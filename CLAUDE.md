@@ -1,26 +1,30 @@
-# CLAUDE.md — KAZUKO ERP
+# CLAUDE.md — KAZUKO TEA (bản viết lại, repo FnB)
 
-Đọc trước khi làm bất cứ việc gì: `AGENTS.md` (luật bắt buộc) + tài liệu trong `docs/` liên quan tới task. Các quyết định trong `docs/` là chuẩn của dự án.
+Đọc trước khi làm bất cứ việc gì: spec trong `docs/specs/` liên quan tới task. Các quyết định trong `docs/` là chuẩn của dự án.
 
 ## Dự án
 
-ERP tiệm vàng KAZUKO. WPF desktop (Windows-only), .NET 8 (global.json pin SDK 8.0.100), Firebird 5.0 Embedded, SQL viết tay (không ORM), FastReport, MVVM tự viết, modular monolith.
+Viết lại nội bộ phần mềm quản lý quán trà sữa / F&B **KAZUKO TEA** (sản phẩm của chính công ty, sếp giao làm lại). Stack: **WinForms** desktop (Windows-only), **.NET Framework 4.8**, build **x86**, **Firebird 2.5 Embedded** (`fbembed.dll` 32-bit), SQL viết tay (không ORM), FastReport, MVP/MVVM nhẹ. Nghiệp vụ giữ **y hệt** app gốc; UI làm lại hiện đại hơn, có tính năng đổi bảng màu; dùng chung schema `DATA.FDB` (không đổi cấu trúc).
 
-Cấu trúc: `src/Kazuko.App` (shell), `src/Kazuko.Core`, `src/Kazuko.Infrastructure`, `src/Kazuko.Shared.UI`, `src/Modules/*`, `database/migrations/*`, `tests/*`.
+Trong repo:
+- `Kazuko_FnB/` — project đang viết lại (WinForms net48 x86). `bin/obj/.vs` đã gitignore.
+- `KAZUKO TEA/` — app gốc (binary + `Database/DATA.FDB`): chỉ tham chiếu, **không sửa**.
+- `KAZUKO_TEA_SRC_EXPORT/` — mã form/báo cáo xuất từ DB để đọc (gitignored); có đồ thị graphify (`graphify-out/`) để tra cứu chức năng.
+- `docs/specs/` — spec. `DATA.FDB` ở thư mục gốc là bản copy để dev/test.
 
 ## Làm việc với Chiến
 
 - Trước mọi task và trước mọi câu trả lời về repo: `git fetch origin main` và xác nhận commit mới nhất. Không làm việc trên base cũ.
-- Chạy app bằng F5 trong Visual Studio. Trước khi build/run phải tắt hẳn app đang chạy (đóng cửa sổ + Shift+F5 nếu đang debug), nếu không DLL bị lock (MSB3021/MSB3027). Nếu luồng bị chặn vì app đang chạy thì tự tắt đúng tiến trình ERP của workspace này, không chờ Chiến tắt tay.
-- Kiểm tra biên dịch bằng `dotnet build KAZUKO_ERP_JEWELRY.sln` (theo `docs/04-DEVELOPMENT-WORKFLOW.md`).
-- Sửa code thì làm theo skill `kazuko-patch`: 1 patch/task, build trên đúng base, verify `git apply --check` trên main sạch, strip BOM, ghi rõ base commit, kèm lệnh apply + migration.
+- Chạy app bằng F5 trong Visual Studio. Trước khi build/run phải tắt hẳn app đang chạy (đóng cửa sổ + Shift+F5 nếu đang debug), nếu không DLL bị lock (MSB3021/MSB3027). Nếu luồng bị chặn vì app đang chạy thì tự tắt đúng tiến trình của workspace này, không chờ Chiến tắt tay.
+- Kiểm tra biên dịch bằng **MSBuild hoặc Visual Studio** ở cấu hình **x86** (`Kazuko_FnB` là .NET Framework classic, không phải SDK-style).
+- Sửa code thì làm theo skill `kazuko-patch`: 1 patch/task, build trên đúng base, verify `git apply --check` trên main sạch, strip BOM, ghi rõ base commit.
 - Không commit, không push khi chưa được Chiến bảo.
-- Không sửa `data/data.fdb` (file này lọt vào repo public do nhầm, không đụng tới).
+- Không sửa `DATA.FDB` gốc (trong `KAZUKO TEA/Database/`); không commit file DB (có thể chứa dữ liệu thật). Dev/test dùng bản copy.
 
 ## Quy trình spec-driven
 
-Idea → viết spec (lệnh `/spec`) → Chiến duyệt spec → plan → implement → verify theo acceptance criteria trong spec. Không code khi spec chưa được duyệt. Nghiệp vụ vàng/tiền/kho/công nợ là lõi: chưa rõ thì hỏi, không đoán.
+Idea → viết spec (lệnh `/spec`) → Chiến duyệt spec → plan → implement → verify theo acceptance criteria trong spec. Không code khi spec chưa được duyệt. Nghiệp vụ tiền/giá/kho/công nợ là lõi: chưa rõ thì hỏi, không đoán.
 
 ## UI
 
-Dialog gọn, hạn chế vertical scroll, hợp style app hiện tại. Chi tiết xem `docs/02-UI-AND-ACCESSIBILITY.md`. Không hard-code màu/cỡ chữ trong màn hình nghiệp vụ, không đưa SQL vào View/ViewModel.
+Dialog gọn, hạn chế vertical scroll, high-DPI, hỗ trợ cảm ứng cho quầy bán hàng. Không hard-code màu/cỡ chữ trong màn hình nghiệp vụ: dùng design token + `ThemeManager` (tự vẽ, có đổi bảng màu lúc chạy). Không đưa SQL vào View/ViewModel.

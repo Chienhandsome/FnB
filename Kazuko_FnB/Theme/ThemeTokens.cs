@@ -1,0 +1,23 @@
+using System.Drawing;
+
+namespace Kazuko_FnB.Theme
+{
+    /// <summary>
+    /// Một bảng màu = một bộ token. Màn hình nghiệp vụ đọc màu từ đây,
+    /// không hard-code màu trực tiếp.
+    /// </summary>
+    public sealed class ThemeTokens
+    {
+        public string Name { get; set; }
+        public bool IsDark { get; set; }
+
+        public Color Background { get; set; }
+        public Color Surface { get; set; }
+        public Color Text { get; set; }
+        public Color TextMuted { get; set; }
+        public Color Primary { get; set; }
+        public Color OnPrimary { get; set; }
+        public Color Accent { get; set; }
+        public Color Border { get; set; }
+    }
+}
