@@ -1,3 +1,10 @@
 /KAZUKO GOLD MAY CHU MAY CON
 /Firebird_2_5
 /KAZUKO_TEA_SRC_EXPORT
+
+# Visual Studio build/cache của project Kazuko_FnB
+/Kazuko_FnB/bin/
+/Kazuko_FnB/obj/
+/Kazuko_FnB/.vs/
+*.suo
+*.user
