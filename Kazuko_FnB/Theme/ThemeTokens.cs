@@ -19,5 +19,7 @@ namespace Kazuko_FnB.Theme
         public Color OnPrimary { get; set; }
         public Color Accent { get; set; }
         public Color Border { get; set; }
+        public Color Danger { get; set; }
+        public Color Success { get; set; }
     }
 }

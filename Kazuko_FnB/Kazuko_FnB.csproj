@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <!-- fbembed.dll là 32-bit: Prefer32Bit để exe chạy tiến trình 32-bit kể cả khi build Any CPU. -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -42,6 +43,8 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -59,11 +62,28 @@
     <Compile Include="Theme\ThemeTokens.cs" />
     <Compile Include="Theme\ThemeManager.cs" />
     <Compile Include="Theme\BuiltInThemes.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="Data\UserRepository.cs" />
+    <Compile Include="Services\AppSettings.cs" />
+    <Compile Include="Services\DatabaseService.cs" />
+    <Compile Include="Services\LoginService.cs" />
+    <Compile Include="UI\Draw.cs" />
+    <Compile Include="UI\Controls\AppBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\FlatButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\InputBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\SegmentedTabs.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\LoginForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="UI\MainForm.cs">
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -88,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="app.manifest" />
   </ItemGroup>
   <!-- Native Firebird 2.5 embedded: chép ra cạnh exe lúc build. -->
   <ItemGroup>
@@ -105,6 +126,13 @@
     </None>
     <None Include="native\icuuc30.dll">
       <Link>icuuc30.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- DB mẫu cho nút "Tạo data": dùng lại file đã có trong repo, không chép thêm bản thứ hai. -->
+  <ItemGroup>
+    <None Include="..\KAZUKO TEA\Data\TEMPLATE.FDB">
+      <Link>Data\TEMPLATE.FDB</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
