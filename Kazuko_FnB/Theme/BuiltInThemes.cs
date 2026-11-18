@@ -13,14 +13,14 @@ namespace Kazuko_FnB.Theme
         {
             Name = "Cam",
             IsDark = false,
-            Background = Color.FromArgb(250, 244, 238),
-            Surface = Color.FromArgb(255, 251, 247),
+            Background = Color.FromArgb(255, 247, 239),
+            Surface = Color.FromArgb(255, 252, 249),
             Text = Color.FromArgb(46, 33, 24),
             TextMuted = Color.FromArgb(120, 98, 84),
-            Primary = Color.FromArgb(234, 102, 24),
+            Primary = Color.FromArgb(242, 100, 8),
             OnPrimary = Color.White,
             Accent = Color.FromArgb(196, 140, 60),
-            Border = Color.FromArgb(232, 214, 198),
+            Border = Color.FromArgb(255, 213, 178),
             Danger = Color.FromArgb(192, 40, 28),
             Success = Color.FromArgb(28, 128, 52)
         };

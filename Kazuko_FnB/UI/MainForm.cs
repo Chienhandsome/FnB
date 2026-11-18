@@ -325,8 +325,11 @@ namespace Kazuko_FnB.UI
 
             _menu.ApplyTheme(t);
 
-            _toolbar.BarColor = t.Background;
-            _toolbar.ButtonColor = t.Surface;
+            // Nền thanh/trang giữ màu nền theme (kem); chỉ nút toolbar, tab đang chọn, thân thẻ là trắng.
+            Color pane = t.Background;
+            Color white = t.IsDark ? t.Surface : Color.White;
+            _toolbar.BarColor = pane;
+            _toolbar.ButtonColor = white;
             _toolbar.ButtonBorderColor = strong;
             _toolbar.HoverColor = Draw.Mix(t.Surface, t.Primary, 0.14f);
             _toolbar.TextColor = t.Text;
@@ -335,9 +338,9 @@ namespace Kazuko_FnB.UI
             _toolbar.BottomBorderColor = strong;
             _toolbar.Invalidate();
 
-            _tabs.BarColor = t.Background;
-            _tabs.TabColor = Draw.Mix(t.Background, t.Border, 0.5f);
-            _tabs.SelectedTabColor = t.Surface;
+            _tabs.BarColor = pane;
+            _tabs.TabColor = t.IsDark ? Draw.Mix(pane, t.Border, 0.5f) : Draw.Mix(pane, t.Primary, 0.22f);
+            _tabs.SelectedTabColor = white;
             _tabs.BorderColor = strong;
             _tabs.AccentColor = t.Primary;
             _tabs.TextColor = t.Text;
@@ -345,18 +348,18 @@ namespace Kazuko_FnB.UI
             _tabs.DangerColor = t.Danger;
             _tabs.Invalidate();
 
-            _content.BackColor = t.Background;
+            _content.BackColor = pane;
             foreach (Control v in _views.Values)
             {
                 var q = v as QuickAccessView;
                 if (q != null)
-                    q.ApplyTheme(t);
+                    q.ApplyTheme(t, pane);
                 var p = v as PlaceholderView;
                 if (p != null)
-                    p.ApplyTheme(t);
+                    p.ApplyTheme(t, pane);
             }
 
-            _status.BarColor = t.Surface;
+            _status.BarColor = t.Background;
             _status.BorderColor = strong;
             _status.TextColor = t.Text;
             _status.MutedColor = t.TextMuted;

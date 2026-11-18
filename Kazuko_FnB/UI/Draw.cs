@@ -29,7 +29,8 @@ namespace Kazuko_FnB.UI
         /// <summary>Viền đậm dùng chung cho mọi component (yêu cầu của sếp): đậm hơn Border của theme.</summary>
         public static Color StrongBorder(Theme.ThemeTokens t)
         {
-            return Mix(t.Border, t.Text, t.IsDark ? 0.30f : 0.38f);
+            // Theme sáng: viền đậm nghiêng về màu chủ đạo (cam) thay vì nâu xám.
+            return t.IsDark ? Mix(t.Border, t.Text, 0.30f) : Mix(t.Border, t.Primary, 0.45f);
         }
 
         public static Color Mix(Color a, Color b, float t)

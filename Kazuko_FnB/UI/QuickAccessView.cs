@@ -57,18 +57,24 @@ namespace Kazuko_FnB.UI
 
         public void ApplyTheme(ThemeTokens t)
         {
+            ApplyTheme(t, t.Background);
+        }
+
+        public void ApplyTheme(ThemeTokens t, Color page)
+        {
             Color strong = Draw.StrongBorder(t);
-            BackColor = t.Background;
-            _headingIcon.BackColor = _heading.BackColor = t.Background;
+            BackColor = page;
+            _headingIcon.BackColor = _heading.BackColor = page;
             _headingIcon.ForeColor = t.Primary;
             _heading.ForeColor = t.Text;
             foreach (QuickAccessCard c in _cards)
             {
-                c.PageColor = t.Background;
-                c.SurfaceColor = t.Surface;
-                c.HeaderColor = Draw.Mix(t.Surface, t.Accent, t.IsDark ? 0.22f : 0.30f);
+                c.PageColor = page;
+                c.SurfaceColor = t.IsDark ? t.Surface : Color.White;
+                c.HeaderColor = t.IsDark ? Draw.Mix(t.Surface, t.Accent, 0.22f)
+                    : Draw.Mix(Color.White, Color.FromArgb(255, 222, 120), 0.40f);
                 c.BorderColor = strong;
-                c.RowColor = Draw.Mix(t.Surface, t.Background, 0.45f);
+                c.RowColor = t.IsDark ? Draw.Mix(t.Surface, t.Background, 0.45f) : t.Background;
                 c.RowHoverColor = Draw.Mix(t.Surface, t.Primary, 0.16f);
                 c.TextColor = t.Text;
                 c.AccentColor = t.Primary;
@@ -194,8 +200,13 @@ namespace Kazuko_FnB.UI
 
         public void ApplyTheme(ThemeTokens t)
         {
-            BackColor = t.Background;
-            _title.BackColor = _note.BackColor = t.Background;
+            ApplyTheme(t, t.Background);
+        }
+
+        public void ApplyTheme(ThemeTokens t, Color page)
+        {
+            BackColor = page;
+            _title.BackColor = _note.BackColor = page;
             _title.ForeColor = t.Text;
             _note.ForeColor = t.TextMuted;
         }

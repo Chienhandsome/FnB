@@ -24,7 +24,7 @@ namespace Kazuko_FnB.UI.Controls
 
         public void ApplyTheme(ThemeTokens t)
         {
-            BackColor = t.Surface;
+            BackColor = t.Background;
             ForeColor = t.Text;
             Renderer = new ThemedMenuRenderer(t);
             Invalidate();
@@ -122,7 +122,7 @@ namespace Kazuko_FnB.UI.Controls
 
         protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
         {
-            using (var b = new SolidBrush(_t.Surface))
+            using (var b = new SolidBrush(e.ToolStrip is ToolStripDropDown ? _t.Surface : _t.Background))
                 e.Graphics.FillRectangle(b, e.AffectedBounds);
             if (e.ToolStrip is ToolStripDropDown)
             {

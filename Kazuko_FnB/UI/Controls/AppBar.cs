@@ -52,7 +52,7 @@ namespace Kazuko_FnB.UI.Controls
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            Font = new Font("Segoe UI Semibold", 10.5f);
+            Font = new Font("Segoe UI", 10.5f, FontStyle.Bold);
             _boldFont = new Font("Segoe UI Semibold", 10f);
             _smallFont = new Font("Segoe UI", 8.5f);
             _iconFont = new Font(Draw.IconFont, 9f);

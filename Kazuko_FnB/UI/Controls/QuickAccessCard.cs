@@ -168,13 +168,10 @@ namespace Kazuko_FnB.UI.Controls
                 int hh = HeaderHeight(s);
                 var old = g.Clip;
                 g.SetClip(card, CombineMode.Intersect);
-                using (var lb = new LinearGradientBrush(new Rectangle(0, 0, Math.Max(1, Width), hh + 1),
-                    GradientFrom, GradientTo, LinearGradientMode.Horizontal))
-                    g.FillRectangle(lb, 0, 0, Width, hh);
-                // Vệt sáng phía trên cho cảm giác bóng.
-                using (var gloss = new LinearGradientBrush(new Rectangle(0, 0, Math.Max(1, Width), hh / 2 + 1),
-                    Color.FromArgb(70, Color.White), Color.FromArgb(0, Color.White), LinearGradientMode.Vertical))
-                    g.FillRectangle(gloss, 0, 0, Width, hh / 2);
+                using (var hb = new SolidBrush(HeaderColor))
+                    g.FillRectangle(hb, 0, 0, Width, hh);
+                using (var pen = new Pen(Draw.Mix(HeaderColor, GradientTo, 0.35f), 1.2f * s))
+                    g.DrawLine(pen, 0, hh, Width, hh);
                 g.Clip = old;
 
                 // Viền thẻ: gradient cùng tông, đậm.
@@ -191,12 +188,12 @@ namespace Kazuko_FnB.UI.Controls
             int hdr = HeaderHeight(s);
             int dia = (int)(28 * s);
             var circle = new Rectangle(x, (hdr - dia) / 2, dia, dia);
-            using (var cb = new SolidBrush(Color.FromArgb(70, Color.White)))
+            using (var cb = new LinearGradientBrush(circle, GradientFrom, GradientTo, LinearGradientMode.ForwardDiagonal))
                 g.FillEllipse(cb, circle);
             TextRenderer.DrawText(g, Glyph ?? "", _iconFont, circle, Color.White,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
             var titleRect = new Rectangle(x + iconW, 0, Math.Max(0, Width - x - iconW - (int)(10 * s)), hdr);
-            TextRenderer.DrawText(g, title, _titleFont, titleRect, Color.White,
+            TextRenderer.DrawText(g, title, _titleFont, titleRect, TextColor,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine |
                 TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
 

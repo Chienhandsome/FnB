@@ -12,7 +12,7 @@ namespace Kazuko_FnB.Services
     /// </summary>
     public static class MainMenuBuilder
     {
-        private const int QuickItemsPerGroup = 6;
+        private const int QuickItemsPerGroup = 4;
 
         public static MenuModel Build(UserSession session)
         {
