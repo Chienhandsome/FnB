@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.Theme;
@@ -8,25 +11,39 @@ using Kazuko_FnB.UI.Controls;
 namespace Kazuko_FnB.UI
 {
     /// <summary>
-    /// Khung chính sau đăng nhập. Hiện mới có appbar (tên app, người dùng + vai trò, Đăng xuất,
-    /// thu nhỏ / phóng to / đóng). Menu, thanh công cụ và tab tài liệu làm ở G1.3.
+    /// Khung chính sau đăng nhập: appbar → menu → thanh công cụ → tab tài liệu → nội dung → thanh trạng thái.
+    /// Mở chức năng = mở một tab; các chức năng chưa làm hiện nội dung tạm.
     /// </summary>
     internal sealed class MainForm : Form
     {
         private const int WM_NCHITTEST = 0x84;
         private const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14,
                           HTBOTTOM = 15, HTBOTTOMLEFT = 16, HTBOTTOMRIGHT = 17;
+        private const string HomeKey = "home";
 
         private readonly UserSession _session;
+        private readonly MenuModel _model;
         private readonly AppBar _bar = new AppBar();
-        private readonly Label _placeholder = new Label();
+        private readonly ThemedMenuStrip _menu = new ThemedMenuStrip();
+        private readonly IconToolbar _toolbar = new IconToolbar();
+        private readonly DocumentTabs _tabs = new DocumentTabs();
+        private readonly Panel _content = new Panel();
+        private readonly AppStatusBar _status = new AppStatusBar();
+        private readonly Timer _clock = new Timer();
+        private readonly Dictionary<string, Control> _views = new Dictionary<string, Control>();
+        private QuickAccessView _home;
+        private bool _closingConfirmed;
 
-        /// <summary>true nếu người dùng bấm Đăng xuất (quay lại màn đăng nhập), false nếu đóng app.</summary>
+        /// <summary>true nếu người dùng chọn Đăng xuất (quay lại màn đăng nhập), false nếu thoát app.</summary>
         public bool LogoutRequested { get; private set; }
+
+        /// <summary>Chỉ dùng cho lệnh --render-main: bỏ hộp thoại xác nhận khi đóng.</summary>
+        internal bool SkipConfirm { get; set; }
 
         public MainForm(UserSession session)
         {
             _session = session;
+            _model = MainMenuBuilder.Build(session);
 
             Text = "KAZUKO TEA - " + session.DisplayName +
                    (session.CurrentStore != null ? " - " + session.CurrentStore.Name : "");
@@ -43,17 +60,40 @@ namespace Kazuko_FnB.UI
             _bar.ShowMaximize = true;
             _bar.EnableDrag = true;
             _bar.SetUser(session.DisplayName, session.RoleText);
-            _bar.LogoutClicked += delegate { LogoutRequested = true; Close(); };
+            _bar.LogoutClicked += delegate { DoLogout(); };
 
-            _placeholder.Text = "Đăng nhập thành công. Menu và các chức năng sẽ được bổ sung ở bước tiếp theo.";
-            _placeholder.TextAlign = ContentAlignment.MiddleCenter;
-            _placeholder.Font = new Font("Segoe UI", 12f);
+            BuildMenu();
+            _toolbar.SetItems(_model.Toolbar);
+            _toolbar.ItemClicked += delegate (object s, MenuNode n) { HandleNode(n); };
 
-            Controls.Add(_placeholder);
+            _tabs.SelectedChanged += delegate { ShowSelectedView(); };
+            _tabs.TabCloseRequested += delegate (object s, string key) { CloseTab(key); };
+            _tabs.CloseAllRequested += delegate { CloseAllTabs(); };
+            _tabs.PinToggleRequested += delegate { TogglePin(); };
+
+            _home = new QuickAccessView(_model.QuickGroups);
+            _home.ItemClicked += delegate (object s, MenuNode n) { HandleNode(n); };
+            _home.Dock = DockStyle.Fill;
+            _views[HomeKey] = _home;
+            _content.Controls.Add(_home);
+            _tabs.Add(HomeKey, "Truy cập nhanh", true);
+            _tabs.Select(HomeKey);
+
+            Controls.Add(_content);
+            Controls.Add(_status);
+            Controls.Add(_tabs);
+            Controls.Add(_toolbar);
+            Controls.Add(_menu);
             Controls.Add(_bar);
+            MainMenuStrip = _menu;
+
+            _clock.Interval = 1000;
+            _clock.Tick += delegate { UpdateStatus(); };
+            _clock.Start();
 
             ThemeManager.ThemeChanged += OnThemeChanged;
             ApplyTheme();
+            UpdateStatus();
             WindowState = FormWindowState.Maximized;
         }
 
@@ -61,6 +101,209 @@ namespace Kazuko_FnB.UI
         {
             get { return DeviceDpi / 96f; }
         }
+
+        /// <summary>Dùng cho --render-main: mở vài chức năng đầu trên thanh công cụ thành tab.</summary>
+        internal void PreviewOpenTabs(int count)
+        {
+            int opened = 0;
+            foreach (MenuNode n in _model.Toolbar)
+            {
+                if (n.IsSeparator)
+                    continue;
+                OpenTab(n);
+                if (++opened >= count)
+                    break;
+            }
+        }
+
+        /// <summary>Dùng cho --render-main: mở menu thả xuống thứ index rồi chụp ra ảnh.</summary>
+        internal Bitmap PreviewDropDown(int index)
+        {
+            var top = _menu.Items[index] as ToolStripMenuItem;
+            if (top == null)
+                return null;
+            top.ShowDropDown();
+            Application.DoEvents();
+            ToolStripDropDown dd = top.DropDown;
+            var bmp = new Bitmap(Math.Max(1, dd.Width), Math.Max(1, dd.Height));
+            dd.DrawToBitmap(bmp, new Rectangle(0, 0, bmp.Width, bmp.Height));
+            top.HideDropDown();
+            return bmp;
+        }
+
+        // ------------------------------------------------------------------ menu
+
+        private void BuildMenu()
+        {
+            var usedShortcuts = new HashSet<Keys>();
+            foreach (MenuNode root in _model.Roots)
+            {
+                var top = new ToolStripMenuItem(root.Title) { Tag = root };
+                AddChildren(top, root, usedShortcuts);
+                _menu.Items.Add(top);
+            }
+            _menu.StyleItems(S);
+        }
+
+        private void AddChildren(ToolStripMenuItem parent, MenuNode node, HashSet<Keys> usedShortcuts)
+        {
+            foreach (MenuNode c in node.Children)
+            {
+                if (c.IsSeparator)
+                {
+                    parent.DropDownItems.Add(new ToolStripSeparator());
+                    continue;
+                }
+                var item = new ToolStripMenuItem(c.Title) { Tag = c };
+                if (c.IsLeaf)
+                {
+                    MenuNode captured = c;
+                    item.Click += delegate { HandleNode(captured); };
+                    // DB có vài mục trùng phím tắt: chỉ gán cho mục đầu tiên.
+                    if (c.Shortcut != Keys.None && usedShortcuts.Add(c.Shortcut))
+                    {
+                        try
+                        {
+                            item.ShortcutKeys = c.Shortcut;
+                            item.ShowShortcutKeys = true;
+                        }
+                        catch (InvalidEnumArgumentException)
+                        {
+                            // Mã phím tắt không hợp lệ: bỏ qua phím tắt, giữ mục menu.
+                        }
+                    }
+                }
+                else
+                {
+                    AddChildren(item, c, usedShortcuts);
+                }
+                parent.DropDownItems.Add(item);
+            }
+        }
+
+        // ------------------------------------------------------------------ hành động
+
+        private void HandleNode(MenuNode node)
+        {
+            switch (node.Action)
+            {
+                case MenuAction.Logout:
+                    DoLogout();
+                    break;
+                case MenuAction.Exit:
+                    DoExit();
+                    break;
+                default:
+                    OpenTab(node);
+                    break;
+            }
+        }
+
+        private void OpenTab(MenuNode node)
+        {
+            string key = node.Id;
+            if (_tabs.Find(key) == null)
+            {
+                var view = new PlaceholderView(node.Title) { Dock = DockStyle.Fill, Visible = false };
+                _views[key] = view;
+                _content.Controls.Add(view);
+                _tabs.Add(key, node.Title, false);
+            }
+            _tabs.Select(key);
+        }
+
+        private void CloseTab(string key)
+        {
+            DocTab t = _tabs.Find(key);
+            if (t == null || t.Fixed)
+                return;
+            Control view;
+            if (_views.TryGetValue(key, out view))
+            {
+                _views.Remove(key);
+                _content.Controls.Remove(view);
+                view.Dispose();
+            }
+            _tabs.Remove(key);
+        }
+
+        private void CloseAllTabs()
+        {
+            var toClose = new List<string>();
+            foreach (DocTab t in _tabs.Tabs)
+                if (!t.Fixed && !t.Pinned)
+                    toClose.Add(t.Key);
+            foreach (string k in toClose)
+                CloseTab(k);
+        }
+
+        private void TogglePin()
+        {
+            DocTab t = _tabs.SelectedTab;
+            if (t != null && !t.Fixed)
+                _tabs.SetPinned(t.Key, !t.Pinned);
+        }
+
+        private void ShowSelectedView()
+        {
+            string key = _tabs.SelectedKey;
+            foreach (KeyValuePair<string, Control> kv in _views)
+                kv.Value.Visible = kv.Key == key;
+            Control shown;
+            if (key != null && _views.TryGetValue(key, out shown))
+                shown.BringToFront();
+            UpdateStatus();
+        }
+
+        private void DoLogout()
+        {
+            if (!Confirm("Bạn có muốn đăng xuất khỏi hệ thống không?", "Đăng xuất"))
+                return;
+            LogoutRequested = true;
+            _closingConfirmed = true;
+            Close();
+        }
+
+        private void DoExit()
+        {
+            if (!Confirm("Bạn có muốn thoát khỏi hệ thống không?", "Thoát"))
+                return;
+            _closingConfirmed = true;
+            Close();
+        }
+
+        private bool Confirm(string message, string caption)
+        {
+            if (SkipConfirm)
+                return true;
+            return MessageBox.Show(this, message, caption, MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            // Đóng bằng nút ✕ hoặc Alt+F4 cũng hỏi xác nhận, giống app gốc.
+            if (!_closingConfirmed && e.CloseReason == CloseReason.UserClosing)
+            {
+                if (!Confirm("Bạn có muốn thoát khỏi hệ thống không?", "Thoát"))
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
+            base.OnFormClosing(e);
+        }
+
+        private void UpdateStatus()
+        {
+            _status.LeftText = "Xin chào " + _session.DisplayName + " (" + _session.RoleText + ")   " +
+                               DateTime.Now.ToString("HH:mm:ss - dd/MM/yyyy", CultureInfo.InvariantCulture);
+            DocTab t = _tabs.SelectedTab;
+            _status.MiddleText = t == null ? "" : "Đang xem: " + t.Title;
+            _status.RightText = "CSDL: " + (_session.DatabasePath ?? "");
+        }
+
+        // ------------------------------------------------------------------ theme
 
         private void OnThemeChanged(object sender, EventArgs e)
         {
@@ -70,23 +313,73 @@ namespace Kazuko_FnB.UI
         private void ApplyTheme()
         {
             ThemeTokens t = ThemeManager.Current;
+            Color strong = Draw.StrongBorder(t);
             BackColor = t.Background;
+
             _bar.BarColor = t.Primary;
             _bar.BarTextColor = t.OnPrimary;
-            // Nút Đăng xuất: màu cảnh báo, chữ chọn theo độ sáng để đọc được trên cả nền sáng lẫn tối.
+            // Nút Đăng xuất: màu cảnh báo, chữ chọn để đọc được trên cả nền sáng lẫn tối.
             _bar.LogoutColor = t.IsDark ? t.Danger : Color.FromArgb(196, 43, 28);
             _bar.LogoutTextColor = t.IsDark ? Color.FromArgb(40, 12, 8) : Color.White;
             _bar.Invalidate();
-            _placeholder.BackColor = t.Background;
-            _placeholder.ForeColor = t.TextMuted;
+
+            _menu.ApplyTheme(t);
+
+            _toolbar.BarColor = t.Background;
+            _toolbar.ButtonColor = t.Surface;
+            _toolbar.ButtonBorderColor = strong;
+            _toolbar.HoverColor = Draw.Mix(t.Surface, t.Primary, 0.14f);
+            _toolbar.TextColor = t.Text;
+            _toolbar.IconColor = t.Primary;
+            _toolbar.SeparatorColor = Draw.Mix(t.Accent, t.Background, 0.2f);
+            _toolbar.BottomBorderColor = strong;
+            _toolbar.Invalidate();
+
+            _tabs.BarColor = t.Background;
+            _tabs.TabColor = Draw.Mix(t.Background, t.Border, 0.5f);
+            _tabs.SelectedTabColor = t.Surface;
+            _tabs.BorderColor = strong;
+            _tabs.AccentColor = t.Primary;
+            _tabs.TextColor = t.Text;
+            _tabs.MutedTextColor = t.TextMuted;
+            _tabs.DangerColor = t.Danger;
+            _tabs.Invalidate();
+
+            _content.BackColor = t.Background;
+            foreach (Control v in _views.Values)
+            {
+                var q = v as QuickAccessView;
+                if (q != null)
+                    q.ApplyTheme(t);
+                var p = v as PlaceholderView;
+                if (p != null)
+                    p.ApplyTheme(t);
+            }
+
+            _status.BarColor = t.Surface;
+            _status.BorderColor = strong;
+            _status.TextColor = t.Text;
+            _status.MutedColor = t.TextMuted;
+            _status.Invalidate();
         }
+
+        // ------------------------------------------------------------------ bố cục và cửa sổ không viền
 
         protected override void OnLayout(LayoutEventArgs levent)
         {
             base.OnLayout(levent);
-            int barH = (int)(48 * S);
-            _bar.SetBounds(0, 0, ClientSize.Width, barH);
-            _placeholder.SetBounds(0, barH, ClientSize.Width, Math.Max(0, ClientSize.Height - barH));
+            float s = S;
+            int w = ClientSize.Width, h = ClientSize.Height;
+            if (w <= 0 || h <= 0)
+                return;
+            int y = 0;
+            _bar.SetBounds(0, y, w, (int)(48 * s)); y += _bar.Height;
+            _menu.SetBounds(0, y, w, (int)(38 * s)); y += _menu.Height;
+            _toolbar.SetBounds(0, y, w, _toolbar.PreferredBarHeight); y += _toolbar.Height;
+            _tabs.SetBounds(0, y, w, (int)(44 * s)); y += _tabs.Height;
+            int statusH = (int)(28 * s);
+            _status.SetBounds(0, h - statusH, w, statusH);
+            _content.SetBounds(0, y, w, Math.Max(0, h - statusH - y));
         }
 
         protected override void OnResize(EventArgs e)
@@ -147,7 +440,11 @@ namespace Kazuko_FnB.UI
         protected override void Dispose(bool disposing)
         {
             if (disposing)
+            {
                 ThemeManager.ThemeChanged -= OnThemeChanged;
+                _clock.Stop();
+                _clock.Dispose();
+            }
             base.Dispose(disposing);
         }
     }

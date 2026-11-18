@@ -16,7 +16,7 @@ namespace Kazuko_FnB
         ///   --db-smoke     &lt;db&gt; [file kết quả]
         ///   --login-test   &lt;db&gt; &lt;tài khoản&gt; &lt;mật khẩu&gt; &lt;file kết quả&gt;
         ///   --render-login &lt;file.png&gt; [rộng cao] [login|db|dbok=&lt;db&gt;] [tên theme]
-        ///   --render-main  &lt;file.png&gt; [rộng cao] [tên theme] [vai trò]
+        ///   --render-main  &lt;file.png&gt; [rộng cao] [tên theme] [vai trò] [đường dẫn DATA.FDB]
         /// </summary>
         [STAThread]
         static int Main(string[] args)
@@ -39,6 +39,7 @@ namespace Kazuko_FnB
             Application.SetCompatibleTextRenderingDefault(false);
 
             AppSettings settings = AppSettings.Load();
+            Data.KazukoConnection.Configure(settings.FbUser, settings.GetFbPassword());
             ThemeManager.Apply(BuiltInThemes.Find(settings.ThemeName));
 
             if (args.Length >= 2 && args[0] == "--render-login")
@@ -115,10 +116,12 @@ namespace Kazuko_FnB
                 UserName = "admin",
                 DisplayName = "Quản trị",
                 RoleText = args.Length >= 6 ? args[5] : "Quản trị viên",
-                IsAdmin = true
+                IsAdmin = true,
+                DatabasePath = args.Length >= 7 ? args[6] : null
             };
             using (var form = new MainForm(session))
             {
+                form.SkipConfirm = true;
                 form.WindowState = FormWindowState.Normal;
                 form.ShowInTaskbar = false;
                 form.StartPosition = FormStartPosition.Manual;
@@ -128,6 +131,24 @@ namespace Kazuko_FnB
                 form.Size = new Size(w, h);
                 form.PerformLayout();
                 Application.DoEvents();
+
+                // Tuỳ chọn thêm: tabs=N mở N chức năng; menu=I chụp menu thả xuống thứ I (file .menu.png).
+                for (int i = 7; i < args.Length; i++)
+                {
+                    if (args[i].StartsWith("tabs=", StringComparison.Ordinal))
+                    {
+                        form.PreviewOpenTabs(int.Parse(args[i].Substring(5)));
+                        form.PerformLayout();
+                        Application.DoEvents();
+                    }
+                    else if (args[i].StartsWith("menu=", StringComparison.Ordinal))
+                    {
+                        using (Bitmap mb = form.PreviewDropDown(int.Parse(args[i].Substring(5))))
+                            if (mb != null)
+                                mb.Save(args[1] + ".menu.png", ImageFormat.Png);
+                    }
+                }
+
                 using (var bmp = new Bitmap(form.Width, form.Height))
                 {
                     form.DrawToBitmap(bmp, new Rectangle(0, 0, form.Width, form.Height));
@@ -155,6 +176,8 @@ namespace Kazuko_FnB
                 form.Size = new Size(w, h);
                 if (args.Length >= 5 && args[4].StartsWith("dbok=", StringComparison.Ordinal))
                     form.PreviewConnect(args[4].Substring(5));
+                else if (args.Length >= 5 && args[4] == "server")
+                    form.PreviewServerMode();
                 else if (args.Length >= 5 && args[4] == "db")
                     form.SelectTab(1);
                 else

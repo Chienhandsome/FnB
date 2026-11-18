@@ -51,6 +51,8 @@ Khảo sát đã làm (chỉ đọc, trên bản sao DB trong thư mục tạm, 
 
 ## 4. Nghiệp vụ chi tiết (khung theo menu gốc)
 
+**Thanh menu (đã xác minh khi làm G1.3):** gồm 7 nhóm từ `SMENU` (Hoạt động, Khách hàng, Kho hàng, Công nợ, Quỹ, Nhân sự, Quản trị) cộng các menu **cố định trong mã app gốc** (`MenuTs`): "Hệ thống" (CSDL, tạo mới/sao lưu/phục hồi, người dùng và phân quyền, thư viện ảnh, cấu hình toàn hệ thống, đổi mật khẩu, đăng xuất, thoát, đăng ký bản quyền), "Báo cáo" và "Trợ giúp". Thanh công cụ icon lấy từ `SMENU.TOOLBAR = 30` (11 mục); phím tắt lưu dạng số của `Keys`. Bản viết lại chưa làm "Báo cáo" (G4) và "Đăng ký bản quyền". Mục "Truy cập nhanh" là phần mới theo UI mẫu, dựng từ các nhóm `SMENU`.
+
 Danh sách dưới đây lấy từ `SMENU` và tên bảng. Cột "Xác minh" là việc cần làm trước khi viết chi tiết quy tắc: đọc mã form tương ứng trong `SFORM.CODE` (và `STABLEDESC.CODE`, `SREPORT.SQL`), rồi đối chiếu bằng app gốc.
 
 ### 4.1 Hoạt động

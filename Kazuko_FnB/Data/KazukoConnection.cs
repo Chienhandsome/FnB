@@ -9,6 +9,19 @@ namespace Kazuko_FnB.Data
     /// </summary>
     public static class KazukoConnection
     {
+        private static string _userId = "SYSDBA";
+        private static string _password = "masterkey";
+
+        /// <summary>
+        /// Tài khoản Firebird dùng cho mọi kết nối (đặt từ tab "Cơ sở dữ liệu").
+        /// Lưu ý: Firebird embedded bỏ qua tài khoản/mật khẩu; chúng có tác dụng khi dùng máy chủ.
+        /// </summary>
+        public static void Configure(string userId, string password)
+        {
+            _userId = string.IsNullOrWhiteSpace(userId) ? "SYSDBA" : userId.Trim();
+            _password = password ?? "";
+        }
+
         public static string BuildConnectionString(string databasePath)
         {
             if (string.IsNullOrWhiteSpace(databasePath))
@@ -17,8 +30,8 @@ namespace Kazuko_FnB.Data
             var csb = new FbConnectionStringBuilder
             {
                 ServerType = FbServerType.Embedded,
-                UserID = "SYSDBA",
-                Password = "masterkey",
+                UserID = _userId,
+                Password = _password,
                 Database = databasePath,
                 Charset = "UTF8",
                 Pooling = false

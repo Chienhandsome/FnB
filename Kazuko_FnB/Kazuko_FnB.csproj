@@ -82,6 +82,29 @@
     <Compile Include="UI\LoginForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Data\MenuRepository.cs" />
+    <Compile Include="Services\FunctionPermissions.cs" />
+    <Compile Include="Services\GlyphMap.cs" />
+    <Compile Include="Services\MainMenuBuilder.cs" />
+    <Compile Include="Services\MenuModel.cs" />
+    <Compile Include="UI\Controls\AppStatusBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\DocumentTabs.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\IconToolbar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\QuickAccessCard.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\ThemedMenuStrip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\QuickAccessView.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -126,6 +149,12 @@
     </None>
     <None Include="native\icuuc30.dll">
       <Link>icuuc30.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Ảnh nền màn đăng nhập: LoginForm đọc Assets\login-bg.jpg|png cạnh exe. -->
+  <ItemGroup>
+    <None Include="Assets\login-bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

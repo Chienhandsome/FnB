@@ -87,6 +87,31 @@ namespace Kazuko_FnB.Data
             }
         }
 
+        /// <summary>Nạp toàn bộ quyền chức năng của người dùng trong một truy vấn. Admin không cần truy vấn.</summary>
+        public Services.FunctionPermissions GetFunctionPermissions(string userId, bool isAdmin)
+        {
+            var perms = new Services.FunctionPermissions(isAdmin);
+            if (isAdmin)
+                return perms;
+            using (var conn = KazukoConnection.Open(_databasePath))
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText =
+                    "SELECT F.ID, F.NAME, MAX(COALESCE(R.MODE, 0)) " +
+                    "FROM SUSER U " +
+                    "INNER JOIN SGROUPROLE R ON U.SGROUPUSERID = R.SGROUPUSERID " +
+                    "INNER JOIN SFUNCTION F ON F.ID = R.SFUNCTIONID " +
+                    "WHERE U.ID = @UserId GROUP BY F.ID, F.NAME";
+                cmd.Parameters.Add("@UserId", FbDbType.VarChar).Value = userId;
+                using (var r = cmd.ExecuteReader())
+                {
+                    while (r.Read())
+                        perms.Add(AsString(r[0]), AsString(r[1]), r[2] is DBNull ? 0 : Convert.ToInt32(r[2]));
+                }
+            }
+            return perms;
+        }
+
         /// <summary>Tên nhóm người dùng (SGROUPUSER.NAME), null nếu không có.</summary>
         public string GetGroupName(string groupId)
         {

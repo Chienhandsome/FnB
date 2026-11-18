@@ -19,6 +19,7 @@ namespace Kazuko_FnB.UI
         private readonly LoginService _login = new LoginService();
         private readonly DatabaseService _db = new DatabaseService();
         private Image _background;
+        private Bitmap _bgCache;
         private Rectangle _card;
 
         private readonly AppBar _bar = new AppBar();
@@ -37,8 +38,18 @@ namespace Kazuko_FnB.UI
         private readonly FlatButton _btnLogin = new FlatButton();
 
         private readonly Panel _pageDb = new Panel();
-        private readonly Label _lblDb = new Label();
+        private readonly Label _lblConn = new Label();
+        private readonly RadioButton _rbLocal = new RadioButton();
+        private readonly RadioButton _rbServer = new RadioButton();
+        private readonly Label _lblHost = new Label();
+        private readonly InputBox _host = new InputBox();
+        private readonly Label _lblPort = new Label();
+        private readonly InputBox _port = new InputBox();
         private readonly InputBox _dbPath = new InputBox();
+        private readonly Label _lblFbUser = new Label();
+        private readonly InputBox _fbUser = new InputBox();
+        private readonly Label _lblFbPass = new Label();
+        private readonly InputBox _fbPass = new InputBox();
         private readonly FlatButton _btnCreate = new FlatButton();
         private readonly FlatButton _btnPick = new FlatButton();
         private readonly FlatButton _btnConnect = new FlatButton();
@@ -74,6 +85,13 @@ namespace Kazuko_FnB.UI
             if (settings.RememberLogin)
                 _pass.Text = settings.GetPassword() ?? "";
             _dbPath.Text = settings.DatabasePath ?? "";
+            _fbUser.Text = string.IsNullOrWhiteSpace(settings.FbUser) ? AppSettings.DefaultFbUser : settings.FbUser;
+            _fbPass.Text = settings.GetFbPassword();
+            _host.Text = settings.ServerHost ?? "";
+            _port.Text = string.IsNullOrWhiteSpace(settings.ServerPort) ? AppSettings.DefaultServerPort : settings.ServerPort;
+            _rbServer.Checked = settings.UseServer;
+            _rbLocal.Checked = !settings.UseServer;
+            OnConnectionModeChanged();
 
             ThemeManager.ThemeChanged += OnThemeChanged;
             ApplyTheme();
@@ -99,6 +117,13 @@ namespace Kazuko_FnB.UI
             SelectTab(1);
             _dbPath.Text = path;
             DoConnect();
+        }
+
+        /// <summary>Dùng cho lệnh --render-login: chọn chế độ "Máy chủ Firebird".</summary>
+        internal void PreviewServerMode()
+        {
+            SelectTab(1);
+            _rbServer.Checked = true;
         }
 
         /// <summary>Chọn tab (0 = Đăng nhập, 1 = Cơ sở dữ liệu).</summary>
@@ -152,9 +177,32 @@ namespace Kazuko_FnB.UI
             });
 
             // Trang cơ sở dữ liệu
-            SetupLabel(_lblDb, "Tệp dữ liệu (máy này)");
+            SetupLabel(_lblConn, "Kết nối:");
+            _lblConn.TextAlign = ContentAlignment.MiddleLeft;
+            _rbLocal.Text = "Máy này (localhost)";
+            _rbServer.Text = "Máy chủ Firebird";
+            _rbLocal.AutoSize = _rbServer.AutoSize = true;
+            _rbLocal.Checked = true;
+            _rbLocal.CheckedChanged += delegate { OnConnectionModeChanged(); };
+            _rbServer.CheckedChanged += delegate { OnConnectionModeChanged(); };
+
+            SetupLabel(_lblHost, "IP máy chủ:");
+            _host.IconGlyph = "";
+            _host.Placeholder = "192.168.1.10";
+            SetupLabel(_lblPort, "Cổng:");
+            _port.IconGlyph = "";
+            _port.Placeholder = AppSettings.DefaultServerPort;
+
             _dbPath.IconGlyph = "";
             _dbPath.Placeholder = "Đường dẫn tệp .FDB";
+
+            SetupLabel(_lblFbUser, "Tài khoản Firebird:");
+            _fbUser.IconGlyph = "";
+            _fbUser.Placeholder = AppSettings.DefaultFbUser;
+            SetupLabel(_lblFbPass, "Mật khẩu:");
+            _fbPass.IconGlyph = "";
+            _fbPass.Placeholder = "Mật khẩu Firebird";
+            _fbPass.IsPassword = true;
             _btnCreate.Text = "TẠO DATA";
             _btnPick.Text = "CHỌN DATA";
             _btnConnect.Text = "KẾT NỐI";
@@ -168,8 +216,10 @@ namespace Kazuko_FnB.UI
 
             _pageDb.Controls.AddRange(new Control[]
             {
-                _lblDb, _dbPath, _dbStatus, _btnCreate, _btnPick, _btnConnect
+                _lblConn, _rbLocal, _rbServer, _lblHost, _host, _lblPort, _port, _dbPath,
+                _lblFbUser, _fbUser, _lblFbPass, _fbPass, _dbStatus, _btnCreate, _btnPick, _btnConnect
             });
+            _lblHost.Visible = _host.Visible = _lblPort.Visible = _port.Visible = false;
             _pageDb.Visible = false;
 
             Controls.AddRange(new Control[] { _bar, _title, _tabs, _pageLogin, _pageDb, _version });
@@ -182,7 +232,7 @@ namespace Kazuko_FnB.UI
             foreach (Control c in new Control[] { _user, _pass, _remember, _auto, _btnLogin })
                 c.TabIndex = i++;
             i = 0;
-            foreach (Control c in new Control[] { _dbPath, _btnCreate, _btnPick, _btnConnect })
+            foreach (Control c in new Control[] { _rbLocal, _rbServer, _host, _port, _dbPath, _fbUser, _fbPass, _btnCreate, _btnPick, _btnConnect })
                 c.TabIndex = i++;
         }
 
@@ -228,6 +278,18 @@ namespace Kazuko_FnB.UI
             LayoutAll();
         }
 
+        /// <summary>Tab đăng nhập: 500; tab CSDL cao hơn, thêm hàng IP/Cổng khi chọn máy chủ.</summary>
+        private int CardHeight(float s)
+        {
+            if (_tabs.SelectedIndex == 0)
+                return (int)(500 * s);
+            int pad = 32, header = 52 + 62, footer = 22 + 8;
+            int page = 26 + 34 + 54 + 26 + 54 + 46 + 46;   // nhãn + radio + đường dẫn + tài khoản + trạng thái + nút
+            if (_rbServer.Checked)
+                page += 26 + 54;                           // hàng IP / Cổng
+            return (int)((pad + header + page + footer + pad) * s);
+        }
+
         private void LayoutAll()
         {
             float s = S;
@@ -239,7 +301,7 @@ namespace Kazuko_FnB.UI
             _bar.SetBounds(0, 0, W, barH);
 
             int cardW = (int)(440 * s);
-            int cardH = (int)(500 * s);
+            int cardH = CardHeight(s);
             int margin = Math.Max((int)(48 * s), (int)(W * 0.07));
             int x = Math.Max((int)(16 * s), W - cardW - margin);
             int y = barH + Math.Max((int)(16 * s), (H - barH - cardH) / 2);
@@ -269,11 +331,39 @@ namespace Kazuko_FnB.UI
             _error.SetBounds(0, py, cw, (int)(38 * s)); py += (int)(42 * s);
             _btnLogin.SetBounds(0, py, cw, (int)(48 * s)); _btnLogin.Radius = (int)(10 * s);
 
-            // Trang cơ sở dữ liệu: dòng trạng thái nằm trên hàng nút.
+            // Trang cơ sở dữ liệu: Kết nối (radio) → [IP/Cổng] → đường dẫn → tài khoản/mật khẩu
+            // Firebird → dòng trạng thái → hàng nút.
             py = 0;
-            _lblDb.SetBounds(0, py, cw, (int)(22 * s)); py += (int)(26 * s);
-            _dbPath.SetBounds(0, py, cw, (int)(44 * s)); py += (int)(50 * s);
-            _dbStatus.SetBounds(0, py, cw, (int)(48 * s)); py += (int)(56 * s);
+            _lblConn.SetBounds(0, py, cw, (int)(24 * s)); py += (int)(26 * s);
+            int half = cw / 2;
+            _rbLocal.Location = new Point(0, py);
+            _rbServer.Location = new Point(half, py);
+            py += (int)(34 * s);
+
+            bool server = _rbServer.Checked;
+            int colGap = (int)(12 * s);
+            if (server)
+            {
+                int hostW = (int)(cw * 0.62);
+                _lblHost.SetBounds(0, py, hostW, (int)(22 * s));
+                _lblPort.SetBounds(hostW + colGap, py, cw - hostW - colGap, (int)(22 * s));
+                py += (int)(26 * s);
+                _host.SetBounds(0, py, hostW, (int)(44 * s));
+                _port.SetBounds(hostW + colGap, py, cw - hostW - colGap, (int)(44 * s));
+                py += (int)(54 * s);
+            }
+            _dbPath.SetBounds(0, py, cw, (int)(44 * s)); py += (int)(54 * s);
+
+            // Cột mật khẩu rộng hơn một chút để không cắt dấu chấm khi mật khẩu dài.
+            int colW = (int)((cw - colGap) * 0.44);
+            _lblFbUser.SetBounds(0, py, colW, (int)(22 * s));
+            _lblFbPass.SetBounds(colW + colGap, py, cw - colW - colGap, (int)(22 * s));
+            py += (int)(26 * s);
+            _fbUser.SetBounds(0, py, colW, (int)(44 * s));
+            _fbPass.SetBounds(colW + colGap, py, cw - colW - colGap, (int)(44 * s));
+            py += (int)(54 * s);
+
+            _dbStatus.SetBounds(0, py, cw, (int)(40 * s)); py += (int)(46 * s);
             int gap = (int)(10 * s);
             int bw = (cw - gap * 2) / 3;
             _btnCreate.SetBounds(0, py, bw, (int)(46 * s));
@@ -315,12 +405,12 @@ namespace Kazuko_FnB.UI
             _tabs.BorderColor = strongBorder;
             _tabs.Invalidate();
 
-            foreach (Label l in new[] { _lblUser, _lblPass, _lblDb })
+            foreach (Label l in new[] { _lblUser, _lblPass, _lblConn, _lblHost, _lblPort, _lblFbUser, _lblFbPass })
             {
                 l.BackColor = card;
                 l.ForeColor = t.Text;
             }
-            foreach (InputBox box in new[] { _user, _pass, _dbPath })
+            foreach (InputBox box in new[] { _user, _pass, _dbPath, _host, _port, _fbUser, _fbPass })
             {
                 box.SurfaceColor = card;
                 box.FieldColor = t.IsDark ? Draw.Lighten(card, 0.05f) : Color.White;
@@ -334,6 +424,11 @@ namespace Kazuko_FnB.UI
             {
                 cb.BackColor = card;
                 cb.ForeColor = t.Text;
+            }
+            foreach (RadioButton rb in new[] { _rbLocal, _rbServer })
+            {
+                rb.BackColor = card;
+                rb.ForeColor = rb.Enabled ? t.Text : t.TextMuted;
             }
             _error.BackColor = card;
             _error.ForeColor = t.Danger;
@@ -370,10 +465,20 @@ namespace Kazuko_FnB.UI
             float s = S;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            Rectangle area = ClientRectangle;
+            // Vùng nền nằm dưới appbar để ảnh không bị appbar che mất phần trên.
+            Rectangle area = new Rectangle(0, _bar.Bottom, ClientSize.Width, Math.Max(1, ClientSize.Height - _bar.Bottom));
             if (_background != null)
             {
-                DrawCover(g, _background, area);
+                // Ảnh 4K: thu sẵn đúng kích thước cửa sổ một lần, các lần vẽ sau chỉ chép lại.
+                if (_bgCache == null || _bgCache.Size != area.Size)
+                {
+                    if (_bgCache != null)
+                        _bgCache.Dispose();
+                    _bgCache = new Bitmap(Math.Max(1, area.Width), Math.Max(1, area.Height));
+                    using (Graphics cg = Graphics.FromImage(_bgCache))
+                        DrawCover(cg, _background, new Rectangle(Point.Empty, _bgCache.Size));
+                }
+                g.DrawImageUnscaled(_bgCache, area.Location);
             }
             else
             {
@@ -436,7 +541,25 @@ namespace Kazuko_FnB.UI
             _pageDb.Visible = !login;
             _title.Text = login ? "Đăng nhập" : "Cơ sở dữ liệu";
             AcceptButton = login ? _btnLogin : _btnConnect;
+            LayoutAll();
         }
+
+        /// <summary>Đổi giữa "Máy này" và "Máy chủ Firebird". Chế độ máy chủ chưa được hỗ trợ.</summary>
+        private void OnConnectionModeChanged()
+        {
+            bool server = _rbServer.Checked;
+            _lblHost.Visible = _host.Visible = _lblPort.Visible = _port.Visible = server;
+            _btnCreate.Enabled = _btnPick.Enabled = !server;
+            // Firebird embedded bỏ qua tài khoản/mật khẩu nên khóa chỉ đọc; chỉ sửa được ở chế độ máy chủ.
+            _fbUser.ReadOnly = _fbPass.ReadOnly = !server;
+            if (server)
+                SetDbStatus(ServerNotSupported, StatusKind.Error);
+            else
+                SetDbStatus("", StatusKind.Info);
+            LayoutAll();
+        }
+
+        private const string ServerNotSupported = "Chế độ máy chủ Firebird chưa được hỗ trợ trong phiên bản này.";
 
         protected override void OnShown(EventArgs e)
         {
@@ -470,6 +593,13 @@ namespace Kazuko_FnB.UI
         private void DoLogin()
         {
             ShowError("");
+            if (_rbServer.Checked)
+            {
+                _tabs.SelectedIndex = 1;
+                SetDbStatus(ServerNotSupported, StatusKind.Error);
+                return;
+            }
+            Data.KazukoConnection.Configure(_fbUser.Text, _fbPass.Text);
             string db = _dbPath.Text.Trim();
             if (db.Length == 0 || !File.Exists(db))
             {
@@ -507,6 +637,7 @@ namespace Kazuko_FnB.UI
             }
 
             _settings.DatabasePath = db;
+            SaveFirebirdSettings();
             _settings.UserName = user;
             _settings.RememberLogin = _remember.Checked;
             _settings.AutoLogin = _remember.Checked && _auto.Checked;
@@ -565,8 +696,23 @@ namespace Kazuko_FnB.UI
             }
         }
 
+        private void SaveFirebirdSettings()
+        {
+            _settings.FbUser = _fbUser.Text.Trim();
+            _settings.SetFbPassword(_fbPass.Text);
+            _settings.UseServer = _rbServer.Checked;
+            _settings.ServerHost = _host.Text.Trim();
+            _settings.ServerPort = _port.Text.Trim();
+        }
+
         private void DoConnect()
         {
+            if (_rbServer.Checked)
+            {
+                SetDbStatus(ServerNotSupported, StatusKind.Error);
+                return;
+            }
+            Data.KazukoConnection.Configure(_fbUser.Text, _fbPass.Text);
             string path = _dbPath.Text.Trim();
             Cursor = Cursors.WaitCursor;
             string err;
@@ -584,6 +730,7 @@ namespace Kazuko_FnB.UI
                 return;
             }
             _settings.DatabasePath = path;
+            SaveFirebirdSettings();
             try
             {
                 _settings.Save();
@@ -605,6 +752,8 @@ namespace Kazuko_FnB.UI
                 ThemeManager.ThemeChanged -= OnThemeChanged;
                 if (_background != null)
                     _background.Dispose();
+                if (_bgCache != null)
+                    _bgCache.Dispose();
                 _statusBold.Dispose();
             }
             base.Dispose(disposing);

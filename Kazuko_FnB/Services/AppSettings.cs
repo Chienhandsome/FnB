@@ -22,6 +22,17 @@ namespace Kazuko_FnB.Services
         public string ProtectedPassword { get; set; }
         public string ThemeName { get; set; }
 
+        // Tab "Cơ sở dữ liệu": tài khoản Firebird (mặc định SYSDBA), chế độ máy chủ (chưa hỗ trợ).
+        public string FbUser { get; set; }
+        public string ProtectedFbPassword { get; set; }
+        public bool UseServer { get; set; }
+        public string ServerHost { get; set; }
+        public string ServerPort { get; set; }
+
+        public const string DefaultFbUser = "SYSDBA";
+        public const string DefaultFbPassword = "masterkey";
+        public const string DefaultServerPort = "3050";
+
         public static string SettingsDirectory
         {
             get
@@ -66,6 +77,12 @@ namespace Kazuko_FnB.Services
             s.UserName = d.TryGetValue("UserName", out v) ? v : null;
             s.ProtectedPassword = d.TryGetValue("Password", out v) && v.Length > 0 ? v : null;
             s.ThemeName = d.TryGetValue("Theme", out v) ? v : null;
+            s.FbUser = d.TryGetValue("FbUser", out v) && v.Length > 0 ? v : DefaultFbUser;
+            // Không có khóa = chưa từng đặt (dùng mặc định); "-" = đã đặt là rỗng.
+            s.ProtectedFbPassword = d.TryGetValue("FbPassword", out v) && v.Length > 0 ? v : null;
+            s.UseServer = d.TryGetValue("UseServer", out v) && v == "1";
+            s.ServerHost = d.TryGetValue("ServerHost", out v) ? v : "";
+            s.ServerPort = d.TryGetValue("ServerPort", out v) && v.Length > 0 ? v : DefaultServerPort;
             return s;
         }
 
@@ -79,19 +96,62 @@ namespace Kazuko_FnB.Services
                 "AutoLogin=" + (AutoLogin ? "1" : "0"),
                 "UserName=" + (UserName ?? ""),
                 "Password=" + (ProtectedPassword ?? ""),
-                "Theme=" + (ThemeName ?? "")
+                "Theme=" + (ThemeName ?? ""),
+                "FbUser=" + (string.IsNullOrWhiteSpace(FbUser) ? DefaultFbUser : FbUser),
+                "FbPassword=" + (ProtectedFbPassword ?? ""),
+                "UseServer=" + (UseServer ? "1" : "0"),
+                "ServerHost=" + (ServerHost ?? ""),
+                "ServerPort=" + (string.IsNullOrWhiteSpace(ServerPort) ? DefaultServerPort : ServerPort)
             };
             File.WriteAllLines(FilePath, lines, new UTF8Encoding(false));
         }
 
         public string GetPassword()
         {
-            if (string.IsNullOrEmpty(ProtectedPassword))
+            return Unprotect(ProtectedPassword);
+        }
+
+        public void SetPassword(string password)
+        {
+            ProtectedPassword = Protect(password);
+        }
+
+        private const string EmptyPasswordMarker = "-";
+
+        /// <summary>
+        /// Mật khẩu tài khoản Firebird. Chưa từng lưu: dùng mặc định "masterkey".
+        /// Đã lưu là rỗng: trả về chuỗi rỗng (không tự điền lại mặc định).
+        /// </summary>
+        public string GetFbPassword()
+        {
+            if (ProtectedFbPassword == null)
+                return DefaultFbPassword;
+            if (ProtectedFbPassword == EmptyPasswordMarker)
+                return "";
+            return Unprotect(ProtectedFbPassword) ?? DefaultFbPassword;
+        }
+
+        public void SetFbPassword(string password)
+        {
+            ProtectedFbPassword = string.IsNullOrEmpty(password) ? EmptyPasswordMarker : Protect(password);
+        }
+
+        private static string Protect(string plain)
+        {
+            return string.IsNullOrEmpty(plain)
+                ? null
+                : Convert.ToBase64String(ProtectedData.Protect(
+                    Encoding.UTF8.GetBytes(plain), Entropy, DataProtectionScope.CurrentUser));
+        }
+
+        private static string Unprotect(string protectedValue)
+        {
+            if (string.IsNullOrEmpty(protectedValue))
                 return null;
             try
             {
                 byte[] plain = ProtectedData.Unprotect(
-                    Convert.FromBase64String(ProtectedPassword), Entropy, DataProtectionScope.CurrentUser);
+                    Convert.FromBase64String(protectedValue), Entropy, DataProtectionScope.CurrentUser);
                 return Encoding.UTF8.GetString(plain);
             }
             catch (CryptographicException)
@@ -102,14 +162,6 @@ namespace Kazuko_FnB.Services
             {
                 return null;
             }
-        }
-
-        public void SetPassword(string password)
-        {
-            ProtectedPassword = string.IsNullOrEmpty(password)
-                ? null
-                : Convert.ToBase64String(ProtectedData.Protect(
-                    Encoding.UTF8.GetBytes(password), Entropy, DataProtectionScope.CurrentUser));
         }
     }
 }

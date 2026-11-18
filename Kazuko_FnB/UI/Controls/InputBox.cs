@@ -99,10 +99,20 @@ namespace Kazuko_FnB.UI.Controls
             }
         }
 
+        /// <summary>Chỉ đọc: nền hơi xám và chữ nhạt đi để người dùng thấy ô không sửa được.</summary>
         public bool ReadOnly
         {
             get { return _box.ReadOnly; }
-            set { _box.ReadOnly = value; }
+            set
+            {
+                _box.ReadOnly = value;
+                ApplyColors();
+            }
+        }
+
+        private Color EffectiveFill
+        {
+            get { return _box.ReadOnly ? Draw.Mix(FieldColor, BorderColor, 0.22f) : FieldColor; }
         }
 
         private float DpiScale
@@ -112,8 +122,8 @@ namespace Kazuko_FnB.UI.Controls
 
         public void ApplyColors()
         {
-            _box.BackColor = FieldColor;
-            _box.ForeColor = TextColor;
+            _box.BackColor = EffectiveFill;
+            _box.ForeColor = _box.ReadOnly ? Draw.Mix(TextColor, MutedColor, 0.5f) : TextColor;
             Invalidate();
         }
 
@@ -176,7 +186,7 @@ namespace Kazuko_FnB.UI.Controls
             var rect = new RectangleF(inset, inset, Width - inset * 2 - 0.5f, Height - inset * 2 - 0.5f);
             using (GraphicsPath path = Draw.Rounded(rect, 8 * s))
             {
-                using (var b = new SolidBrush(FieldColor))
+                using (var b = new SolidBrush(EffectiveFill))
                     g.FillPath(b, path);
                 using (var pen = new Pen(_focused ? FocusColor : BorderColor, (_focused ? 2.4f : 1.8f) * s))
                     g.DrawPath(pen, path);
