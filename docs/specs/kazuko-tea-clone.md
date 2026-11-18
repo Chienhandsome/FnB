@@ -14,14 +14,16 @@ Khảo sát đã làm (chỉ đọc, trên bản sao DB trong thư mục tạm, 
 - App gốc chạy theo metadata trong DB: menu (`SMENU`), form (`SFORM`), cột lưới (`SCOLUMN`), cấu hình (`SCONFIG`), phân quyền (`SGROUPROLE`), báo cáo (`SREPORT` 126 báo cáo đang bật, `SREPORTTEMPLATE` 155 mẫu in). Thư mục `Report/` trống vì mẫu báo cáo nằm trong DB.
 - `DATA.FDB`: 100 bảng. `D*` là danh mục (54 bảng), `T*` là giao dịch (20 bảng), `S*` là hệ thống/metadata (20 bảng). Không có view, không có stored procedure.
 - `ONLINE.FDB` chỉ chứa 20 bảng hệ thống `S*`, không có dữ liệu bán hàng. Nhiều khả năng là DB cấu hình cho bản web/mobile (menu có cột `VIEWONMOBI`, `VIEWONWEB`; thư mục có `WebService.exe`, `app.apk`). **Chưa xác nhận.**
-- Logic bán hàng không nằm trong các assembly đọc được. `No1Lib.Sys.DLL` là framework chung (lưới, form động, engine báo cáo, tồn kho, công nợ, tồn quỹ); `No1Lib.Sys.Ts.DLL` là control cảm ứng. Phần còn lại nằm trong `No1Lib.Run.dll` (bị packer) và `No1Lib.Core.Dll` (không phải PE chuẩn). **Hai file này không được giải mã** trong dự án này.
-- Vì vậy các quy tắc tính toán chi tiết (giá theo giờ, khuyến mãi, định lượng, giá vốn, lương...) **chưa được xác minh**. Chúng sẽ được xác minh bằng cách chạy app gốc, đối chiếu dữ liệu DB và ảnh UI Chiến gửi (làm sau). Spec này không đoán các quy tắc đó; chúng nằm ở mục 9 (câu hỏi mở).
+- **Mã nghiệp vụ và UI của từng chức năng nằm trong DB, đọc được.** Bảng `SFORM` (110 form) lưu mã C# của form (`CODE`, 104 form, ~1,2 MB), khai báo control (`DESIGNCODE`, 97 form), bố cục XML (`AELAYOUT`, 109 form, ~2,3 MB), bản cảm ứng (`TSCODE`, `TSLAYOUT`, `TSDESIGNCODE`, 23 form). Form lớn nhất: "Hóa đơn nhà hàng" (~213 KB mã), "Dịch vụ máy tính bảng" (~165 KB), "Hóa đơn bán hàng" (~106 KB). `STABLEDESC` (bảng nhập liệu) và `SREPORT` (báo cáo: `SQL`, `CODE`) cũng chứa mã. Đây là nguồn chính để chốt quy tắc nghiệp vụ.
+- `No1Lib.Sys.DLL` là framework chung (lưới, form động, engine báo cáo, tồn kho, công nợ, tồn quỹ); `No1Lib.Sys.Ts.DLL` là control cảm ứng; mã trong DB gọi vào các lớp `No1Lib.*`. `No1Lib.Run.dll` (bị packer) và `No1Lib.Core.Dll` (không phải PE chuẩn) **không được giải mã** trong dự án này; phần logic nằm riêng trong hai file này, nếu có, chưa được biết.
+- Mã trong DB chỉ dùng làm **tài liệu tham chiếu** để rút quy tắc nghiệp vụ; bản clone viết code mới, không nạp/biên dịch mã từ DB và không phụ thuộc `No1Lib.*`. Các quy tắc đã đọc được sẽ được ghi lại bằng lời trong spec; những quy tắc chưa rõ vẫn **chưa được xác minh** và sẽ được đối chiếu bằng cách chạy app gốc và ảnh UI Chiến gửi (làm sau). Spec không đoán các quy tắc đó; chúng nằm ở mục 9 (câu hỏi mở).
 
 ## 2. Mục tiêu
 
 1. Bản clone chạy trên .NET Framework 4.8, WinForms, đọc/ghi **cùng schema** `DATA.FDB` (Firebird 2.5) mà không đổi cấu trúc dữ liệu.
 2. Có đủ các nhóm chức năng của app gốc (mục 4) với kết quả nghiệp vụ giống app gốc trên cùng dữ liệu.
-3. UI hiện đại hơn: bố cục gọn, theo style nhất quán, hỗ trợ màn hình cảm ứng cho quầy bán hàng, high-DPI.
+3. UI hiện đại hơn: bố cục gọn, theo style nhất quán, hỗ trợ màn hình cảm ứng cho quầy bán hàng, high-DPI. Style tham chiếu: ảnh chụp KAZUKO GOLD V8.0 do Chiến cung cấp (menu ngang + thanh công cụ icon, tab tài liệu, thẻ bo góc, lưới tiêu đề màu). Chỉ lấy bố cục/phong cách; logo, icon, hotline, tên và mô tả bảng màu của sản phẩm đó không dùng lại.
+3a. Có tính năng **đổi màu giao diện toàn hệ thống** (như màn hình "Giao diện & Phối màu" trong ảnh tham chiếu): chọn bảng màu, xem thử trực tiếp, "Áp dụng & Lưu", "Khôi phục mặc định", có ít nhất một bảng màu nền tối.
 4. In và xuất các báo cáo hiện có **giữ nguyên nội dung** (dùng lại SQL và mẫu in trong `SREPORT`, `SREPORTTEMPLATE`).
 
 ## 3. Phạm vi
@@ -35,19 +37,20 @@ Khảo sát đã làm (chỉ đọc, trên bản sao DB trong thư mục tạm, 
 - Màn hình bán hàng cảm ứng ("Màn cảm ứng" / "Quản lý bán hàng nhà hàng").
 - Báo cáo: chạy 126 báo cáo từ `SREPORT`, in/xuất qua FastReport dùng mẫu trong `SREPORTTEMPLATE`.
 - Sao lưu / phục hồi DB (app gốc có `BackupDatabase`, `RestoreDatabase`).
+- Màn hình chọn bảng màu giao diện và cơ chế đổi theme lúc chạy (mục 3a ở trên).
 
 ### KHÔNG làm (giai đoạn này)
 
 - Không đổi schema `DATA.FDB` (không DDL), không migrate sang Firebird 3/4/5.
 - Không giải mã, unpack hay sao chép mã từ `No1Lib.Run.dll`, `No1Lib.Core.Dll`. Không đưa mã decompile của `No1Lib.*` vào bản clone.
 - Không đụng vào `KAZUKO TEA/Database/DATA.FDB` gốc khi dev/test: dùng bản sao. (`git status` đang báo file này bị sửa; không commit nó.)
-- Chưa làm: `WebService.exe`, `app.apk` / dịch vụ máy tính bảng (MTB), `ONLINE.FDB`, gửi SMS qua cổng COM (USB 3G). Xem mục 9.
+- Chưa phân tích và chưa làm ở các giai đoạn đầu: `WebService.exe`, `app.apk` / dịch vụ máy tính bảng (MTB), `ONLINE.FDB`. Chiến đã xác nhận các phần này **thuộc phạm vi clone**, nên sẽ có giai đoạn riêng (G6) sau khi phân tích; hiện chưa có đủ thông tin để viết acceptance criteria.
 - Không đụng vào `KAZUKO_ERP_JEWELRY` (vẫn .NET 8 / Firebird 5.0 theo CLAUDE.md).
 - Chưa có công cụ sinh code tự động từ metadata (không dựng lại "engine form động" của app gốc).
 
 ## 4. Nghiệp vụ chi tiết (khung theo menu gốc)
 
-Danh sách dưới đây lấy từ `SMENU` và tên bảng. Cột "Xác minh" là việc cần làm bằng app gốc trước khi viết chi tiết quy tắc.
+Danh sách dưới đây lấy từ `SMENU` và tên bảng. Cột "Xác minh" là việc cần làm trước khi viết chi tiết quy tắc: đọc mã form tương ứng trong `SFORM.CODE` (và `STABLEDESC.CODE`, `SREPORT.SQL`), rồi đối chiếu bằng app gốc.
 
 ### 4.1 Hoạt động
 | Chức năng | Bảng chính | Xác minh |
@@ -88,6 +91,7 @@ Nhóm: bán hàng (theo ngày/giờ/khu vực/bàn/nhân viên/thu ngân/khách 
 - Solution mới, tách lớp: `UI` (WinForms), `Application/ViewModel` (MVP/MVVM nhẹ, không logic trong Form), `Data` (SQL viết tay, không ORM), `Reporting`.
 - SQL không đặt trong Form/UI. Mọi truy cập DB qua lớp `Data`. Transaction rõ ràng cho đơn hàng, kho, công nợ, quỹ.
 - Kết nối Firebird 2.5 embedded qua `FirebirdSql.Data.FirebirdClient` bản tương thích FB 2.5 và .NET 4.8 (phiên bản cụ thể cần xác minh khi dựng project). `fbembed.dll` là bản **x86** nên project mặc định build **x86**.
+- Theme: mỗi bảng màu là một bộ token (nền, chữ, màu chính, màu nhấn, viền, trạng thái). Một `ThemeManager` giữ theme hiện tại và phát sự kiện `ThemeChanged`; toàn bộ control tự viết, renderer của menu/toolbar, tab, lưới đọc màu từ token và vẽ lại khi theme đổi. Xem thử = áp dụng tạm, đóng không lưu thì hoàn lại theme cũ. Không dùng thư viện skin không hỗ trợ đổi theme lúc chạy. Icon phải đổi màu được (SVG tô màu theo token hoặc bộ icon trung tính) để dùng được trên nền tối.
 - UI: bộ design token (màu, cỡ chữ, khoảng cách) tập trung, không hard-code trong màn hình nghiệp vụ; dialog gọn, hạn chế cuộn dọc; high-DPI; chế độ cảm ứng cho quầy bán hàng.
 - Báo cáo: nạp SQL + mẫu từ `SREPORT` / `SREPORTTEMPLATE`; không sao chép lại logic.
 
@@ -119,12 +123,15 @@ Chia theo giai đoạn; mỗi giai đoạn chỉ được coi là xong khi các 
 **G5 UI**
 - [ ] Mọi màn hình có độ phủ tương đương menu gốc; kiểm 100%, 125%, 150% DPI.
 - [ ] Màn hình bán hàng dùng được hoàn toàn bằng cảm ứng.
+- [ ] Đổi bảng màu có tác dụng ngay trên mọi màn hình đang mở (menu, toolbar, tab, lưới, dialog) mà không cần khởi động lại; xem thử rồi đóng không lưu thì giữ nguyên theme cũ.
+- [ ] Theme được lưu theo người dùng/máy và tự nạp lại lần mở sau; "Khôi phục mặc định" hoạt động.
+- [ ] Tất cả bảng màu đạt độ tương phản chữ/nền đọc được (kiểm bằng công cụ tính tương phản WCAG, mục tiêu tối thiểu AA cho chữ thường), kể cả bảng màu nền tối.
 
 ## 7. Kế hoạch implement (sau khi duyệt)
 
 1. G0: dựng solution `net48`, lớp truy cập Firebird, bộ test đọc DB (trên bản sao), khung theme.
 2. G1: đăng nhập, phân quyền, cấu hình, danh mục.
-3. Chạy app gốc cùng Chiến và nhận ảnh UI để chốt quy tắc ở mục 4 → cập nhật spec.
+3. Đọc `SFORM.CODE`, `STABLEDESC.CODE`, `SREPORT.SQL` của từng chức năng để rút quy tắc nghiệp vụ, ghi lại bằng lời vào mục 4; sau đó chạy app gốc cùng Chiến và nhận ảnh UI để đối chiếu → cập nhật spec.
 4. G2 → G3 → G4 → G5 theo thứ tự ưu tiên Chiến chọn.
 5. Mỗi giai đoạn là một hoặc nhiều patch nhỏ theo quy trình của repo; không commit/push khi chưa được Chiến bảo.
 
@@ -132,8 +139,10 @@ Files/vùng chạm: toàn bộ solution mới (chưa tồn tại). Không có mi
 
 ## 8. Rủi ro
 
-- **Quy tắc nghiệp vụ nằm trong mã bị bảo vệ** nên phải suy ra bằng đối chiếu hành vi; rủi ro sai lệch ở các phép tính tiền/kho/công nợ. Giảm thiểu bằng bộ ca kiểm thử đối chiếu với app gốc.
-- **Dùng chung DB với app gốc**: nếu hai app cùng ghi một lúc có thể xung đột (Firebird embedded thường chỉ cho một tiến trình mở DB).
+- **Quy tắc nghiệp vụ phải suy ra từ mã trong DB và hành vi app gốc**, có thể còn phần nằm trong `No1Lib.Run.dll`/`No1Lib.Core.Dll` (không giải mã); rủi ro sai lệch ở các phép tính tiền/kho/công nợ. Giảm thiểu bằng bộ ca kiểm thử đối chiếu với app gốc.
+- **Mã trong DB là tài sản của sản phẩm gốc**: chỉ dùng để hiểu nghiệp vụ, không sao chép nguyên văn vào bản clone; cần xác nhận điều khoản giấy phép.
+- **Dùng chung schema với app gốc**: bản clone dùng bản copy riêng của `DATA.FDB`, không mở cùng file với app gốc (Firebird embedded thường chỉ cho một tiến trình mở DB). Nếu sau này cần chuyển dữ liệu qua lại thì phải bảo toàn schema.
+- **Phạm vi mở rộng sang web/mobile (G6)**: `WebService.exe`, `app.apk`, `ONLINE.FDB` chưa được phân tích; khối lượng có thể lớn.
 - **Giấy phép**: FastReport, Aspose.Cells, Krypton, EASendMail và các `No1Lib.*` là thư viện của bên thứ ba; cần xác nhận quyền dùng lại trong bản clone. Điều khoản giấy phép của phần mềm gốc có thể hạn chế việc làm bản tương đương.
 - **Phiên bản driver Firebird**: cần bản tương thích đồng thời FB 2.5 và .NET 4.8.
 - **`fbembed.dll` là x86**: ràng buộc kiến trúc build.
@@ -141,12 +150,18 @@ Files/vùng chạm: toàn bộ solution mới (chưa tồn tại). Không có mi
 
 ## 9. Câu hỏi mở (cần Chiến trả lời hoặc xác minh bằng app gốc)
 
-1. Bản clone và app gốc có chạy đồng thời trên cùng `DATA.FDB` không, hay chỉ thay thế hoàn toàn?
-2. `ONLINE.FDB`, `WebService.exe`, `app.apk`, "Dịch vụ MTB" (máy tính bảng): có nằm trong phạm vi clone không? Mặc định hiện tại là **không**.
-3. Gửi SMS qua cổng COM (USB 3G) và máy in mã vạch (TSC TTP-244, Bartender): giữ lại không?
+Đã trả lời (Chiến, 2026-11-18; thứ tự trả lời "có / có" được hiểu theo thứ tự câu 2 và 3, cần Chiến xác nhận nếu hiểu sai):
+
+1. ~~Chạy đồng thời với app gốc?~~ **Dùng chung schema, không chạy chung file DB**: Chiến sẽ tự copy `DATA.FDB` ra dùng cho bản clone. Clone không được đổi schema để vẫn đọc được DB của app gốc.
+2. ~~`ONLINE.FDB`, `WebService.exe`, `app.apk`, "Dịch vụ MTB" có trong phạm vi?~~ **Có.** Cần phân tích riêng, xem G6 ở mục 3.
+3. ~~Giữ SMS qua cổng COM (USB 3G) và máy in mã vạch (TSC TTP-244, Bartender)?~~ **Có.**
+
+Chưa cần xác định lúc này (Chiến nói sau): câu 4 → 9 bên dưới. Câu hỏi "WinForms có phù hợp không" đã được Chiến nêu thêm, xem phần trả lời trong hội thoại; chưa đổi quyết định WinForms trong spec.
+
 4. Dùng lại thư viện FastReport/Aspose/Krypton có giấy phép hợp lệ không, hay phải thay bằng thư viện khác?
 5. Thư viện UI cho giao diện hiện đại: tự vẽ theo design token (khuyến nghị, ít phụ thuộc), hay dùng thư viện bên thứ ba (nêu tên nếu có ưu tiên)?
 6. Thứ tự ưu tiên giai đoạn: bán hàng trước, hay danh mục + báo cáo trước?
 7. Tên project/solution và vị trí đặt (đề xuất: thư mục riêng cạnh `KAZUKO TEA`, trong repo `FnB`).
 8. Danh sách ảnh UI và các kịch bản chạy app gốc cần quay lại để chốt quy tắc ở mục 4 (Chiến gửi sau).
-9. CLAUDE.md của repo này đang mô tả KAZUKO ERP (.NET 8, Firebird 5.0, WPF). Có cần tạo CLAUDE.md riêng cho bản clone (.NET 4.8, Firebird 2.5, WinForms) không?
+9. Đổi màu giao diện: số lượng bảng màu cần có và tên/bảng màu cho quán trà sữa (không dùng lại tên và mô tả của KAZUKO GOLD)? Theme lưu ở đâu: file cấu hình cục bộ theo người dùng Windows (đề xuất, không đụng DB) hay trong `SCONFIG`/`SUSER` (dùng chung, nhưng là ghi dữ liệu vào DB)?
+10. CLAUDE.md của repo này đang mô tả KAZUKO ERP (.NET 8, Firebird 5.0, WPF). Có cần tạo CLAUDE.md riêng cho bản clone (.NET 4.8, Firebird 2.5, WinForms) không?
