@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{6B1F0D42-9C1B-4F55-8B7A-5E2D4C0A1002}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Kazuko_FnB.Data</RootNamespace>
+    <AssemblyName>Kazuko_FnB.Data</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <!-- fbembed.dll là 32-bit: tiến trình chạy phải là 32-bit (Prefer32Bit ở project exe). -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="FirebirdSql.Data.FirebirdClient">
+      <HintPath>..\lib\FirebirdSql.Data.FirebirdClient.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kazuko_FnB.Domain\Kazuko_FnB.Domain.csproj">
+      <Project>{6B1F0D42-9C1B-4F55-8B7A-5E2D4C0A1001}</Project>
+      <Name>Kazuko_FnB.Domain</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CatalogRepository.cs" />
+    <Compile Include="ConfigRepository.cs" />
+    <Compile Include="DbHelper.cs" />
+    <Compile Include="DbSmokeTest.cs" />
+    <Compile Include="FormRepository.cs" />
+    <Compile Include="GroupRepository.cs" />
+    <Compile Include="ImageRepository.cs" />
+    <Compile Include="KazukoConnection.cs" />
+    <Compile Include="MenuRepository.cs" />
+    <Compile Include="ReferenceChecker.cs" />
+    <Compile Include="RoleRepository.cs" />
+    <Compile Include="ScreenLayout.cs" />
+    <Compile Include="UserAdminRepository.cs" />
+    <Compile Include="UserRepository.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

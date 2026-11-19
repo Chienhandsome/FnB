@@ -1,3 +1,7 @@
 <Solution>
-  <Project Path="Kazuko_FnB.csproj" Id="1aae1313-fe61-49ef-85d3-4e6c644eafa0" />
+  <Project Path="Kazuko_FnB.UI/Kazuko_FnB.UI.csproj" Id="1aae1313-fe61-49ef-85d3-4e6c644eafa0" />
+  <Project Path="Kazuko_FnB.Domain/Kazuko_FnB.Domain.csproj" Id="6b1f0d42-9c1b-4f55-8b7a-5e2d4c0a1001" />
+  <Project Path="Kazuko_FnB.Data/Kazuko_FnB.Data.csproj" Id="6b1f0d42-9c1b-4f55-8b7a-5e2d4c0a1002" />
+  <Project Path="Kazuko_FnB.Services/Kazuko_FnB.Services.csproj" Id="6b1f0d42-9c1b-4f55-8b7a-5e2d4c0a1003" />
+  <Project Path="Kazuko_FnB.Infrastructure/Kazuko_FnB.Infrastructure.csproj" Id="6b1f0d42-9c1b-4f55-8b7a-5e2d4c0a1004" />
 </Solution>

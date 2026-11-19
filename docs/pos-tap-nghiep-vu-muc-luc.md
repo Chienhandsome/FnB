@@ -81,3 +81,4 @@ Nguồn: `POS_TAP_SRC_EXPORT/` (gitignored). Đây là **ghi chú đầu vào ch
 - **Bỏ** karaoke và toàn bộ tính tiền giờ: `TDONHANGGIO`, bảng giá giờ (`DBANGGIA`), `Shared.TinhGia`, dịch vụ theo giờ (`DLOAIMATHANGID=7`), combo hát, tiền mở bàn, ngắt giờ, giá theo khung giờ. Các mục tương ứng trong các file trên chỉ để tham khảo.
 - **Để sau**: app Android / máy chủ tablet ([pos-tap-nghiep-vu-may-tinh-bang.md](pos-tap-nghiep-vu-may-tinh-bang.md)).
 - **Làm**: bán lẻ, nhà hàng theo bàn (không giờ), kho, thu chi/công nợ, khuyến mại, thẻ/tích lũy, báo cáo, lương.
+- **Bán lẻ — Chiến xác nhận giữ lại (2026-11-19, sau khi đo DB thật):** phù hợp mô hình tự phục vụ (gọi món và thanh toán ngay tại quầy, không bàn). Lưu ý khi làm: form gốc không có menu trong POS TAP và dùng cột `DMATHANG.LOAIDINHLUONG` không có trong `DATA.fdb`; bản clone viết mới nên trừ vật tư theo `DLOAIMATHANGID = '1'` (như nhà hàng), không dùng cột đó. Xem `reference/db-pos-tap-do-truc-tiep.md` mục 5.

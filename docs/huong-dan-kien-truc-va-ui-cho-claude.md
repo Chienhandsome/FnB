@@ -1,14 +1,14 @@
 # Hướng dẫn kiến trúc & UI cho Claude — Kazuko_FnB
 
-Tài liệu này tóm gọn mọi quyết định đã chốt để Claude đọc và tuân thủ khi code bản clone. Nguồn sự thật về nghiệp vụ: `docs/pos-tap-nghiep-vu*.md` + thư mục rà soát `pos-tap-review/` (vòng 1 + vòng 2). Nếu tài liệu nghiệp vụ và DB thật khác nhau thì DB thật là chuẩn.
+Tài liệu này tóm gọn mọi quyết định đã chốt để Claude đọc và tuân thủ khi code bản clone. Nguồn sự thật về nghiệp vụ: `docs/pos-tap-nghiep-vu*.md` + rà soát vòng 1 + vòng 2 (`docs/tong-hop-ra-soat-*.md`, `docs/deep/`). Nếu tài liệu nghiệp vụ và DB thật khác nhau thì **DB thật (`POS TAP\Database\DATA.fdb`) là chuẩn**; số đo trực tiếp ở `docs/reference/db-pos-tap-do-truc-tiep.md`, nhật ký sửa ở `docs/doi-chieu-vong-2.md`.
 
 ## 1. Bối cảnh — không làm lại
 
-- **App đích: POS TAP** (`Application.exe` desktop quản lý, `ApplicationTs.exe` POS cảm ứng).
-- **F&B thuần:** chỉ giữ COFFEE (0) + POS (1). Bỏ BIDA/KARAOKE/HOTEL/MASSAGE/PS3/SPA và toàn bộ tính tiền theo giờ, bảng giá giờ/ngày-đêm, đặt phòng theo giờ. Sau này sẽ bổ sung nhà hàng, trà sữa, quán ăn,... nhưng cũng cùng là 1 dạng thôi.
+- **App đích: POS TAP** (`Application.exe` desktop quản lý, `ApplicationTs.exe` POS cảm ứng). TEA chỉ còn là tham chiếu.
+- **F&B thuần:** chỉ giữ COFFEE (0) + POS (1). Bỏ BIDA/KARAOKE/HOTEL/MASSAGE/PS3/SPA và toàn bộ tính tiền theo giờ, bảng giá giờ/ngày-đêm, đặt phòng theo giờ.
 - **Stack:** WinForms **.NET Framework 4.8**, x86, Firebird 2.5 Embedded, **schema POS TAP giữ nguyên, không DDL**. Không dùng `No1Lib.*` (logic nghiệp vụ không nằm trong No1Lib mà nằm trong mã form lưu ở DB). Thư viện bên thứ ba bê vào `Kazuko_FnB\lib`.
-- **DB dev/test** là bản copy ở `Kazuko_FnB\Database\` (gitignore). DB POS TAP thật ≈ DEMO.fdb, chỉ khác đúng 1 bảng `DNGANHANG` (POS TAP không có). DEMO thừa 1 form, 1 báo cáo, 3 function, 7 config so với POS TAP.
-- **Đã xong:** khung chính + menu + đăng nhập + phân quyền; nhóm Hệ thống (selftest 86/89); đổi theme; 16 màn danh mục chỉ xem (chưa commit); bản thử Phiếu thu dựng từ `SFORM.AELAYOUT` → renderer chung (211 đạt, chưa commit).
+- **DB dev/test** là bản copy ở `Kazuko_FnB\Database\` (gitignore). **DB chuẩn = `DATA.fdb` hiện tại** (Chiến chốt 19/11): 100 bảng, 111 form, 128 dòng báo cáo (127 bật + 1 tắt), 86 function, 205 khóa `SCONFIG`, `DKHACHHANG` 21 cột, không có `DNGANHANG`. Các con số "DEMO thừa 1 form/1 báo cáo/3 function/7 config, chỉ khác `DNGANHANG`" của bản rà vòng 2 là của `FNB_DEMO.fdb`, không áp dụng. `DEMO.FDB` trong thư mục cài chỉ dùng làm dữ liệu mẫu cho demo.
+- **Sếp đã cho phép viết lại app mới (19/11/2026)** — được dùng lại nghiệp vụ/SQL/mẫu báo cáo trong DB. Thư viện thương mại (FastReport) cần chốt giấy phép riêng; `No1Lib.*` không dùng lại.
 - **Mốc gần nhất:** demo toàn bộ UI mới cho sếp duyệt. Desktop trước, POS cảm ứng sau. Thứ tự theo menu gốc: Hoạt động (danh mục trước, luồng tiền/giá/kho sau) → Khách hàng → Kho → Công nợ → Quỹ → Nhân sự → Báo cáo.
 - **Quy ước engine phải giữ:** PK `ID` là GUID; `STATUS = 30` đang dùng, `-30` xóa mềm; tự điền `USERCREATEDID`/`TIMECREATED` khi thêm, `USERMODIFIEDID`/`TIMEMODIFIED` khi sửa; `ConvertTo.Long` trả -1 khi null/lỗi (kiểu số khác trả 0).
 
@@ -36,7 +36,9 @@ DB — Firebird 2.5 Embedded, schema giữ nguyên
 - **Kiểm quyền trong Services, không chỉ ở UI.** App cũ kiểm quyền ở client nên MTB gọi thẳng là qua mặt được.
 - **Lưu vết chỉ ghi thêm, không được xóa.** `TLUUVET` append-only; bỏ hẳn nút xóa toàn bảng + mật khẩu cứng 9876. Bỏ mọi mật khẩu cứng (`6789`/`9876`/`4321`/`6666`).
 
-### Chia project (modular monolith, giữ đơn giản)
+### Chia project (modular monolith, giữ đơn giản) — ĐÃ CHỐT tách 5 project (Chiến, 19/11)
+
+**Đã tách (19/11/2026, base `5822006`, chưa commit):** `Kazuko_FnB.Domain` (DTO/entity), `Kazuko_FnB.Data`, `Kazuko_FnB.Services`, `Kazuko_FnB.Infrastructure` (`AppSettings`), `Kazuko_FnB.UI` (exe: toàn bộ WinForms, `Theme/`, `Shell/` = `MainMenuBuilder`/`IconCatalog`/`BrandLogo`/`GlyphMap`, `Diagnostics/SelfTest`). Build MSBuild Debug sạch; selftest 210 đạt / 3 lỗi, **trùng hệt** bản trước khi tách (3 lỗi cũ: nhóm còn tài khoản ×2 và "đủ 81 chức năng" — DB thật có 86 nên kỳ vọng 81 trong selftest đã lỗi thời). Việc còn lại: `UI` vẫn tham chiếu `FirebirdSql.Data.FirebirdClient` chỉ để `catch (FbException)` ở 11 chỗ (nên bọc thành exception riêng trong `Data`/`Services`); `Services` có `DatabaseService` dùng `FbException`; các spec cũ vẫn ghi đường dẫn `Kazuko_FnB/Data/`, `Kazuko_FnB/UI/`, `Kazuko_FnB/Services/MainMenuBuilder.cs`… → đọc là `Kazuko_FnB.Data/`, `Kazuko_FnB.UI/`, `Kazuko_FnB.UI/Shell/MainMenuBuilder.cs`. Quy tắc tách ban đầu: mỗi project là `.csproj` classic, đều build **x86**, `TargetFramework v4.8`, thêm file bằng `Compile Include`; chuỗi tham chiếu một chiều `UI → Services → Data → Domain` (`Infrastructure` được `UI`/`Services`/`Data` dùng); `FirebirdSql.Data.FirebirdClient` + `fbembed.dll` chỉ ở `Data` và project khởi chạy; `lib\` dùng chung; selftest hiện có chuyển sang project test hoặc giữ ở `UI`.
 
 ```
 Kazuko_FnB/
@@ -59,7 +61,7 @@ Services **không dính gì tới WinForms** (không nhận `Form`, `DataGridVie
 
 ### 3 quyết định còn chờ Chiến chốt
 
-1. **Một luật làm tròn duy nhất cho tiền.** App cũ có 2 luật (nhà hàng làm tròn tới 1000, bán lẻ làm tròn thường). Đề xuất: lấy luật nhà hàng (làm tròn tới 1000, `LamTron` AwayFromZero) vì đó là số khách thấy trên bill.
+1. **Một luật làm tròn duy nhất cho tiền — ĐÃ CHỐT (Chiến, 19/11):** dùng luật nhà hàng cho cả bán lẻ: `LamTron(tiền, LamTronTien)` làm tròn tới bội của `LamTronTien` (hiện 1000), `AwayFromZero`. App cũ có 2 luật (bán lẻ làm tròn thường) — bản clone chỉ giữ một.
 2. **Dapper hay ADO.NET thuần cho lớp Data.** Đề xuất Dapper: nhỏ, chạy tốt trên .NET Framework 4.8, tham số hóa mặc định. Nếu đã code theo hướng khác thì giữ hướng đó, đừng đổi giữa chừng.
 3. **Test cho công thức tiền/kho/nợ.** Bản rà soát cho sẵn "đáp án" (ví dụ: mua chịu 10M trả 4M thì nợ phải ra 6M, không phải 14M). Mỗi công thức viết xong phải có test khóa lại.
 
@@ -69,14 +71,14 @@ App gốc metadata-driven: UI + logic nằm trong DB. Việc dựng lại dựa 
 
 | Cần gì để dựng lại | Lấy ở đâu trong DB |
 |---|---|
-| Cây control + vị trí + kích thước + event | `SFORM.AELAYOUT` (XML, 111 file đầy đủ) |
-| Danh sách control (loại + tên) | `SFORM.DESIGNCODE` (99 file) |
-| Logic + handler làm gì | `SFORM.CODE` (C#, 112 file) |
-| UI cảm ứng | `TSCODE` + `TSLAYOUT` + `TSDESIGNCODE` (26 form mỗi loại) |
-| Menu + thứ tự + quyền | `SMENU` (78 mục) |
+| Cây control + vị trí + kích thước + event | `SFORM.AELAYOUT` (XML; 111 form — trong `POS_TAP_SRC_EXPORT` là `layout.xml`) |
+| Danh sách control (loại + tên) | `SFORM.DESIGNCODE` (`designcode.cs`) |
+| Logic + handler làm gì | `SFORM.CODE` (C#, 111 form — `code.cs`) |
+| UI cảm ứng | `TSCODE` + `TSLAYOUT` + `TSDESIGNCODE` (26 form mỗi loại — `ts_*.cs/xml`) |
+| Menu + thứ tự + quyền | `SMENU` (78 mục, 77 đang bật; chỉ ~30 form có menu trỏ tới, còn lại là hộp thoại mở từ form khác) |
 | Ảnh/icon | `SIMAGE` (272 ảnh PNG) |
-| Mẫu in | `SREPORTTEMPLATE` (.frx, 38 file) |
-| Cột lưới | `AELAYOUT` FieldMap + `SGRID` |
+| Mẫu in | `SREPORTTEMPLATE` (156 dòng manifest: 36 `.frx` + `.config` của báo cáo tự sinh) |
+| Cột lưới | `AELAYOUT` FieldMap + `SGRID` (chỉ 2 dòng: Mặt hàng, Khách hàng; 14 danh mục còn lại dùng thứ tự `SCOLUMN`) |
 | Metadata UI khác | `SFORM` còn có `FILTERCONFIG`, `REFCONFIG`, `CLIENTCODE`/`SERVERCODE` (2 form), `TSLAYOUT` — đã xuất hết vào `pos-tap-review/raw/` |
 
 ### Quy trình 4 bước
@@ -97,6 +99,13 @@ Không có đối tượng nào tên "QuickMenu" trong DB. Menu chuột phải �
 
 Ngoài 4 cái trên, các lưới (`DataSearch`/`GridMapper`) có menu chuột phải riêng của engine qua event `OnContextMenuShowing` (lọc, sắp xếp, xuất...). Cái này **không định nghĩa trong DB** — là hành vi có sẵn của control `No1Lib`. Khi clone sang `DataGridView`, tự làm lại menu lưới này (hoặc quyết định có cần không).
 
+#### Mẫu in: sửa bằng FastReport Designer nhúng trong app (đã xác minh bằng ảnh chụp màn hình 19/11)
+
+- App cũ **CÓ** trình sửa mẫu nhúng trong app — kết luận "không có bằng chứng" trước đây là **sai**: tính năng này nằm trong engine `No1Lib`, không có dòng `SFORM` nào nên tìm trong DB không thấy.
+- Luồng: chức năng **"Cấu hình toàn hệ thống"** (`SFUNCTION` ID 7, nhóm Hệ thống) → hộp thoại cấu hình → "Phần này dành cho nhà phát triển, mời bạn nhập mật khẩu" → mật khẩu **`no1admin`** (cứng trong engine, không có trong DB) → bấm **Mở khóa** → chọn nhóm mẫu + mẫu (vd: Mẫu 80, Mẫu A4 nằm ngang, Mẫu A4 thẳng đứng) → bấm **"Sửa mẫu"** → FastReport Designer mở ngay trong app dưới dạng tab (kéo-thả sửa trên canvas, có nút Preview) → bấm **"Cập nhật vào cơ sở dữ liệu"** để ghi file `.frx` đã sửa trở lại `SREPORTTEMPLATE.TEMPLATE`.
+- **Sếp đã cho phép viết lại app mới (19/11) → chốt làm B luôn.** Bản clone gồm: (1) **render** bill/báo cáo từ `.frx` trong DB; (2) màn **quản lý mẫu in**: danh sách nhóm mẫu + mẫu từ `SREPORTTEMPLATE`, xuất/nhập `.frx`, xem trước; (3) **Designer nhúng trong app**: cổng mật khẩu nhà phát triển (đổi được, không hard-code `no1admin`), mở Designer (`Report.Design()`) dưới dạng tab, nút **"Cập nhật vào cơ sở dữ liệu"** ghi `.frx` về `SREPORTTEMPLATE.TEMPLATE`, nút Preview, nút khôi phục mẫu gốc. Không cần dựng lại cả hộp thoại "Cấu hình toàn hệ thống" 13 mục — mấy mục đó là màn cài đặt, làm riêng. **Điều kiện duy nhất còn lại: chốt giấy phép FastReport** (công ty đã có license thương mại thì xác nhận license có bao gồm app viết lại không; không có thì dùng FastReport Open Source) **+ test mở 1 file `.frx` thật** (mẫu tạo bằng FastReport 1.2.47, năm 2014–2016) trong Designer mới trước khi code.
+- **Khác app cũ ở 1 điểm:** mật khẩu nhà phát triển KHÔNG hard-code `no1admin` nữa — để trong cấu hình đổi được (mật khẩu cứng là lỗi bảo mật đã ghi trong rà soát).
+
 ## 4. Đồng nhất style toàn app
 
 **Nguyên tắc duy nhất: không một form nào được tự set màu/chữ cho control của nó.** Mọi style nằm ở một chỗ trung tâm, form chỉ xài đúng loại control.
@@ -108,7 +117,7 @@ Ngoài 4 cái trên, các lưới (`DataSearch`/`GridMapper`) có menu chuột p
 3. **Control riêng của app (`KzButton`, `KzTextBox`, `KzComboBox`...).** Kế thừa từ control chuẩn WinForms, style nhét sẵn trong constructor (kiểu nút phẳng, viền, padding, font). Form dùng `KzButton` thay vì `Button` là tự đẹp ngay từ lúc kéo thả trong designer. Lớp chống trôi thứ hai: kể cả ai đó quên gọi `ApplyTheme` thì nút vẫn đúng kiểu.
 4. **`BaseForm` — form cha cho mọi form.** Tất cả form kế thừa nó thay vì `Form` trực tiếp. Nó lo: gọi `ApplyTheme` khi mở, set font/icon chung, phím tắt Enter/Escape, giới hạn kích thước.
 
-### Quy tắc kích thước (ghi thành bảng, không để mỗi form tự chọn) - này chỉ là kích thước chọn trước thôi, có thể tôi sẽ yêu cầu chỉnh sửa lại cho phù hợp
+### Quy tắc kích thước (ghi thành bảng, không để mỗi form tự chọn)
 
 Nút chuẩn 90×32, nút chính 110×32; ô nhập cao 28; label 9pt, tiêu đề 10pt đậm; lề form 12px, khoảng cách giữa các control 8px; lưới: header cao 28, dòng cao 26. Các số này nằm chung trong `ThemeManager` dưới dạng hằng số. Font: **một** font cho toàn app (đề xuất Segoe UI 9pt), `AutoScaleMode` giống nhau ở mọi form.
 
@@ -133,11 +142,13 @@ Spec UI trích ra chỉ cần ghi **loại control** (nút, ô nhập, lưới, 
 - **1 money engine + transaction** cho thanh toán/trừ kho (mục 2). Không mang sang bản clone: nhiều bộ công thức tiền/số/tồn song song; mô hình DB không bảo vệ gì (0 FK/CHECK — đã chốt giữ schema thì bù bằng transaction + validation ở app + test khóa công thức); mật khẩu cứng/chữ thường, SQL ghép chuỗi, server không auth.
 - **Giữ lại:** phủ tính năng + quy ước dữ liệu đã đúng (BIGINT cho tiền, xóa mềm STATUS, tự điền người tạo/sửa, một bảng chứng từ `TDONHANG`); tinh thần metadata-driven ở mức dữ liệu — nhưng code phải ở trong repo, không nằm trong DB nữa.
 - Công thức tiền/kho/nợ đã rà soát 2 vòng (241 câu hỏi, trả lời thêm 186) — giữ đúng hoặc sửa theo danh sách bug đã chứng minh bằng code (ví dụ: bản tổng hợp NCC sai dấu, KQKD lệch `−2×ChiPhiThangTruoc`, 2 báo cáo tháng cộng nhầm cột...). Chi tiết trong `pos-tap-review/tong-hop-ra-soat-vong-2.md`.
-- **7 câu chặn — chỉ trả lời được bằng app gốc / DATA.fdb thật, chưa viết code thanh toán/công nợ trước khi có đáp án:** (1) trừ kho ở đâu + transaction khi thanh toán; (2) phiếu thu công nợ có trừ nợ thật không; (3) `LOAI 5/6` là gì; (4) test bản tổng hợp NCC 10M/4M + Tồn quỹ `LOAI=2` + lỗi `@TODATE`; (5) 7 khóa config thừa / giá trị `SCONFIG` POS TAP thật; (6) `TinhLuongBangMay` có phải form thừa DEMO không + báo cáo thừa có phải "BÁO CÁO CHI TIẾT BÁN HÀNG THEO THU NGÂN" không; (7) thuật toán sinh `DeviceId`/`MADANGKY` bản quyền MTB.
+- **Câu chặn còn lại — chỉ trả lời được bằng app gốc, chưa viết code thanh toán/công nợ trước khi có đáp án** (thao tác test cụ thể ở `docs/checklist-test-app-goc.md` phần A): (1) trừ kho ở đâu + transaction khi thanh toán; (2) phiếu thu công nợ có trừ nợ thật không; (3) `LOAI 5/6` là gì; (4) bản tổng hợp NCC 10M/4M + Tồn quỹ `LOAI=2` + lỗi `@TODATE` + đặt trước; (5) thuật toán sinh `DeviceId`/`MADANGKY` bản quyền MTB (MTB làm sau).
+- **Đã trả lời bằng đo `DATA.fdb` thật (19/11):** giá trị `SCONFIG` (không có khóa "thừa"); báo cáo "thừa" chỉ là 1 báo cáo bị tắt (`STATUS=0`); `Tính lương bằng máy` có trong DB nhưng không có menu; `DMATHANG.LOAIDINHLUONG` không tồn tại (nên bán lẻ clone trừ vật tư theo `DLOAIMATHANGID='1'`).
+- **Bán lẻ được giữ lại** (Chiến, 19/11), phù hợp mô hình tự phục vụ; hai việc cần chốt khi làm: có thêm in phiếu/số thứ tự cho pha chế không, và định dạng số hóa đơn bán lẻ (`GenSoHoaDon` trong `No1Lib`, cần test app gốc).
 
 ## 6. Thứ tự làm việc
 
-1. Viết lại spec **Danh mục khách hàng theo schema POS TAP** (bảng E1–E20 đã cập nhật ở `deep/khach-hang.md`).
+1. Viết lại spec **Danh mục khách hàng theo schema POS TAP** — số liệu đã sửa theo DB thật trong `docs/specs/danh-muc-khach-hang.md` (15 trường, dialog 466×383); còn câu hỏi A1–A3, Q2–Q12 chờ Chiến. Bảng E1–E20 ở `deep/khach-hang.md` chỉ tham khảo (một phần dựa DEMO 26 cột).
 2. Làm theo thứ tự menu gốc: Hoạt động (danh mục trước, luồng tiền/giá/kho sau) → Khách hàng → Kho → Công nợ → Quỹ → Nhân sự → Báo cáo.
 3. Chiến chốt các nghi vấn giống bug (giữ hay sửa) theo từng nhóm — danh sách trong mục (e) mỗi file `deep/*.md` + §12 của `quan-tri.md`.
 4. Chạy app gốc POS TAP trên DB mẫu để trả lời 7 câu chặn (mục 5) rồi mới viết code thanh toán/công nợ.

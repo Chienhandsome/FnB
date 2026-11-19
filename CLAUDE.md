@@ -7,7 +7,7 @@
 Viết lại nội bộ phần mềm quản lý F&B **KAZUKO F&B** (sản phẩm của chính công ty, sếp giao làm lại). Stack: **WinForms** desktop (Windows-only), **.NET Framework 4.8**, build **x86**, **Firebird 2.5 Embedded** (`fbembed.dll` 32-bit), SQL viết tay (không ORM), FastReport, MVP/MVVM nhẹ. Nghiệp vụ giữ **y hệt** app gốc; UI làm lại hiện đại hơn, có tính năng đổi bảng màu; dùng chung schema `DATA.FDB` (không đổi cấu trúc).
 
 Trong repo:
-- `Kazuko_FnB/` — project đang viết lại (WinForms net48 x86). `bin/obj/.vs` đã gitignore.
+- `Kazuko_FnB/` — solution đang viết lại (WinForms net48 x86), tách 5 project classic (đã tách 19/11/2026): `Kazuko_FnB.UI` (exe, WinForms + theme), `Kazuko_FnB.Services` (luật nghiệp vụ), `Kazuko_FnB.Data` (repository Firebird), `Kazuko_FnB.Domain` (DTO/entity), `Kazuko_FnB.Infrastructure` (cấu hình). Tham chiếu một chiều UI → Services → Data → Domain. Mở `Kazuko_FnB/Kazuko_FnB.slnx`, startup = `Kazuko_FnB.UI`. `bin/obj/.vs` đã gitignore.
 - `POS TAP/` — app gốc (binary + `Database/DATA.FDB`): chỉ tham chiếu, **không sửa**.
 - `POS_TAP_SRC_EXPORT/` — mã form/báo cáo xuất từ DB để đọc (gitignored); có đồ thị graphify (`graphify-out/`) để tra cứu chức năng.
 - `docs/specs/` — spec. `DATA.FDB` ở thư mục gốc là bản copy để dev/test.

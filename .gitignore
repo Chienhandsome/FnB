@@ -7,6 +7,8 @@
 /Kazuko_FnB/bin/
 /Kazuko_FnB/obj/
 /Kazuko_FnB/.vs/
+/Kazuko_FnB/*/bin/
+/Kazuko_FnB/*/obj/
 *.suo
 *.user
 
