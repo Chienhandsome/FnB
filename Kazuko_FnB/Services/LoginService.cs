@@ -26,6 +26,8 @@ namespace Kazuko_FnB.Services
         public string DatabasePath { get; set; }
         public List<StoreRecord> Stores { get; set; }
         public StoreRecord CurrentStore { get; set; }
+        /// <summary>Quyền chức năng của người dùng (nạp một lần lúc đăng nhập). Có thể null ở lệnh render thử.</summary>
+        public FunctionPermissions Permissions { get; set; }
     }
 
     public enum LoginResultCode
@@ -91,7 +93,8 @@ namespace Kazuko_FnB.Services
                             : !string.IsNullOrWhiteSpace(groupName) ? groupName : "Nhân viên",
                         DatabasePath = databasePath,
                         Stores = stores,
-                        CurrentStore = stores.Count > 0 ? stores[0] : null
+                        CurrentStore = stores.Count > 0 ? stores[0] : null,
+                        Permissions = repo.GetFunctionPermissions(u.Id, u.IsAdmin)
                     }
                 };
             }

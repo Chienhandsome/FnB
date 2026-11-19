@@ -85,7 +85,7 @@ namespace Kazuko_FnB.UI.Controls
 
             TextRenderer.DrawText(g, Text, Font, ClientRectangle, TextColor,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
-                TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
+                TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
 
             if (Focused && ShowFocusCues)
             {

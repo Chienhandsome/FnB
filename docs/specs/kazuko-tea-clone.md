@@ -25,7 +25,7 @@ Khảo sát đã làm (chỉ đọc, trên bản sao DB trong thư mục tạm, 
 1. Bản clone chạy trên .NET Framework 4.8, WinForms, đọc/ghi **cùng schema** `DATA.FDB` (Firebird 2.5) mà không đổi cấu trúc dữ liệu.
 2. Có đủ các nhóm chức năng của app gốc (mục 4) với kết quả nghiệp vụ giống app gốc trên cùng dữ liệu.
 3. UI hiện đại hơn: bố cục gọn, theo style nhất quán, hỗ trợ màn hình cảm ứng cho quầy bán hàng, high-DPI. Style tham chiếu: ảnh chụp KAZUKO GOLD V8.0 do Chiến cung cấp (menu ngang + thanh công cụ icon, tab tài liệu, thẻ bo góc, lưới tiêu đề màu). Chỉ lấy bố cục/phong cách; logo, icon, hotline, tên và mô tả bảng màu của sản phẩm đó không dùng lại.
-3a. Có tính năng **đổi màu giao diện toàn hệ thống** (như màn hình "Giao diện & Phối màu" trong ảnh tham chiếu): chọn bảng màu, xem thử trực tiếp, "Áp dụng & Lưu", "Khôi phục mặc định", có ít nhất một bảng màu nền tối.
+3a. Có tính năng **đổi màu giao diện toàn hệ thống** (như màn hình "Giao diện & Phối màu" trong ảnh tham chiếu): chọn bảng màu, xem thử trực tiếp, "Áp dụng & Lưu", "Khôi phục mặc định", **10 bảng màu, đều nền sáng; không có chế độ nền tối (Chiến bỏ dark mode, 2026-11-19)**. Theme đổi cả màu thanh tiêu đề lẫn màu nền nhạt vùng làm việc, viền tab/thẻ (icon và dải tiêu đề thẻ giữ màu riêng). Mở màn bằng **mục menu mới "Giao diện chương trình" trong menu Quản trị** (Chiến chốt, 2026-11-19). Màn chọn theo ảnh tham chiếu trong `docs/specs/img/theme-tham-khao/`: lưới thẻ (tên, nhãn phong cách, đối tượng, 4 chấm màu, mô tả), bấm thẻ = xem thử ngay, Đóng không lưu = hoàn lại, toast sau khi lưu. Tên/mô tả bảng màu tự đặt theo F&B.
 4. In và xuất các báo cáo hiện có **giữ nguyên nội dung** (dùng lại SQL và mẫu in trong `SREPORT`, `SREPORTTEMPLATE`).
 
 ## 3. Phạm vi
@@ -86,6 +86,8 @@ Nhân viên, ca làm việc, tạm ứng lương, thưởng phạt (`TTHUONGPHAT
 ### 4.7 Quản trị
 Dữ liệu ban đầu (công nợ, tồn kho đầu kỳ), nhập dữ liệu từ hệ thống cũ, cấu hình máy in hóa đơn theo khu vực, thiết kế giao diện màn cảm ứng, phân quyền, sao lưu/phục hồi.
 
+**Loại hình kinh doanh / "Ứng dụng" (thông tin mới của Chiến, 2026-11-19; ảnh `docs/specs/img/pos/`).** Bản POS (máy cảm ứng, `ApplicationTs.exe`) mở màn **"CHỌN ỨNG DỤNG"** liệt kê các loại hình kinh doanh, nút *Thêm / Sửa / Xóa trống / Thoát*. Danh sách nằm ở bảng `DUNGDUNG` (9 dòng): `0` COFFEE, `1` POS, `2` KARAOKE, `3` BIDA, `4` HOTEL, `5` MASSAGE, `6` HOTEL-KARAOKE, `7` PS3, `8` SPA (cột `ID`, `NAME`, `SORTORDER`, `SIMAGEID`…). Loại hình đang chọn lưu ở `SCONFIG.UngDung` (`TEXTVALUE` = ID; bản sao hiện = `4` HOTEL; nhóm cấu hình "Ứng dụng" đang bị ẩn trên màn Cấu hình) và mã app gốc đọc qua `Shared.UngDung` để đổi giao diện/hành vi (ví dụ SPA: chọn nhân viên theo từng dòng mặt hàng; HOTEL: ẩn ô "từ giờ" ở phiếu đặt hàng; còn các cờ như `CoTienGio`, `SuDungGiaTheoGio`). **Chưa quyết** bản FnB giữ loại hình nào và có màn chọn này không — xem câu hỏi mở của Chiến.
+
 ### 4.8 Báo cáo (126)
 Nhóm: bán hàng (theo ngày/giờ/khu vực/bàn/nhân viên/thu ngân/khách hàng/mặt hàng/nhóm hiển thị), nhập-xuất-tồn, thẻ kho, công nợ, thu chi, lãi gộp (giá nhập / giá vốn), kiểm kê, chuyển kho, đặt hàng, biểu đồ doanh thu, hoa hồng NVKD, sinh nhật khách. Danh sách đầy đủ lưu trong `SREPORT.NAME`.
 
@@ -94,7 +96,7 @@ Nhóm: bán hàng (theo ngày/giờ/khu vực/bàn/nhân viên/thu ngân/khách 
 - Solution mới, tách lớp: `UI` (WinForms), `Application/ViewModel` (MVP/MVVM nhẹ, không logic trong Form), `Data` (SQL viết tay, không ORM), `Reporting`.
 - SQL không đặt trong Form/UI. Mọi truy cập DB qua lớp `Data`. Transaction rõ ràng cho đơn hàng, kho, công nợ, quỹ.
 - Kết nối Firebird 2.5 embedded qua `FirebirdSql.Data.FirebirdClient` bản tương thích FB 2.5 và .NET 4.8 (phiên bản cụ thể cần xác minh khi dựng project). `fbembed.dll` là bản **x86** nên project mặc định build **x86**.
-- Theme: mỗi bảng màu là một bộ token (nền, chữ, màu chính, màu nhấn, viền, trạng thái). Một `ThemeManager` giữ theme hiện tại và phát sự kiện `ThemeChanged`; toàn bộ control tự viết, renderer của menu/toolbar, tab, lưới đọc màu từ token và vẽ lại khi theme đổi. Xem thử = áp dụng tạm, đóng không lưu thì hoàn lại theme cũ. Không dùng thư viện skin không hỗ trợ đổi theme lúc chạy. Icon phải đổi màu được (SVG tô màu theo token hoặc bộ icon trung tính) để dùng được trên nền tối.
+- Theme: mỗi bảng màu là một bộ token (nền, chữ, màu chính, màu nhấn, viền, trạng thái). Một `ThemeManager` giữ theme hiện tại và phát sự kiện `ThemeChanged`; toàn bộ control tự viết, renderer của menu/toolbar, tab, lưới đọc màu từ token và vẽ lại khi theme đổi. Xem thử = áp dụng tạm, đóng không lưu thì hoàn lại theme cũ. Không dùng thư viện skin không hỗ trợ đổi theme lúc chạy. Icon phải đổi màu được (SVG tô màu theo token hoặc bộ icon trung tính).
 - UI: bộ design token (màu, cỡ chữ, khoảng cách) tập trung, không hard-code trong màn hình nghiệp vụ; dialog gọn, hạn chế cuộn dọc; high-DPI; chế độ cảm ứng cho quầy bán hàng.
 - Báo cáo: nạp SQL + mẫu từ `SREPORT` / `SREPORTTEMPLATE`; không sao chép lại logic.
 
@@ -128,7 +130,7 @@ Chia theo giai đoạn; mỗi giai đoạn chỉ được coi là xong khi các 
 - [ ] Màn hình bán hàng dùng được hoàn toàn bằng cảm ứng.
 - [ ] Đổi bảng màu có tác dụng ngay trên mọi màn hình đang mở (menu, toolbar, tab, lưới, dialog) mà không cần khởi động lại; xem thử rồi đóng không lưu thì giữ nguyên theme cũ.
 - [ ] Theme được lưu theo người dùng/máy và tự nạp lại lần mở sau; "Khôi phục mặc định" hoạt động.
-- [ ] Tất cả bảng màu đạt độ tương phản chữ/nền đọc được (kiểm bằng công cụ tính tương phản WCAG, mục tiêu tối thiểu AA cho chữ thường), kể cả bảng màu nền tối.
+- [ ] Tất cả bảng màu đạt độ tương phản chữ/nền đọc được (kiểm bằng công cụ tính tương phản WCAG, mục tiêu tối thiểu AA cho chữ thường).
 
 ## 7. Kế hoạch implement (sau khi duyệt)
 

@@ -8,6 +8,9 @@ namespace Kazuko_FnB.Services
     /// </summary>
     public sealed class FunctionPermissions
     {
+        /// <summary>Đủ bốn cờ Xem/Sửa/Thêm/Xóa (dành cho admin).</summary>
+        public const int AllBits = RoleModes.View | RoleModes.Edit | RoleModes.Add | RoleModes.Remove;
+
         private readonly Dictionary<string, int> _byId = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _byName = new Dictionary<string, int>();
 
@@ -41,6 +44,30 @@ namespace Kazuko_FnB.Services
                 return true;
             int m;
             return _byName.TryGetValue(functionName, out m) && m != RoleModes.Locked;
+        }
+
+        /// <summary>Cờ quyền (RoleModes) theo tên chức năng. Admin có đủ cờ; không có dòng = 0.</summary>
+        public int ModeByName(string functionName)
+        {
+            if (IsAdmin)
+                return AllBits;
+            int m;
+            return !string.IsNullOrEmpty(functionName) && _byName.TryGetValue(functionName, out m) ? m : RoleModes.Locked;
+        }
+
+        /// <summary>Cờ quyền (RoleModes) theo ID chức năng.</summary>
+        public int ModeById(string functionId)
+        {
+            if (IsAdmin)
+                return AllBits;
+            int m;
+            return !string.IsNullOrEmpty(functionId) && _byId.TryGetValue(functionId, out m) ? m : RoleModes.Locked;
+        }
+
+        /// <summary>Có cờ <paramref name="bit"/> (RoleModes.View/Edit/Add/Remove) trên chức năng tên này không.</summary>
+        public bool Can(string functionName, int bit)
+        {
+            return (ModeByName(functionName) & bit) == bit;
         }
     }
 }

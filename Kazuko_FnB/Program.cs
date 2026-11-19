@@ -35,6 +35,9 @@ namespace Kazuko_FnB
                 return r.Success ? 0 : 2;
             }
 
+            if (args.Length >= 3 && args[0] == "--selftest")
+                return Data.SelfTest.Run(args[1], args[2]);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -46,6 +49,8 @@ namespace Kazuko_FnB
                 return RenderLogin(args, settings);
             if (args.Length >= 2 && args[0] == "--render-main")
                 return RenderMain(args);
+            if (args.Length >= 3 && args[0] == "--render-screen")
+                return RenderScreen(args);
 
             // Vòng lặp: đăng nhập → khung chính → (Đăng xuất) quay lại đăng nhập.
             // Tự động đăng nhập chỉ áp dụng lần mở app đầu tiên, không áp dụng sau khi bấm Đăng xuất.
@@ -149,6 +154,54 @@ namespace Kazuko_FnB
                     }
                 }
 
+                using (var bmp = new Bitmap(form.Width, form.Height))
+                {
+                    form.DrawToBitmap(bmp, new Rectangle(0, 0, form.Width, form.Height));
+                    bmp.Save(args[1], ImageFormat.Png);
+                }
+                form.Close();
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// --render-screen &lt;file.png&gt; &lt;id màn hình&gt; [tên theme] [đường dẫn DATA.FDB] [tùy chọn...]
+        /// Dựng hộp thoại chức năng ngoài màn hình rồi chụp ra PNG (kiểm tra giao diện, không cần người bấm).
+        /// Tùy chọn thêm cho dialog: "tab=N", "select=...", xem từng màn.
+        /// </summary>
+        private static int RenderScreen(string[] args)
+        {
+            if (args.Length >= 4)
+                ThemeManager.Apply(BuiltInThemes.Find(args[3]));
+            var session = new UserSession
+            {
+                UserId = "demo",
+                UserName = "admin",
+                DisplayName = "Quản trị",
+                RoleText = "Quản trị viên",
+                IsAdmin = true,
+                DatabasePath = args.Length >= 5 ? args[4] : null
+            };
+            AppSession.Current = session;
+            using (Form form = UI.Dialogs.ScreenFactory.Create(args[2], session))
+            {
+                if (form == null)
+                {
+                    Console.Error.WriteLine("Chưa có màn hình: " + args[2]);
+                    return 3;
+                }
+                form.StartPosition = FormStartPosition.Manual;
+                form.ShowInTaskbar = false;
+                form.Location = new Point(-20000, -20000);
+                form.Show();
+                for (int i = 5; i < args.Length; i++)
+                {
+                    var pv = form as UI.Dialogs.IScreenPreview;
+                    if (pv != null)
+                        pv.Preview(args[i]);
+                }
+                form.PerformLayout();
+                Application.DoEvents();
                 using (var bmp = new Bitmap(form.Width, form.Height))
                 {
                     form.DrawToBitmap(bmp, new Rectangle(0, 0, form.Width, form.Height));

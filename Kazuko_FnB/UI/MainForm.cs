@@ -43,6 +43,7 @@ namespace Kazuko_FnB.UI
         public MainForm(UserSession session)
         {
             _session = session;
+            AppSession.Current = session;
             _model = MainMenuBuilder.Build(session);
 
             Text = "KAZUKO FNB - " + session.DisplayName +
@@ -196,7 +197,9 @@ namespace Kazuko_FnB.UI
                     DoExit();
                     break;
                 default:
-                    OpenTab(node);
+                    // Chức năng đã có màn thật (hộp thoại) thì mở; còn lại mở tab tạm.
+                    if (!Dialogs.ScreenFactory.TryOpen(this, node, _session))
+                        OpenTab(node);
                     break;
             }
         }

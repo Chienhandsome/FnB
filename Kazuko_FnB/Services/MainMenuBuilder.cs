@@ -25,7 +25,7 @@ namespace Kazuko_FnB.Services
                 try
                 {
                     var users = new UserRepository(session.DatabasePath);
-                    perms = users.GetFunctionPermissions(session.UserId, session.IsAdmin);
+                    perms = session.Permissions ?? users.GetFunctionPermissions(session.UserId, session.IsAdmin);
                     dbRoots = new MenuRepository(session.DatabasePath).LoadTree();
                 }
                 catch (FirebirdSql.Data.FirebirdClient.FbException)

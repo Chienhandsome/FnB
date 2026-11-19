@@ -117,6 +117,36 @@
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Data\DbHelper.cs" />
+    <Compile Include="Data\ConfigRepository.cs" />
+    <Compile Include="Data\SelfTest.cs" />
+    <Compile Include="Services\SystemConfig.cs" />
+    <Compile Include="Services\AppSession.cs" />
+    <Compile Include="UI\ThemeApplier.cs" />
+    <Compile Include="UI\Msg.cs" />
+    <Compile Include="UI\Dialogs\IScreenPreview.cs" />
+    <Compile Include="UI\Dialogs\ThemedDialog.cs" />
+    <Compile Include="UI\Dialogs\ScreenFactory.cs" />
+    <Compile Include="UI\Dialogs\ConfigDialog.cs" />
+    <Compile Include="UI\Dialogs\PromptDialog.cs" />
+    <Compile Include="UI\Dialogs\ImagePickerDialog.cs" />
+    <Compile Include="UI\Dialogs\ImageLibraryDialog.cs" />
+    <Compile Include="UI\ImageUtil.cs" />
+    <Compile Include="UI\Choice.cs" />
+    <Compile Include="UI\Controls\ImageCombo.cs" />
+    <Compile Include="UI\Dialogs\GroupEditDialog.cs" />
+    <Compile Include="UI\Dialogs\UserEditDialog.cs" />
+    <Compile Include="UI\Dialogs\UserManagerDialog.cs" />
+    <Compile Include="UI\Dialogs\RolesPanel.cs" />
+    <Compile Include="UI\Dialogs\ChangePasswordDialog.cs" />
+    <Compile Include="Services\PasswordPolicy.cs" />
+    <Compile Include="Services\RoleLogic.cs" />
+    <Compile Include="Data\RoleRepository.cs" />
+    <Compile Include="Data\UserAdminRepository.cs" />
+    <Compile Include="Data\GroupRepository.cs" />
+    <Compile Include="Data\ReferenceChecker.cs" />
+    <Compile Include="Data\ImageRepository.cs" />
+    <Compile Include="Services\ConfigViewModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
