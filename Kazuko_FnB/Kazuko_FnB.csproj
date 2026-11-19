@@ -133,6 +133,7 @@
     <Compile Include="Theme\ThemeTokens.cs" />
     <Compile Include="Theme\ThemeManager.cs" />
     <Compile Include="Theme\BuiltInThemes.cs" />
+    <Compile Include="Theme\ContrastChecker.cs" />
     <Compile Include="Data\UserRepository.cs" />
     <Compile Include="Services\AppSettings.cs" />
     <Compile Include="Services\DatabaseService.cs" />
@@ -154,6 +155,13 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Data\MenuRepository.cs" />
+    <Compile Include="Data\CatalogRepository.cs" />
+    <Compile Include="UI\CatalogView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Dialogs\CatalogPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Services\FunctionPermissions.cs" />
     <Compile Include="Services\GlyphMap.cs" />
     <Compile Include="Services\IconCatalog.cs" />
@@ -201,6 +209,8 @@
     <Compile Include="UI\Dialogs\PromptDialog.cs" />
     <Compile Include="UI\Dialogs\ImagePickerDialog.cs" />
     <Compile Include="UI\Dialogs\ImageLibraryDialog.cs" />
+    <Compile Include="UI\Dialogs\ThemeChooserDialog.cs" />
+    <Compile Include="UI\Controls\ThemeCard.cs" />
     <Compile Include="UI\ImageUtil.cs" />
     <Compile Include="UI\Choice.cs" />
     <Compile Include="UI\Controls\ImageCombo.cs" />
@@ -288,7 +298,7 @@
   </ItemGroup>
   <!-- DB mẫu cho nút "Tạo data": dùng lại file đã có trong repo, không chép thêm bản thứ hai. -->
   <ItemGroup>
-    <None Include="..\KAZUKO TEA\Data\TEMPLATE.FDB">
+    <None Include="..\POS TAP\Data\TEMPLATE.FDB">
       <Link>Data\TEMPLATE.FDB</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

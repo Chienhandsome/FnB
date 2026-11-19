@@ -100,7 +100,12 @@ namespace Kazuko_FnB.Services
             "Kiểm soát order",
             "Danh mục đợt khuyến mại",
             "Danh mục voucher",
-            "Danh mục thẻ trả trước"
+            "Danh mục thẻ trả trước",
+            // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
+            "Danh mục bảng giá",
+            "Danh mục loại phòng",
+            "Danh mục mật khẩu wifi",
+            "Thông báo sửa chữa"
         };
 
         private static void HideFromMenu(MenuNode n)
@@ -138,6 +143,8 @@ namespace Kazuko_FnB.Services
             AddIfAllowed(ordered, perms, Item("admin.audit", "Lịch sử tương tác hệ thống", "Lịch sử tương tác hệ thống", MenuAction.OpenTab));
             AddIfAllowed(ordered, perms, Item("admin.users", "Người dùng và phân quyền", "Quản lý người dùng", MenuAction.OpenTab));
             AddIfAllowed(ordered, perms, Item("admin.config", "Cấu hình toàn hệ thống", "Cấu hình toàn hệ thống", MenuAction.OpenTab));
+            // Đổi bảng màu chỉ lưu cục bộ theo người dùng Windows (không đụng DB) nên không gắn quyền chức năng.
+            ordered.Add(Item("admin.themes", "Giao diện chương trình", null, MenuAction.OpenTab));
 
             admin.Children.Clear();
             admin.Children.AddRange(ordered);
@@ -174,7 +181,9 @@ namespace Kazuko_FnB.Services
                 InToolbar = n.InToolbar,
                 ToolbarIndex = n.ToolbarIndex,
                 ToolbarTitle = n.ToolbarTitle,
-                Action = n.Action
+                Action = n.Action,
+                StableDescId = n.StableDescId,
+                Operation = n.Operation
             };
         }
 
@@ -319,16 +328,20 @@ namespace Kazuko_FnB.Services
             foreach (MenuNode n in found)
             {
                 string full = n.IsSeparator ? "" : DisplayToolbarTitle(n);
+                if (!n.IsSeparator && ToolbarHiddenTitles.Contains((n.Title ?? "").Trim()))
+                    continue;
                 var tb = new MenuNode
                 {
                     Id = n.Id,
-                    Title = ShortToolbarTitle(full),
+                    Title = full,
                     FullTitle = full,
                     RawName = n.RawName,
                     IsSeparator = n.IsSeparator,
                     FunctionId = n.FunctionId,
                     Shortcut = n.Shortcut,
-                    Action = n.Action
+                    Action = n.Action,
+                    StableDescId = n.StableDescId,
+                    Operation = n.Operation
                 };
                 model.Toolbar.Add(tb);
             }
@@ -336,16 +349,20 @@ namespace Kazuko_FnB.Services
             TrimSeparators(model.Toolbar);
         }
 
-        // Nút tắt bổ sung (không nằm trong cờ TOOLBAR của DB): "|" là dải kẻ ngăn nhóm.
-        // Mỗi nút trỏ tới một mục menu có sẵn nên vẫn theo phân quyền; mục bị khóa quyền sẽ không hiện.
+        // Mục có cờ TOOLBAR trong DB nhưng thanh công cụ của app đích (POS TAP) không hiện
+        // (Chiến gửi ảnh thanh công cụ, 2026-11-19). Chỉ lược khỏi thanh công cụ; menu và Truy cập nhanh giữ nguyên.
+        private static readonly HashSet<string> ToolbarHiddenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Dịch vụ MTB",
+            "Theo dõi đặt phòng"
+        };
+
+        // Nút cố định trong mã của app đích, nằm sau các nút lấy từ DB: "|" là dải kẻ ngăn nhóm.
+        // "@note", "@report", "@exit" là nút không có mục trong SMENU. Tên khác = mục menu có sẵn (theo phân quyền).
         private static readonly string[] ExtraToolbar =
         {
             "|",
-            "Danh mục khách hàng", "Danh mục mặt hàng", "Nhập hàng vào kho",
-            "|",
-            "Tạo phiếu thu", "Công nợ khách hàng",
-            "|",
-            "@report", "@exit"
+            "@note", "@report", "@exit"
         };
 
         private static void AddExtraToolbarButtons(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms)
@@ -356,6 +373,11 @@ namespace Kazuko_FnB.Services
                 if (key == "|")
                 {
                     model.Toolbar.Add(new MenuNode { Id = "tb.sep." + (sep++), Title = "", IsSeparator = true });
+                    continue;
+                }
+                if (key == "@note")
+                {
+                    model.Toolbar.Add(new MenuNode { Id = "tb.note", Title = "Ghi chú", FullTitle = "Ghi chú", Action = MenuAction.OpenTab });
                     continue;
                 }
                 if (key == "@report")
@@ -388,12 +410,14 @@ namespace Kazuko_FnB.Services
                 model.Toolbar.Add(new MenuNode
                 {
                     Id = n.Id,
-                    Title = ShortToolbarTitle(n.Title),
+                    Title = n.Title,
                     FullTitle = n.Title,
                     RawName = n.RawName,
                     FunctionId = n.FunctionId,
                     Shortcut = n.Shortcut,
-                    Action = n.Action
+                    Action = n.Action,
+                    StableDescId = n.StableDescId,
+                    Operation = n.Operation
                 });
             }
         }
@@ -412,31 +436,6 @@ namespace Kazuko_FnB.Services
                     return f;
             }
             return null;
-        }
-
-        // Tên rút gọn cho nút thanh công cụ (một dòng chữ). Chỉ đổi cách hiển thị; tên đầy đủ nằm ở FullTitle
-        // (tooltip) và menu / Truy cập nhanh vẫn dùng tên gốc. Tên không có trong bảng giữ nguyên.
-        private static readonly Dictionary<string, string> ToolbarShortNames =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "Sử dụng dịch vụ", "Dùng dịch vụ" },
-                { "Quản lý bán hàng", "Bán hàng" },
-                { "Theo dõi đặt phòng", "Đặt phòng" },
-                { "Thống kê doanh thu", "Doanh thu" },
-                { "Thống kê mặt hàng bán", "Hàng bán" },
-                { "Chi tiết hoạt động", "CT hoạt động" },
-                { "Tổng hợp KQKD", "KQKD" },
-                { "Danh mục khách hàng", "Khách hàng" },
-                { "Danh mục mặt hàng", "Mặt hàng" },
-                { "Nhập hàng vào kho", "Nhập hàng" },
-                { "Tạo phiếu thu", "Phiếu thu" },
-                { "Công nợ khách hàng", "Công nợ KH" }
-            };
-
-        private static string ShortToolbarTitle(string full)
-        {
-            string s;
-            return full != null && ToolbarShortNames.TryGetValue(full.Trim(), out s) ? s : full;
         }
 
         private static string DisplayToolbarTitle(MenuNode n)

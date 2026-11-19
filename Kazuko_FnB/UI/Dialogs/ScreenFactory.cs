@@ -17,6 +17,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "admin.config", session => new ConfigDialog(session) },
                 { "admin.images", session => new ImageLibraryDialog(session) },
                 { "admin.users", session => new UserManagerDialog(session) },
+                { "admin.themes", session => new ThemeChooserDialog(session) },
                 { "sys.password", session => new ChangePasswordDialog(session) },
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
@@ -28,9 +29,32 @@ namespace Kazuko_FnB.UI.Dialogs
             return id != null && Map.ContainsKey(id);
         }
 
-        /// <summary>Tạo form cho id (null nếu chưa có). Dùng cho --render-screen.</summary>
+        /// <summary>
+        /// Màn nội dung (mở trong tab) cho mục menu dựa vào bảng nhập liệu: danh mục phẳng hoặc cây nhóm + lưới.
+        /// Trả null nếu mục này chưa có màn (khi đó mở tab tạm "sẽ được bổ sung").
+        /// </summary>
+        public static Control CreateView(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null || string.IsNullOrEmpty(node.StableDescId)
+                || node.Operation != 0 || string.IsNullOrEmpty(session.DatabasePath))
+                return null;
+            try
+            {
+                if (!new Data.CatalogRepository(session.DatabasePath).IsSupported(node.StableDescId))
+                    return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return new CatalogView(session.DatabasePath, node.StableDescId, node.Title);
+        }
+
+        /// <summary>Tạo form cho id (null nếu chưa có). Dùng cho --render-screen; "catalog:TÊNBẢNG" dựng khung chụp màn danh mục.</summary>
         public static Form Create(string id, UserSession session)
         {
+            if (id != null && id.StartsWith("catalog:", StringComparison.Ordinal))
+                return new CatalogPreviewForm(session, id.Substring(8));
             Func<UserSession, Form> f;
             return id != null && Map.TryGetValue(id, out f) ? f(session) : null;
         }

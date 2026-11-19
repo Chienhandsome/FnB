@@ -77,11 +77,10 @@ namespace Kazuko_FnB.UI
             foreach (QuickAccessCard c in _cards)
             {
                 c.PageColor = page;
-                c.SurfaceColor = t.IsDark ? t.Surface : Color.White;
-                c.HeaderColor = t.IsDark ? Draw.Mix(t.Surface, t.Accent, 0.22f)
-                    : Draw.Mix(Color.White, Color.FromArgb(255, 222, 120), 0.40f);
+                c.SurfaceColor = Color.White;
+                c.HeaderColor = Draw.Mix(Color.White, Color.FromArgb(255, 222, 120), 0.40f);
                 c.BorderColor = strong;
-                c.RowColor = t.IsDark ? Draw.Mix(t.Surface, t.Background, 0.45f) : t.Background;
+                c.RowColor = t.Background;
                 c.RowHoverColor = Draw.Mix(t.Surface, t.Primary, 0.16f);
                 c.TextColor = t.Text;
                 c.AccentColor = t.Primary;
@@ -92,7 +91,7 @@ namespace Kazuko_FnB.UI
             foreach (StatTile st in _tiles)
             {
                 st.PageColor = page;
-                st.SurfaceColor = t.IsDark ? t.Surface : Color.White;
+                st.SurfaceColor = Color.White;
                 st.BorderColor = strong;
                 st.CaptionColor = t.TextMuted;
                 st.ValueColor = t.Text;

@@ -9,7 +9,11 @@ namespace Kazuko_FnB.Theme
     public sealed class ThemeTokens
     {
         public string Name { get; set; }
-        public bool IsDark { get; set; }
+
+        // Thông tin hiển thị trên thẻ ở màn "Giao diện chương trình".
+        public string Tag { get; set; }
+        public string Audience { get; set; }
+        public string Description { get; set; }
 
         public Color Background { get; set; }
         public Color Surface { get; set; }

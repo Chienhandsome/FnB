@@ -26,7 +26,7 @@ namespace Kazuko_FnB.Data
             {
                 cmd.CommandText =
                     "SELECT ID, NAME, PARENTID, SORTORDER, ITEMTYPE, TOOLBAR, TOOLBARINDEX, " +
-                    "TOOLBARTITLTE, SHORTCUT, HIDEINMENU, SFUNCTIONID " +
+                    "TOOLBARTITLTE, SHORTCUT, HIDEINMENU, SFUNCTIONID, STABLEDESCID, OPERATION " +
                     "FROM SMENU WHERE STATUS = 30 ORDER BY SORTORDER";
                 using (var r = cmd.ExecuteReader())
                 {
@@ -46,7 +46,9 @@ namespace Kazuko_FnB.Data
                             ToolbarTitle = Str(r[7]).Trim(),
                             Shortcut = ToKeys(Int(r[8])),
                             Hidden = Int(r[9]) == 30,
-                            FunctionId = Str(r[10])
+                            FunctionId = Str(r[10]),
+                            StableDescId = Str(r[11]),
+                            Operation = Int(r[12])
                         };
                         all[n.Id] = n;
                         ordered.Add(n);

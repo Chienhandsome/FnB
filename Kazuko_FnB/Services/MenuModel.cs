@@ -39,6 +39,10 @@ namespace Kazuko_FnB.Services
         /// <summary>Tên đầy đủ khi Title đã được rút gọn để hiển thị (vd. nút thanh công cụ); dùng cho tooltip và chọn icon.</summary>
         public string FullTitle { get; set; }
         public MenuAction Action { get; set; }
+        /// <summary>SMENU.STABLEDESCID: bảng nhập liệu dựng màn danh mục chung; rỗng nếu mục này không dựa vào bảng.</summary>
+        public string StableDescId { get; set; }
+        /// <summary>SMENU.OPERATION: 0 = mở danh mục thường; số khác = thao tác riêng (vd. 7 = gửi tin nhắn).</summary>
+        public int Operation { get; set; }
 
         public bool IsLeaf
         {

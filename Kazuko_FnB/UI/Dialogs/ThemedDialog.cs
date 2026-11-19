@@ -23,8 +23,9 @@ namespace Kazuko_FnB.UI.Dialogs
             WrapContents = false,
             Tag = "footer"
         };
-        private readonly Label _title = new Label { AutoSize = false, Tag = "header" };
-        private readonly Label _subtitle = new Label { AutoSize = false, Tag = "header" };
+        // UseMnemonic = false để dấu & trong tiêu đề/mô tả hiện ra đúng chữ (không bị nuốt làm phím tắt).
+        private readonly Label _title = new Label { AutoSize = false, Tag = "header", UseMnemonic = false };
+        private readonly Label _subtitle = new Label { AutoSize = false, Tag = "header", UseMnemonic = false };
 
         public ThemedDialog(string title, string subtitle, int widthAt96, int heightAt96)
         {
@@ -65,6 +66,12 @@ namespace Kazuko_FnB.UI.Dialogs
 
             ThemeManager.ThemeChanged += OnThemeChanged;
             Load += delegate { ApplyDialogTheme(); };
+        }
+
+        /// <summary>Thanh chân hộp thoại (chứa các nút); lớp con có thể thêm control dock bên trái (vd. dòng thông báo).</summary>
+        protected Panel FooterPanel
+        {
+            get { return _footer; }
         }
 
         /// <summary>Vùng nội dung (Padding 12px); thêm control con vào đây.</summary>

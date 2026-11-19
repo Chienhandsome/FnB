@@ -409,7 +409,7 @@ namespace Kazuko_FnB.UI
 
             _marquee.FromColor = Draw.GradFrom(t);
             _marquee.ToColor = Draw.GradTo(t);
-            _marquee.TextColor = t.IsDark ? Color.FromArgb(40, 18, 6) : Color.White;
+            _marquee.TextColor = Color.White;
             _marquee.Invalidate();
 
             foreach (Control c in new Control[] { _title, _version, _pageLogin, _pageDb })
@@ -419,7 +419,7 @@ namespace Kazuko_FnB.UI
 
             _tabs.SurfaceColor = card;
             _tabs.TrackColor = Draw.Mix(t.Background, t.Border, 0.6f);
-            _tabs.PillColor = t.IsDark ? Draw.Lighten(card, 0.18f) : Color.White;
+            _tabs.PillColor = Color.White;
             _tabs.SelectedTextColor = t.Text;
             _tabs.TextColor = t.TextMuted;
             _tabs.BorderColor = strongBorder;
@@ -433,7 +433,7 @@ namespace Kazuko_FnB.UI
             foreach (InputBox box in new[] { _user, _pass, _dbPath, _host, _port, _fbUser, _fbPass })
             {
                 box.SurfaceColor = card;
-                box.FieldColor = t.IsDark ? Draw.Lighten(card, 0.05f) : Color.White;
+                box.FieldColor = Color.White;
                 box.BorderColor = strongBorder;
                 box.FocusColor = t.Primary;
                 box.TextColor = t.Text;
@@ -462,7 +462,7 @@ namespace Kazuko_FnB.UI
                 b.Invalidate();
             }
             _btnPick.SurfaceColor = card;
-            _btnPick.FillColor = t.IsDark ? Draw.Lighten(card, 0.18f) : Draw.Darken(t.Primary, 0.6f);
+            _btnPick.FillColor = Draw.Darken(t.Primary, 0.6f);
             _btnPick.TextColor = Color.White;
             _btnPick.Invalidate();
 
@@ -472,7 +472,7 @@ namespace Kazuko_FnB.UI
         /// <summary>Viền đậm (sếp yêu cầu): đậm hơn màu Border của theme.</summary>
         private static Color StrongBorder(ThemeTokens t)
         {
-            return Draw.Mix(t.Border, t.Text, t.IsDark ? 0.30f : 0.38f);
+            return Draw.Mix(t.Border, t.Text, 0.38f);
         }
 
         // ------------------------------------------------------------------ vẽ nền + khung
@@ -503,8 +503,8 @@ namespace Kazuko_FnB.UI
             }
             else
             {
-                Color c1 = t.IsDark ? Draw.Mix(t.Background, t.Primary, 0.25f) : Draw.Lighten(t.Primary, 0.55f);
-                Color c2 = t.IsDark ? t.Background : t.Primary;
+                Color c1 = Draw.Lighten(t.Primary, 0.55f);
+                Color c2 = t.Primary;
                 using (var lg = new LinearGradientBrush(area, c1, c2, 35f))
                     g.FillRectangle(lg, area);
                 using (var bubble = new SolidBrush(Color.FromArgb(28, 255, 255, 255)))
@@ -517,7 +517,7 @@ namespace Kazuko_FnB.UI
                 using (var sub = new Font("Segoe UI", 16f))
                 {
                     var r = new Rectangle((int)(area.Width * 0.08), 0, Math.Max(10, _card.Left - (int)(area.Width * 0.12)), area.Height);
-                    Color fg = t.IsDark ? t.Text : Color.White;
+                    Color fg = Color.White;
                     TextRenderer.DrawText(g, "KAZUKO FNB", big, new Rectangle(r.X, area.Height / 2 - (int)(70 * s), r.Width, (int)(80 * s)), fg,
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
                     TextRenderer.DrawText(g, "Phần mềm quản lý FnB", sub, new Rectangle(r.X, area.Height / 2 + (int)(10 * s), r.Width, (int)(40 * s)),

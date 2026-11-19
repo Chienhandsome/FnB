@@ -159,6 +159,8 @@ namespace Kazuko_FnB.Data
         // Các bước sau (ảnh, người dùng, quyền, mật khẩu) đăng ký thêm ở đây.
         private static void RunExtra(string db)
         {
+            ThemeTests();
+            CatalogTests(db);
             ImageTests(db);
             UserTests(db);
             RoleTests(db);
@@ -383,6 +385,154 @@ namespace Kazuko_FnB.Data
 
             repo.Delete(id);
             Check("Xóa ảnh không còn dùng", repo.LoadAll().Count == before && repo.Get(id) == null);
+        }
+
+        // ------------------------------------------------------------------ Danh mục dùng chung (xem)
+
+        private static readonly string[] CatalogTables =
+        {
+            "DBANGGIA", "DCALAMVIEC", "DCUAHANG", "DKHOHANG", "DLOAIPHONG", "DLYDOTHUCHI", "DNHANVIEN", "DTAIKHOANNGANHANG",
+            "DBAN", "DDOTKHUYENMAI", "DKHACHHANG", "DMATHANG", "DMATKHAUWIFI", "DNHACUNGCAP", "DTHETRATRUOC", "DVOUCHER"
+        };
+
+        private static void CatalogTests(string db)
+        {
+            // Hàm thuần (không cần DB).
+            Check("Tìm không dấu: 'Đặng Văn Ơi' → 'dang van oi'", CatalogRepository.Fold("Đặng Văn Ơi") == "dang van oi");
+            Check("Tìm không dấu: 'Cà phê Sữa' → 'ca phe sua'", CatalogRepository.Fold("Cà phê Sữa") == "ca phe sua");
+            Check("Thoát ký tự đặc biệt khi lọc", CatalogRepository.EscapeLike("a'b[c]*%") == "a''b[[]c[]][*][%]");
+
+            List<GridColumnSpec> g = CatalogRepository.ParseGrid("CODE|63|true|NAME|217|false|NOTE|56|true ");
+            Check("Đọc cấu hình lưới SGRID (3 cột, cột 2 ẩn, độ rộng 217)",
+                g.Count == 3 && g[0].Name == "CODE" && g[0].Visible && g[1].Name == "NAME" && !g[1].Visible && g[1].Width == 217 && g[2].Visible);
+
+            var nodes = new Dictionary<string, CatalogNode>
+            {
+                { "a", new CatalogNode { Id = "a", ParentId = null } },
+                { "b", new CatalogNode { Id = "b", ParentId = "a" } },
+                { "c", new CatalogNode { Id = "c", ParentId = "b" } }
+            };
+            Check("Đường đi nhóm cha → con", CatalogRepository.CategoryPath(nodes, "c") == "|a|b|c|");
+            nodes["a"].ParentId = "c";
+            Check("Vòng lặp nhóm không treo máy", CatalogRepository.CategoryPath(nodes, "c").Length > 0);
+
+            // Trên DB.
+            var repo = new CatalogRepository(db);
+            var before = new Dictionary<string, string>();
+            foreach (string t in CatalogTables)
+                before[t] = Stamp(db, t);
+
+            int treeCount = 0;
+            foreach (string t in CatalogTables)
+            {
+                string id = repo.FindIdByTable(t);
+                Check("[" + t + "] có định nghĩa trong STABLEDESC", id != null);
+                if (id == null)
+                    continue;
+                Check("[" + t + "] dùng được màn danh mục chung", repo.IsSupported(id));
+                CatalogDefinition def = repo.LoadDefinition(id);
+                Check("[" + t + "] có cột hiển thị (kể cả cột tên)", def != null && def.Columns.Count > 0 && def.Columns.Exists(c => c.Name == "NAME"),
+                    def == null ? "null" : def.Columns.Count + " cột");
+                if (def == null)
+                    continue;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                CatalogData data = repo.Load(def);
+                sw.Stop();
+                int expected;
+                using (FbConnection conn = KazukoConnection.Open(db))
+                    expected = DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM \"" + t + "\" WHERE STATUS = 30"));
+                Check("[" + t + "] số dòng hiện = số dòng STATUS = 30", data.Rows.Count == expected, data.Rows.Count + " / " + expected + ", đọc " + sw.ElapsedMilliseconds + " ms");
+                if (def.CategoryTable != null)
+                {
+                    treeCount++;
+                    Check("[" + t + "] cây nhóm đọc được", data.Nodes.Count >= 0 && def.CategoryColumn != null);
+                }
+            }
+            Check("Có 4 danh mục dạng cây nhóm (bàn, đợt khuyến mại, khách hàng, mặt hàng)", treeCount == 4, "n=" + treeCount);
+
+            string khId = repo.FindIdByTable("DKHACHHANG");
+            if (khId != null)
+            {
+                CatalogDefinition kh = repo.LoadDefinition(khId);
+                Check("Khách hàng: thứ tự cột theo SGRID của app gốc (Tên, Nhóm, Mã khách…), ghi chú ẩn",
+                    kh.Columns.Count == 10 && kh.Columns[0].Name == "NAME" && kh.Columns[1].Name == "DNHOMKHACHHANGID" && kh.Columns[2].Name == "MAKHACH"
+                    && !kh.Columns.Exists(c => c.Name == "NOTE"), kh.Columns.Count + " cột");
+                Check("Khách hàng: không còn cột CMND (POS TAP đã bỏ)", !kh.Columns.Exists(c => c.Name == "SOCMND"));
+            }
+
+            // Menu: số mục dùng được màn chung.
+            int supported = 0;
+            foreach (MenuNode n in Flatten(new MenuRepository(db).LoadTree()))
+                if (n.Operation == 0 && !string.IsNullOrEmpty(n.StableDescId) && repo.IsSupported(n.StableDescId))
+                    supported++;
+            Check("Menu có 16 mục dùng màn danh mục chung", supported == 16, "n=" + supported);
+
+            bool unchanged = true;
+            var changed = new List<string>();
+            foreach (string t in CatalogTables)
+                if (Stamp(db, t) != before[t])
+                {
+                    unchanged = false;
+                    changed.Add(t);
+                }
+            Check("Mở danh mục không ghi gì vào DB (số dòng và TIMEMODIFIED không đổi)", unchanged, string.Join(",", changed.ToArray()));
+        }
+
+        private static string Stamp(string db, string table)
+        {
+            using (FbConnection conn = KazukoConnection.Open(db))
+            {
+                DataTable t = DbHelper.Table(conn, null, "SELECT COUNT(*), MAX(TIMEMODIFIED) FROM \"" + table + "\"");
+                return Convert.ToString(t.Rows[0][0]) + "|" + Convert.ToString(t.Rows[0][1]);
+            }
+        }
+
+        private static IEnumerable<MenuNode> Flatten(IEnumerable<MenuNode> roots)
+        {
+            foreach (MenuNode n in roots)
+            {
+                yield return n;
+                foreach (MenuNode c in Flatten(n.Children))
+                    yield return c;
+            }
+        }
+
+        // ------------------------------------------------------------------ Giao diện (bảng màu)
+
+        private static void ThemeTests()
+        {
+            var all = new List<Theme.ThemeTokens>(Theme.BuiltInThemes.All());
+            Check("Có đúng 4 bảng màu", all.Count == 4, "n=" + all.Count);
+
+            var names = new HashSet<string>();
+            bool unique = true;
+            foreach (Theme.ThemeTokens t in all)
+                unique &= names.Add(t.Name);
+            Check("Tên các bảng màu không trùng nhau", unique);
+            Check("Bảng màu mặc định là Cam Nắng", Theme.BuiltInThemes.Default.Name == "Cam Nắng");
+            Check("Tên bảng màu cũ (Nền tối) rơi về mặc định", ReferenceEquals(Theme.BuiltInThemes.Find("Nền tối"), Theme.BuiltInThemes.Default));
+            Check("Tên rỗng rơi về mặc định", ReferenceEquals(Theme.BuiltInThemes.Find(null), Theme.BuiltInThemes.Default));
+
+            foreach (Theme.ThemeTokens t in all)
+            {
+                bool light = Theme.ContrastChecker.Luminance(t.Background) > 0.8 && Theme.ContrastChecker.Luminance(t.Surface) > 0.8
+                    && Theme.ContrastChecker.Luminance(t.Text) < 0.1;
+                Check("Bảng màu \"" + t.Name + "\" là nền sáng", light);
+
+                bool hasInfo = !string.IsNullOrWhiteSpace(t.Tag) && !string.IsNullOrWhiteSpace(t.Audience) && !string.IsNullOrWhiteSpace(t.Description);
+                Check("Bảng màu \"" + t.Name + "\" có nhãn, đối tượng, mô tả", hasInfo);
+
+                var fails = new List<string>();
+                double min = double.MaxValue;
+                foreach (Theme.ContrastPair p in Theme.ContrastChecker.Evaluate(t))
+                {
+                    min = Math.Min(min, p.Ratio);
+                    if (!p.Pass)
+                        fails.Add(p.Name + " " + p.Ratio.ToString("0.00") + "<" + p.Minimum.ToString("0.0"));
+                }
+                Check("Bảng màu \"" + t.Name + "\" đạt tương phản AA", fails.Count == 0,
+                    fails.Count == 0 ? "thấp nhất " + min.ToString("0.00") : string.Join("; ", fails.ToArray()));
+            }
         }
 
         private static bool Equal(byte[] x, byte[] y)

@@ -209,7 +209,10 @@ namespace Kazuko_FnB.UI
             string key = node.Id;
             if (_tabs.Find(key) == null)
             {
-                var view = new PlaceholderView(node.Title) { Dock = DockStyle.Fill, Visible = false };
+                // Mục có màn thật (danh mục dựa vào bảng nhập liệu) thì dựng màn đó; không thì tab tạm.
+                Control view = Dialogs.ScreenFactory.CreateView(node, _session) ?? new PlaceholderView(node.Title);
+                view.Dock = DockStyle.Fill;
+                view.Visible = false;
                 _views[key] = view;
                 _content.Controls.Add(view);
                 _tabs.Add(key, node.Title, false);
@@ -325,15 +328,15 @@ namespace Kazuko_FnB.UI
             _bar.BarColor = t.Primary;
             _bar.BarTextColor = t.OnPrimary;
             // Nút Đăng xuất: màu cảnh báo, chữ chọn để đọc được trên cả nền sáng lẫn tối.
-            _bar.LogoutColor = t.IsDark ? t.Danger : Color.FromArgb(196, 43, 28);
-            _bar.LogoutTextColor = t.IsDark ? Color.FromArgb(40, 12, 8) : Color.White;
+            _bar.LogoutColor = Color.FromArgb(196, 43, 28);
+            _bar.LogoutTextColor = Color.White;
             _bar.Invalidate();
 
             _menu.ApplyTheme(t);
 
             // Nền thanh/trang giữ màu nền theme (kem); chỉ nút toolbar, tab đang chọn, thân thẻ là trắng.
             Color pane = t.Background;
-            Color white = t.IsDark ? t.Surface : Color.White;
+            Color white = Color.White;
             _toolbar.BarColor = pane;
             _toolbar.ButtonColor = white;
             _toolbar.ButtonBorderColor = strong;
@@ -345,7 +348,7 @@ namespace Kazuko_FnB.UI
             _toolbar.Invalidate();
 
             _tabs.BarColor = pane;
-            _tabs.TabColor = t.IsDark ? Draw.Mix(pane, t.Border, 0.5f) : Draw.Mix(pane, t.Primary, 0.22f);
+            _tabs.TabColor = Draw.Mix(pane, t.Primary, 0.22f);
             _tabs.SelectedTabColor = white;
             _tabs.BorderColor = strong;
             _tabs.AccentColor = t.Primary;
@@ -363,6 +366,9 @@ namespace Kazuko_FnB.UI
                 var p = v as PlaceholderView;
                 if (p != null)
                     p.ApplyTheme(t, pane);
+                var cv = v as CatalogView;
+                if (cv != null)
+                    cv.ApplyTheme(t, pane);
             }
 
             _status.BarColor = t.Background;

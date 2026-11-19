@@ -224,7 +224,7 @@ namespace Kazuko_FnB.UI.Controls
 
         private Color StrongBorder
         {
-            get { return Draw.Mix(_t.Border, _t.Text, _t.IsDark ? 0.30f : 0.38f); }
+            get { return Draw.Mix(_t.Border, _t.Text, 0.38f); }
         }
 
         private static Font _iconFont;
@@ -378,7 +378,7 @@ namespace Kazuko_FnB.UI.Controls
                     }
                     else
                     {
-                        using (var b = new SolidBrush(_t.IsDark ? _t.Surface : Color.White))
+                        using (var b = new SolidBrush(Color.White))
                             g.FillPath(b, p);
                         using (var pen = new Pen(Draw.Mix(_t.Border, _t.Primary, 0.45f), 1.4f))
                             g.DrawPath(pen, p);
