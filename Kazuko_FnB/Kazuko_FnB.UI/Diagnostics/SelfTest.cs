@@ -205,12 +205,20 @@ namespace Kazuko_FnB.UI.Diagnostics
             Check("RoleLogic: tích Khóa → 0", RoleLogic.SetLocked(0xF0, true) == 0);
             Check("RoleLogic: Tất cả = 0xF0; chức năng chỉ-xem = 0x10", RoleLogic.SetAll(0x10, true, false) == 0xF0 && RoleLogic.SetAll(0, true, true) == 0x10);
             Check("RoleLogic: bỏ Sửa giữ Xem + Thêm", RoleLogic.SetBit(0x70, RoleModes.Edit, false) == 0x50);
+            Check("LamTronTien: 1499 → 1000 (bội 1000)", Kazuko_FnB.Services.MoneyRounding.RoundToStep(1499m, 1000m) == 1000m);
+            Check("LamTronTien: 1500 → 2000 (hòa làm tròn xa 0)", Kazuko_FnB.Services.MoneyRounding.RoundToStep(1500m, 1000m) == 2000m);
+            Check("LamTronTien: -1500 → -2000 (xa 0 cả số âm)", Kazuko_FnB.Services.MoneyRounding.RoundToStep(-1500m, 1000m) == -2000m);
+            Check("LamTronTien: 0 → 0", Kazuko_FnB.Services.MoneyRounding.RoundToStep(0m, 1000m) == 0m);
+            bool stepThrew = false;
+            try { Kazuko_FnB.Services.MoneyRounding.RoundToStep(1m, 0m); }
+            catch (ArgumentOutOfRangeException) { stepThrew = true; }
+            Check("LamTronTien: bước 0 ném ArgumentOutOfRangeException", stepThrew);
 
             var roles = new RoleRepository(db);
             var groups = new GroupRepository(db);
             var users = new UserAdminRepository(db);
             List<FunctionRow> funcs = roles.LoadFunctions();
-            Check("Đủ 81 chức năng trong ma trận", funcs.Count == 81, "n=" + funcs.Count);
+            Check("Đủ 86 chức năng trong ma trận", funcs.Count == 86, "n=" + funcs.Count);
             Check("Có chức năng chỉ-xem (NOTE=View) và chức năng đủ quyền", funcs.Exists(f => f.ViewOnly) && funcs.Exists(f => !f.ViewOnly));
 
             FunctionRow login = funcs.Find(f => f.Id == LoginService.LoginFunctionId);

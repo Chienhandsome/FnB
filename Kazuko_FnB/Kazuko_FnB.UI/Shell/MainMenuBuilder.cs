@@ -31,7 +31,7 @@ namespace Kazuko_FnB.UI
                     perms = session.Permissions ?? users.GetFunctionPermissions(session.UserId, session.IsAdmin);
                     dbRoots = new MenuRepository(session.DatabasePath).LoadTree();
                 }
-                catch (FirebirdSql.Data.FirebirdClient.FbException)
+                catch (Kazuko_FnB.Data.DataAccessException)
                 {
                     // Không đọc được menu: vẫn cho vào app với menu cố định.
                     perms = new FunctionPermissions(session.IsAdmin);

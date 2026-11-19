@@ -13,6 +13,11 @@ namespace Kazuko_FnB.Data
     {
         public static string Run(string databasePath)
         {
+            return DbHelper.Guard(() => RunCore(databasePath));
+        }
+
+        private static string RunCore(string databasePath)
+        {
             var sb = new StringBuilder();
             using (var conn = KazukoConnection.Open(databasePath))
             {

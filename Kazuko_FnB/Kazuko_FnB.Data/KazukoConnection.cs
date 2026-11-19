@@ -43,7 +43,15 @@ namespace Kazuko_FnB.Data
         public static FbConnection Open(string databasePath)
         {
             var conn = new FbConnection(BuildConnectionString(databasePath));
-            conn.Open();
+            try
+            {
+                conn.Open();
+            }
+            catch (FbException ex)
+            {
+                conn.Dispose();
+                throw DataAccessException.From(ex);
+            }
             return conn;
         }
     }

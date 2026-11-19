@@ -58,6 +58,7 @@
     <Compile Include="ConfigViewModel.cs" />
     <Compile Include="DatabaseService.cs" />
     <Compile Include="LoginService.cs" />
+    <Compile Include="MoneyRounding.cs" />
     <Compile Include="PasswordPolicy.cs" />
     <Compile Include="PhieuThuRules.cs" />
     <Compile Include="RoleLogic.cs" />

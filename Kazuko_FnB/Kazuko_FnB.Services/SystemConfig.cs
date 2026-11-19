@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Domain;
 
@@ -36,7 +35,7 @@ namespace Kazuko_FnB.Services
                     _values = new ConfigRepository(path).LoadValues();
                     _loadedFrom = path;
                 }
-                catch (FbException)
+                catch (DataAccessException)
                 {
                     _values = new Dictionary<string, ConfigValue>(StringComparer.Ordinal);
                     _loadedFrom = null;

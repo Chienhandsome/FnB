@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.UI.Controls;
@@ -215,7 +214,7 @@ namespace Kazuko_FnB.UI.Dialogs
                     return;
                 _groups.Delete(g.Id);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không xóa được: " + ex.Message);
                 return;
@@ -298,7 +297,7 @@ namespace Kazuko_FnB.UI.Dialogs
                     return;
                 _users.Delete(u.Id);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không xóa được: " + ex.Message);
                 return;

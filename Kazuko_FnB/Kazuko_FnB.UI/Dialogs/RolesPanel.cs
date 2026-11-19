@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.UI.Controls;
@@ -316,7 +315,7 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 _repo.SaveModes(_group.Id, toSave, AppSession.UserId);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không ghi được phân quyền: " + ex.Message);
                 SetGroup(_group);
@@ -400,7 +399,7 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 _repo.SetReportsAllowed(_group.Id, list.Select(x => x.Id), allow, AppSession.UserId);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không ghi được phân quyền: " + ex.Message);
                 SetGroup(_group);

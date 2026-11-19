@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.UI.Controls;
@@ -318,7 +317,7 @@ namespace Kazuko_FnB.UI.Dialogs
                     LoadUser(saved);
                 }
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không ghi được dữ liệu: " + ex.Message);
             }

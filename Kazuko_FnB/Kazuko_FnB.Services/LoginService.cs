@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Domain;
 
@@ -54,7 +53,7 @@ namespace Kazuko_FnB.Services
                     }
                 };
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 return Fail(LoginResultCode.DatabaseError, "Không mở được dữ liệu: " + ex.Message);
             }

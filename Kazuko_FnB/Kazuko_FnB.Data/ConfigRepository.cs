@@ -127,7 +127,7 @@ namespace Kazuko_FnB.Data
                 {
                     dt = DbHelper.Table(conn, null, "SELECT ID, NAME FROM " + table + where + " ORDER BY NAME");
                 }
-                catch (FbException)
+                catch (DataAccessException)
                 {
                     return list;
                 }

@@ -20,6 +20,11 @@ namespace Kazuko_FnB.Data
 
         public List<UserRecord> FindByUserName(string userName)
         {
+            return DbHelper.Guard(() => FindByUserNameCore(userName));
+        }
+
+        private List<UserRecord> FindByUserNameCore(string userName)
+        {
             var list = new List<UserRecord>();
             using (var conn = KazukoConnection.Open(_databasePath))
             using (var cmd = conn.CreateCommand())
@@ -53,6 +58,11 @@ namespace Kazuko_FnB.Data
         /// </summary>
         public int GetFunctionMode(string userId, string functionId)
         {
+            return DbHelper.Guard(() => GetFunctionModeCore(userId, functionId));
+        }
+
+        private int GetFunctionModeCore(string userId, string functionId)
+        {
             using (var conn = KazukoConnection.Open(_databasePath))
             using (var cmd = conn.CreateCommand())
             {
@@ -69,6 +79,11 @@ namespace Kazuko_FnB.Data
 
         /// <summary>Nạp toàn bộ quyền chức năng của người dùng trong một truy vấn. Admin không cần truy vấn.</summary>
         public FunctionPermissions GetFunctionPermissions(string userId, bool isAdmin)
+        {
+            return DbHelper.Guard(() => GetFunctionPermissionsCore(userId, isAdmin));
+        }
+
+        private FunctionPermissions GetFunctionPermissionsCore(string userId, bool isAdmin)
         {
             var perms = new FunctionPermissions(isAdmin);
             if (isAdmin)
@@ -95,6 +110,11 @@ namespace Kazuko_FnB.Data
         /// <summary>Tên nhóm người dùng (SGROUPUSER.NAME), null nếu không có.</summary>
         public string GetGroupName(string groupId)
         {
+            return DbHelper.Guard(() => GetGroupNameCore(groupId));
+        }
+
+        private string GetGroupNameCore(string groupId)
+        {
             if (string.IsNullOrEmpty(groupId))
                 return null;
             using (var conn = KazukoConnection.Open(_databasePath))
@@ -108,6 +128,11 @@ namespace Kazuko_FnB.Data
         }
 
         public List<StoreRecord> GetStores(string userId)
+        {
+            return DbHelper.Guard(() => GetStoresCore(userId));
+        }
+
+        private List<StoreRecord> GetStoresCore(string userId)
         {
             var list = new List<StoreRecord>();
             using (var conn = KazukoConnection.Open(_databasePath))

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.UI.Controls;
@@ -120,7 +119,7 @@ namespace Kazuko_FnB.UI.Dialogs
                         _repo.Add(name, data, AppSession.UserId);
                     }
                 }
-                catch (FbException ex)
+                catch (DataAccessException ex)
                 {
                     Msg.Error(this, "Không ghi được dữ liệu: " + ex.Message);
                 }
@@ -140,7 +139,7 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 _repo.Replace(r.Id, data, AppSession.UserId);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không ghi được dữ liệu: " + ex.Message);
                 return;
@@ -166,7 +165,7 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 _repo.Delete(r.Id);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không xóa được: " + ex.Message);
                 return;

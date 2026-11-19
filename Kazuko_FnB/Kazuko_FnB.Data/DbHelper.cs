@@ -42,52 +42,100 @@ namespace Kazuko_FnB.Data
 
         public static int Exec(FbConnection conn, FbTransaction tx, string sql, params object[] args)
         {
-            using (FbCommand cmd = Command(conn, tx, sql, args))
-                return cmd.ExecuteNonQuery();
+            try
+            {
+                using (FbCommand cmd = Command(conn, tx, sql, args))
+                    return cmd.ExecuteNonQuery();
+            }
+            catch (FbException ex)
+            {
+                throw DataAccessException.From(ex);
+            }
         }
 
         public static object Scalar(FbConnection conn, FbTransaction tx, string sql, params object[] args)
         {
-            using (FbCommand cmd = Command(conn, tx, sql, args))
+            try
             {
-                object v = cmd.ExecuteScalar();
-                return v is DBNull ? null : v;
+                using (FbCommand cmd = Command(conn, tx, sql, args))
+                {
+                    object v = cmd.ExecuteScalar();
+                    return v is DBNull ? null : v;
+                }
+            }
+            catch (FbException ex)
+            {
+                throw DataAccessException.From(ex);
             }
         }
 
         public static DataTable Table(FbConnection conn, FbTransaction tx, string sql, params object[] args)
         {
-            var dt = new DataTable();
-            using (FbCommand cmd = Command(conn, tx, sql, args))
-            using (var da = new FbDataAdapter(cmd))
-                da.Fill(dt);
-            return dt;
+            try
+            {
+                var dt = new DataTable();
+                using (FbCommand cmd = Command(conn, tx, sql, args))
+                using (var da = new FbDataAdapter(cmd))
+                    da.Fill(dt);
+                return dt;
+            }
+            catch (FbException ex)
+            {
+                throw DataAccessException.From(ex);
+            }
         }
 
         /// <summary>Mở kết nối, chạy <paramref name="work"/> trong một transaction; lỗi thì hoàn tác.</summary>
         public static void InTransaction(string databasePath, Action<FbConnection, FbTransaction> work)
         {
-            using (FbConnection conn = KazukoConnection.Open(databasePath))
-            using (FbTransaction tx = conn.BeginTransaction())
+            try
             {
-                try
+                using (FbConnection conn = KazukoConnection.Open(databasePath))
+                using (FbTransaction tx = conn.BeginTransaction())
                 {
-                    work(conn, tx);
-                    tx.Commit();
+                    try
+                    {
+                        work(conn, tx);
+                        tx.Commit();
+                    }
+                    catch
+                    {
+                        tx.Rollback();
+                        throw;
+                    }
                 }
-                catch
-                {
-                    tx.Rollback();
-                    throw;
-                }
+            }
+            catch (FbException ex)
+            {
+                throw DataAccessException.From(ex);
             }
         }
 
         /// <summary>Mở kết nối chỉ đọc một lần cho một nhóm truy vấn.</summary>
         public static T Read<T>(string databasePath, Func<FbConnection, T> work)
         {
-            using (FbConnection conn = KazukoConnection.Open(databasePath))
-                return work(conn);
+            try
+            {
+                using (FbConnection conn = KazukoConnection.Open(databasePath))
+                    return work(conn);
+            }
+            catch (FbException ex)
+            {
+                throw DataAccessException.From(ex);
+            }
+        }
+
+        /// <summary>Chạy <paramref name="work"/>, đổi FbException thành DataAccessException (cho code dùng FbCommand trực tiếp).</summary>
+        public static T Guard<T>(Func<T> work)
+        {
+            try
+            {
+                return work();
+            }
+            catch (FbException ex)
+            {
+                throw DataAccessException.From(ex);
+            }
         }
 
         public static string Str(object v)

@@ -18,6 +18,11 @@ namespace Kazuko_FnB.Data
         /// <summary>Trả về các nút gốc, con đã sắp theo SORTORDER.</summary>
         public List<MenuNode> LoadTree()
         {
+            return DbHelper.Guard(LoadTreeCore);
+        }
+
+        private List<MenuNode> LoadTreeCore()
+        {
             var all = new Dictionary<string, MenuNode>();
             var ordered = new List<MenuNode>();
             using (var conn = KazukoConnection.Open(_databasePath))

@@ -1,7 +1,6 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.Domain;
@@ -83,7 +82,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 }
                 _repo.SetPassword(_session.UserId, _new.Text, AppSession.UserId);
             }
-            catch (FbException ex)
+            catch (DataAccessException ex)
             {
                 Msg.Error(this, "Không ghi được dữ liệu: " + ex.Message);
                 return;
