@@ -14,6 +14,8 @@ namespace Kazuko_FnB.Services
         // Thứ tự quan trọng: mẫu đứng trước thắng.
         private static readonly KeyValuePair<string, string>[] Rules =
         {
+            P("báo cáo", ""),
+            P("thoát", ""),
             P("tạo phiếu", ""),
             P("ca làm việc", ""),
             P("chấm công", ""),
@@ -54,6 +56,9 @@ namespace Kazuko_FnB.Services
 
         private static readonly KeyValuePair<string, string>[] GroupRules =
         {
+            P("hệ thống", ""),
+            P("báo cáo", ""),
+            P("trợ giúp", ""),
             P("hoạt động", ""),
             P("khách hàng", ""),
             P("kho hàng", ""),

@@ -94,3 +94,11 @@ DESKTOP-BICOUFA	Wed Nov 18 19:35:45 2026
 	D:\Working\FnB\KAZUKO TEA\ib_util.dll library has not been found
 	ib_util.dll library has not been found
 
+
+DESKTOP-BICOUFA	Thu Nov 19 08:27:44 2026
+	ib_util init failed, UDFs can't be used - looks like firebird misconfigured
+	
+	D:\Working\FnB\KAZUKO TEA\bin/ib_util.dll library has not been found
+	D:\Working\FnB\KAZUKO TEA\ib_util.dll library has not been found
+	ib_util.dll library has not been found
+

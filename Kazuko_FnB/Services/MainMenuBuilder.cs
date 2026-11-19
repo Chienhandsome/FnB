@@ -43,9 +43,16 @@ namespace Kazuko_FnB.Services
             foreach (MenuNode root in dbRoots)
             {
                 MenuNode pruned = Prune(root, perms);
-                if (pruned != null && !pruned.IsSeparator)
+                if (pruned == null || pruned.IsSeparator)
+                    continue;
+                // Chỉ lược khỏi menu thả xuống; thanh công cụ / Truy cập nhanh vẫn dùng dữ liệu đầy đủ.
+                HideFromMenu(pruned);
+                if (string.Equals(pruned.Title, "Quản trị", StringComparison.OrdinalIgnoreCase))
+                    ArrangeAdminMenu(pruned, perms);
+                if (HasRealItem(pruned.Children))
                     model.Roots.Add(pruned);
             }
+            model.Roots.Add(BuildReportMenu());
             model.Roots.Add(BuildHelpMenu());
 
             // Thanh công cụ và thẻ Truy cập nhanh chỉ lấy từ nhóm DB.
@@ -83,6 +90,71 @@ namespace Kazuko_FnB.Services
             }
             TrimSeparators(copy.Children);
             return HasRealItem(copy.Children) ? copy : null;
+        }
+
+        // Mục có trong dữ liệu nhưng không đưa vào menu thả xuống (theo menu mẫu).
+        private static readonly HashSet<string> MenuHiddenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Dịch vụ MTB",
+            "Danh mục cửa hàng",
+            "Kiểm soát order",
+            "Danh mục đợt khuyến mại",
+            "Danh mục voucher",
+            "Danh mục thẻ trả trước"
+        };
+
+        private static void HideFromMenu(MenuNode n)
+        {
+            for (int i = n.Children.Count - 1; i >= 0; i--)
+            {
+                MenuNode c = n.Children[i];
+                if (!c.IsSeparator && c.Title != null && MenuHiddenTitles.Contains(c.Title.Trim()))
+                {
+                    n.Children.RemoveAt(i);
+                    continue;
+                }
+                HideFromMenu(c);
+            }
+            TrimSeparators(n.Children);
+        }
+
+        /// <summary>
+        /// Menu "Quản trị" theo menu mẫu: một số mục lấy từ DB (Dữ liệu ban đầu, Thiết kế giao diện màn cảm ứng),
+        /// số còn lại cố định trong mã như app gốc. Mục DB không có trong mẫu (vd. cấu hình máy in) bị lược.
+        /// </summary>
+        private static void ArrangeAdminMenu(MenuNode admin, FunctionPermissions perms)
+        {
+            MenuNode initial = FindChild(admin, "Dữ liệu ban đầu");
+            MenuNode design = FindChild(admin, "Thiết kế giao diện màn cảm ứng");
+
+            var ordered = new List<MenuNode>();
+            AddIfAllowed(ordered, perms, Item("admin.images", "Thư viện ảnh...", "Thư viện ảnh", MenuAction.OpenTab));
+            if (initial != null)
+                ordered.Add(initial);
+            if (design != null)
+                ordered.Add(design);
+            AddIfAllowed(ordered, perms, Item("admin.wipe", "Xóa dữ liệu", "Xóa dữ liệu", MenuAction.OpenTab));
+            AddIfAllowed(ordered, perms, Item("admin.devtools", "Công cụ nhà phát triển", "Công cụ nhà phát triển", MenuAction.OpenTab));
+            AddIfAllowed(ordered, perms, Item("admin.audit", "Lịch sử tương tác hệ thống", "Lịch sử tương tác hệ thống", MenuAction.OpenTab));
+            AddIfAllowed(ordered, perms, Item("admin.users", "Người dùng và phân quyền", "Quản lý người dùng", MenuAction.OpenTab));
+            AddIfAllowed(ordered, perms, Item("admin.config", "Cấu hình toàn hệ thống", "Cấu hình toàn hệ thống", MenuAction.OpenTab));
+
+            admin.Children.Clear();
+            admin.Children.AddRange(ordered);
+        }
+
+        private static void AddIfAllowed(List<MenuNode> into, FunctionPermissions perms, MenuNode n)
+        {
+            if (perms.AllowsName(n.FunctionName))
+                into.Add(n);
+        }
+
+        private static MenuNode FindChild(MenuNode parent, string title)
+        {
+            foreach (MenuNode c in parent.Children)
+                if (!c.IsSeparator && c.Title != null && string.Equals(c.Title.Trim(), title, StringComparison.OrdinalIgnoreCase))
+                    return c;
+            return null;
         }
 
         private static MenuNode Clone(MenuNode n)
@@ -141,36 +213,97 @@ namespace Kazuko_FnB.Services
         private static MenuNode BuildSystemMenu(FunctionPermissions perms)
         {
             var m = new MenuNode { Id = "sys", Title = "Hệ thống", RawName = "HỆ THỐNG" };
-            var all = new List<MenuNode>
+            // Cơ sở dữ liệu... là mục cha có 3 mục con (giống app gốc).
+            var db = Item("sys.db", "Cơ sở dữ liệu...", null, MenuAction.OpenTab);
+            foreach (MenuNode c in new[]
             {
-                Item("sys.db", "Cơ sở dữ liệu...", null, MenuAction.OpenTab),
                 Item("sys.db.new", "Tạo mới cơ sở dữ liệu", "Tạo mới cơ sở dữ liệu", MenuAction.OpenTab),
                 Item("sys.db.backup", "Sao lưu cơ sở dữ liệu", "Sao lưu cơ sở dữ liệu", MenuAction.OpenTab),
-                Item("sys.db.restore", "Phục hồi cơ sở dữ liệu", "Phục hồi cơ sở dữ liệu", MenuAction.OpenTab),
-                Sep("sys.sep1"),
-                Item("sys.users", "Người dùng và phân quyền", "Quản lý người dùng", MenuAction.OpenTab),
-                Item("sys.images", "Thư viện ảnh...", "Thư viện ảnh", MenuAction.OpenTab),
-                Item("sys.config", "Cấu hình toàn hệ thống", "Cấu hình toàn hệ thống", MenuAction.OpenTab),
+                Item("sys.db.restore", "Phục hồi cơ sở dữ liệu", "Phục hồi cơ sở dữ liệu", MenuAction.OpenTab)
+            })
+                if (perms.AllowsName(c.FunctionName))
+                    db.Children.Add(c);
+
+            var logout = Item("sys.logout", "Đăng xuất khỏi hệ thống", null, MenuAction.Logout);
+            logout.Shortcut = Keys.Control | Keys.Shift | Keys.L;
+            var exit = Item("sys.exit", "Thoát khỏi hệ thống", null, MenuAction.Exit);
+            exit.Shortcut = Keys.Control | Keys.Q;
+
+            var all = new List<MenuNode>
+            {
+                db,
                 Item("sys.password", "Đổi mật khẩu đăng nhập", null, MenuAction.OpenTab),
-                Sep("sys.sep2"),
-                Item("sys.logout", "Đăng xuất khỏi hệ thống", null, MenuAction.Logout),
-                Item("sys.exit", "Thoát khỏi hệ thống", null, MenuAction.Exit)
+                Sep("sys.sep1"),
+                logout,
+                exit
             };
             foreach (MenuNode n in all)
-                if (n.IsSeparator || perms.AllowsName(n.FunctionName))
+            {
+                if (n == db && db.Children.Count == 0)
+                    continue;
+                if (n.IsSeparator || n == db || perms.AllowsName(n.FunctionName))
                     m.Children.Add(n);
+            }
             TrimSeparators(m.Children);
+            return m;
+        }
+
+        // Menu "Báo cáo" cố định trong mã (theo menu mẫu của app gốc). Báo cáo chưa làm: mở tab tạm.
+        // Báo cáo kho hàng và các nhóm con của "Báo cáo bán hàng" (theo nhân viên, khu vực, thu ngân, khách hàng,
+        // khác) chưa có nội dung mẫu nên chưa liệt kê.
+        private static readonly string[][] ReportGroups =
+        {
+            new[] { "Báo cáo quỹ",
+                "Danh sách phiếu thu theo ngày", "Danh sách phiếu thu theo lý do thu chi",
+                "Danh sách phiếu chi theo ngày", "Danh sách phiếu chi theo lý do thu chi",
+                "Tổng hợp thu chi theo ngày", "Tổng hợp thu chi theo lý do", "Báo cáo tồn quỹ" },
+            new[] { "Báo cáo danh mục",
+                "Danh sách khách hàng theo nhóm", "Danh sách khách hàng theo nhân viên",
+                "Danh sách nhà cung cấp theo nhóm", "Danh sách đợt khuyến mại",
+                "Danh sách mặt hàng theo nhóm", "Danh sách mặt hàng theo hãng sản xuất",
+                "Khách hàng đến ngày sinh nhật", "Báo cáo cấu hình bàn khu vực",
+                "Công thức định lượng", "Báo cáo chi tiết phân quyền hệ thống" },
+            new[] { "Báo cáo bán hàng",
+                "Tổng hợp bán hàng theo ngày", "Tổng hợp mặt hàng bán theo ngày",
+                "Báo cáo chi tiết bán hàng theo ngày", "Tổng hợp doanh thu theo loại đồ",
+                "Tổng hợp doanh thu chưa thanh toán", "Báo cáo bán hàng theo ngày" },
+            new[] { "Báo cáo đặt hàng",
+                "Danh sách đặt hàng theo ngày", "Danh sách đặt hàng theo khách hàng",
+                "Tổng hợp đặt hàng theo ngày", "Tổng hợp đặt hàng theo khách hàng",
+                "Tổng hợp mặt hàng đặt theo khách hàng", "Tổng hợp mặt hàng đặt theo ngày" },
+            new[] { "Báo cáo công nợ",
+                "Đối chiếu công nợ nhà cung cấp", "Báo cáo công nợ nhà cung cấp",
+                "Đối chiếu công nợ khách hàng", "Tổng hợp công nợ khách hàng",
+                "Tổng hợp công nợ nhà cung cấp", "Báo cáo công nợ khách hàng" },
+            new[] { "Báo cáo quản trị",
+                "Tổng hợp lãi gộp theo mặt hàng (giá vốn)", "Tổng hợp lãi gộp theo mặt hàng (giá nhập)",
+                "Chi tiết lãi theo hóa đơn (giá nhập)", "Chi tiết lãi theo hóa đơn (giá vốn)",
+                "Báo cáo kết quả kinh doanh", "Chi tiết hoạt động trong ngày",
+                "Báo cáo 20 mặt hàng bán chạy nhất", "Phân tích tình hình bán hàng",
+                "Báo cáo bán hàng theo giờ", "Danh sách món xóa, giảm, trả lại" },
+            new[] { "Báo cáo biểu đồ",
+                "Biểu đồ doanh số theo nhóm", "Biểu đồ doanh thu ngày trong tháng",
+                "Biểu đồ doanh thu tháng trong năm", "Biểu đồ theo nhân viên kinh doanh" }
+        };
+
+        private static MenuNode BuildReportMenu()
+        {
+            var m = new MenuNode { Id = "rpt", Title = "Báo cáo", RawName = "BÁO CÁO" };
+            for (int g = 0; g < ReportGroups.Length; g++)
+            {
+                string[] def = ReportGroups[g];
+                MenuNode group = Item("rpt." + g, def[0], null, MenuAction.OpenTab);
+                for (int i = 1; i < def.Length; i++)
+                    group.Children.Add(Item("rpt." + g + "." + i, def[i], null, MenuAction.OpenTab));
+                m.Children.Add(group);
+            }
             return m;
         }
 
         private static MenuNode BuildHelpMenu()
         {
             var m = new MenuNode { Id = "help", Title = "Trợ giúp", RawName = "TRỢ GIÚP" };
-            m.Children.Add(Item("help.guide", "Hướng dẫn sử dụng", null, MenuAction.OpenTab));
-            m.Children.Add(Item("help.start", "Bắt đầu sử dụng phần mềm", null, MenuAction.OpenTab));
-            m.Children.Add(Item("help.tips", "Mẹo vặt khi sử dụng phần mềm", null, MenuAction.OpenTab));
-            m.Children.Add(Item("help.terms", "Thỏa thuận sử dụng phần mềm", null, MenuAction.OpenTab));
-            m.Children.Add(Sep("help.sep1"));
+            m.Children.Add(Item("help.license", "Đăng ký bản quyền...", null, MenuAction.OpenTab));
             m.Children.Add(Item("help.about", "Thông tin phần mềm", null, MenuAction.OpenTab));
             return m;
         }
@@ -186,10 +319,12 @@ namespace Kazuko_FnB.Services
 
             foreach (MenuNode n in found)
             {
+                string full = n.IsSeparator ? "" : DisplayToolbarTitle(n);
                 var tb = new MenuNode
                 {
                     Id = n.Id,
-                    Title = n.IsSeparator ? "" : DisplayToolbarTitle(n),
+                    Title = ShortToolbarTitle(full),
+                    FullTitle = full,
                     RawName = n.RawName,
                     IsSeparator = n.IsSeparator,
                     FunctionId = n.FunctionId,
@@ -198,7 +333,111 @@ namespace Kazuko_FnB.Services
                 };
                 model.Toolbar.Add(tb);
             }
+            AddExtraToolbarButtons(model, dbRoots, perms);
             TrimSeparators(model.Toolbar);
+        }
+
+        // Nút tắt bổ sung (không nằm trong cờ TOOLBAR của DB): "|" là dải kẻ ngăn nhóm.
+        // Mỗi nút trỏ tới một mục menu có sẵn nên vẫn theo phân quyền; mục bị khóa quyền sẽ không hiện.
+        private static readonly string[] ExtraToolbar =
+        {
+            "|",
+            "Danh mục khách hàng", "Danh mục mặt hàng", "Nhập hàng vào kho",
+            "|",
+            "Tạo phiếu thu", "Công nợ khách hàng",
+            "|",
+            "@report", "@exit"
+        };
+
+        private static void AddExtraToolbarButtons(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms)
+        {
+            int sep = 0;
+            foreach (string key in ExtraToolbar)
+            {
+                if (key == "|")
+                {
+                    model.Toolbar.Add(new MenuNode { Id = "tb.sep." + (sep++), Title = "", IsSeparator = true });
+                    continue;
+                }
+                if (key == "@report")
+                {
+                    model.Toolbar.Add(new MenuNode { Id = "tb.report", Title = "Báo cáo", FullTitle = "Báo cáo", Action = MenuAction.OpenTab });
+                    continue;
+                }
+                if (key == "@exit")
+                {
+                    model.Toolbar.Add(new MenuNode { Id = "tb.exit", Title = "Thoát", FullTitle = "Thoát khỏi hệ thống", Action = MenuAction.Exit });
+                    continue;
+                }
+
+                MenuNode n = null;
+                foreach (MenuNode root in dbRoots)
+                {
+                    n = FindLeafByTitle(root, key, perms);
+                    if (n != null)
+                        break;
+                }
+                if (n == null)
+                    continue;
+                // Đã có sẵn trên thanh công cụ (do cờ DB) thì không thêm lần nữa.
+                bool dup = false;
+                foreach (MenuNode e in model.Toolbar)
+                    if (e.Id == n.Id)
+                        dup = true;
+                if (dup)
+                    continue;
+                model.Toolbar.Add(new MenuNode
+                {
+                    Id = n.Id,
+                    Title = ShortToolbarTitle(n.Title),
+                    FullTitle = n.Title,
+                    RawName = n.RawName,
+                    FunctionId = n.FunctionId,
+                    Shortcut = n.Shortcut,
+                    Action = n.Action
+                });
+            }
+        }
+
+        private static MenuNode FindLeafByTitle(MenuNode n, string title, FunctionPermissions perms)
+        {
+            if (n.Hidden || n.IsSeparator)
+                return null;
+            if (n.IsLeaf)
+                return string.Equals((n.Title ?? "").Trim(), title, StringComparison.OrdinalIgnoreCase) && perms.AllowsId(n.FunctionId)
+                    ? n : null;
+            foreach (MenuNode c in n.Children)
+            {
+                MenuNode f = FindLeafByTitle(c, title, perms);
+                if (f != null)
+                    return f;
+            }
+            return null;
+        }
+
+        // Tên rút gọn cho nút thanh công cụ (một dòng chữ). Chỉ đổi cách hiển thị; tên đầy đủ nằm ở FullTitle
+        // (tooltip) và menu / Truy cập nhanh vẫn dùng tên gốc. Tên không có trong bảng giữ nguyên.
+        private static readonly Dictionary<string, string> ToolbarShortNames =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Sử dụng dịch vụ", "Dùng dịch vụ" },
+                { "Quản lý bán hàng", "Bán hàng" },
+                { "Theo dõi đặt phòng", "Đặt phòng" },
+                { "Thống kê doanh thu", "Doanh thu" },
+                { "Thống kê mặt hàng bán", "Hàng bán" },
+                { "Chi tiết hoạt động", "CT hoạt động" },
+                { "Tổng hợp KQKD", "KQKD" },
+                { "Danh mục khách hàng", "Khách hàng" },
+                { "Danh mục mặt hàng", "Mặt hàng" },
+                { "Nhập hàng vào kho", "Nhập hàng" },
+                { "Tạo phiếu thu", "Phiếu thu" },
+                { "Công nợ khách hàng", "Công nợ KH" }
+            };
+
+        private static string ShortToolbarTitle(string full)
+        {
+            string s;
+            return full != null && ToolbarShortNames.TryGetValue(full.Trim(), out s) ? s : full;
         }
 
         private static string DisplayToolbarTitle(MenuNode n)

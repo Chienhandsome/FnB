@@ -85,6 +85,7 @@
     <Compile Include="Data\MenuRepository.cs" />
     <Compile Include="Services\FunctionPermissions.cs" />
     <Compile Include="Services\GlyphMap.cs" />
+    <Compile Include="Services\IconCatalog.cs" />
     <Compile Include="Services\MainMenuBuilder.cs" />
     <Compile Include="Services\MenuModel.cs" />
     <Compile Include="UI\Controls\AppStatusBar.cs">
@@ -158,6 +159,13 @@
   <!-- Ảnh nền màn đăng nhập: LoginForm đọc Assets\login-bg.jpg|png cạnh exe. -->
   <ItemGroup>
     <None Include="Assets\login-bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Icon màu (PNG 96px đổi từ Flat Color Icons trong Assets\flat-color-icons-master): IconCatalog đọc Assets\icons cạnh exe. -->
+  <ItemGroup>
+    <None Include="Assets\icons\*.png">
+      <Link>Assets\icons\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

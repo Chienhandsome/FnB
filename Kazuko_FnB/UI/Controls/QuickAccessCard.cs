@@ -188,10 +188,23 @@ namespace Kazuko_FnB.UI.Controls
             int hdr = HeaderHeight(s);
             int dia = (int)(28 * s);
             var circle = new Rectangle(x, (hdr - dia) / 2, dia, dia);
-            using (var cb = new LinearGradientBrush(circle, GradientFrom, GradientTo, LinearGradientMode.ForwardDiagonal))
-                g.FillEllipse(cb, circle);
-            TextRenderer.DrawText(g, Glyph ?? "", _iconFont, circle, Color.White,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+            Image groupIcon = IconCatalog.ForGroup(Title);
+            if (groupIcon != null)
+            {
+                // Icon màu: nền tròn trắng, viền cam nhạt.
+                using (var cb = new SolidBrush(Color.White))
+                    g.FillEllipse(cb, circle);
+                using (var cp = new Pen(Draw.Mix(HeaderColor, GradientTo, 0.45f), 1.4f * s))
+                    g.DrawEllipse(cp, circle);
+                DrawIcon(g, groupIcon, circle, (int)(20 * s));
+            }
+            else
+            {
+                using (var cb = new LinearGradientBrush(circle, GradientFrom, GradientTo, LinearGradientMode.ForwardDiagonal))
+                    g.FillEllipse(cb, circle);
+                TextRenderer.DrawText(g, Glyph ?? "", _iconFont, circle, Color.White,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+            }
             var titleRect = new Rectangle(x + iconW, 0, Math.Max(0, Width - x - iconW - (int)(10 * s)), hdr);
             TextRenderer.DrawText(g, title, _titleFont, titleRect, TextColor,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine |
@@ -226,17 +239,44 @@ namespace Kazuko_FnB.UI.Controls
 
                 int bs = Math.Min((int)(30 * s), r.Height - (int)(6 * s));
                 var badge = new Rectangle(r.X + (int)(10 * s), r.Y + (r.Height - bs) / 2, bs, bs);
-                using (GraphicsPath bp = Draw.Rounded(badge, 8 * s))
-                using (var bb = new LinearGradientBrush(badge, GradientFrom, GradientTo, LinearGradientMode.ForwardDiagonal))
-                    g.FillPath(bb, bp);
-                TextRenderer.DrawText(g, GlyphMap.ForItem(_items[i].Title), _badgeFont, badge, Color.White,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+                Image rowIcon = IconCatalog.ForItem(_items[i].Title);
+                if (rowIcon != null)
+                {
+                    // Icon màu trên ô trắng viền nhạt.
+                    using (GraphicsPath bp = Draw.Rounded(badge, 8 * s))
+                    {
+                        using (var bb = new SolidBrush(Color.White))
+                            g.FillPath(bb, bp);
+                        using (var bpen = new Pen(Draw.Mix(BorderColor, Color.White, 0.55f), 1.2f * s))
+                            g.DrawPath(bpen, bp);
+                    }
+                    DrawIcon(g, rowIcon, badge, (int)(22 * s));
+                }
+                else
+                {
+                    using (GraphicsPath bp = Draw.Rounded(badge, 8 * s))
+                    using (var bb = new LinearGradientBrush(badge, GradientFrom, GradientTo, LinearGradientMode.ForwardDiagonal))
+                        g.FillPath(bb, bp);
+                    TextRenderer.DrawText(g, GlyphMap.ForItem(_items[i].Title), _badgeFont, badge, Color.White,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+                }
 
                 var textRect = new Rectangle(badge.Right + (int)(12 * s), r.Y, r.Right - badge.Right - (int)(20 * s), r.Height);
                 TextRenderer.DrawText(g, _items[i].Title, _rowFont, textRect, TextColor,
                     TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine |
                     TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
             }
+        }
+
+        private static void DrawIcon(Graphics g, Image icon, Rectangle area, int size)
+        {
+            size = Math.Min(size, Math.Min(area.Width, area.Height));
+            var r = new Rectangle(area.X + (area.Width - size) / 2, area.Y + (area.Height - size) / 2, size, size);
+            InterpolationMode oldMode = g.InterpolationMode;
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.DrawImage(icon, r);
+            g.InterpolationMode = oldMode;
         }
 
         protected override void Dispose(bool disposing)

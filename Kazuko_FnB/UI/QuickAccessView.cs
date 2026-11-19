@@ -92,6 +92,16 @@ namespace Kazuko_FnB.UI
             int pad = (int)(24 * s);
             var bar = new Rectangle(pad + AutoScrollPosition.X, (int)(54 * s) + AutoScrollPosition.Y, (int)(150 * s), Math.Max(3, (int)(4 * s)));
             ThemeTokens t = ThemeManager.Current;
+            Image bolt = IconCatalog.Named("flash_on");
+            if (bolt != null)
+            {
+                // Label glyph che mất ảnh vẽ ở view: ẩn đi khi đã có icon màu.
+                _headingIcon.Visible = false;
+                int sz = (int)(30 * s);
+                e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                e.Graphics.DrawImage(bolt, new Rectangle(pad + AutoScrollPosition.X + (int)(2 * s),
+                    (int)(14 * s) + AutoScrollPosition.Y + (int)(5 * s), sz, sz));
+            }
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             using (var b = new System.Drawing.Drawing2D.LinearGradientBrush(bar, Draw.GradFrom(t), Draw.GradTo(t), System.Drawing.Drawing2D.LinearGradientMode.Horizontal))
             using (var path = Draw.Rounded(bar, bar.Height / 2f))

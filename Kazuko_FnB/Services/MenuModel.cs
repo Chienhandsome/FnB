@@ -36,6 +36,8 @@ namespace Kazuko_FnB.Services
         public bool InToolbar { get; set; }
         public int ToolbarIndex { get; set; }
         public string ToolbarTitle { get; set; }
+        /// <summary>Tên đầy đủ khi Title đã được rút gọn để hiển thị (vd. nút thanh công cụ); dùng cho tooltip và chọn icon.</summary>
+        public string FullTitle { get; set; }
         public MenuAction Action { get; set; }
 
         public bool IsLeaf
