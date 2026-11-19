@@ -71,7 +71,7 @@ namespace Kazuko_FnB.Services
             var s = new AppSettings();
             s.DatabasePath = d.TryGetValue("DatabasePath", out v) && v.Length > 0
                 ? v
-                : ConfigurationManager.AppSettings["DatabasePath"];
+                : DefaultDatabasePath();
             s.RememberLogin = d.TryGetValue("RememberLogin", out v) && v == "1";
             s.AutoLogin = d.TryGetValue("AutoLogin", out v) && v == "1";
             s.UserName = d.TryGetValue("UserName", out v) ? v : null;
@@ -84,6 +84,33 @@ namespace Kazuko_FnB.Services
             s.ServerHost = d.TryGetValue("ServerHost", out v) ? v : "";
             s.ServerPort = d.TryGetValue("ServerPort", out v) && v.Length > 0 ? v : DefaultServerPort;
             return s;
+        }
+
+        /// <summary>
+        /// Đường dẫn DB mặc định khi người dùng chưa chọn: giá trị appSettings "DatabasePath" nếu có;
+        /// nếu không thì tìm Database\DATA.fdb (cạnh exe hoặc ở các thư mục cha, để chạy từ bin\Debug khi dev).
+        /// </summary>
+        public static string DefaultDatabasePath()
+        {
+            string configured = ConfigurationManager.AppSettings["DatabasePath"];
+            if (!string.IsNullOrWhiteSpace(configured))
+                return configured;
+
+            try
+            {
+                var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+                for (int i = 0; i < 6 && dir != null; i++, dir = dir.Parent)
+                {
+                    string candidate = Path.Combine(dir.FullName, "Database", "DATA.fdb");
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+            }
+            catch (IOException)
+            {
+                // Không tìm được thì để trống, người dùng tự chọn ở tab "Cơ sở dữ liệu".
+            }
+            return configured;
         }
 
         public void Save()

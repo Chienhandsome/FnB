@@ -11,3 +11,5 @@
 *.user
 POS TAP
 Kazuko_FnB/lib
+# DB dev/test (bản copy từ POS TAP, có thể chứa dữ liệu thật) — không commit
+/Kazuko_FnB/Database/
