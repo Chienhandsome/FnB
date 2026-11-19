@@ -227,7 +227,6 @@ namespace Kazuko_FnB.Services
             var logout = Item("sys.logout", "Đăng xuất khỏi hệ thống", null, MenuAction.Logout);
             logout.Shortcut = Keys.Control | Keys.Shift | Keys.L;
             var exit = Item("sys.exit", "Thoát khỏi hệ thống", null, MenuAction.Exit);
-            exit.Shortcut = Keys.Control | Keys.Q;
 
             var all = new List<MenuNode>
             {
