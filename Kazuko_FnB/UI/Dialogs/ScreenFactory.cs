@@ -18,6 +18,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "admin.images", session => new ImageLibraryDialog(session) },
                 { "admin.users", session => new UserManagerDialog(session) },
                 { "admin.themes", session => new ThemeChooserDialog(session) },
+                // Bản thử "Phiếu thu" dựng từ layout gốc (docs/specs/pilot-phieu-thu.md); cũng mở được từ menu Quỹ ▸ Tạo phiếu thu.
+                { "preview.phieuthu", session => new PhieuThuDialog(session) },
                 { "sys.password", session => new ChangePasswordDialog(session) },
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
@@ -59,9 +61,37 @@ namespace Kazuko_FnB.UI.Dialogs
             return id != null && Map.TryGetValue(id, out f) ? f(session) : null;
         }
 
+        /// <summary>Mục "Tạo phiếu thu": thao tác 1 trên bảng TTHUCHI với LOAI = 0 (LOAI = 1 là phiếu chi, chưa làm).</summary>
+        internal static bool IsNewIncomeVoucher(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null || node.Operation != 1 || node.Loai != 0 || string.IsNullOrEmpty(node.StableDescId))
+                return false;
+            try
+            {
+                return new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId) == "TTHUCHI";
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         /// <summary>Mở hộp thoại (modal) nếu mục này đã có màn thật; trả về true nếu đã xử lý.</summary>
         public static bool TryOpen(IWin32Window owner, MenuNode node, UserSession session)
         {
+            if (IsNewIncomeVoucher(node, session))
+            {
+                try
+                {
+                    using (var dlg = new PhieuThuDialog(session))
+                        dlg.ShowDialog(owner);
+                }
+                catch (Exception ex)
+                {
+                    Msg.Error(owner, "Không mở được phiếu thu: " + ex.Message);
+                }
+                return true;
+            }
             using (Form form = Create(node.Id, session))
             {
                 if (form == null)

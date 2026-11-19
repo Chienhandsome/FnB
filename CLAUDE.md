@@ -4,12 +4,12 @@
 
 ## Dự án
 
-Viết lại nội bộ phần mềm quản lý quán trà sữa / F&B **KAZUKO TEA** (sản phẩm của chính công ty, sếp giao làm lại). Stack: **WinForms** desktop (Windows-only), **.NET Framework 4.8**, build **x86**, **Firebird 2.5 Embedded** (`fbembed.dll` 32-bit), SQL viết tay (không ORM), FastReport, MVP/MVVM nhẹ. Nghiệp vụ giữ **y hệt** app gốc; UI làm lại hiện đại hơn, có tính năng đổi bảng màu; dùng chung schema `DATA.FDB` (không đổi cấu trúc).
+Viết lại nội bộ phần mềm quản lý F&B **KAZUKO F&B** (sản phẩm của chính công ty, sếp giao làm lại). Stack: **WinForms** desktop (Windows-only), **.NET Framework 4.8**, build **x86**, **Firebird 2.5 Embedded** (`fbembed.dll` 32-bit), SQL viết tay (không ORM), FastReport, MVP/MVVM nhẹ. Nghiệp vụ giữ **y hệt** app gốc; UI làm lại hiện đại hơn, có tính năng đổi bảng màu; dùng chung schema `DATA.FDB` (không đổi cấu trúc).
 
 Trong repo:
 - `Kazuko_FnB/` — project đang viết lại (WinForms net48 x86). `bin/obj/.vs` đã gitignore.
-- `KAZUKO TEA/` — app gốc (binary + `Database/DATA.FDB`): chỉ tham chiếu, **không sửa**.
-- `KAZUKO_TEA_SRC_EXPORT/` — mã form/báo cáo xuất từ DB để đọc (gitignored); có đồ thị graphify (`graphify-out/`) để tra cứu chức năng.
+- `POS TAP/` — app gốc (binary + `Database/DATA.FDB`): chỉ tham chiếu, **không sửa**.
+- `POS_TAP_SRC_EXPORT/` — mã form/báo cáo xuất từ DB để đọc (gitignored); có đồ thị graphify (`graphify-out/`) để tra cứu chức năng.
 - `docs/specs/` — spec. `DATA.FDB` ở thư mục gốc là bản copy để dev/test.
 
 ## Làm việc với Chiến

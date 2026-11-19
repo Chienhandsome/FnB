@@ -183,7 +183,8 @@ namespace Kazuko_FnB.Services
                 ToolbarTitle = n.ToolbarTitle,
                 Action = n.Action,
                 StableDescId = n.StableDescId,
-                Operation = n.Operation
+                Operation = n.Operation,
+                Loai = n.Loai
             };
         }
 
@@ -341,7 +342,8 @@ namespace Kazuko_FnB.Services
                     Shortcut = n.Shortcut,
                     Action = n.Action,
                     StableDescId = n.StableDescId,
-                    Operation = n.Operation
+                    Operation = n.Operation,
+                    Loai = n.Loai
                 };
                 model.Toolbar.Add(tb);
             }
@@ -417,7 +419,8 @@ namespace Kazuko_FnB.Services
                     Shortcut = n.Shortcut,
                     Action = n.Action,
                     StableDescId = n.StableDescId,
-                    Operation = n.Operation
+                    Operation = n.Operation,
+                    Loai = n.Loai
                 });
             }
         }

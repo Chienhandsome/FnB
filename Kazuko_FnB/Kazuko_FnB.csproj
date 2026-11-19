@@ -156,6 +156,15 @@
     </Compile>
     <Compile Include="Data\MenuRepository.cs" />
     <Compile Include="Data\CatalogRepository.cs" />
+    <Compile Include="Data\ScreenLayout.cs" />
+    <Compile Include="Data\FormRepository.cs" />
+    <Compile Include="Services\PhieuThuRules.cs" />
+    <Compile Include="UI\DynamicForm.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Dialogs\PhieuThuDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="UI\CatalogView.cs">
       <SubType>Component</SubType>
     </Compile>

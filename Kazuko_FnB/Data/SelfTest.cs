@@ -161,6 +161,7 @@ namespace Kazuko_FnB.Data
         {
             ThemeTests();
             CatalogTests(db);
+            PhieuThuTests(db);
             ImageTests(db);
             UserTests(db);
             RoleTests(db);
@@ -385,6 +386,111 @@ namespace Kazuko_FnB.Data
 
             repo.Delete(id);
             Check("Xóa ảnh không còn dùng", repo.LoadAll().Count == before && repo.Get(id) == null);
+        }
+
+        // ------------------------------------------------------------------ Bản thử Phiếu thu (layout từ SFORM.AELAYOUT)
+
+        private static void PhieuThuTests(string db)
+        {
+            // Luật thuần (SFORM.CODE của form gốc).
+            ObjectFieldState s0 = PhieuThuRules.ForObjectType(0), s1 = PhieuThuRules.ForObjectType(1),
+                s2 = PhieuThuRules.ForObjectType(2), s3 = PhieuThuRules.ForObjectType(3), sx = PhieuThuRules.ForObjectType(-1);
+            Check("Loại đối tượng 0 (khác): bật tên và địa chỉ, tắt nhân viên/khách/NCC",
+                s0.Name && s0.Address && !s0.Employee && !s0.Customer && !s0.Supplier);
+            Check("Loại đối tượng 1 (nhân viên): chỉ bật ô nhân viên", s1.Employee && !s1.Customer && !s1.Supplier && !s1.Name && !s1.Address);
+            Check("Loại đối tượng 2 (khách hàng): chỉ bật ô khách hàng", s2.Customer && !s2.Employee && !s2.Supplier && !s2.Name && !s2.Address);
+            Check("Loại đối tượng 3 (nhà cung cấp): chỉ bật ô nhà cung cấp", s3.Supplier && !s3.Employee && !s3.Customer && !s3.Name && !s3.Address);
+            Check("Chưa chọn loại: tắt hết", !sx.Name && !sx.Address && !sx.Employee && !sx.Customer && !sx.Supplier);
+            string n, a;
+            PhieuThuRules.FillFromEmployee("Bùi Thu Minh", out n, out a);
+            Check("Chọn nhân viên: tên = tên nhân viên, địa chỉ trống", n == "Bùi Thu Minh" && a == "");
+            PhieuThuRules.FillFromParty("Anh Chung", "12 Xuân Thủy", out n, out a);
+            Check("Chọn khách/nhà cung cấp: tên và địa chỉ của họ", n == "Anh Chung" && a == "12 Xuân Thủy");
+            PhieuThuRules.FillFromParty(null, null, out n, out a);
+            Check("Bỏ chọn: xóa tên và địa chỉ", n == "" && a == "");
+            Check("Tích chuyển khoản bật ô tài khoản ngân hàng", PhieuThuRules.BankAccountEnabled(true) && !PhieuThuRules.BankAccountEnabled(false));
+            Check("Chuyển khoản mà chưa chọn tài khoản: báo đúng chữ gốc",
+                PhieuThuRules.Validate(null, true, false) == "Mời bạn chọn tài khoản ngân hàng");
+            Check("Chuyển khoản đã chọn tài khoản hoặc không chuyển khoản: hợp lệ",
+                PhieuThuRules.Validate(null, true, true) == null && PhieuThuRules.Validate(new List<string>(), false, false) == null);
+            Check("Thiếu trường bắt buộc: báo tên trường",
+                PhieuThuRules.Validate(new List<string> { "Số phiếu", "Cửa hàng" }, false, false) == "Mời bạn nhập: Số phiếu, Cửa hàng");
+
+            // Layout đọc từ DB.
+            var repo = new FormRepository(db);
+            ScreenLayout lay = repo.LoadLayout("Phiếu thu");
+            Check("Đọc được layout form Phiếu thu từ SFORM.AELAYOUT", lay != null);
+            if (lay == null)
+                return;
+            Check("Layout: bảng đích TTHUCHI, kích thước gốc 527x379", lay.Table == "TTHUCHI" && lay.Width == 527 && lay.Height == 379,
+                lay.Table + " " + lay.Width + "x" + lay.Height);
+            Check("Layout: 21 dòng ánh xạ trường", lay.Maps.Count == 21, "n=" + lay.Maps.Count);
+            var required = new List<string>();
+            foreach (FieldMap m in lay.Maps)
+                if (m.Required)
+                    required.Add(m.DataField);
+            required.Sort();
+            Check("Layout: đúng 3 trường bắt buộc (CUAHANG, NAME, THU)", string.Join(",", required.ToArray()) == "DCUAHANGID,NAME,THU", string.Join(",", required.ToArray()));
+            int editors = lay.Controls.FindAll(c => c.Kind == LayoutKind.Text || c.Kind == LayoutKind.Number || c.Kind == LayoutKind.Date
+                || c.Kind == LayoutKind.Combo || c.Kind == LayoutKind.Lookup || c.Kind == LayoutKind.Check).Count;
+            Check("Layout: 17 ô nhập và ô tích", editors == 17, "n=" + editors);
+            LayoutControl cbo = lay.Find("cboLOAIDOITUONG");
+            Check("Layout: ô Loại đối tượng có 4 mục đúng thứ tự",
+                cbo != null && string.Join("|", cbo.Items.ToArray()) == "Đối tượng khác|Nhân viên|Khách hàng|Nhà cung cấp");
+            LayoutControl kh = lay.Find("lueDKHACHHANGID");
+            Check("Layout: ô Khách hàng lúc đầu bị tắt", kh != null && !kh.Enabled);
+
+            Dictionary<string, string> tables = repo.LookupTables("TTHUCHI");
+            Check("Ô tra cứu trỏ đúng bảng (lý do, khách hàng, nhân viên, nhà cung cấp, cửa hàng, tài khoản ngân hàng)",
+                tables.ContainsKey("DLYDOTHUCHIID") && tables["DLYDOTHUCHIID"] == "DLYDOTHUCHI"
+                && tables["DKHACHHANGID"] == "DKHACHHANG" && tables["DNHANVIENID"] == "DNHANVIEN" && tables["DNHACUNGCAPID"] == "DNHACUNGCAP"
+                && tables["DCUAHANGID"] == "DCUAHANG" && tables["DTAIKHOANNGANHANGID"] == "DTAIKHOANNGANHANG");
+
+            int reasons, allCustomers, userStores;
+            string anyUser;
+            using (FbConnection conn = KazukoConnection.Open(db))
+            {
+                reasons = DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM DLYDOTHUCHI WHERE STATUS = 30 AND LALYDOTHU = 30"));
+                allCustomers = DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM DKHACHHANG WHERE STATUS = 30"));
+                anyUser = DbHelper.Str(DbHelper.Scalar(conn, null, "SELECT FIRST 1 SUSERID FROM TNGUOIDUNGTHEOCUAHANG"));
+                userStores = anyUser == null ? 0 : DbHelper.Int(DbHelper.Scalar(conn, null,
+                    "SELECT COUNT(*) FROM DCUAHANG WHERE STATUS = 30 AND ID IN (SELECT DCUAHANGID FROM TNGUOIDUNGTHEOCUAHANG WHERE SUSERID = @u)", "@u", anyUser));
+            }
+            Check("Danh sách lý do thu = số dòng LALYDOTHU = 30", repo.LoadIncomeReasons().Count == reasons, "n=" + reasons);
+            Check("Danh sách khách hàng = số dòng đang dùng", repo.LoadAll("DKHACHHANG").Count == allCustomers, "n=" + allCustomers);
+            if (anyUser != null)
+                Check("Cửa hàng của người dùng không phải admin = các cửa hàng được gán", repo.LoadStoresOfUser(anyUser).Count == userStores, "n=" + userStores);
+
+            // Mục menu: "Tạo phiếu thu" mở bản thử, "Tạo phiếu chi" thì chưa.
+            MenuNode thu = null, chi = null;
+            foreach (MenuNode node in Flatten(new MenuRepository(db).LoadTree()))
+            {
+                if (node.Title == "Tạo phiếu thu") thu = node;
+                if (node.Title == "Tạo phiếu chi") chi = node;
+            }
+            UserSession sess = AppSession.Current;
+            Check("Menu \"Tạo phiếu thu\" mở bản thử Phiếu thu", thu != null && UI.Dialogs.ScreenFactory.IsNewIncomeVoucher(thu, sess));
+            Check("Menu \"Tạo phiếu chi\" chưa có màn (vẫn là tab tạm)", chi != null && !UI.Dialogs.ScreenFactory.IsNewIncomeVoucher(chi, sess));
+
+            // Dựng màn từ layout (không cần cửa sổ).
+            try
+            {
+                using (var form = new UI.DynamicForm(lay))
+                {
+                    int count = 0;
+                    foreach (string nm in form.EditorNames)
+                        count++;
+                    Check("Màn dựng đủ 17 ô nhập từ layout", count == 17, "n=" + count);
+                    Check("Mọi control trong layout đều dựng được (không bỏ sót)", form.Skipped.Count == 0, string.Join(",", new List<string>(form.Skipped).ToArray()));
+                    var lblNum = form.LabelOf("txtNAME");
+                    Check("Trường bắt buộc có dấu * ở nhãn", lblNum != null && lblNum.Text.EndsWith("*"));
+                    Check("Ô tra cứu và ô chọn dựng đúng loại", form.Editor("lueDKHACHHANGID") is UI.LookupCombo && form.Editor("cboLOAIDOITUONG") is System.Windows.Forms.ComboBox);
+                }
+            }
+            catch (Exception ex)
+            {
+                Check("Dựng màn từ layout", false, ex.GetType().Name + ": " + ex.Message);
+            }
         }
 
         // ------------------------------------------------------------------ Danh mục dùng chung (xem)

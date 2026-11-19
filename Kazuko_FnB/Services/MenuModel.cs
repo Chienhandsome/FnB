@@ -43,6 +43,8 @@ namespace Kazuko_FnB.Services
         public string StableDescId { get; set; }
         /// <summary>SMENU.OPERATION: 0 = mở danh mục thường; số khác = thao tác riêng (vd. 7 = gửi tin nhắn).</summary>
         public int Operation { get; set; }
+        /// <summary>SMENU.LOAI: với phiếu thu/chi, 0 = phiếu thu, 1 = phiếu chi.</summary>
+        public int Loai { get; set; }
 
         public bool IsLeaf
         {

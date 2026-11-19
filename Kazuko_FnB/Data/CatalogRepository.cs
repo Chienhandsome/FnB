@@ -326,12 +326,18 @@ namespace Kazuko_FnB.Data
             }
         }
 
+        /// <summary>Tên bảng/cột an toàn để ghép vào SQL (chữ hoa, số, gạch dưới).</summary>
+        internal static bool IsIdentifier(string name)
+        {
+            return name != null && Ident.IsMatch(name);
+        }
+
         private static string Upper(string s)
         {
             return string.IsNullOrWhiteSpace(s) ? null : s.Trim().ToUpperInvariant();
         }
 
-        private static bool TableExists(FbConnection conn, string table)
+        internal static bool TableExists(FbConnection conn, string table)
         {
             object n = DbHelper.Scalar(conn, null,
                 "SELECT COUNT(*) FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = @t AND (RDB$SYSTEM_FLAG = 0 OR RDB$SYSTEM_FLAG IS NULL) AND RDB$VIEW_BLR IS NULL",
@@ -345,7 +351,7 @@ namespace Kazuko_FnB.Data
                 throw new InvalidDataException("Bảng danh mục không hợp lệ: " + table);
         }
 
-        private static List<string> ReadTableColumns(FbConnection conn, string table)
+        internal static List<string> ReadTableColumns(FbConnection conn, string table)
         {
             var list = new List<string>();
             DataTable t = DbHelper.Table(conn, null,
