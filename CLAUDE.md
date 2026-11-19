@@ -28,3 +28,8 @@ Idea → viết spec (lệnh `/spec`) → Chiến duyệt spec → plan → impl
 ## UI
 
 Dialog gọn, hạn chế vertical scroll, high-DPI, hỗ trợ cảm ứng cho quầy bán hàng. Không hard-code màu/cỡ chữ trong màn hình nghiệp vụ: dùng design token + `ThemeManager` (tự vẽ, có đổi bảng màu lúc chạy). Không đưa SQL vào View/ViewModel.
+
+## Quy trình làm việc
+
+1. Trước khi implement: gọi subagent `researcher` (Haiku) tìm tài liệu/code liên quan.
+2. Chỉ code sau khi đã có kết quả tìm hiểu.

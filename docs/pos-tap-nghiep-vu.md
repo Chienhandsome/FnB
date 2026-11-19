@@ -79,6 +79,8 @@ Chỉ áp khi `KichHoatKhuyenMaiTuDong=30`. Đợt đang dùng: `CURRENT_DATE BE
 - **Đệ quy**: vật tư lại có định lượng riêng thì thay bằng vật tư con (nhân số lượng) cho tới khi hết cấp.
 - Mỗi vật tư thành một dòng `TDONHANGCHITIET`: `XUATVATTU=30`, `DONGIA=0`, `THANHTIEN=0`, đơn vị = đơn vị cơ sở vật tư, kho = kho xuất.
 - Danh sách mặt hàng bán loại bỏ nguyên liệu: `COALESCE(LOAIDINHLUONG,0) <> LoaiMatHang.NguyenLieu`.
+- **[Bổ sung v2 — chỗ DEMO khác POS TAP thật]** Cột `DMATHANG.LOAIDINHLUONG` **không có** trong schema DEMO/TEMPLATE nhưng code bán lẻ dùng (2 chỗ: SQL `XuatVatTu` ở trên và danh sách mặt hàng bán; đã kiểm trên `POS_TAP_SRC_EXPORT`: 4 hit trong `Hóa đơn bán hàng` + `Quản lý bán hàng`). `XuatVatTu` chạy không try/catch ngay sau lưu thanh toán → cột phải tồn tại trong `DATA.fdb` POS TAP thật; **lấy schema POS TAP thật làm chuẩn**, đừng tin schema DEMO ở cột này. Trừ vật tư bán lẻ **bung đệ quy không giới hạn độ sâu** (`GetVatTu`, không kiểm tra vòng tròn) — công thức A⊃B⊃A treo lúc thanh toán; nhà hàng chỉ bung 1 cấp thêm qua `InsertVatTu`.
+- **[Bổ sung v2]** `GetNoCu` đã đối chiếu nguyên văn trên `POS_TAP_SRC_EXPORT` (xem công thức ở mục 1.6): phiếu thu công nợ `LOAI=2` đóng góp 0 (nhánh `-CHI`); phiếu đặt trước (`TDATHANGID IS NOT NULL`) bị loại. Hai câu hỏi lớn của bán hàng vẫn mở: **trừ kho thực sự xảy ra ở đâu** (0 `UPDATE` tồn trong form) và **transaction khi thanh toán** (0 hit) → test app gốc (checklist BH-Q13).
 
 ### 1.8 Điểm tích lũy và nhóm khách hàng
 - `GetDiemTichLuy(khách, đơn)`:

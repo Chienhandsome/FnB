@@ -24,3 +24,8 @@ Phiếu báo giá cho khách (không tác động kho, công nợ hay quỹ):
 - Chọn khách hàng thì tự điền tên, địa chỉ, điện thoại, email (khóa các ô nhập tay); không chọn thì nhập tay.
 - Chi tiết: mặt hàng, đơn vị (2 đơn vị: nhập số lượng lẻ / chẵn qua `NhapSoLuong`, đơn giá `GIABAN` / `GIABANCHAN`), số lượng, đơn giá, % giảm, thành tiền; gộp dòng cùng mặt hàng + đơn vị; nhập từ Excel (Mã hàng hoặc Tên hàng, Số lượng, ĐVT, đơn giá, % giảm).
 - Tổng như phiếu nhập kho: `TIENHANG = ΣTHANHTIEN`; giảm giá `%`/tiền (`TIENGIAMGIA = 100 × Round(TIENHANG × TL / 10000)`; theo tiền thì `TL = 100 × tiền / TIENHANG`); `TIENTHUE = TILETHUE × (TIENHANG − TIENGIAMGIA)/100`; `TONGCONG = TIENHANG − TIENGIAMGIA + TIENTHUE + PHIVANCHUYEN`.
+
+## Bổ sung vòng 2 (19/11/2026)
+
+- **[Sửa v2]** `DTKTHEOKHUVUC` **có màn nhập**: tab "Truy cập" trong form khu vực (`DKHUVUCAe`), chỉ hiện khi `PhanQuyenTruyCapTheoKhuVuc == 30` (nhận định "không có màn nhập" của vòng 1 là sai). Không làm màn này thì cấu hình `PhanQuyenTruyCapTheoKhuVuc` vô dụng — nên làm theo mẫu đó.
+- Nhớ phân biệt: máy in bếp theo khu vực lưu ở `app.dat` section `INKHUVUC` (key = `DKHUVUC.ID`, 1 khu vực = 1 máy in) / registry `EasyReg`; `DTKTHEOKHUVUC` chỉ là phân quyền user↔khu vực.

@@ -14,7 +14,7 @@ Mã suy ra từ `DMATHANGAe`, `TinhLaiGiaVon`, `Màn hình bếp`:
 | `3` | Mặt hàng mở (nhập tên, đơn vị, giá lúc bán) |
 | `4` | Combo (gồm các mặt hàng, `GIOHATCOMBO` giờ hát nếu có tiền giờ) |
 | `5` | Combo mở |
-| `6` | (chưa thấy trong mã; có `DichVu` trong enum, mã dự đoán `6`) |
+| `6` | Dịch vụ — **[Sửa v2]** đã xác nhận bằng bảng `DLOAIMATHANG` (seed DEMO): `0` kiêm vật tư, `1` pha chế (định lượng), `2` nguyên vật liệu, `3` mặt hàng mở, `4` combo, `5` combo mở, `6` dịch vụ, `7` dịch vụ theo giờ |
 | `7` | Dịch vụ theo giờ |
 
 Mã `0–3` là hệ thống; "Khác" lấy từ `DLOAIMATHANG` loại `ID` không phải `0,1,2,3` (cờ `CODINHLUONG` của loại cho biết có định lượng). Loại đồ của nhóm mặt hàng `DNHOMMATHANG.DLOAIDOID`: `0` đồ ăn, `1` đồ uống, `2` dịch vụ, `3` đồ khác, `4` nguyên liệu.
@@ -36,7 +36,7 @@ Mã `0–3` là hệ thống; "Khác" lấy từ `DLOAIMATHANG` loại `ID` khô
 
 ## 4. Đợt khuyến mại (`DDOTKHUYENMAI`, chi tiết `DDOTKHUYENMAICHITIET`)
 
-- Loại hình `DLOAIHINHKHUYENMAIID` (`LOAIHINHKHUYENMAI`): giảm giá tổng bill, giảm giá theo nhóm, giảm giá theo sản phẩm, giảm theo giá trị đơn hàng, giảm theo số lượng mặt hàng, mặt hàng đồng giá, mua 1 tặng 1, **tặng theo trị giá** (`TANGTHEOTRIGIA`: dòng chi tiết có mặt hàng tặng `DMATHANGTANGID`; **mã áp dụng loại này chưa thấy trong các form bán hàng đã đọc**, cần tìm thêm).
+- Loại hình `DLOAIHINHKHUYENMAIID` (`LOAIHINHKHUYENMAI`): giảm giá tổng bill, giảm giá theo nhóm, giảm giá theo sản phẩm, giảm theo giá trị đơn hàng, giảm theo số lượng mặt hàng, mặt hàng đồng giá, mua 1 tặng 1, **tặng theo trị giá** (`TANGTHEOTRIGIA`: dòng chi tiết có mặt hàng tặng `DMATHANGTANGID`; **mã áp dụng loại này chưa thấy trong các form bán hàng đã đọc**, cần tìm thêm). **[Sửa v2]** Đã tìm hết: **không có mã áp dụng ở đâu** (cả 2 form hóa đơn, `CanhBaoKhuyenMai`, MTB, TS; trong `DDOTKHUYENMAIAe` chỉ có nhánh chọn tab `pageTangTheoTriGia` + `LoadTangTheoTriGia()` — đã kiểm trên `POS_TAP_SRC_EXPORT`) → loại KM này **nhập được, không chạy**. Tương tự loại `8be106e5` "Giảm giá tiền theo sản phẩm": lưu được nhưng không có nhánh xử lý. Chiến chốt: viết luật hay ẩn hai loại này khỏi danh mục (xem [file khách hàng](pos-tap-nghiep-vu-khach-hang-the.md) mục 6.3).
 - Ràng buộc khi lưu: đủ trường bắt buộc, `TUNGAY ≤ DENNGAY`; giảm theo nhóm: mỗi nhóm `0 ≤ TILEGIAMGIA ≤ 100`. Mã gốc từng có kiểm tra "một thời điểm chỉ một chương trình" nhưng đã bị comment — nhiều đợt có thể chạy cùng lúc (lấy max theo từng loại như các form bán hàng).
 - Giảm tổng bill: các trường `TILEGIAMGIA` (tiền hàng), `TILEGIAMGIATIENGIO`, `TILEGIAMGIATONG`, `KHUYENMAIGIOHAT` (phút), `TILEGIAMGIAGIODAU`; chỉ hiện ô giờ khi có tiền giờ và không gộp; gộp thì chỉ hiện giảm tổng.
 - Giảm theo nhóm: dạng cây nhóm hàng (loại trừ nhóm nguyên liệu), nhóm có con thì khóa ô nhập; lưu bằng `UpdateByFields` vào `DDOTKHUYENMAICHITIET (DNHOMMATHANGID, TILEGIAMGIA)`.

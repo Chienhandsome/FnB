@@ -42,3 +42,11 @@ Danh sách bill theo khoảng ngày (mặc định ngày DB hiện tại) và c�
 
 - Danh sách bill theo khoảng ngày, mặc định ngày giao dịch (`Shared.GetNgayGiaoDich`), sắp theo `NGAY, GIOTHANHTOAN`. Panel phải nhúng form `Hóa đơn nhà hàng` ở chế độ `QuanLyBanHang`, hoặc `DieuChinhHoaDon` khi mở từ menu `Menus.DieuChinhHoaDon` (khi đó ẩn nút hủy và khóa chọn ngày).
 - **Hủy hóa đơn**: quyền `Functions.HuyHoaDon`; `NhapLyDoKhiHuyHoaDon=30` thì bắt nhập lý do, không thì lý do mặc định "Hủy hóa đơn" và xác nhận; dùng chung `QuanLyBanHang.HuyBill`.
+
+## 5. Bổ sung vòng 2 (19/11/2026)
+
+- **[Sửa v2 — lọc danh sách bill]** Lưới `grMain` của `Quản lý bán hàng` và `Quản lý bán hàng nhà hàng` chỉ hiện bill **`LOAI = 0 AND DATHANHTOAN = 30`** (cộng lọc ngày/cửa hàng): hai cột ẩn `2f410f17` ("Loại", `CONDITION =0`) và `1c24b19b` ("Đã thanh toán", `CONDITION =30`) trong blob FieldMap base64 của AELAYOUT. (Một hướng rà của vòng 2 từng kết luận "lưới không có điều kiện lọc" vì chỉ đọc text XML mà không giải mã blob base64 — kết luận đó sai, đã được sửa sau khi tự giải mã blob.)
+- **Voucher trên bill hủy:** `HuyBill` **DELETE** dòng `TDONHANG` nên sau hủy `COUNT(*) WHERE DVOUCHERID` về 0 → voucher dùng lại được; voucher gắn trên bill nháp chưa thanh toán vẫn bị tính "đã dùng" (xem [file khách hàng](pos-tap-nghiep-vu-khach-hang-the.md) mục 3).
+- **Chế độ "Điều chỉnh hóa đơn"**: `QuanLyBanHangNhaHang` chỉ truyền `Mode` vào form con; hành vi nút Thanh toán ở mode này không thấy trong code đã đọc (**[Chưa chốt]** — checklist BH-Q29).
+- **Thanh toán — hai câu hỏi lớn còn mở:** (1) trừ kho thực sự ở đâu (không có `UPDATE` tồn trong form nào, kể cả MTB); (2) có transaction khi thanh toán không (0 hit) — phải xác minh trước khi code thanh toán (checklist BH-Q13). `TCHITIETTHANHTOAN` là bảng chết (0 tham chiếu): không clone trừ khi DB thật chứng minh còn dùng.
+- Bản cảm ứng `XacNhanThanhToanTs` (`ts_code.cs`) **đã đọc vòng 2**: có đủ ATM/chuyển khoản (+ chọn tài khoản)/voucher/thẻ trả trước/trừ tích lũy/cho nợ (`chkKhachNo`, hỏi xác nhận, theo `ChoPhepKhachNo == 30`), ghi `SOTT`, `NGAY`, điểm, nâng nhóm — khác MTB chỉ tiền mặt. Desktop vs TS kiểm tra `MaxValue` khác nhau (`>=` vs `>`): chưa rõ đâu đúng (checklist BH-Q49).
