@@ -17,7 +17,7 @@ namespace Kazuko_FnB.UI
     /// Khung chính sau đăng nhập: appbar → menu → thanh công cụ → tab tài liệu → nội dung → thanh trạng thái.
     /// Mở chức năng = mở một tab; các chức năng chưa làm hiện nội dung tạm.
     /// </summary>
-    internal sealed class MainForm : Form
+    internal sealed class MainForm : BaseForm
     {
         private const int WM_NCHITTEST = 0x84;
         private const int HTLEFT = 10, HTRIGHT = 11, HTTOP = 12, HTTOPLEFT = 13, HTTOPRIGHT = 14,
@@ -57,9 +57,7 @@ namespace Kazuko_FnB.UI
             MinimumSize = new Size(960, 600);
             Size = new Size(1280, 760);
             DoubleBuffered = true;
-            Font = new Font("Segoe UI", 10f);
-            if (BrandLogo.AppIcon != null)
-                Icon = BrandLogo.AppIcon;
+            // Font, icon và đăng ký ThemeChanged do BaseForm lo.
 
             _bar.Text = "PHẦN MỀM QUẢN LÝ KAZUKO FNB  v" + Application.ProductVersion;
             _bar.ShowUser = true;
@@ -97,8 +95,7 @@ namespace Kazuko_FnB.UI
             _clock.Tick += delegate { UpdateStatus(); };
             _clock.Start();
 
-            ThemeManager.ThemeChanged += OnThemeChanged;
-            ApplyTheme();
+            ApplyFormTheme();
             UpdateStatus();
             WindowState = FormWindowState.Maximized;
         }
@@ -318,12 +315,7 @@ namespace Kazuko_FnB.UI
 
         // ------------------------------------------------------------------ theme
 
-        private void OnThemeChanged(object sender, EventArgs e)
-        {
-            ApplyTheme();
-        }
-
-        private void ApplyTheme()
+        protected override void ApplyFormTheme()
         {
             ThemeTokens t = ThemeManager.Current;
             Color strong = Draw.StrongBorder(t);
@@ -460,7 +452,6 @@ namespace Kazuko_FnB.UI
         {
             if (disposing)
             {
-                ThemeManager.ThemeChanged -= OnThemeChanged;
                 _clock.Stop();
                 _clock.Dispose();
             }

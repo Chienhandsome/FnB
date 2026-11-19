@@ -21,6 +21,9 @@ namespace Kazuko_FnB.UI
         public static void Apply(Control root, ThemeTokens t)
         {
             ApplyOne(root, t);
+            // InputBox tự quản TextBox bên trong (không viền); không tô đè lên nó.
+            if (root is InputBox)
+                return;
             foreach (Control c in root.Controls)
                 Apply(c, t);
         }
@@ -40,6 +43,24 @@ namespace Kazuko_FnB.UI
             if (btn != null)
             {
                 ApplyButton(btn, t, tag);
+                return;
+            }
+
+            // Nút duy nhất của app là FlatButton; Button thô (nếu lỡ có) vẫn được tô theo theme thay vì để màu hệ thống.
+            var plain = c as Button;
+            if (plain != null)
+            {
+                plain.FlatStyle = FlatStyle.Flat;
+                plain.BackColor = surface;
+                plain.ForeColor = t.Text;
+                plain.FlatAppearance.BorderColor = strong;
+                return;
+            }
+
+            var input = c as InputBox;
+            if (input != null)
+            {
+                ApplyInput(input, t, input.Parent != null ? input.Parent.BackColor : t.Background, strong);
                 return;
             }
 
@@ -161,6 +182,18 @@ namespace Kazuko_FnB.UI
                 b.BorderColor = Draw.StrongBorder(t);
             }
             b.Invalidate();
+        }
+
+        /// <summary>Tô một ô nhập bo góc: surface = màu nền phía sau (lộ ra ở góc bo), border = màu viền khi chưa focus.</summary>
+        public static void ApplyInput(InputBox box, ThemeTokens t, Color surface, Color border)
+        {
+            box.SurfaceColor = surface;
+            box.FieldColor = Color.White;
+            box.BorderColor = border;
+            box.FocusColor = t.Primary;
+            box.TextColor = t.Text;
+            box.MutedColor = t.TextMuted;
+            box.ApplyColors();
         }
 
         public static void ApplyGrid(DataGridView g, ThemeTokens t)

@@ -149,6 +149,9 @@
     <Compile Include="CatalogView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="BaseForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Choice.cs" />
     <Compile Include="Controls\AppBar.cs">
       <SubType>Component</SubType>
@@ -182,6 +185,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Controls\ThemeCard.cs" />
+    <Compile Include="Controls\ThemedContextMenu.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Controls\ThemedMenuStrip.cs">
       <SubType>Component</SubType>
     </Compile>

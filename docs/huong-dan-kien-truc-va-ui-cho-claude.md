@@ -118,6 +118,18 @@ Ngoài 4 cái trên, các lưới (`DataSearch`/`GridMapper`) có menu chuột p
 3. **Control riêng của app (`KzButton`, `KzTextBox`, `KzComboBox`...).** Kế thừa từ control chuẩn WinForms, style nhét sẵn trong constructor (kiểu nút phẳng, viền, padding, font). Form dùng `KzButton` thay vì `Button` là tự đẹp ngay từ lúc kéo thả trong designer. Lớp chống trôi thứ hai: kể cả ai đó quên gọi `ApplyTheme` thì nút vẫn đúng kiểu.
 4. **`BaseForm` — form cha cho mọi form.** Tất cả form kế thừa nó thay vì `Form` trực tiếp. Nó lo: gọi `ApplyTheme` khi mở, set font/icon chung, phím tắt Enter/Escape, giới hạn kích thước.
 
+### Thành phần dùng chung đã có trong code (`Kazuko_FnB.UI`) — màn mới PHẢI dùng, không tự tạo
+
+Tên thật trong code khác tên `Kz*` ghi ở trên; khi viết spec/màn mới dùng tên thật:
+
+| Vai trò | Lớp thật | Quy tắc |
+|---|---|---|
+| Nút | `Controls/FlatButton` | Nút duy nhất của app; cấm `new Button()` (nếu lỡ có, `ThemeApplier` vẫn tô theme nhưng phải đổi sang `FlatButton`). Kiểu nút qua `Tag`: `"primary"`, `"danger"`, null. |
+| Ô nhập | `Controls/InputBox` (bo góc, icon, hiện mật khẩu) | `ThemeApplier` tự tô; không gán màu tay. `TextBox` thường vẫn được tô (viền đơn) cho chỗ không cần bo góc. |
+| Menu chuột phải | `Controls/ThemedContextMenu` | Dùng `AddItem(text, [phím tắt], onClick)` / `AddSeparator()`, gán `control.ContextMenuStrip = menu`. Cấm tự tạo `ContextMenuStrip` thô. Cùng renderer với menu chính. |
+| Tô màu theme | `ThemeApplier.Apply(root, tokens)` | Hàm duy nhất tô cây control (tương đương `ThemeManager.ApplyTheme(form)` ở trên). Kiểu control qua `Control.Tag`. |
+| Form cha | `BaseForm` (`ThemedDialog` kế thừa cho hộp thoại) | Mọi form kế thừa `BaseForm` (font, icon, đăng ký/hủy `ThemeChanged`); chỉ ghi đè `ApplyFormTheme()`. Hộp thoại dùng `ThemedDialog` (có tiêu đề/thân/chân nút). |
+
 ### Quy tắc kích thước (ghi thành bảng, không để mỗi form tự chọn) - này chỉ là kích thước chọn trước thôi, có thể tôi sẽ yêu cầu chỉnh sửa lại cho phù hợp
 
 Nút chuẩn 90×32, nút chính 110×32; ô nhập cao 28; label 9pt, tiêu đề 10pt đậm; lề form 12px, khoảng cách giữa các control 8px; lưới: header cao 28, dòng cao 26. Các số này nằm chung trong `ThemeManager` dưới dạng hằng số. Font: **một** font cho toàn app (đề xuất Segoe UI 9pt), `AutoScaleMode` giống nhau ở mọi form.

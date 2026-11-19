@@ -16,7 +16,7 @@ namespace Kazuko_FnB.UI
     /// Màn đăng nhập toàn màn hình: appbar tự vẽ, ảnh nền (tạm: gradient theo theme),
     /// khung bên phải gồm 2 tab Đăng nhập / Cơ sở dữ liệu (chế độ máy này).
     /// </summary>
-    internal sealed class LoginForm : Form
+    internal sealed class LoginForm : BaseForm
     {
         private readonly AppSettings _settings;
         private readonly LoginService _login = new LoginService();
@@ -78,9 +78,7 @@ namespace Kazuko_FnB.UI
             StartPosition = FormStartPosition.Manual;
             AutoScaleMode = AutoScaleMode.None;
             DoubleBuffered = true;
-            Font = new Font("Segoe UI", 10f);
-            if (Kazuko_FnB.UI.BrandLogo.AppIcon != null)
-                Icon = Kazuko_FnB.UI.BrandLogo.AppIcon;
+            // Font, icon và đăng ký ThemeChanged do BaseForm lo.
 
             BuildControls();
             LoadBackground();
@@ -99,8 +97,7 @@ namespace Kazuko_FnB.UI
             _rbLocal.Checked = !settings.UseServer;
             OnConnectionModeChanged();
 
-            ThemeManager.ThemeChanged += OnThemeChanged;
-            ApplyTheme();
+            ApplyFormTheme();
             AcceptButton = _btnLogin;
 
             if (!string.IsNullOrEmpty(initialError))
@@ -395,12 +392,7 @@ namespace Kazuko_FnB.UI
 
         // ------------------------------------------------------------------ theme
 
-        private void OnThemeChanged(object sender, EventArgs e)
-        {
-            ApplyTheme();
-        }
-
-        private void ApplyTheme()
+        protected override void ApplyFormTheme()
         {
             ThemeTokens t = ThemeManager.Current;
             Color card = t.Surface;
@@ -434,15 +426,7 @@ namespace Kazuko_FnB.UI
                 l.ForeColor = t.Text;
             }
             foreach (InputBox box in new[] { _user, _pass, _dbPath, _host, _port, _fbUser, _fbPass })
-            {
-                box.SurfaceColor = card;
-                box.FieldColor = Color.White;
-                box.BorderColor = strongBorder;
-                box.FocusColor = t.Primary;
-                box.TextColor = t.Text;
-                box.MutedColor = t.TextMuted;
-                box.ApplyColors();
-            }
+                ThemeApplier.ApplyInput(box, t, card, strongBorder);
             foreach (CheckBox cb in new[] { _remember, _auto })
             {
                 cb.BackColor = card;
@@ -834,7 +818,6 @@ namespace Kazuko_FnB.UI
         {
             if (disposing)
             {
-                ThemeManager.ThemeChanged -= OnThemeChanged;
                 if (_background != null)
                     _background.Dispose();
                 if (_bgCache != null)

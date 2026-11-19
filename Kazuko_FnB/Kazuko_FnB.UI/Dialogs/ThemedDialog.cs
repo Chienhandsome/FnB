@@ -14,7 +14,7 @@ namespace Kazuko_FnB.UI.Dialogs
     /// Nền chung cho các hộp thoại: thanh tiêu đề màu theme, thân, chân chứa nút (căn phải).
     /// Tự tô lại khi đổi theme (xem thử/áp dụng). Kích thước truyền theo 96 DPI, tự nhân theo DeviceDpi.
     /// </summary>
-    internal class ThemedDialog : Form
+    internal class ThemedDialog : BaseForm
     {
         private readonly Panel _header = new Panel { Dock = DockStyle.Top, Tag = "header" };
         private readonly Panel _body = new Panel { Dock = DockStyle.Fill };
@@ -33,18 +33,15 @@ namespace Kazuko_FnB.UI.Dialogs
         public ThemedDialog(string title, string subtitle, int widthAt96, int heightAt96)
         {
             float s = DeviceDpi / 96f;
-            AutoScaleMode = AutoScaleMode.None;
+            // Font, icon, AutoScaleMode.None và đăng ký ThemeChanged do BaseForm lo.
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
             KeyPreview = true;
-            Font = new Font("Segoe UI", 10f);
             Text = title;
             ClientSize = new Size((int)(widthAt96 * s), (int)(heightAt96 * s));
-            if (BrandLogo.AppIcon != null)
-                Icon = BrandLogo.AppIcon;
 
             _title.Font = new Font("Segoe UI Semibold", 12f);
             _title.Text = title;
@@ -67,7 +64,6 @@ namespace Kazuko_FnB.UI.Dialogs
             Controls.Add(_footer);
             Controls.Add(_header);
 
-            ThemeManager.ThemeChanged += OnThemeChanged;
             Load += delegate { ApplyDialogTheme(); };
         }
 
@@ -122,7 +118,8 @@ namespace Kazuko_FnB.UI.Dialogs
             return b;
         }
 
-        private void OnThemeChanged(object sender, EventArgs e)
+        // BaseForm gọi khi đổi theme.
+        protected override void ApplyFormTheme()
         {
             ApplyDialogTheme();
         }
@@ -145,13 +142,6 @@ namespace Kazuko_FnB.UI.Dialogs
                 }
             }
             Invalidate(true);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-                ThemeManager.ThemeChanged -= OnThemeChanged;
-            base.Dispose(disposing);
         }
     }
 }

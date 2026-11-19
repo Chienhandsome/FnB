@@ -214,6 +214,38 @@ namespace Kazuko_FnB.UI.Diagnostics
             catch (ArgumentOutOfRangeException) { stepThrew = true; }
             Check("LamTronTien: bước 0 ném ArgumentOutOfRangeException", stepThrew);
 
+            // Thành phần UI dùng chung (không cần hiện cửa sổ).
+            try
+            {
+                using (var cm = new Kazuko_FnB.UI.Controls.ThemedContextMenu())
+                {
+                    cm.AddItem("Mục A", null);
+                    cm.AddSeparator();
+                    cm.AddItem("Mục B", System.Windows.Forms.Keys.F5, null);
+                    Check("ThemedContextMenu: 2 mục + 1 vạch ngăn", cm.Items.Count == 3);
+                    Check("ThemedContextMenu: dùng ThemedMenuRenderer của menu chính", cm.Renderer is Kazuko_FnB.UI.Controls.ThemedMenuRenderer);
+                    Check("ThemedContextMenu: mục B có phím tắt F5", ((System.Windows.Forms.ToolStripMenuItem)cm.Items[2]).ShortcutKeys == System.Windows.Forms.Keys.F5);
+                }
+                using (var panel = new System.Windows.Forms.Panel())
+                {
+                    var ib = new Kazuko_FnB.UI.Controls.InputBox();
+                    var plain = new System.Windows.Forms.Button();
+                    panel.Controls.Add(ib);
+                    panel.Controls.Add(plain);
+                    Kazuko_FnB.Theme.ThemeTokens t0 = Kazuko_FnB.Theme.ThemeManager.Current;
+                    Kazuko_FnB.UI.ThemeApplier.Apply(panel, t0);
+                    Check("ThemeApplier tô InputBox theo token (focus = Primary, chữ = Text)", ib.FocusColor == t0.Primary && ib.TextColor == t0.Text);
+                    Check("ThemeApplier tô Button thô theo theme (nền = Surface, phẳng)", plain.BackColor == t0.Surface && plain.FlatStyle == System.Windows.Forms.FlatStyle.Flat);
+                }
+                using (var f = new Kazuko_FnB.UI.BaseForm())
+                    Check("BaseForm: font Segoe UI 10pt, AutoScaleMode.None",
+                        f.Font.Name == "Segoe UI" && Math.Abs(f.Font.Size - 10f) < 0.01f && f.AutoScaleMode == System.Windows.Forms.AutoScaleMode.None);
+            }
+            catch (Exception ex)
+            {
+                Check("Thành phần UI dùng chung dựng được", false, ex.GetType().Name + ": " + ex.Message);
+            }
+
             var roles = new RoleRepository(db);
             var groups = new GroupRepository(db);
             var users = new UserAdminRepository(db);
