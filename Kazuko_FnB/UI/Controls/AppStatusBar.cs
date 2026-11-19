@@ -10,6 +10,7 @@ namespace Kazuko_FnB.UI.Controls
         private string _middle = "";
         private string _right = "";
         private readonly Font _font;
+        private readonly Font _boldFont;
         private readonly Font _iconFont;
 
         public Color BarColor { get; set; }
@@ -22,6 +23,7 @@ namespace Kazuko_FnB.UI.Controls
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             _font = new Font("Segoe UI", 9f);
+            _boldFont = new Font("Segoe UI", 9f, FontStyle.Bold);
             _iconFont = new Font(Draw.IconFont, 9f);
             BarColor = Color.White;
             BorderColor = Color.Gray;
@@ -83,11 +85,15 @@ namespace Kazuko_FnB.UI.Controls
                                       TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding;
 
             TextRenderer.DrawText(g, _left, _font, new Rectangle(pad, 0, leftW, Height), TextColor, f | TextFormatFlags.Left);
-            TextRenderer.DrawText(g, _middle, _font, new Rectangle(pad + leftW, 0, Width - leftW - rightW - pad * 2, Height),
+            TextRenderer.DrawText(g, _middle, _boldFont, new Rectangle(pad + leftW, 0, Width - leftW - rightW - pad * 2, Height),
                 TextColor, f | TextFormatFlags.HorizontalCenter);
 
             var rr = new Rectangle(Width - rightW - pad, 0, rightW, Height);
-            TextRenderer.DrawText(g, "", _iconFont, new Rectangle(rr.X, 0, (int)(18 * s), Height), MutedColor,
+            // Icon CSDL đặt sát ngay trước chữ (chữ canh phải nên đo độ rộng thật).
+            int textW = System.Math.Min(rr.Width - (int)(22 * s),
+                TextRenderer.MeasureText(_right ?? "", _font, new Size(int.MaxValue, Height), TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width);
+            int iconX = rr.Right - textW - (int)(22 * s);
+            TextRenderer.DrawText(g, "", _iconFont, new Rectangle(iconX, 0, (int)(18 * s), Height), MutedColor,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding);
             TextRenderer.DrawText(g, _right, _font, new Rectangle(rr.X + (int)(22 * s), 0, rr.Width - (int)(22 * s), Height),
                 MutedColor, f | TextFormatFlags.Right | TextFormatFlags.PathEllipsis);
@@ -98,6 +104,7 @@ namespace Kazuko_FnB.UI.Controls
             if (disposing)
             {
                 _font.Dispose();
+                _boldFont.Dispose();
                 _iconFont.Dispose();
             }
             base.Dispose(disposing);

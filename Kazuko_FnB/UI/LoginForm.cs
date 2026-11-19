@@ -76,6 +76,8 @@ namespace Kazuko_FnB.UI
             AutoScaleMode = AutoScaleMode.None;
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 10f);
+            if (Kazuko_FnB.Services.BrandLogo.AppIcon != null)
+                Icon = Kazuko_FnB.Services.BrandLogo.AppIcon;
 
             BuildControls();
             LoadBackground();
@@ -153,9 +155,11 @@ namespace Kazuko_FnB.UI
             // Trang đăng nhập
             SetupLabel(_lblUser, "Tên tài khoản");
             _user.IconGlyph = "";
+            _user.IconImage = Kazuko_FnB.Services.IconCatalog.Named("businessman");
             _user.Placeholder = "Nhập tên tài khoản";
             SetupLabel(_lblPass, "Mật khẩu");
             _pass.IconGlyph = "";
+            _pass.IconImage = Kazuko_FnB.Services.IconCatalog.Named("key");
             _pass.Placeholder = "Nhập mật khẩu";
             _pass.IsPassword = true;
 
@@ -189,19 +193,25 @@ namespace Kazuko_FnB.UI
 
             SetupLabel(_lblHost, "IP máy chủ:");
             _host.IconGlyph = "";
+            _host.IconImage = Kazuko_FnB.Services.IconCatalog.Named("globe");
             _host.Placeholder = "192.168.1.10";
             SetupLabel(_lblPort, "Cổng:");
             _port.IconGlyph = "";
+            _port.IconImage = Kazuko_FnB.Services.IconCatalog.Named("link");
             _port.Placeholder = AppSettings.DefaultServerPort;
 
             _dbPath.IconGlyph = "";
+
+            _dbPath.IconImage = Kazuko_FnB.Services.IconCatalog.Named("database");
             _dbPath.Placeholder = "Đường dẫn tệp .FDB";
 
             SetupLabel(_lblFbUser, "Tài khoản Firebird:");
             _fbUser.IconGlyph = "";
+            _fbUser.IconImage = Kazuko_FnB.Services.IconCatalog.Named("businessman");
             _fbUser.Placeholder = AppSettings.DefaultFbUser;
             SetupLabel(_lblFbPass, "Mật khẩu:");
             _fbPass.IconGlyph = "";
+            _fbPass.IconImage = Kazuko_FnB.Services.IconCatalog.Named("key");
             _fbPass.Placeholder = "Mật khẩu Firebird";
             _fbPass.IsPassword = true;
             _btnCreate.Text = "TẠO DATA";
@@ -309,7 +319,7 @@ namespace Kazuko_FnB.UI
             int cardH = CardHeight(s);
             int margin = Math.Max((int)(48 * s), (int)(W * 0.07));
             int x = Math.Max((int)(16 * s), W - cardW - margin);
-            int y = barH + Math.Max((int)(16 * s), (H - barH - cardH) / 2);
+            int y = barH + Math.Max((int)(16 * s), (H - barH - marqueeH - cardH) / 2);
             _card = new Rectangle(x, y, cardW, cardH);
 
             int pad = (int)(32 * s);
@@ -476,7 +486,8 @@ namespace Kazuko_FnB.UI
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
             // Vùng nền nằm dưới appbar để ảnh không bị appbar che mất phần trên.
-            Rectangle area = new Rectangle(0, _bar.Bottom, ClientSize.Width, Math.Max(1, ClientSize.Height - _bar.Bottom));
+            // Chừa dải chữ chạy ở đáy: ảnh nền chỉ vẽ phía trên dải, không bị dải đè lên.
+            Rectangle area = new Rectangle(0, _bar.Bottom, ClientSize.Width, Math.Max(1, ClientSize.Height - _bar.Bottom - _marquee.Height));
             if (_background != null)
             {
                 // Ảnh 4K: thu sẵn đúng kích thước cửa sổ một lần, các lần vẽ sau chỉ chép lại.
@@ -486,7 +497,7 @@ namespace Kazuko_FnB.UI
                         _bgCache.Dispose();
                     _bgCache = new Bitmap(Math.Max(1, area.Width), Math.Max(1, area.Height));
                     using (Graphics cg = Graphics.FromImage(_bgCache))
-                        DrawCover(cg, _background, new Rectangle(Point.Empty, _bgCache.Size));
+                        DrawFitWithBlur(cg, _background, new Rectangle(Point.Empty, _bgCache.Size));
                 }
                 g.DrawImageUnscaled(_bgCache, area.Location);
             }
@@ -531,6 +542,67 @@ namespace Kazuko_FnB.UI
                     g.FillPath(b, p);
                 using (var pen = new Pen(StrongBorder(t), 2f * s))
                     g.DrawPath(pen, p);
+            }
+        }
+
+        /// <summary>
+        /// Hiện trọn ảnh nền (vừa chiều cao), phần thừa hai bên lấp bằng chính ảnh đó phóng to và làm mờ,
+        /// mép ảnh mờ dần vào nền mờ nên không thấy đường cắt. Vùng quá rộng hoặc quá cao so với ảnh thì phủ kín như cũ.
+        /// </summary>
+        private static void DrawFitWithBlur(Graphics g, Image img, Rectangle area)
+        {
+            float areaRatio = area.Width / (float)area.Height;
+            float imgRatio = img.Width / (float)img.Height;
+            if (areaRatio <= imgRatio || areaRatio > imgRatio * 1.15f)
+            {
+                DrawCover(g, img, area);
+                return;
+            }
+
+            // Nền mờ: thu nhỏ rất nhiều rồi phóng lại.
+            using (var small = new Bitmap(Math.Max(8, area.Width / 24), Math.Max(8, area.Height / 24)))
+            {
+                using (Graphics sg = Graphics.FromImage(small))
+                    DrawCover(sg, img, new Rectangle(Point.Empty, small.Size));
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.DrawImage(small, area);
+            }
+
+            // Ảnh chính vừa chiều cao, hai mép mờ dần (alpha 0 → 255) để hòa vào nền mờ.
+            float scale = area.Height / (float)img.Height;
+            int w = (int)Math.Round(img.Width * scale), h = area.Height;
+            int x = area.X + (area.Width - w) / 2;
+            using (var fit = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            {
+                using (Graphics fg = Graphics.FromImage(fit))
+                {
+                    fg.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    fg.DrawImage(img, new Rectangle(0, 0, w, h));
+                }
+                int feather = Math.Max(4, Math.Min(48, w / 16));
+                var data = fit.LockBits(new Rectangle(0, 0, w, h), System.Drawing.Imaging.ImageLockMode.ReadWrite,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try
+                {
+                    var row = new byte[data.Stride];
+                    for (int yy = 0; yy < h; yy++)
+                    {
+                        IntPtr ptr = data.Scan0 + yy * data.Stride;
+                        System.Runtime.InteropServices.Marshal.Copy(ptr, row, 0, data.Stride);
+                        for (int xx = 0; xx < feather; xx++)
+                        {
+                            byte a = (byte)(255 * xx / feather);
+                            row[xx * 4 + 3] = a;
+                            row[(w - 1 - xx) * 4 + 3] = a;
+                        }
+                        System.Runtime.InteropServices.Marshal.Copy(row, 0, ptr, data.Stride);
+                    }
+                }
+                finally
+                {
+                    fit.UnlockBits(data);
+                }
+                g.DrawImageUnscaled(fit, x, area.Y);
             }
         }
 

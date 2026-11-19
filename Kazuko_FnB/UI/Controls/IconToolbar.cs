@@ -99,7 +99,7 @@ namespace Kazuko_FnB.UI.Controls
             }
 
             // Mọi nút cùng một chiều rộng; cửa sổ hẹp thì thu nhỏ đều tất cả (không nhỏ hơn mức tối thiểu).
-            int nominal = (int)(112 * s), min = (int)(80 * s);
+            int nominal = (int)(112 * s), min = (int)(64 * s);
             int fixedSpace = left * 2 + seps * (sepW + gap * 2) + Math.Max(0, buttons - 1) * gap;
             int w = buttons == 0 ? nominal : Math.Max(min, Math.Min(nominal, (Width - fixedSpace) / buttons));
 

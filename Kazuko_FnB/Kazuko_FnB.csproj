@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -6,6 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{1AAE1313-FE61-49EF-85D3-4E6C644EAFA0}</ProjectGuid>
     <OutputType>WinExe</OutputType>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <RootNamespace>Kazuko_FnB</RootNamespace>
     <AssemblyName>Kazuko_FnB</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
@@ -86,6 +87,7 @@
     <Compile Include="Services\FunctionPermissions.cs" />
     <Compile Include="Services\GlyphMap.cs" />
     <Compile Include="Services\IconCatalog.cs" />
+    <Compile Include="Services\BrandLogo.cs" />
     <Compile Include="Services\MainMenuBuilder.cs" />
     <Compile Include="Services\MenuModel.cs" />
     <Compile Include="UI\Controls\AppStatusBar.cs">
@@ -98,6 +100,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\Controls\MarqueeBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Controls\StatTile.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\Controls\QuickAccessCard.cs">
@@ -159,6 +164,18 @@
   <!-- Ảnh nền màn đăng nhập: LoginForm đọc Assets\login-bg.jpg|png cạnh exe. -->
   <ItemGroup>
     <None Include="Assets\login-bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Logo ứng dụng: BrandLogo đọc Assets\logo.png; Assets\app.ico là icon cửa sổ / exe (tạo từ chữ K của logo). -->
+  <ItemGroup>
+    <None Include="Assets\banner.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\app.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

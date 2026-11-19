@@ -255,6 +255,17 @@ namespace Kazuko_FnB.UI.Controls
             // Tên ứng dụng bên trái, nhường chỗ cho vùng bên phải.
             int right = _showUser && !_chipRect.IsEmpty ? _chipRect.Left : _minRect.Left;
             int left = (int)(16 * s);
+            Image logo = Kazuko_FnB.Services.BrandLogo.MarkWhite;
+            if (logo != null)
+            {
+                // Logo K trắng bên trái tên ứng dụng.
+                int lh = (int)(28 * s);
+                int lw = (int)(lh * logo.Width / (float)logo.Height);
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(logo, new Rectangle(left, (Height - lh) / 2, lw, lh));
+                left += lw + (int)(12 * s);
+            }
             var titleRect = new Rectangle(left, 0, Math.Max(0, right - left - (int)(12 * s)), Height);
             TextRenderer.DrawText(g, Text, Font, titleRect, BarTextColor,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);

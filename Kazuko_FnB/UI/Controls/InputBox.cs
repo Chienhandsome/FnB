@@ -31,6 +31,24 @@ namespace Kazuko_FnB.UI.Controls
         public Color MutedColor { get; set; }
         public Color SurfaceColor { get; set; }
         private string _iconGlyph;
+        private Image _iconImage;
+
+        /// <summary>Icon màu (ưu tiên hơn IconGlyph); null = dùng IconGlyph.</summary>
+        public Image IconImage
+        {
+            get { return _iconImage; }
+            set
+            {
+                _iconImage = value;
+                LayoutBox();
+                Invalidate();
+            }
+        }
+
+        private bool HasIcon
+        {
+            get { return _iconImage != null || !string.IsNullOrEmpty(IconGlyph); }
+        }
 
         /// <summary>Ký tự icon (font Segoe MDL2 Assets), rỗng = không icon.</summary>
         public string IconGlyph
@@ -144,7 +162,7 @@ namespace Kazuko_FnB.UI.Controls
         {
             float s = DpiScale;
             int pad = (int)(12 * s);
-            int iconW = string.IsNullOrEmpty(IconGlyph) ? 0 : (int)(28 * s);
+            int iconW = !HasIcon ? 0 : (int)(28 * s);
             int eyeW = _isPassword ? (int)(36 * s) : 0;
             _box.Location = new Point(pad + iconW, Math.Max(0, (Height - _box.Height) / 2));
             _box.Width = Math.Max(10, Width - pad * 2 - iconW - eyeW);
@@ -194,7 +212,14 @@ namespace Kazuko_FnB.UI.Controls
 
             using (var iconFont = new Font(Draw.IconFont, 11f))
             {
-                if (!string.IsNullOrEmpty(IconGlyph))
+                if (_iconImage != null)
+                {
+                    int isz = (int)(20 * s);
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.DrawImage(_iconImage, new Rectangle((int)(12 * s), (Height - isz) / 2, isz, isz));
+                }
+                else if (!string.IsNullOrEmpty(IconGlyph))
                 {
                     var iconRect = new Rectangle((int)(12 * s), 0, (int)(24 * s), Height);
                     TextRenderer.DrawText(g, IconGlyph, iconFont, iconRect, MutedColor,

@@ -54,6 +54,8 @@ namespace Kazuko_FnB.UI
             Size = new Size(1280, 760);
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 10f);
+            if (BrandLogo.AppIcon != null)
+                Icon = BrandLogo.AppIcon;
 
             _bar.Text = "PHẦN MỀM QUẢN LÝ KAZUKO FNB  v" + Application.ProductVersion;
             _bar.ShowUser = true;
@@ -296,10 +298,11 @@ namespace Kazuko_FnB.UI
 
         private void UpdateStatus()
         {
-            _status.LeftText = "Xin chào " + _session.DisplayName + " (" + _session.RoleText + ")   " +
-                               DateTime.Now.ToString("HH:mm:ss - dd/MM/yyyy", CultureInfo.InvariantCulture);
+            // Trái: màn đang xem + giờ; giữa: bản quyền (chưa có logic bản quyền nên tạm "Dùng thử"); phải: CSDL.
             DocTab t = _tabs.SelectedTab;
-            _status.MiddleText = t == null ? "" : "Đang xem: " + t.Title;
+            _status.LeftText = (t == null ? "" : "Đang xem: " + t.Title + "    ") +
+                               DateTime.Now.ToString("HH:mm:ss - dd/MM/yyyy", CultureInfo.InvariantCulture);
+            _status.MiddleText = "Đăng ký bản quyền: Dùng thử";
             _status.RightText = "CSDL: " + (_session.DatabasePath ?? "");
         }
 
