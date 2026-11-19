@@ -337,7 +337,7 @@ namespace Kazuko_FnB.UI
                 var tb = new MenuNode
                 {
                     Id = n.Id,
-                    Title = full,
+                    Title = n.IsSeparator ? "" : ShortToolbarTitle(full),
                     FullTitle = full,
                     RawName = n.RawName,
                     IsSeparator = n.IsSeparator,
@@ -361,6 +361,23 @@ namespace Kazuko_FnB.UI
             "Dịch vụ MTB",
             "Theo dõi đặt phòng"
         };
+
+        // Nhãn rút gọn cho nút thanh công cụ (chỉ hiển thị; tên đầy đủ vẫn ở tooltip và FullTitle, DB không đổi).
+        private static readonly Dictionary<string, string> ToolbarShortTitles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Sử dụng dịch vụ", "Dịch vụ" },
+            { "Quản lý bán hàng", "Quản lý" },
+            { "Thống kê doanh thu", "Doanh thu" },
+            { "Thống kê mặt hàng bán", "Mặt hàng" },
+            { "Chi tiết hoạt động", "Hoạt động" },
+            { "Tổng hợp KQKD", "KQKD" }
+        };
+
+        private static string ShortToolbarTitle(string full)
+        {
+            string shortTitle;
+            return ToolbarShortTitles.TryGetValue(full ?? "", out shortTitle) ? shortTitle : full;
+        }
 
         // Nút cố định trong mã của app đích, nằm sau các nút lấy từ DB: "|" là dải kẻ ngăn nhóm.
         // "@note", "@report", "@exit" là nút không có mục trong SMENU. Tên khác = mục menu có sẵn (theo phân quyền).
@@ -461,6 +478,18 @@ namespace Kazuko_FnB.UI
 
         // ------------------------------------------------------------------ Truy cập nhanh
 
+        // Mục quan trọng theo nhóm menu gốc của app (tên đúng như trong menu). Quán cà phê/POS: bán hàng, kho, quỹ, công nợ, nhân sự.
+        private static readonly Dictionary<string, string[]> QuickPreferred = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Hoạt động", new[] { "Sử dụng dịch vụ", "Quản lý bán hàng", "Danh mục mặt hàng", "Danh mục bảng giá" } },
+            { "Khách hàng", new[] { "Danh mục khách hàng", "Danh mục đợt khuyến mại", "Khách hàng thân thiết", "Danh mục voucher" } },
+            { "Kho hàng", new[] { "Tồn kho", "Nhập hàng vào kho", "Kiểm kê kho", "Danh mục nhà cung cấp" } },
+            { "Công nợ", new[] { "Công nợ khách hàng", "Công nợ nhà cung cấp" } },
+            { "Quỹ", new[] { "Tạo phiếu thu", "Tạo phiếu chi", "Tồn quỹ", "Danh mục lý do thu chi" } },
+            { "Nhân sự", new[] { "Danh mục nhân viên", "Chấm công", "Tính lương", "Tạm ứng lương" } },
+            { "Quản trị", new[] { "Cấu hình máy in hóa đơn theo khu vực", "Nhập dữ liệu từ hệ thống cũ", "Tồn kho ban đầu" } }
+        };
+
         private static void BuildQuickGroups(MenuModel model, List<MenuNode> prunedRoots)
         {
             foreach (MenuNode root in prunedRoots)
@@ -480,10 +509,30 @@ namespace Kazuko_FnB.UI
                         ordered.Add(l);
 
                 var group = new QuickGroup { Title = root.Title, Glyph = GlyphMap.ForGroup(root.Title) };
+
+                // Mục quan trọng chọn tay cho từng nhóm (theo thứ tự liệt kê); chỉ lấy mục người dùng có quyền.
+                string[] preferred;
+                if (QuickPreferred.TryGetValue((root.Title ?? "").Trim(), out preferred))
+                {
+                    foreach (string want in preferred)
+                    {
+                        if (group.Items.Count >= QuickItemsPerGroup)
+                            break;
+                        MenuNode hit = leaves.Find(delegate (MenuNode l)
+                        {
+                            return string.Equals((l.Title ?? "").Trim(), want, StringComparison.OrdinalIgnoreCase);
+                        });
+                        if (hit != null && !group.Items.Contains(hit))
+                            group.Items.Add(hit);
+                    }
+                }
+                // Chưa đủ thì bổ sung theo quy tắc cũ, bỏ qua mục ngoài phạm vi (karaoke/đặt phòng, MTB).
                 foreach (MenuNode l in ordered)
                 {
                     if (group.Items.Count >= QuickItemsPerGroup)
                         break;
+                    if (group.Items.Contains(l) || ToolbarHiddenTitles.Contains((l.Title ?? "").Trim()))
+                        continue;
                     group.Items.Add(l);
                 }
                 if (group.Items.Count > 0)

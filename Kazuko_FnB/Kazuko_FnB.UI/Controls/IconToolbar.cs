@@ -102,7 +102,7 @@ namespace Kazuko_FnB.UI.Controls
             }
 
             // Mọi nút cùng một chiều rộng; cửa sổ hẹp thì thu nhỏ đều tất cả (không nhỏ hơn mức tối thiểu).
-            int nominal = (int)(112 * s), min = (int)(64 * s);
+            int nominal = (int)(128 * s), min = (int)(64 * s);
             int fixedSpace = left * 2 + seps * (sepW + gap * 2) + Math.Max(0, buttons - 1) * gap;
             int w = buttons == 0 ? nominal : Math.Max(min, Math.Min(nominal, (Width - fixedSpace) / buttons));
 
@@ -125,7 +125,7 @@ namespace Kazuko_FnB.UI.Controls
                     x += gap;
                 first = false;
                 en.Bounds = new Rectangle(x, top, w, h);
-                en.Label = BalancedWrap(en.Node.Title, w - (int)(6 * s));
+                en.Label = en.Node.Title;
                 x += w;
             }
         }
@@ -155,34 +155,6 @@ namespace Kazuko_FnB.UI.Controls
                 _textFont.Dispose();
                 _textFont = new Font("Segoe UI Semibold", chosen);
             }
-        }
-
-        /// <summary>Chữ vừa một dòng thì giữ nguyên; không thì ngắt đôi tại khoảng trắng cho hai dòng cân nhau.</summary>
-        private string BalancedWrap(string text, int maxWidth)
-        {
-            text = text ?? "";
-            Size none = new Size(int.MaxValue, int.MaxValue);
-            const TextFormatFlags f = TextFormatFlags.NoPadding | TextFormatFlags.SingleLine;
-            if (TextRenderer.MeasureText(text, _textFont, none, f).Width <= maxWidth)
-                return text;
-
-            string best = text;
-            int bestWidth = int.MaxValue;
-            for (int i = 0; i < text.Length; i++)
-            {
-                if (text[i] != ' ')
-                    continue;
-                string a = text.Substring(0, i), b = text.Substring(i + 1);
-                int wa = TextRenderer.MeasureText(a, _textFont, none, f).Width;
-                int wb = TextRenderer.MeasureText(b, _textFont, none, f).Width;
-                int widest = Math.Max(wa, wb);
-                if (widest < bestWidth)
-                {
-                    bestWidth = widest;
-                    best = a + "\n" + b;
-                }
-            }
-            return best;
         }
 
         private int HitTest(Point p)
@@ -288,7 +260,7 @@ namespace Kazuko_FnB.UI.Controls
                 // Vùng chữ rộng hơn ngưỡng đo (Bounds.Width - 6s) để DrawText không tự ngắt thêm dòng.
                 var textRect = new Rectangle(en.Bounds.X + (int)(1 * s), en.Bounds.Y + (int)(38 * s),
                     en.Bounds.Width - (int)(2 * s), en.Bounds.Height - (int)(40 * s));
-                // Vùng chữ cố định cho 2 dòng, căn giữa dọc: chữ 1 dòng và 2 dòng đều nằm đối xứng.
+                // Nhãn luôn một dòng (cỡ chữ đã chọn ở FitTextFont); căn giữa dọc trong vùng chữ.
                 TextRenderer.DrawText(g, en.Label ?? en.Node.Title, _textFont, textRect, TextColor,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
                     TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
