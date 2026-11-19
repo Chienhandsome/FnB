@@ -4,6 +4,7 @@
 - Ngày: 2026-11-19
 - Base: `origin/main` @ `b0d15db` (đã `git fetch origin main`; nhánh `main` local đang ở `7ced0a8`, đi trước origin 1 commit)
 - Spec tổng: `docs/specs/kazuko-tea-clone.md` (mục 4.2 Khách hàng, mục 6 tiêu chí G1)
+- **Cập nhật theo DB thật (2026-11-19):** bản nháp này viết theo schema TEA; đã đo lại trên `POS TAP\Database\DATA.fdb` (số đo ở `docs/reference/db-pos-tap-do-truc-tiep.md`) và sửa: `DKHACHHANG` thật có **21 cột / 15 trường trên dialog** (không có `SOCMND`, `NGAYCAP`, `NOICAP`; có `DTHETRATRUOCID`), dialog thật **466×383**, `STABLEDESC.FORMAT` rỗng. Chỗ đã sửa đánh dấu **[Sửa theo DB thật]**. Spec vẫn ở trạng thái NHÁP chờ Chiến duyệt.
 - Nguồn đã đọc: `STABLEDESC/DKHACHHANG`, `STABLEDESC/DNHOMKHACHHANG`, `SFORM/Khách hàng thân thiết`, `SFORM/Hóa đơn bán hàng` + `Hóa đơn nhà hàng` (phần gắn khách), `SFORM/Nhập dữ liệu`; metadata `SMENU`, `STABLEDESC`, `SCOLUMN`, `SGRID`, `SCONFIG`, `SGROUPROLE` và cấu trúc bảng đọc từ **bản sao** `DATA.FDB` (chỉ đọc, không sửa file nào).
 
 ## 1. Bối cảnh
@@ -22,7 +23,7 @@ Menu **Khách hàng > Danh mục khách hàng** (Ctrl+K, `SMENU.SHORTCUT = 13114
 
 **Làm**
 - Màn "Danh mục khách hàng": cây nhóm khách bên trái (có mục "Tất cả"), lưới khách bên phải, ô tìm kiếm (F3 nhảy vào ô tìm), thanh nút Thêm / Sửa / Xóa / Làm mới.
-- Dialog thêm/sửa khách hàng (đủ 18 trường của mục 4.1, có chọn Nhóm, Nhân viên, Tỉnh thành).
+- Dialog thêm/sửa khách hàng (đủ **15 trường** của mục 4.1 — **[Sửa theo DB thật]** trước ghi 18 —, có chọn Nhóm, Nhân viên, Tỉnh thành, Thẻ trả trước).
 - Quản lý **Nhóm khách hàng** (`DNHOMKHACHHANG`) ngay trên cây nhóm: thêm/sửa/xóa nhóm với các trường ở mục 4.2. *(Giả định — cần Chiến xác nhận ở câu hỏi A1: menu không có mục "Nhóm khách hàng" riêng.)*
 - Quyền theo `SGROUPROLE` cho chức năng "Danh mục khách hàng": Xem / Thêm / Sửa / Xóa.
 - Cung cấp lớp truy vấn (`Data`) cho khách hàng + nhóm, để các màn sau (hóa đơn, công nợ, thân thiết) dùng lại.
@@ -54,12 +55,11 @@ Kiểu cột đọc từ DB (VARCHAR đo theo ký tự, charset UTF8). Nhãn và
 | `DNHANVIENID` | Nhân viên | VARCHAR(36) → `DNHANVIEN.ID` | không | — | Nhân viên phụ trách (NVKD) |
 | `NGAYSINH` | Ngày thành lập/sinh nhật | TIMESTAMP | không | — | |
 | `DIEMTICHLUYBANDAU` | Điểm tích lũy ban đầu | INTEGER, mặc định 0 | không | — | UI gốc cho nhập 2 số thập phân, khoảng ±10¹² nhưng cột là INTEGER (Q5) |
-| `GIABAN` | Giá bán | INTEGER, mặc định 0 | không | — | Combo 5 mục: 0 "Giá theo danh mục", 1 "Giá bán 2", 2 "Giá bán 3", 3 "Giá bán 4", 4 "Giá gần nhất". Chỉ bật khi cấu hình tương ứng (`SCOLUMN.ENABLECONFIGID`, nghi là `SuDungGiaTheoKhach`) (Q6). Không hiện trên lưới |
+| `GIABAN` | Giá bán | INTEGER, mặc định 0 | không | — | Combo 5 mục: 0 "Giá theo danh mục", 1 "Giá bán 2", 2 "Giá bán 3", 3 "Giá bán 4", 4 "Giá gần nhất". Chỉ bật khi cấu hình tương ứng — **[Sửa theo DB thật]** `SCOLUMN.ENABLECONFIGID` = `SuDungGiaTheoKhach` (xác nhận; hiện = 0, nên ô bị khóa). Config này vừa điều khiển ô trên dialog vừa điều khiển việc hóa đơn lấy `GIABAN` làm loại giá (Q6 đã trả lời). Không hiện trên lưới |
 | `DTINHTHANHID` | Tỉnh thành | VARCHAR(36) → `DTINHTHANH.ID` | không | — | Bảng `DTINHTHANH` trong bản sao đang trống |
 | `FACEBOOK` | Facebook | VARCHAR(255) | không | không | |
-| `SOCMND` | Số CMND | VARCHAR(255) | không | không | Hóa đơn dùng lại khi chọn khách |
-| `NGAYCAP` | Ngày cấp | TIMESTAMP | không | — | |
-| `NOICAP` | Nơi cấp | VARCHAR(255) | không | không | |
+| `DTHETRATRUOCID` | Thẻ trả trước | VARCHAR(36) → `DTHETRATRUOC.ID` | không | — | **[Sửa theo DB thật]** cột có ở POS TAP (không có ở TEA). Ô chỉ bật khi cấu hình `SuDungTheTraTruoc` = 30 (`SCOLUMN.ENABLECONFIGID`; hiện = 0). Khách gắn sẵn thẻ thì thanh toán tự dùng thẻ đó nếu còn tiền |
+| ~~`SOCMND`~~ / ~~`NGAYCAP`~~ / ~~`NOICAP`~~ | — | — | — | — | **[Sửa theo DB thật]** **không tồn tại ở POS TAP** (chỉ có ở TEA). Hóa đơn nhà hàng điền thông tin khách (tên đơn vị, người mua, MST, địa chỉ, điện thoại…) vào cột của `TDONHANG`, không dùng CMND |
 | `NOTE` | Ghi chú | VARCHAR(255) | không | không | |
 | `STATUS` | (ẩn) | INTEGER NOT NULL | có | — | Trạng thái dòng: **30 = đang dùng** (theo mọi dòng `SMENU/SFUNCTION` trong DB). Cách "xóa" xem Q2 |
 | `USERCREATEDID`, `TIMECREATED` | (ẩn) | VARCHAR(36) NOT NULL / TIMESTAMP | có / — | — | Người tạo (user đăng nhập), thời điểm tạo |
@@ -113,7 +113,8 @@ Kiểu cây (`PARENTID`, `PARENTDIR`, `ITEMTYPE`, `SORTORDER`, `AUTOID`) như c�
 
 Hiển thị ô tỉ lệ giảm trên dialog nhóm (từ `DNHOMKHACHHANG/code.cs`, `mapper_OnLoad`), phụ thuộc cấu hình:
 - Cửa hàng **không có tiền giờ** (`Shared.CoTienGio` = sai) → ẩn ô "Tỉ lệ giảm giá tiền giờ".
-- Cấu hình `GopChungGiamGiaTienGioVaTienHangLamMot` = 30 → ẩn "tiền giờ" **và** "tiền hàng", chỉ còn ô "Tỉ lệ giảm giá" (giảm tổng) — khi có tiền giờ. Hiện cấu hình này = 0.
+- Cấu hình `GopChungGiamGiaTienGioVaTienHangLamMot` = 30 **và** có tiền giờ → ẩn "tiền giờ" **và** "tiền hàng", chỉ còn ô "Tỉ lệ giảm giá" (giảm tổng). Hiện cấu hình này = 0.
+- **[Sửa theo DB thật]** Ô "Tỉ lệ giảm giá" (giảm tổng, `TILEGIAMGIA`) **mặc định ẩn** (`Visible=False` trong layout) và code `mapper_OnLoad` (đã đọc trên `POS_TAP_SRC_EXPORT/STABLEDESC/DNHOMKHACHHANG`) chỉ bật nó khi `Shared.CoTienGio` **và** `GopChung = 30`. POS TAP có `CoTienGio = 0` → ô này **không bao giờ hiện**, nhưng `GetTiLeGiamTheoKhach` vẫn đọc cột khi bán → giá trị kẹt ở DB (mặc định 0), không sửa được qua UI. Bản mới: **Chiến chốt** luôn hiện ô này hay bỏ cột (câu hỏi mới A2).
 - Mọi ô có đơn vị "%". Khoảng nhập của các ô giảm: ±10¹⁶, 2 số thập phân (app gốc không chặn >100% — Q9).
 
 ### 4.3 Quyền (`SGROUPROLE`)
@@ -127,14 +128,15 @@ Quy tắc: không có quyền Thêm → ẩn/vô hiệu nút Thêm; Sửa/Xóa t
 - Hóa đơn chọn khách → lấy nhóm của khách → giảm giá theo nhóm: giảm đồ ăn/uống/khác/dịch vụ theo từng loại; nếu `GopChungGiamGiaTienGioVaTienHangLamMot` = 30 thì giảm tổng = max(KM tự động, `TILEGIAMGIA` của nhóm), ngược lại giảm tiền hàng và tiền giờ mỗi cái = max(KM tự động, tỉ lệ nhóm).
 - Hóa đơn tự điền `SOCMND`, tên, địa chỉ, điện thoại từ khách (ô nhập khóa lại khi đã chọn khách).
 - Điểm tích lũy = `DIEMTICHLUYBANDAU` + điểm từ hóa đơn (`CachTinhDiem` = 1: cộng cột `DIEM` từng hóa đơn đã thanh toán; =0: tổng tiền ÷ `DoanhSoTuongUngVoi1Diem`, hiện 20 000) + (`DIEMTANG` − `DIEMGIAM`) trong `TTANGGIAMDIEM`. Khi `TuDongNangCapThanhVienKhiDatHanMuc` = 30 (hiện = 30), sau mỗi hóa đơn nếu điểm đạt ngưỡng `DNHOMKHACHHANG.DIEMTICHLUY` thì chuyển khách sang nhóm có ngưỡng cao nhất ≤ điểm. Nghĩa là `DIEMTICHLUYBANDAU` và ngưỡng điểm của nhóm ảnh hưởng tới tiền giảm giá — là dữ liệu nghiệp vụ, không chỉ là nhãn.
-- Bảng tham chiếu `DKHACHHANGID`: `TDONHANG`, `TDATHANG`, `TBAOGIA`, `TTHUCHI`, `TTANGGIAMDIEM`, `TLUUTAM`, `DVOUCHER`. Bản sao `DATA.FDB` hiện **0 khách, 0 nhóm, 0 tỉnh thành, 1 nhân viên**.
+- **[Bổ sung theo vòng 2 + DB thật]** Giá trị hiện hành trên DB thật: `CachTinhDiem = 1`, `QuyDoi1DiemSangTien = 1000`, `DoanhSoTuongUngVoi1Diem = 20000`, `TuDongNangCapThanhVienKhiDatHanMuc = 30`, `HienThiDiemCuaKhachHangTrenHoaDon = 0`. App gốc có **ba công thức điểm** + một công thức xét nâng nhóm (không trừ điểm đã tiêu) cho kết quả khác nhau; chi tiết và đề xuất một công thức chuẩn ở `docs/pos-tap-nghiep-vu-khach-hang-the.md` mục 6.1. Spec G2 phải chốt trước khi code.
+- Bảng tham chiếu `DKHACHHANGID`: `TDONHANG`, `TDATHANG`, `TBAOGIA`, `TTHUCHI`, `TTANGGIAMDIEM`, `TLUUTAM`, `DVOUCHER`. `DATA.FDB` thật hiện **0 khách, 0 nhóm, 0 tỉnh thành, 0 nhân viên** (**[Sửa theo DB thật]** trước ghi 1 nhân viên; `DEMO.FDB` có 3 khách, 13 nhân viên, 0 nhóm khách).
 
 ## 5. Bố cục UI
 
 Theo CLAUDE.md: dùng design token + `ThemeManager`, không hard-code màu/cỡ chữ; high-DPI; hạn chế cuộn dọc; cảm ứng; không SQL trong View/ViewModel.
 
 - **Màn danh mục** (mở thành tab tài liệu trong khung chính, thay tab "sẽ được bổ sung"): trên cùng thanh tiêu đề + ô tìm (có F3) + nút Thêm/Sửa/Xóa/Làm mới; trái: cây nhóm (có "Tất cả", đếm số khách mỗi nhóm là tùy chọn, không có trong app gốc → **không làm**); phải: lưới. Nhấp đôi một dòng = Sửa. Phím: Ctrl+K mở màn; Insert/Enter/Delete theo app gốc (chốt theo ảnh).
-- **Dialog Thêm/Sửa khách hàng**: app gốc 466×410 một cột dài 18 trường. Bản mới gọn hơn: **hai cột**, nhóm theo ý nghĩa — *Định danh* (Mã khách, Tên, Nhóm, Nhân viên phụ trách), *Liên hệ* (Điện thoại, Email, Địa chỉ, Tỉnh thành, Facebook), *Pháp lý* (Mã số thuế, Số CMND, Ngày cấp, Nơi cấp), *Khác* (Ngày thành lập/sinh nhật, Điểm tích lũy ban đầu, Giá bán, Ghi chú). Không cuộn dọc ở độ phân giải 1366×768 @100–150% DPI. Nhãn lỗi hiện ngay cạnh ô sai, thông báo giữ nguyên chữ app gốc. Nút Lưu / Lưu & thêm tiếp (nếu app gốc có) / Hủy; Enter/Esc.
+- **Dialog Thêm/Sửa khách hàng**: **[Sửa theo DB thật]** app gốc **466×383**, một cột, **15 trường** (`layout.xml` thật; trước ghi 466×410 và 18 trường). Dialog gốc **không có group box**. Bản mới gọn hơn: **hai cột**, nhóm theo ý nghĩa (nhóm chỉ là cách xếp của bản mới) — *Định danh* (Mã khách, Tên, Nhóm, Nhân viên phụ trách), *Liên hệ* (Điện thoại, Email, Địa chỉ, Tỉnh thành, Facebook), *Pháp lý* (Mã số thuế), *Khác* (Ngày thành lập/sinh nhật, Điểm tích lũy ban đầu, Giá bán, Thẻ trả trước, Ghi chú). Không cuộn dọc ở độ phân giải 1366×768 @100–150% DPI. Nhãn lỗi hiện ngay cạnh ô sai, thông báo giữ nguyên chữ app gốc. Nút Lưu / Lưu & thêm tiếp (nếu app gốc có) / Hủy; Enter/Esc.
 - **Dialog Nhóm khách hàng**: 2 cột (Tên, Ảnh, Điểm tích lũy, Ghi chú | các ô tỉ lệ giảm theo mục 4.2), gọn.
 - Chạm: hàng lưới và nút đủ lớn (token cỡ hàng cảm ứng của khung chính).
 
@@ -147,7 +149,7 @@ Kiểm trên **bản sao** `DATA.FDB` (bản sao trống khách hàng, nên mỗ
 - [ ] Mã khách mặc định khi bấm Thêm theo đúng mẫu `KH` + 5 số của app gốc và tiếp nối đúng sau khi đã có khách (ca: bảng trống, có KH00001, có mã tay nhập).
 - [ ] Để trống Tên → báo lỗi bắt buộc, không ghi dòng; để trống Mã → tương tự.
 - [ ] Trùng Mã với khách khác → báo lỗi trùng; trùng Tên khi `ChoPhepTrungTenKhachHang`=0 → báo lỗi; đổi cấu hình thành 30 → cho trùng tên. Sửa chính khách đó (giữ nguyên Mã/Tên) không bị báo trùng.
-- [ ] Nhập đủ 18 trường, lưu rồi mở lại: mọi giá trị khớp, kể cả ngày, nhóm, nhân viên, tỉnh thành, giá bán.
+- [ ] Nhập đủ 15 trường, lưu rồi mở lại: mọi giá trị khớp, kể cả ngày, nhóm, nhân viên, tỉnh thành, giá bán, thẻ trả trước (hai ô cuối chỉ nhập được khi bật `SuDungGiaTheoKhach` / `SuDungTheTraTruoc`).
 - [ ] Tên dài 255 ký tự lưu được; 256 ký tự bị chặn/báo lỗi theo app gốc; tiếng Việt có dấu (UTF8) lưu và đọc đúng.
 - [ ] Sửa khách: `TIMEMODIFIED`/`USERMODIFIEDID` cập nhật, `TIMECREATED`/`USERCREATEDID` giữ nguyên.
 - [ ] Xóa khách chưa phát sinh → biến mất khỏi lưới (cách xóa — cứng hay `STATUS` — đúng như Q2).
@@ -155,7 +157,7 @@ Kiểm trên **bản sao** `DATA.FDB` (bản sao trống khách hàng, nên mỗ
 - [ ] Danh sách đối chiếu bảng/cột trước và sau: **không có DDL**; chỉ các dòng `DKHACHHANG`/`DNHOMKHACHHANG` thay đổi.
 
 **Nhóm**
-- [ ] Thêm/sửa/xóa nhóm đúng mục 4.2; tên nhóm trống hoặc trùng bị chặn; ô "tiền giờ"/"tiền hàng"/"giảm tổng" hiện/ẩn đúng theo `Shared.CoTienGio` và `GopChungGiamGiaTienGioVaTienHangLamMot`.
+- [ ] Thêm/sửa/xóa nhóm đúng mục 4.2; tên nhóm trống hoặc trùng bị chặn; ô "tiền giờ"/"tiền hàng"/"giảm tổng" hiện/ẩn đúng theo `Shared.CoTienGio` và `GopChungGiamGiaTienGioVaTienHangLamMot` (với `CoTienGio = 0`: chỉ hiện "tiền hàng" và 4 ô theo loại đồ; "giảm tổng" ẩn — hoặc theo quyết định A2).
 - [ ] Xóa nhóm đang có khách → hành vi đúng app gốc (Q2).
 - [ ] Chọn nhóm trên cây lọc đúng lưới; "Tất cả" hiện hết; (con/cháu theo Q8).
 
@@ -207,7 +209,7 @@ Chụp toàn cửa sổ, ghi chú dưới mỗi ảnh nếu có thao tác đặc
 - DB **không có FK/unique** → nếu bản clone và app gốc cùng ghi vào một DB (không nên, dùng bản sao riêng) có thể sinh trùng mã; kiểm trùng phải làm trong transaction.
 - `DIEMTICHLUYBANDAU` và ngưỡng điểm nhóm ảnh hưởng giảm giá/nâng nhóm ở hóa đơn: sai ở đây là sai tiền → cần đối chiếu số liệu ở G2.
 - Bản sao DB không có khách/nhóm/tỉnh thành → ca kiểm thử phải tự dựng; cần dữ liệu thật (đã che thông tin cá nhân) nếu muốn kiểm tải.
-- `STABLEDESC.FORMAT` của `DKHACHHANG` chứa 5 cặp (ID mẫu, `LOAI` 1–4 và −1) — nghi là liên kết tới mẫu in của danh sách; mẫu có ID đó **không có** trong `STEMPLATE` của bản sao → chưa rõ nút In danh sách có thật không (ảnh #11).
+- **[Sửa theo DB thật]** `STABLEDESC.FORMAT` của `DKHACHHANG` **rỗng (NULL)** trên DB thật — nhận định cũ "chứa 5 cặp (ID mẫu, `LOAI` 1–4 và −1)" đến từ bản sao khác và không áp dụng. Nút In danh sách (nếu có) cần cơ sở khác hoặc bỏ (ảnh #11).
 
 **Câu hỏi cho Chiến** (chưa rõ từ code; không đoán)
 - **A1.** Nhóm khách hàng quản lý ngay trên cây của màn này (không có menu riêng), đúng không? Cho gộp vào spec này luôn?
@@ -222,3 +224,5 @@ Chụp toàn cửa sổ, ghi chú dưới mỗi ảnh nếu có thao tác đặc
 - **Q10.** Khi thiếu quyền Thêm/Sửa/Xóa: ẩn nút hay làm mờ? Chỉ có quyền Xem thì dialog mở ở chế độ chỉ đọc?
 - **Q11.** Xác nhận ngoài phạm vi spec này: Khách hàng thân thiết, Gửi tin nhắn, Nhập từ hệ thống cũ, công nợ — làm spec riêng sau. Được không?
 - **Q12.** Cần "Lưu & thêm tiếp", In/Xuất Excel danh sách khách trong bản mới không (nếu app gốc có thì giữ y hệt)?
+- **A2 (mới).** Ô "Tỉ lệ giảm giá" (giảm tổng) của nhóm khách không bao giờ hiện ở POS TAP (`CoTienGio = 0`) nhưng cột vẫn được đọc khi bán: luôn hiện ô này trong bản mới, hay bỏ cột khỏi dialog?
+- **A3 (mới).** Ô "Thẻ trả trước" trên dialog khách chỉ bật khi `SuDungTheTraTruoc = 30` (hiện 0): ẩn hay mờ khi tắt? (Cùng câu với Q6 cho "Giá bán".)

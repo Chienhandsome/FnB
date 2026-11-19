@@ -2,7 +2,7 @@
 
 - **Ngày:** 19/11/2026. Base: `origin/main` @ `4fdfe48` (đã `git fetch`). Các sửa đổi dưới đây **chưa commit** (theo CLAUDE.md, chờ Chiến bảo).
 - **Đã đọc:** `tong-hop-ra-soat-pos-tap.md` (vòng 1) + `tong-hop-ra-soat-vong-2.md` + 7 file `deep/*.md` (`hoat-dong-ban-hang`, `khach-hang`, `kho-hang`, `cong-no-quy`, `nhan-su`, `quan-tri`, `bao-cao`) + phần bằng chứng `.frx` ở `work/frx-extract.md`. Với các file lớn (`hoat-dong-ban-hang` 217 KB, `quan-tri` 140 KB) đã đọc kỹ các phần đối chiếu Claude, đáp án Q, câu còn mở, nghi bug, kết luận; **chưa đọc từng dòng** các phần mô tả luồng (`hoat-dong-ban-hang` §2, §3.3, §6 N1–N49; `quan-tri` (b.1) bảng 212 khóa `SCONFIG`, (b.6) danh sách 101 điểm `Track()`): các ý lấy từ đó chỉ là tóm tắt có sẵn trong phần tổng kết của chính các file này.
-- **Dữ liệu thật:** `POS_TAP_SRC_EXPORT/` (111 form, 36 báo cáo SQL, 29 `STABLEDESC`; mỗi form có `code.cs`/`designcode.cs`/`layout.xml`, một số có `ts_code.cs`; báo cáo chỉ có `query.sql`/`code.cs`; **không** có `.frx`/`.config`, `SCONFIG`, `SGROUPROLE`, danh sách `SREPORT` đầy đủ). Quy ước: chỗ nào DEMO khác dữ liệu thật thì **dữ liệu thật là chuẩn**, ghi rõ ở mục 3.
+- **Dữ liệu thật (cập nhật cuối ngày):** ngoài `POS_TAP_SRC_EXPORT/` còn **đo trực tiếp `POS TAP\Database\DATA.fdb`** (trên bản chép, chỉ đọc) — số đo ở [reference/db-pos-tap-do-truc-tiep.md](reference/db-pos-tap-do-truc-tiep.md), là chuẩn cao nhất. `POS_TAP_SRC_EXPORT/` (111 form, 36 báo cáo SQL, 29 `STABLEDESC`; mỗi form có `code.cs`/`designcode.cs`/`layout.xml`, một số có `ts_code.cs`; báo cáo chỉ có `query.sql`/`code.cs`; **không** có `.frx`/`.config`, `SCONFIG`, `SGROUPROLE`, danh sách `SREPORT` đầy đủ). Quy ước: chỗ nào DEMO khác dữ liệu thật thì **dữ liệu thật là chuẩn**, ghi rõ ở mục 3.
 - Phạm vi: chỉ sửa tài liệu + lập checklist. Không động vào code `Kazuko_FnB/`, không sửa `docs/specs/`.
 
 ## 1. Đã sửa những chỗ sai nào, ở đâu
@@ -62,10 +62,10 @@ Chỗ sai của bản tài liệu trước (đã được code chứng minh, the
 
 | Kết luận vòng 2 (đọc DEMO) | Dữ liệu thật | Xử lý trong tài liệu |
 |---|---|---|
-| `TinhLuongBangMay` "có thể chính là form thừa của DEMO" (DEMO 112 form vs POS TAP 111) | Form `Tính lương bằng máy__0046913e` **có** trong export thật (111 form). Vẫn không có caller/menu | `luong` §4: bác giả thuyết; form thừa của DEMO là form khác, chưa xác định |
-| Báo cáo thừa của DEMO (128 vs 127) có thể là "BÁO CÁO CHI TIẾT BÁN HÀNG THEO THU NGÂN" | Báo cáo đó **có** trong `SREPORT` thật (`1b44aa87`). Export thật chỉ liệt kê 36 báo cáo SQL | `bao-cao` §8.4: bác ứng viên; báo cáo thừa chưa xác định |
+| `TinhLuongBangMay` "có thể chính là form thừa của DEMO" (DEMO 112 form vs POS TAP 111) | Form `Tính lương bằng máy__0046913e` **có** trong export thật và trong `SFORM` thật (111 form). Không có menu `STATUS=30` nào trỏ tới | `luong` §4: bác giả thuyết; form thừa của `FNB_DEMO.fdb` là form khác, chưa xác định |
+| "Báo cáo thừa của DEMO (128 vs 127)" (ứng viên: "BÁO CÁO CHI TIẾT BÁN HÀNG THEO THU NGÂN") | `SREPORT` thật **cũng 128 dòng**: 127 `STATUS=30` + 1 `STATUS=0` — dòng tắt đúng là báo cáo ứng viên đó. Không có báo cáo thừa; (lần sửa đầu trong ngày kết luận "bác ứng viên" dựa trên export code là sai, đã sửa lại sau khi đo DB) | `bao-cao` §8.4; `reference/db-pos-tap-do-truc-tiep.md` §1 |
 | `LUONGTHEOCA` "không hiện trên form nào" | `numLUONGTHEOCA` là ô nhập có thật trên form Nhân viên (hiện/ẩn theo `TinhLuongSuDungMayChamCong`). Vẫn **không** công thức/báo cáo nào dùng | `luong` §5 |
-| `DMATHANG.LOAIDINHLUONG` không có trong DEMO/TEMPLATE | Code POS TAP thật dùng cột này (4 hit) → cột tồn tại trong DB thật; schema DEMO thiếu | `muc-luc`/`pos-tap-nghiep-vu` §1.7; `kho` §9.4 |
+| `DMATHANG.LOAIDINHLUONG` không có trong DEMO/TEMPLATE → suy ra "phải có trong DB thật vì `XuatVatTu` không try/catch" | **DB thật cũng không có cột này** (đo trực tiếp). Các form bán lẻ dùng nó không có menu ở POS TAP | `kho` §9.4; `pos-tap-nghiep-vu` §1.7; `reference/db-pos-tap-do-truc-tiep.md` §5 |
 | `LOAI 99` "chỉ có phía đọc, không chỗ ghi; Công nợ ban đầu chỉ ghi 98" (`deep/hoat-dong-ban-hang.md` §7.2) | Form `Công nợ ban đầu` ghi `CONGNODAU = khachHang ? 99 : 98` (khớp `deep/cong-no-quy.md` và `deep/kho-hang.md`; file deep bán hàng tự mâu thuẫn) | `muc-luc` §2 |
 | `LOAI 5/6` xuất hiện ở KQKD, biểu đồ ngày, **tồn quỹ, XNT chi tiết** (bảng tổng hợp vòng 2) | SQL thật chỉ có ở **KQKD** và **biểu đồ doanh thu ngày**; tồn quỹ và XNT chi tiết không chứa `LOAI = 5/6` | `muc-luc` §2; `bao-cao` §4 |
 
@@ -76,9 +76,13 @@ Chỗ sai của bản tài liệu trước (đã được code chứng minh, the
 - SQL báo cáo: tổng hợp NCC không chứa `KHONGTHAYDOICONGNO` (7 file công nợ/đối chiếu còn lại đều có); `@TODATE` hoa ở đúng 2 báo cáo công nợ theo kỳ; lãi gộp tổng hợp giá nhập **chia** `QUYDOI` (`COALESCE(DDONVITINHCHANID,'') <> ''`), tổng hợp giá vốn **nhân** (`DDONVITINHID = DDONVITINHCHANID`); "GIẢM GIÁ TỔNG BILL" có ở cả 4 báo cáo lãi gộp với bộ lọc khác nhau như đã mô tả; `LOAI = 5/6` chỉ trong `code.cs` của KQKD + biểu đồ ngày.
 - `TANGTHEOTRIGIA`: chỉ nhánh chọn tab trong `DDOTKHUYENMAI/code.cs`; `WebService.exe` có trong `Sử dụng dịch vụ`; `ExcelSalaryEngine` 0 kết quả.
 
-### 3c. Chưa đối chiếu được với dữ liệu thật (export thật không có)
+### 3c. Trước đây "chưa đối chiếu được" — nay đã đo trực tiếp trên `DATA.fdb` thật
 
-`SCONFIG` (giá trị khóa, 205 vs 212), `SGROUPROLE` (số dòng 267/268/269 giữa các tài liệu — chưa biết dòng lệch), danh sách 127 báo cáo gồm 73 tự sinh, `SREPORTTEMPLATE` (`.frx`/`.config`), `SFUNCTION`/`SMENU` (menu của form lương máy, "Khách đặt hàng", form quyền 61/66), seed các bảng `D…` (nhãn `DGIAMATHANG`, `DLOAIHINHKHUYENMAI`, `DNGANHANG`…), số dòng/dữ liệu nghiệp vụ. Các kết luận dựa vào đó ghi **[Chưa chốt]** và có mục trong [checklist-test-app-goc.md](checklist-test-app-goc.md). Khi gặp bất kỳ giá trị `SCONFIG`/seed nào khác DEMO trên DB thật: lấy DB thật làm chuẩn.
+`SCONFIG` (205 khóa, giá trị từng khóa), `SGROUPROLE` (268 dòng, theo nhóm), `SFUNCTION` (86; 8 chức năng không nhóm nào có quyền; **không** có e-invoice 9998/9999), danh sách `SREPORT` (128 dòng = 127 bật + 1 tắt), seed `DGIAMATHANG`/`DLOAIDO`/`DLOAIMATHANG`/`DLOAIHINHKHUYENMAI` (**chỉ 5 loại KM**), schema cột (`DKHACHHANG` 21 cột, `DMATHANG` không có `LOAIDINHLUONG`), `SMENU` ↔ `SFORM` (form bán lẻ và `Tính lương bằng máy` không có menu), `SGRID` (2 dòng), `GENNO`. Còn chưa có: `SREPORTTEMPLATE` nội dung (`.frx`/`.config` — đọc từ DEMO), dữ liệu nghiệp vụ (DB trống; dữ liệu thật chỉ có trong các backup `.gbk`).
+
+### 3c'. Nhiều kết luận vòng 2 chỉ đúng cho `FNB_DEMO.fdb`, không đúng cho `DATA.fdb`
+
+`FNB_DEMO.fdb` (112 form, 212 khóa, `DKHACHHANG` 26 cột, `DNGANHANG`, e-invoice) khác `DATA.fdb` (111 form, 205 khóa, 21 cột, không `DNGANHANG`, không e-invoice) — chi tiết ở `reference/db-pos-tap-do-truc-tiep.md` mục 6. Mọi mục vòng 2 dựa vào phần DEMO có thừa (bảng E1–E20 "26 cột", "7 khóa thừa", "10 chức năng không quyền", "`UngDung` 2 dòng"…) đã được hiệu chỉnh trong tài liệu theo DB thật.
 
 ### 3d. Phát hiện thêm từ thư mục app gốc `POS TAP\` (không có trong bản rà vòng 2)
 
@@ -92,6 +96,20 @@ Chỉ liệt kê file (không mở DB). Phiên bản app: `app.dat` ghi `VERSION
 
 ## 4. Việc để lại (không làm trong đợt này)
 
-- `docs/specs/danh-muc-khach-hang.md`: bảng E1–E20 đã có bản sửa ở `deep/khach-hang.md` (e) (dialog 466×513, 1 cột, 20 trường, không group box; E10 bị bác — `STABLEDESC.FORMAT` rỗng; E13 đảo ngược — `ENABLECONFIGID` có thật…). **Chưa sửa spec** vì spec phải qua Chiến duyệt (quy trình spec-driven); nên làm bước "viết lại spec danh mục khách hàng theo schema POS TAP" riêng.
-- `docs/specs/he-thong.md` §4.1 (`USERID`/`CARDCODE`, acceptance H1 sai theo vòng 2; `SGROUPROLE` 267 vs 268): cần diff trên DB thật trước khi sửa.
+- `docs/specs/danh-muc-khach-hang.md` đã được sửa **số liệu/sự kiện** theo DB thật (mục 5), nhưng **chưa viết lại thành spec mới** và vẫn là NHÁP chờ Chiến duyệt: còn câu hỏi A1–A3, Q2–Q12 và bảng E1–E20 của `deep/khach-hang.md` (e) (một phần E dựa vào DEMO 26 cột nên không áp dụng cho DB thật; đã thay bằng số đo thật).
+- `docs/specs/he-thong.md`: đã sửa §4.1 (`USERID` "ID đăng nhập" và `CARDCODE` "Mã thẻ" **có** control trên form thật — spec cũ ghi "không có trên form") và số liệu `SGROUPROLE`/`SFUNCTION`/`SCONFIG`; ảnh chụp 8b không thấy hai ô này (có thể nằm dưới vùng lưới cửa hàng) — Chiến xem lại dialog thật.
 - 18+ quyết định Chiến cần chốt (giữ hay sửa các bug đã chứng minh) nằm rải rác ở mục (e) của từng file deep; tài liệu nghiệp vụ chỉ ghi "Chiến chốt", không tự quyết.
+
+## 5. Rà soát `docs/specs/` theo DB thật (19/11/2026)
+
+Đã so từng spec với số đo trực tiếp; chỗ lệch được sửa tại chỗ (đánh dấu **[Sửa theo DB thật]**), chỗ chưa chốt ghi câu hỏi mới.
+
+| Spec | Chỗ miss / sai đã sửa |
+|---|---|
+| `he-thong.md` | **`USERID`/`CARDCODE` có trên form (spec ghi không có)**; `SFUNCTION` 81 → **86**; `SGROUPROLE` Kế toán 71 → **73**, Thu ngân 36 → **35**, tổng 267 → **268**; `SCONFIG` ~190 → **205**; `SCONFIGGROUP` 17 nhóm gồm "Khách sạn" → **18 nhóm, không có "Khách sạn"**, 3 nhóm (Máy in mặc định, Mẫu hóa đơn, Số phiếu) không có khóa, 9 khóa không thuộc nhóm; danh sách khóa nội bộ bổ sung; `SUSER` còn 1 người dùng (`Admin`); 8 chức năng không ai có quyền; `SREPORTROLE` 196 dòng |
+| `danh-muc-khach-hang.md` | 18 trường → **15** (bỏ `SOCMND`/`NGAYCAP`/`NOICAP` không tồn tại ở POS TAP; thêm `DTHETRATRUOCID`); dialog 466×410 → **466×383, không group box**; `ENABLECONFIGID` của `GIABAN`/`DTHETRATRUOCID` xác nhận (`SuDungGiaTheoKhach`/`SuDungTheTraTruoc`, hiện 0); ô `TILEGIAMGIA` nhóm **không bao giờ hiện** ở POS TAP (đã kiểm code thật) — câu hỏi mới A2; `STABLEDESC.FORMAT` rỗng (nhận định "5 cặp" sai); `DATA.fdb` 0 nhân viên; giá trị điểm thật + ba công thức điểm; câu hỏi mới A3 |
+| `kazuko-tea-clone.md` | `T*` 20 → **26** bảng; `SREPORT` 127 → **128 dòng (127 bật, 1 tắt)**, `SREPORTTEMPLATE` 156, `SGROUPROLE` 268; G4 "126 báo cáo" → 127; bổ sung: tách bàn không tồn tại, form bán lẻ không có menu và dùng cột không có trong DB, `TCHITIETTHANHTOAN`/`CHITIETCONGNOEX`, `ExcelSalaryEngine` không tồn tại, form lương máy không có menu |
+| `goi-demo-ui.md` | Nguyên nhân "SGRID join 0 dòng": nối sai cột (`GRIDID` rỗng; đúng là `SGRID.ID = STABLEDESC.ID`); `SGRID` thật chỉ có **2 dòng** (Mặt hàng, Khách hàng) nên 14 danh mục còn lại không có bố cục lưới lưu sẵn; `DATA.fdb` có 1 bàn (không phải 0) |
+| `pilot-phieu-thu.md` | Nhóm "Số phiếu" không phải "đang ẩn" mà **không có khóa `SCONFIG`**; `GENNO = 30` ở `TTHUCHI` (số phiếu do framework tự sinh) |
+
+Không sửa nội dung nghiệp vụ trong spec (chỉ số liệu/sự kiện đã đo); các quyết định cho Chiến chốt (A2, A3, phạm vi bán lẻ) đã nằm trong spec/tài liệu tương ứng.

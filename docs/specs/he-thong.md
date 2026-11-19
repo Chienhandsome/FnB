@@ -4,6 +4,7 @@
 - Ngày: 2026-11-19
 - Base: `origin/main` @ `b0d15db` (đã `git fetch origin main`)
 - Spec tổng: `docs/specs/kazuko-tea-clone.md` (mục 4.7, mục 6 G1). Spec "Danh mục khách hàng" (`danh-muc-khach-hang.md`) đang gác lại; nó **phụ thuộc** spec này ở phần Cấu hình (mục 4.4).
+- **Đối chiếu DB thật (2026-11-19, sau khi duyệt vòng 1):** số liệu metadata ở mục 4 đã được đo lại trực tiếp trên bản chép của `POS TAP\Database\DATA.fdb` — xem `docs/reference/db-pos-tap-do-truc-tiep.md`. Các chỗ đã sửa đánh dấu **[Sửa theo DB thật]**; số liệu cũ viết theo bản sao trước đó (đa phần khác 1–2 đơn vị).
 - Nguồn đã đọc: `SFORM/Tài khoản người dùng`, `SFORM/Chọn ảnh`, `SFORM/Lưu vết hoạt động`, `SFORM/Xác nhận xóa lưu vết`, `SFORM/Nhập dữ liệu`; metadata `SUSER`, `SGROUPUSER`, `SGROUPROLE`, `SFUNCTION`, `SCONFIG`, `SCONFIGGROUP`, `SIMAGE`, `TNGUOIDUNGTHEOCUAHANG` đọc từ **bản sao** `DATA.FDB` (chỉ đọc, đã xóa bản sao tạm); mã khung chính đã có trong `Kazuko_FnB` (`MainMenuBuilder`, `LoginService`, `UserRepository`, `AppSettings`).
 
 ## 1. Bối cảnh
@@ -51,6 +52,8 @@ Form "Tài khoản người dùng" (một màn nhập liệu `SUSER` + lưới c
 | `EMAIL` | Email | VARCHAR(255) | không | — |
 | `SGROUPUSERID` | Nhóm người dùng | → `SGROUPUSER.ID` | có | — |
 | `DNHANVIENID` | Nhân viên | → `DNHANVIEN.ID` | không | — |
+| `USERID` | ID đăng nhập | VARCHAR | không | chưa rõ | **[Sửa theo DB thật]** có `txtUSERID` trên form (vị trí 104,315; nhãn "ID đăng nhập"); dùng cho đăng nhập MTB không cần mật khẩu (xem `pos-tap-nghiep-vu-may-tinh-bang.md` mục 10) |
+| `CARDCODE` | Mã thẻ | VARCHAR | không | chưa rõ | **[Sửa theo DB thật]** có `txtCARDCODE` trên form (nhãn "Mã thẻ", 104,345); không có logic nào dùng giá trị trong code đã xuất |
 | (lưới) Cửa hàng + cột Truy cập (tích) | | `DCUAHANG` × `TNGUOIDUNGTHEOCUAHANG` | xem dưới | — |
 
 Quy tắc đọc từ mã:
@@ -60,17 +63,17 @@ Quy tắc đọc từ mã:
 - Sau khi lưu: **xóa toàn bộ** dòng `TNGUOIDUNGTHEOCUAHANG` của người dùng đó rồi **ghi lại** mỗi cửa hàng được tích một dòng (`SUSERID`, `DCUAHANGID`).
 - Trùng `NAME` hoặc `USERNAME`, trống `NAME`/`USERNAME`/`SGROUPUSERID` → lỗi (thông báo nguyên văn: chờ ảnh).
 
-Cột có trong bảng nhưng **không có trên form** (giữ nguyên khi sửa, không tự đổi): `ISADMIN`, `SMTP`, `SSL`, `PORT`, `PASS` (gửi mail), `VIETINPUT`, `INPUTMODE`, `SIMAGEID`, `DEFAULTFUNCID` (chức năng mặc định), `USERID`, `CARDCODE` (thẻ từ), `NOTE`, `ITEMTYPE/PARENTID/PARENTDIR/SORTORDER/AUTOID`.
+Cột có trong bảng nhưng **không có trên form** (giữ nguyên khi sửa, không tự đổi): `ISADMIN`, `SMTP`, `SSL`, `PORT`, `PASS` (gửi mail), `VIETINPUT`, `INPUTMODE`, `SIMAGEID`, `DEFAULTFUNCID` (chức năng mặc định — không có control), `NOTE`, `ITEMTYPE/PARENTID/PARENTDIR/SORTORDER/AUTOID`.
 
-Dữ liệu hiện có (bản sao): 2 người dùng. `Admin` (`ISADMIN=1`, **mật khẩu rỗng**, nhóm trỏ tới một ID không có trong `SGROUPUSER`) và `a` (nhóm Thu ngân, gắn nhân viên). **Mật khẩu lưu dạng chữ thường (không băm)** — khung đăng nhập hiện cũng so sánh trực tiếp. Giữ nguyên để tương thích; xem rủi ro.
+Dữ liệu hiện có: **[Sửa theo DB thật]** `DATA.fdb` hiện chỉ có **1 người dùng**: `Admin` (tên hiển thị "Administrator", `ISADMIN=1`, **mật khẩu rỗng**, nhóm trỏ tới một ID không có trong `SGROUPUSER`); tài khoản `a` (nhóm Thu ngân, gắn nhân viên) của bản sao cũ không còn. `DEMO.FDB` có thêm `phucvu1`. **Mật khẩu lưu dạng chữ thường (không băm)** — khung đăng nhập hiện cũng so sánh trực tiếp. Giữ nguyên để tương thích; xem rủi ro.
 
 Hiển thị lưới danh sách người dùng, nút Thêm/Sửa/Xóa, xóa người dùng đã phát sinh thao tác: **chưa biết** (Q2).
 
 ### 4.2 Nhóm người dùng và phân quyền — `SGROUPUSER`, `SGROUPROLE`, `SFUNCTION`
 
 - Nhóm: `NAME`, `NOTE`, `SIMAGEID`, cây (`PARENTID`…). Hiện có 5 nhóm: Thu ngân, Kế toán, Thủ kho, Quản lý, Phục vụ. (Tài khoản `Admin` là quản trị tối cao theo `ISADMIN`, không phụ thuộc nhóm.)
-- Chức năng: 81 dòng `SFUNCTION`, chia theo `GROUPNAME` (Bán hàng, Báo cáo, Cơ sở dữ liệu, Công nợ, Danh mục, Hệ thống, Hóa đơn bán hàng, Kho hàng, Nhân sự, Quản trị, Quỹ). `NOTE='View'` ở nhiều chức năng (nghi: chức năng chỉ có quyền Có/Không, không có Sửa/Thêm/Xóa — Q5).
-- Phân quyền: mỗi dòng `SGROUPROLE` = (nhóm, chức năng, `MODE`). `MODE` là cờ bit: **Xem 0x10, Sửa 0x20, Thêm 0x40, Xóa 0x80**, 0 = khóa. Giá trị đang dùng: 0, 16, 80, 112, 240. Không có dòng = khóa (đã làm đúng ở khung chính). Số dòng/nhóm: Quản lý 81, Kế toán 71, Phục vụ 67, Thu ngân 36, Thủ kho 12 (tổng 267).
+- Chức năng: **[Sửa theo DB thật]** **86** dòng `SFUNCTION` (không phải 81), chia theo `GROUPNAME`: Bán hàng 20, Báo cáo 1, Cơ sở dữ liệu 3, Công nợ 2, Danh mục 11, Hệ thống 7, Hóa đơn bán hàng 18, Kho hàng 9, Nhân sự 5, Quản trị 5, Quỹ 5. 8 chức năng không nhóm nào được cấp quyền (In lại bill, Xóa giảm món, Xóa giảm món sau khi in chế biến, Sử dụng màn hình bếp, Thay đổi khách hàng trong điều chỉnh hóa đơn, Danh mục mật khẩu wifi, Điều chỉnh giờ tính lương dịch vụ theo giờ, Bản quyền máy tính bảng) — vẫn phải hiện trên màn phân quyền để Chiến cấp được. `NOTE='View'` ở nhiều chức năng (nghi: chức năng chỉ có quyền Có/Không, không có Sửa/Thêm/Xóa — Q5).
+- Phân quyền: mỗi dòng `SGROUPROLE` = (nhóm, chức năng, `MODE`). `MODE` là cờ bit: **Xem 0x10, Sửa 0x20, Thêm 0x40, Xóa 0x80**, 0 = khóa. Giá trị đang dùng: 0, 16, 80, 112, 240. Không có dòng = khóa (đã làm đúng ở khung chính). Số dòng/nhóm: **[Sửa theo DB thật]** Quản lý 81, **Kế toán 73**, Phục vụ 67, **Thu ngân 35**, Thủ kho 12 (tổng **268**, không phải 267); `MODE` = 0 (104 dòng), 16 (28), 80 (8), 112 (2), 240 (126). Quyền xem báo cáo `SREPORTROLE`: 196 dòng (cột `SGROUPUSERID`, `SREPORTID`, `MODE`).
 - Màn phân quyền: chọn nhóm → bảng chức năng (gom theo `GROUPNAME`) với các ô tích Xem/Sửa/Thêm/Xóa; lưu = ghi lại dòng `SGROUPROLE` của nhóm. Bố cục/hành vi chi tiết (tích Sửa có tự tích Xem không, nút chọn cả nhóm…) chờ ảnh (Q5).
 - Cấu hình liên quan: `PhanQuyenTruyCapTheoKhuVuc` (=0 hiện tại) — bật thì có thêm phân quyền theo khu vực bàn (nguồn dữ liệu chưa thấy trong schema nhóm này → Q6).
 
@@ -80,9 +83,9 @@ Hiển thị lưới danh sách người dùng, nút Thêm/Sửa/Xóa, xóa ngư
 
 `SCONFIG` là bảng khóa–giá trị. **Khóa = `NAME`**, giá trị nằm ở cột theo kiểu: `INTVALUE` (số nguyên/bật tắt), `DECIMALVALUE`, `TEXTVALUE`, `DATETIMEVALUE`, `BLOBVALUE` (ảnh logo…). `DATATYPE` (1 chuỗi, 3 số, 5 blob), `CONTROLTYPE` (3 ô số, 5 ô chữ, 6 ô chữ nhiều dòng, 7 ảnh, 8 danh sách chọn từ bảng `REFTABLEID` lọc bởi `OTHERCONFIG`, 9 ô tích, 10 combo với danh sách ở `MOREDETAIL`; giá trị combo = chỉ số 0,1,2…). **Ô tích: 30 = bật, 0 = tắt.**
 
-Hiển thị: theo `SCONFIGGROUP` (một tab cấp 1 mỗi nhóm) rồi theo `TAB` (0 hoặc 30) và `SORTORDER`. 17 nhóm: Thông tin chung, In HĐ và in chế biến, Bán hàng, Giờ trên bill, Thanh toán, Tích điểm, Kho hàng, Mặt hàng, Thiết bị khác, Cảnh báo, Quản trị, Cảm ứng, Tùy chọn khác, Ứng dụng, Khách sạn, **Ẩn** (nhóm không hiện: cờ nội bộ như `CoTienGio`, `SuDungGiaTheoKhach`, `BatBuocNhapKhachHang`, `CoGiaoHang`…), và một số khóa **nội bộ** không có `CAPTION` (`BATCH_ID`, `LAST_EXPORT`, `Profile`, `DatabaseVersion`, `Application`, `SharedCode`, `CompliedCode`, các khóa dài kiểu số làm bản quyền…) — **không hiển thị, không sửa**.
+Hiển thị: theo `SCONFIGGROUP` (một tab cấp 1 mỗi nhóm) rồi theo `TAB` (0 hoặc 30) và `SORTORDER`. **[Sửa theo DB thật]** `SCONFIGGROUP` có **18 nhóm** (không có "Khách sạn"): Thông tin chung (7 khóa), Máy in mặc định (0), In HĐ và in chế biến (22), Mẫu hóa đơn (0), Số phiếu (0), Bán hàng (26), Giờ trên bill (14), Thanh toán (11), Tích điểm (4), Kho hàng (10), Mặt hàng (14), Thiết bị khác (14), Cảnh báo (4), Quản trị (21), Cảm ứng (5), Tùy chọn khác (13), Ứng dụng (3), **Ẩn** (28); 3 nhóm "Máy in mặc định", "Mẫu hóa đơn", "Số phiếu" **không có khóa `SCONFIG` nào** (màn dựng riêng — xem 8b); 9 khóa không thuộc nhóm nào. (Danh sách 17 nhóm cũ, gồm "Khách sạn", không đúng với DB thật; ảnh chụp 8b ghi 16 nhóm vì bỏ "Ẩn" và có thể dựng tab theo `UngDung`: nhóm "Khách sạn" nếu hiện thì do mã, không phải dòng `SCONFIGGROUP`.) (nhóm không hiện: cờ nội bộ như `CoTienGio`, `SuDungGiaTheoKhach`, `BatBuocNhapKhachHang`, `CoGiaoHang`…), và một số khóa **nội bộ** không có `CAPTION` (`BATCH_ID`, `LAST_EXPORT`, `Profile`, `DatabaseVersion`, `Application`, `SharedCode`, `CompliedCode`, `AppAutoVersion`, `ChonNgayLamViecKhiDangNhap`, `TraDoThucHienAm`, `TinhLuongSuDungMayChamCong` (giá trị NULL), hai khóa dài kiểu số làm bản quyền…) — **không hiển thị, không sửa**.
 
-Khoảng 190 khóa; danh sách đầy đủ lấy từ DB lúc chạy (spec không chép từng khóa). Một số khóa gần như chắc chắn ảnh hưởng nghiệp vụ tiền/giá/kho và là nền cho các spec sau, ghi lại để các spec đó dùng: `CoTienGio`, `GopChungGiamGiaTienGioVaTienHangLamMot`, `LamTronTien`, `CoThueSuat`/`MacDinhThueSuat`, `CoPhiDichVu`/`MacDinhPhiDichVu`, `ChoPhepKhachNo`, `QuyDoi1DiemSangTien`, `DoanhSoTuongUngVoi1Diem`, `CachTinhDiem`, `TuDongNangCapThanhVienKhiDatHanMuc`, `ChoPhepTrungTenKhachHang`, `SuDungNhieuKho`, `TuDongTinhGiaVon`, `SoHoaDonQuayVongTheo`, `ThoiGianChoPhepHuyBill`, `SoFileSaoLuu`/`TuDongSaoLuuDuLieu`/`SoNgaySaoLuu`/`DuongDanSaoLuu`.
+**[Sửa theo DB thật]** **205 khóa** (không phải ~190); danh sách đầy đủ lấy từ DB lúc chạy (spec không chép từng khóa). Một số khóa gần như chắc chắn ảnh hưởng nghiệp vụ tiền/giá/kho và là nền cho các spec sau, ghi lại để các spec đó dùng: `CoTienGio`, `GopChungGiamGiaTienGioVaTienHangLamMot`, `LamTronTien`, `CoThueSuat`/`MacDinhThueSuat`, `CoPhiDichVu`/`MacDinhPhiDichVu`, `ChoPhepKhachNo`, `QuyDoi1DiemSangTien`, `DoanhSoTuongUngVoi1Diem`, `CachTinhDiem`, `TuDongNangCapThanhVienKhiDatHanMuc`, `ChoPhepTrungTenKhachHang`, `SuDungNhieuKho`, `TuDongTinhGiaVon`, `SoHoaDonQuayVongTheo`, `ThoiGianChoPhepHuyBill`, `SoFileSaoLuu`/`TuDongSaoLuuDuLieu`/`SoNgaySaoLuu`/`DuongDanSaoLuu`.
 
 Phụ thuộc hiển thị đọc từ mã: `SuDungGia2/3/4` bật thì có ô "Diễn giải giá"; `InHoaDonTheoKhuVuc` và các khóa in có thể lệ thuộc `SuDungChucNangInXuongBep`; (còn lại chờ ảnh). Lưu: ghi từng khóa đã đổi; khóa chưa có dòng thì tạo mới (kiểm tra bằng ảnh/Q7).
 
@@ -122,7 +125,7 @@ Kiểm trên **bản sao** `DATA.FDB`; so sánh với app gốc bằng ảnh Chi
 - [ ] Trống Họ tên/Tài khoản/Nhóm → báo lỗi; trùng Họ tên hoặc Tài khoản → báo lỗi; sửa chính người đó không báo trùng.
 - [ ] Chọn nhân viên → Họ tên bị khóa và bằng tên nhân viên; bỏ chọn → nhập tay được.
 - [ ] Bỏ tích hết cửa hàng → hiện câu hỏi đúng nguyên văn; Không = không lưu, Có = lưu và không có dòng cửa hàng.
-- [ ] Sửa người dùng: các cột không có trên form (`ISADMIN`, `CARDCODE`, SMTP…) giữ nguyên; `TNGUOIDUNGTHEOCUAHANG` ghi lại đúng.
+- [ ] Sửa người dùng: các cột không có trên form (`ISADMIN`, `DEFAULTFUNCID`, SMTP…) giữ nguyên; `USERID`/`CARDCODE` (có trên form, dialog gốc 400×371) nhập/sửa được và lưu đúng; `TNGUOIDUNGTHEOCUAHANG` ghi lại đúng.
 - [ ] Người dùng mới đăng nhập được ngay bằng tài khoản vừa tạo và chỉ thấy các cửa hàng được tích.
 
 **H2 Phân quyền**

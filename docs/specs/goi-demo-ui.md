@@ -51,7 +51,7 @@ Gói gồm ba việc, làm theo thứ tự:
 | | Thẻ trả trước (`DTHETRATRUOC`) | 1 |
 | | Voucher (`DVOUCHER`) | 0 |
 
-**Hai DB mẫu của POS TAP rất khác nhau:** `DATA.fdb` gần như rỗng (0 khách, 0 nhân viên, 1 mặt hàng, 0 bàn), còn `DEMO.FDB` có dữ liệu (581 mặt hàng, 13 nhân viên, 19 bàn, 3 khách, 4 đơn hàng, 3 phiếu thu chi). Cả hai có tài khoản `Admin` (quản trị) với mật khẩu rỗng; DEMO có thêm `phucvu1`. App đang trỏ vào `DATA.fdb`, nên nếu chiếu cho sếp lúc này mọi màn danh mục sẽ trống: **demo phải dùng DEMO.FDB.**
+**Hai DB mẫu của POS TAP rất khác nhau:** `DATA.fdb` gần như rỗng (0 khách, 0 nhân viên, 1 mặt hàng, 1 bàn, 1 khu vực — đo lại 2026-11-19), còn `DEMO.FDB` có dữ liệu (581 mặt hàng, 13 nhân viên, 19 bàn, 3 khách, 4 đơn hàng, 3 phiếu thu chi). Cả hai có tài khoản `Admin` (quản trị) với mật khẩu rỗng; DEMO có thêm `phucvu1`. App đang trỏ vào `DATA.fdb`, nên nếu chiếu cho sếp lúc này mọi màn danh mục sẽ trống: **demo phải dùng DEMO.FDB.**
 
 ## 3. Phạm vi
 
@@ -126,7 +126,7 @@ Vùng chạm dự kiến: `Kazuko_FnB/Theme/*`, `Kazuko_FnB/UI/Dialogs/*` (thêm
 
 ## 7. Rủi ro
 
-- **Metadata lưới (`SGRID`):** truy vấn nối `SGRID.GRIDID` với `STABLEDESC.ID` cho 0 dòng ở cả 16 bảng, nên chưa biết cách lấy thứ tự/độ rộng cột của app gốc. B1 có thể phải dùng thứ tự `SCOLUMN` và độ rộng tự co giãn; cần xác minh trước khi hứa "giống app gốc".
+- **Metadata lưới (`SGRID`):** **[Sửa theo DB thật 2026-11-19]** nối đúng là `SGRID.ID = STABLEDESC.ID` (cột `GRIDID` rỗng nên nối bằng `GRIDID` cho 0 dòng — nguyên nhân của kết quả "0 dòng" trước đây). Nhưng `SGRID` thật chỉ có **2 dòng**: `DMATHANG` (14 cột, 8 hiện + 6 ẩn) và `DKHACHHANG` (11 cột, 10 hiện + `NOTE` ẩn) — số đo ở `docs/reference/db-pos-tap-do-truc-tiep.md`. 14 danh mục còn lại **không có** bố cục lưới lưu sẵn: dùng thứ tự `SCOLUMN` và độ rộng tự co giãn; chỉ Mặt hàng và Khách hàng có thể "giống app gốc" về thứ tự/độ rộng cột.
 - **`TABLETYPE = 0` và `3` chưa xác minh bằng mã:** nếu danh mục phẳng có hành vi khác (ví dụ ràng buộc riêng), màn chung có thể không đủ.
 - **Chất lượng dữ liệu DEMO:** là DB mẫu đi kèm POS TAP, chưa kiểm xem có dữ liệu thật của khách nào không; Chiến nên xem lướt tên nhân viên/khách trước khi chiếu cho sếp.
 - **Phạm vi "toàn bộ UI mới":** gói này chỉ phủ khung, đổi màu và 16 danh mục (khoảng một phần ba số menu); 34 menu form riêng chưa có UI. Nếu sếp kỳ vọng thấy cả bán hàng, cần gói thêm (D5).

@@ -31,7 +31,7 @@ Kiểm chứng đường làm: **`SFORM.AELAYOUT` (XML) → mô tả màn hình 
 **Làm:** mở được hộp thoại từ menu **Quỹ ▸ Tạo phiếu thu**; hiển thị đủ trường theo layout gốc; đủ luật mục 3; nút *Lưu* chạy kiểm tra (mục 3) rồi báo "bản thử, chưa ghi dữ liệu"; nút *Đóng*.
 
 **KHÔNG làm** (thuộc phiếu thu thật, nghiệp vụ tiền/công nợ, chưa phân tích):
-- Ghi vào `TTHUCHI`, tự sinh **Số phiếu** (mẫu dữ liệu: `PT20/00001`; định dạng nằm ở nhóm cấu hình "Số phiếu" đang ẩn), cập nhật công nợ/thẻ trả trước, ý nghĩa "Không thay đổi công nợ".
+- Ghi vào `TTHUCHI`, tự sinh **Số phiếu** (mẫu dữ liệu: `PT20/00001`; định dạng nằm ở nhóm cấu hình "Số phiếu" — trên DB thật nhóm này **có trong `SCONFIGGROUP` nhưng không có khóa `SCONFIG` nào**, nên cơ chế sinh số không nằm ở `SCONFIG`; `TTHUCHI` có cờ `STABLEDESC.GENNO = 30` → framework tự sinh, định dạng chưa biết, xem checklist KHO-R1), cập nhật công nợ/thẻ trả trước, ý nghĩa "Không thay đổi công nợ".
 - Phiếu chi (`Tạo phiếu chi`), danh sách phiếu thu chi, các chế độ mở từ form khác (nạp thẻ, tạm ứng theo đơn hàng).
 
 ## 5. Tiêu chí nghiệm thu

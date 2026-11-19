@@ -41,7 +41,7 @@ Lưu ý quyền sở hữu cần xác nhận (mục 9): framework `No1Lib.*` và
 Khảo sát đã làm (chỉ đọc, trên bản sao DB trong thư mục tạm, không sửa file gốc):
 
 - App gốc chạy theo metadata trong DB: menu (`SMENU`), form (`SFORM`), cột lưới (`SCOLUMN`), cấu hình (`SCONFIG`), phân quyền (`SGROUPROLE`), báo cáo (`SREPORT` 126 báo cáo đang bật, `SREPORTTEMPLATE` 155 mẫu in). Thư mục `Report/` trống vì mẫu báo cáo nằm trong DB.
-- `DATA.FDB`: 100 bảng. `D*` là danh mục (54 bảng), `T*` là giao dịch (20 bảng), `S*` là hệ thống/metadata (20 bảng). Không có view, không có stored procedure.
+- `DATA.FDB`: 100 bảng. `D*` là danh mục (54 bảng), `T*` là giao dịch (26 bảng), `S*` là hệ thống/metadata (20 bảng) *(số đo lại trên `DATA.fdb` POS TAP 2026-11-19: 54 + 26 + 20 = 100; bản ghi cũ "T* 20" không cộng ra 100)*. Không có view, không có stored procedure.
 - `ONLINE.FDB` chỉ chứa 20 bảng hệ thống `S*`, không có dữ liệu bán hàng. Nhiều khả năng là DB cấu hình cho bản web/mobile (menu có cột `VIEWONMOBI`, `VIEWONWEB`; thư mục có `WebService.exe`, `app.apk`). **Chưa xác nhận.**
 - **Mã nghiệp vụ và UI của từng chức năng nằm trong DB, đọc được.** Bảng `SFORM` (110 form) lưu mã C# của form (`CODE`, 104 form, ~1,2 MB), khai báo control (`DESIGNCODE`, 97 form), bố cục XML (`AELAYOUT`, 109 form, ~2,3 MB), bản cảm ứng (`TSCODE`, `TSLAYOUT`, `TSDESIGNCODE`, 23 form). Form lớn nhất: "Hóa đơn nhà hàng" (~213 KB mã), "Dịch vụ máy tính bảng" (~165 KB), "Hóa đơn bán hàng" (~106 KB). `STABLEDESC` (bảng nhập liệu) và `SREPORT` (báo cáo: `SQL`, `CODE`) cũng chứa mã. Đây là nguồn chính để chốt quy tắc nghiệp vụ.
 - `No1Lib.Sys.DLL` là framework chung (lưới, form động, engine báo cáo, tồn kho, công nợ, tồn quỹ); `No1Lib.Sys.Ts.DLL` là control cảm ứng; mã trong DB gọi vào các lớp `No1Lib.*`. `No1Lib.Run.dll` (bị packer) và `No1Lib.Core.Dll` (không phải PE chuẩn). **Đã decompile ngày 2026-11-19: No1Lib không chứa logic nghiệp vụ tiền/giá/kho** (xem mục 1.2).
@@ -55,7 +55,7 @@ Hai bản cùng framework No1Lib và cùng **100 bảng**, nhưng khác như sau
 - **Bảng chỉ có ở POS TAP (3):** `DMATKHAUWIFI`, `DNHOMWIFI`, `TVAORA`.
 - **Cột chỉ có ở TEA:** `DBANGGIA` (15 cột về giá giờ/ngày/đêm, phụ thu, thêm người/trẻ em/giường), `DKHACHHANG.SOCMND/NGAYCAP/NOICAP`, `DBAN.ROOMADDRESS`, `TDONHANG` (`DIACHI`, `DIENTHOAI`, `TENKHACH`, `SOCMND`, `GIATHOATHUAN`, `THOATHUANTHEONGAY`, `GIUONGTHEM`, `NGUOILONTHEM`, `TREEMTHEM`), `TDONHANGCHITIET.GIOGOI`, `TSUACHUA.NGAYSUAXONG`.
 - **Cột chỉ có ở POS TAP:** `DKHACHHANG.DTHETRATRUOCID`, `DNHANVIEN` (`CODE`, `DCALAMVIECID`, `LUONGTHEOCA`), `DCALAMVIEC` (`TUGIO`, `DENGIO`), `DBANQUYEN` (`KETNOILUC`, `MADANGKY`), `DMATHANG.GIOHATCOMBO`, `TBANGLUONGTONGHOP` (`LUONGTHEOCA`, `SOGIOLAM`, `SOGIOTANGCA`), `TDONHANG` (`GIOTRADO`, `PASSWIFI`), `TDONHANGCHITIET.GIOTINHLUONG`, `TINCHEBIEN.DONGIA`.
-- **Quy mô metadata (POS TAP so với TEA):** `SFORM` 111 (110), `SREPORT` 127, `SMENU` 78, `SFUNCTION` 86 (81), `SCONFIG` 205 (196); `SCONFIG.UngDung` = 1 (POS), `CoTienGio` = 0.
+- **Quy mô metadata (POS TAP so với TEA):** `SFORM` 111 (110), `SREPORT` **128 dòng (127 đang bật `STATUS=30`, 1 tắt: "BÁO CÁO CHI TIẾT BÁN HÀNG THEO THU NGÂN")**, `SREPORTTEMPLATE` 156, `SMENU` 78 (77 bật), `SFUNCTION` 86 (81), `SGROUPROLE` 268, `SCONFIG` 205 (196); `SCONFIG.UngDung` = 1 (POS), `CoTienGio` = 0.
 - **Chức năng mới ở POS TAP:** In lại bill; Xóa/giảm món; Xóa/giảm món sau khi in chế biến; Danh mục mật khẩu wifi; Bản quyền máy tính bảng; Điều chỉnh giờ tính lương dịch vụ theo giờ. **Bỏ:** Danh mục bảng giá phòng.
 
 Mọi nội dung "đã xác minh" trong các spec con viết trước 2026-11-19 là trên bản TEA; phải đối chiếu lại với POS TAP bằng `POS_TAP_SRC_EXPORT/` trước khi dùng.
@@ -112,7 +112,7 @@ Danh sách dưới đây lấy từ `SMENU` và tên bảng (khung viết trên 
 | Bảng giá (theo bàn, theo khu vực). **Bảng giá giờ và ngày/đêm không còn ở POS TAP** (không có `DBANGGIAGIO(+CHITIET)`, `DBANGGIANGAYDEM`; bỏ menu "Danh mục bảng giá phòng") | `DBANGGIA`, `DBANGGIATHEOBAN`, `DBANGGIATHEOKHUVUC` | Thứ tự ưu tiên khi có nhiều bảng giá |
 | Cửa hàng, mặt hàng, loại phòng, bàn/khu vực | `DCUAHANG`, `DMATHANG`, `DLOAIPHONG`, `DBAN`, `DKHUVUC` | Trường bắt buộc, ràng buộc |
 | Khách đặt hàng, theo dõi đặt phòng | `TDATHANG(+CHITIET)` | Trạng thái đặt, cọc |
-| Quản lý bán hàng nhà hàng, điều chỉnh hóa đơn | `TDONHANG(+CHITIET)`, `TDONHANGGIO`, `TCHITIETTHANHTOAN`, `TSOHOADON` | Mở bàn, gọi món, chuyển/gộp/tách bàn, thanh toán, in bill, số hóa đơn |
+| Quản lý bán hàng nhà hàng, điều chỉnh hóa đơn | `TDONHANG(+CHITIET)`, `TDONHANGGIO`, `TCHITIETTHANHTOAN`, `TSOHOADON` | Mở bàn, gọi món, chuyển/gộp bàn, thanh toán, in bill, số hóa đơn. *Đã rà vòng 2:* **tách bàn không có implementation** (nút chỉ `SetButtonVisible(false)`); `TCHITIETTHANHTOAN` không dùng. **Trong DB POS TAP chỉ "Quản lý bán hàng nhà hàng" có menu**; form bán lẻ `Hóa đơn bán hàng`, `Quản lý bán hàng`, `Quản lý hóa đơn bán hàng` không có menu nào và bản bán lẻ dùng cột `DMATHANG.LOAIDINHLUONG` **không có** trong `DATA.fdb` → Chiến chốt có đưa bán lẻ vào phạm vi không (`docs/reference/db-pos-tap-do-truc-tiep.md` mục 5) |
 | Chế biến (in chế biến, trạng thái) | `TINCHEBIEN`, `TSOINCHEBIEN`, `DTRANGTHAICHEBIEN` | Luồng in bếp/bar |
 | Hóa đơn hủy, món xóa/giảm/trả | `TDONHANGHUY(+CHITIET)`, `DLYDOHUY` | Quyền hủy, lý do |
 | Kiểm soát order, lưu vết | `TLUUVET`, `TLUUTAM(+CHITIET)`, `STRACKING` | Nội dung lưu vết |
@@ -127,13 +127,13 @@ Khách hàng, nhóm khách, đợt khuyến mại (`DDOTKHUYENMAI`, `DLOAIHINHKH
 Danh mục kho, nhà cung cấp; nhập kho, xuất khác, chuyển kho, kiểm kê; tính lại giá vốn; xuất lại định lượng (`DDINHLUONG`); tồn kho (một kho / nhiều kho); báo cáo hạn dùng (HSD). Dùng chung bảng `TDONHANG(+CHITIET)` cho phiếu nhập/xuất (menu trỏ tới `TDONHANG`). Xác minh: phương pháp tính giá vốn, trừ kho theo định lượng khi bán, cho phép âm kho (`CHOPHEPAMKHO` xuất hiện trong schema).
 
 ### 4.4 Công nợ
-Công nợ khách hàng, nhà cung cấp; đối chiếu công nợ; công nợ ban đầu. Xác minh: cách ghi nhận khi thanh toán một phần (`TCHITIETTHANHTOAN`), `CHITIETCONGNOEX`.
+Công nợ khách hàng, nhà cung cấp; đối chiếu công nợ; công nợ ban đầu. Xác minh: cách ghi nhận khi thanh toán một phần. *Đã rà vòng 2 (2026-11-19):* `TCHITIETTHANHTOAN` không được code nào dùng (bảng chết); `CHITIETCONGNOEX` không tồn tại trong DB POS TAP; phiếu thu công nợ (`TTHUCHI` `LOAI=2`) theo code không làm giảm nợ — phải test app gốc trước khi thiết kế (`docs/checklist-test-app-goc.md`, CN-CHAN1).
 
 ### 4.5 Quỹ
 Lý do thu chi, tài khoản ngân hàng, phiếu thu/chi (`TTHUCHI`), tồn quỹ.
 
 ### 4.6 Nhân sự
-Nhân viên, ca làm việc, tạm ứng lương, thưởng phạt (`TTHUONGPHAT`), chấm công và tính lương (`TBANGLUONG`, `TBANGLUONGCHITIET`, `TBANGLUONGTONGHOP`; có `ExcelSalaryEngine` trong framework gốc nên bảng lương có thể dùng công thức kiểu Excel). Xác minh: cách tính lương. POS TAP thêm lương theo ca (`DNHANVIEN.LUONGTHEOCA`, `DNHANVIEN.DCALAMVIECID`, `DCALAMVIEC.TUGIO/DENGIO`, `TBANGLUONGTONGHOP.LUONGTHEOCA/SOGIOLAM/SOGIOTANGCA`) và chức năng "Điều chỉnh giờ tính lương dịch vụ theo giờ" (`TDONHANGCHITIET.GIOTINHLUONG`); cần xác minh chức năng này còn ý nghĩa khi đã bỏ các loại hình tính tiền theo giờ.
+Nhân viên, ca làm việc, tạm ứng lương, thưởng phạt (`TTHUONGPHAT`), chấm công và tính lương (`TBANGLUONG`, `TBANGLUONGCHITIET`, `TBANGLUONGTONGHOP`). **Đã rà vòng 2:** không có `ExcelSalaryEngine`/công thức kiểu Excel ở đâu (0 kết quả trong mã xuất); mọi công thức lương hard-code C# (`docs/pos-tap-nghiep-vu-luong.md`). Form "Tính lương bằng máy" có trong DB nhưng **không có menu nào trỏ tới** và thư mục cài không có `zkemkeeper.exe`. POS TAP thêm lương theo ca (`DNHANVIEN.LUONGTHEOCA`, `DNHANVIEN.DCALAMVIECID`, `DCALAMVIEC.TUGIO/DENGIO`, `TBANGLUONGTONGHOP.LUONGTHEOCA/SOGIOLAM/SOGIOTANGCA`) và chức năng "Điều chỉnh giờ tính lương dịch vụ theo giờ" (`TDONHANGCHITIET.GIOTINHLUONG`); cần xác minh chức năng này còn ý nghĩa khi đã bỏ các loại hình tính tiền theo giờ.
 
 ### 4.7 Quản trị
 Dữ liệu ban đầu (công nợ, tồn kho đầu kỳ), nhập dữ liệu từ hệ thống cũ, cấu hình máy in hóa đơn theo khu vực, thiết kế giao diện màn cảm ứng, phân quyền, sao lưu/phục hồi. Mới ở POS TAP: Danh mục mật khẩu wifi (`DMATKHAUWIFI`, `DNHOMWIFI`; `TDONHANG.PASSWIFI`) và Bản quyền máy tính bảng (`DBANQUYEN.KETNOILUC`, `MADANGKY`; thuật toán mã máy/DES xem `docs/reference/no1lib-engine.md`).
@@ -178,7 +178,7 @@ Chia theo giai đoạn; mỗi giai đoạn chỉ được coi là xong khi các 
 - [ ] Tồn kho, giá vốn, công nợ, tồn quỹ, bảng lương cho kết quả trùng báo cáo tương ứng của app gốc trên cùng dữ liệu.
 
 **G4 Báo cáo**
-- [ ] 126 báo cáo `SREPORT` mở được; với mỗi báo cáo, số liệu trùng app gốc trên cùng dữ liệu và kỳ lọc.
+- [ ] 127 báo cáo `SREPORT` đang bật (POS TAP; 126 ở TEA) mở được; với mỗi báo cáo, số liệu trùng app gốc trên cùng dữ liệu và kỳ lọc.
 - [ ] Mẫu in từ `SREPORTTEMPLATE` hiển thị và in được; xuất Excel/PDF nếu app gốc có.
 
 **G5 UI**

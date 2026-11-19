@@ -71,7 +71,7 @@ Nguồn: `deep/cong-no-quy.md` (đọc `DEMO.fdb`) đối chiếu với `POS_TAP
 - Phân quyền Quỹ (`SGROUPROLE`): Kế toán + Quản lý MODE 240 trên 4 function Quỹ (16 trên "đổi ngày"); Phục vụ 0; Thu ngân/Thủ kho không có dòng.
 
 ### 6.5 Số phiếu, trường bắt buộc, báo cáo thu chi
-- Số phiếu: cờ `STABLEDESC.GENNO = 30` ở `TTHUCHI` → framework tự sinh; `NAME` bắt buộc + không trùng; không có code sinh số trong export; định dạng (`PT20/00001`…) nằm trong No1Lib, chưa đối chiếu. `TaoSoHoaDon`/`TSOHOADON` chỉ sinh số **hóa đơn**, không liên quan phiếu thu/chi.
+- Số phiếu: cờ `STABLEDESC.GENNO = 30` ở `TTHUCHI` → framework tự sinh; `NAME` bắt buộc + không trùng (đo trực tiếp trên `DATA.fdb` thật: `GENNO = 30` ở `TTHUCHI`, `TDONHANG`, `TDATHANG`, `TBAOGIA`, `TTHUONGPHAT`, `TTANGGIAMDIEM`); không có code sinh số trong export; định dạng (`PT20/00001`…) nằm trong No1Lib, chưa đối chiếu. `TaoSoHoaDon`/`TSOHOADON` chỉ sinh số **hóa đơn**, không liên quan phiếu thu/chi.
 - Trường bắt buộc (theo AELAYOUT đầy đủ): `NAME`, `THU`/`CHI`, `DCUAHANGID`. Không có `DefaultValue` cho ngày (nhiều khả năng framework mặc định hôm nay).
 - 6 báo cáo thu chi có `SQL = NULL` → **báo cáo tự sinh** (xem [file báo cáo](pos-tap-nghiep-vu-bao-cao.md) mục 8).
 - `SetNapThe()` được gọi từ `STABLEDESC` `DTHETRATRUOC` (`btnNapTien_Click`/`btnChiTra_Click`: gán `DTHETRATRUOCID`, lý do gần nhất/fallback "Nạp thẻ trả trước"/"Chi trả thẻ trả trước", `DIENGIAI`), không phải từ `SFORM`.

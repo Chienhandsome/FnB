@@ -13,7 +13,7 @@
    - **DB trống:** chép `POS TAP\Data\TEMPLATE.FDB` (19,5 MB) đè `Database\DATA.fdb` của bản sao → tự tạo dữ liệu theo ca chuẩn ở bước 4.
    - **DB có dữ liệu thật:** restore bản backup `POS TAP\Data\Backup\bak_02_02_2023.gbk` (13 MB, mới nhất) bằng `gbak` Firebird 2.5: `gbak -c -user SYSDBA -password masterkey bak_02_02_2023.gbk DATA_TEST.fdb` rồi đặt thành `Database\DATA.fdb` của bản sao. Dùng cho các câu cần dữ liệu lịch sử (báo cáo, công nợ, điểm tích lũy, `SELECT DISTINCT LOAI`).
    - Có thêm `Database\DEMO.FDB` (22 MB) và **`Database\ONLINE.FDB` (2 MB — chưa ai mở, xem QT-V3)**.
-3. **Công cụ đọc DB:** FlameRobin hoặc `isql` 2.5 (user `SYSDBA`, mật khẩu mặc định `masterkey`, embedded dùng `fbembed.dll` 32-bit). Cách "trước/sau": chạy cùng một truy vấn trước và sau mỗi thao tác, hoặc chép file DB làm snapshot.
+3. **Công cụ đọc DB:** (đã dựng sẵn một công cụ console x86 đọc được `DATA.fdb`/`DEMO.FDB` — xem `reference/db-pos-tap-do-truc-tiep.md`; Python 64-bit trên máy không nạp được `fbembed.dll` 32-bit) hoặc FlameRobin / `isql` 2.5 (user `SYSDBA`, mật khẩu mặc định `masterkey`, embedded dùng `fbembed.dll` 32-bit). Cách "trước/sau": chạy cùng một truy vấn trước và sau mỗi thao tác, hoặc chép file DB làm snapshot.
 4. **Ca dữ liệu chuẩn** (tạo trên DB trống): 1 cửa hàng; kho `K1`, `K2` (`CHOPHEPAMKHO = 0`); mặt hàng `A` (kiêm vật tư, đơn vị lẻ "chai" + chẵn "thùng" = 12, giá nhập 10.000 / bán 15.000), `B` (pha chế, định lượng 2 vật tư), `C` (nguyên liệu); 1 nhóm hàng; khách `KH01`, nhà cung cấp `NCC01`; 2 tài khoản: `admin` và `thungan` (nhóm Thu ngân); 1 khu vực + 2 bàn. Chốt cấu hình trước khi test (ghi lại giá trị): `SuDung2DonViTinh`, `TuDongTinhGiaVon`, `ChoPhepKhachNo`, `CachTinhDiem`, `QuyDoi1DiemSangTien`, `GiaMatHangKhiChuyenBan`.
 5. **Quy ước SQL mẫu (dùng lại trong checklist):**
    - Tồn kho 1 mặt hàng/kho: `SELECT COALESCE(SUM(COALESCE(SLNHAP,0)-COALESCE(SLXUAT,0)),0) FROM TDONHANGCHITIET C JOIN TDONHANG D ON D.ID=C.TDONHANGID WHERE C.DMATHANGID=:mh AND C.DKHOHANGID=:kho AND (D.LOAI<>0 OR D.DATHANHTOAN=30)`
@@ -211,6 +211,7 @@ Thứ tự theo mức ảnh hưởng. Câu A1–A3 bắt buộc xong **trước 
 ### B3. Kho hàng (4 câu)
 
 #### ⭐ KHO-R1 (Q1) — Số phiếu `NAME` sinh thế nào?
+- **Manh mối từ DB thật (19/11/2026):** `STABLEDESC.GENNO = 30` ở `TDONHANG` (dùng chung cho nhập/xuất/chuyển/kiểm kê/bán), `TTHUCHI`, `TDATHANG`, `TBAOGIA`, `TTHUONGPHAT`, `TTANGGIAMDIEM` → framework tự sinh số phiếu cho cả 6 loại; nhóm cấu hình "Số phiếu"/"Mẫu hóa đơn" tồn tại trong `SCONFIGGROUP` nhưng **không có khóa `SCONFIG` nào** → định dạng không nằm ở `SCONFIG`. Vẫn cần test để biết định dạng/thời điểm sinh.
 - **Thao tác:** tạo liên tiếp: 2 phiếu nhập, 2 phiếu xuất, 2 phiếu chuyển, 2 phiếu kiểm kê (cùng ngày), sau đó phiếu nhập sang tháng/năm khác (đổi ngày nếu có quyền); xem ô số phiếu lúc **mở form** vs lúc **lưu**; thử sửa tay số phiếu, thử trùng số. Xem **Cấu hình → Số phiếu**.
 - **DB:** `SELECT LOAI, NAME, NGAY FROM TDONHANG WHERE LOAI IN (1,2,3,4) ORDER BY TIMECREATED`; `SELECT NAME, STRVALUE, INTVALUE FROM SCONFIG WHERE NAME CONTAINING 'SoPhieu' OR NAME CONTAINING 'SOPHIEU'`.
 - **Đọc:** định dạng (`PN…`/`NK20/…`), tiền tố theo `LOAI`, dãy theo ngày/tháng/năm/cửa hàng, sửa tay được/không. Làm tương tự phiếu thu/chi (`PT20/00001`).
@@ -229,6 +230,7 @@ Thứ tự theo mức ảnh hưởng. Câu A1–A3 bắt buộc xong **trước 
 - Kết quả: ______
 
 #### ⭐ KHO-R6/R7 (Q27) — Delta schema DEMO vs POS TAP thật + giá trị cấu hình thật
+- **ĐÃ TRẢ LỜI bằng DB thật (19/11/2026) — không cần restore:** `DMATHANG.LOAIDINHLUONG` **không tồn tại** trong `DATA.fdb`; `SCONFIG` = **205 khóa**; giá trị: `MatHangCoHanSuDung` 0, `MatHangCoKichThuoc` 0, `SuDungNhieuKho` 0, `GiaSuDungKhiChuyenXuatKho` **1** (giá nhập), `TuDongTinhGiaVon` 30, `ThongBaoTruocNgay` 0, `SuDung2DonViTinh` 30, `ChieuDaiMaVach` 7 (bảng đầy đủ ở `reference/db-pos-tap-do-truc-tiep.md` mục 3). Chỉ còn việc chụp các tab Cấu hình. Câu Q27 coi như đóng.
 - **Thao tác (không cần app):** mở **DB thật** (restore backup) bằng FlameRobin/isql: `SELECT RDB$FIELD_NAME FROM RDB$RELATION_FIELDS WHERE RDB$RELATION_NAME='DMATHANG' AND RDB$FIELD_NAME='LOAIDINHLUONG'`; `SELECT NAME, INTVALUE, STRVALUE FROM SCONFIG ORDER BY NAME` (xuất ra file, diff với `sconfig.txt` DEMO); `SELECT COUNT(*) FROM SCONFIG`; liệt kê bảng thừa/thiếu so với DEMO.
 - **Thao tác (app):** mở **Cấu hình** chụp từng tab (đặc biệt combo và tab Số phiếu).
 - **Đọc:** `LOAIDINHLUONG` tồn tại; số khóa `SCONFIG` (kỳ vọng 205); giá trị `MatHangCoHanSuDung`, `MatHangCoKichThuoc`, `SuDungNhieuKho`, `GiaSuDungKhiChuyenXuatKho`, `TuDongTinhGiaVon`, `ThongBaoTruocNgay`, `SuDung2DonViTinh`, `ChieuDaiMaVach`.
@@ -237,6 +239,7 @@ Thứ tự theo mức ảnh hưởng. Câu A1–A3 bắt buộc xong **trước 
 ### B4. Công nợ + Quỹ (2 câu)
 
 #### ⭐ CN-12 — Giá trị thật `ChoPhepKhachNo` và các config nhóm Thanh toán
+- **ĐÃ TRẢ LỜI bằng DB thật (19/11/2026):** `ChoPhepKhachNo` = **0** (tắt bán chịu), `CoTienGio` 0, `LamTronTien` 1000, `ThoiGianChoPhepHuyBill` 50. Đây là cấu hình của bản cài/ DB mẫu hiện tại; nếu quán thật dùng bán chịu thì giá trị trong DB quán khác — hỏi Chiến (hoặc đọc backup `bak_02_02_2023.gbk`).
 - **Thao tác:** như KHO-R6/R7: đọc `SCONFIG` trên **DB thật**: `SELECT NAME, INTVALUE FROM SCONFIG WHERE NAME CONTAINING 'Khach' OR NAME CONTAINING 'ThanhToan' OR NAME CONTAINING 'No'`; mở **Cấu hình → Thanh toán**.
 - **Đọc:** quán dùng bán chịu hay không (`ChoPhepKhachNo`) → quyết định công nợ có là lõi hay chỉ cần tối thiểu.
 - Kết quả: ______
@@ -441,7 +444,7 @@ Các mục này là phần còn mở của câu đã trả lời một phần. T
 | NS-R3 | `TVAORA.SOGIO` thật (×100? nguyên?) | Chạy máy chấm công (hoặc nhập tay `TVAORA`) rồi `SELECT SOGIO, SOGIOTANGCA FROM TVAORA`; so với hiển thị lưới |
 | NS-R4 | `TBANGLUONG.CHITIET` BLOB | `SELECT COUNT(*) FROM TBANGLUONG WHERE CHITIET IS NOT NULL` trên **DB thật** (DEMO = 0) |
 | NS-R5 | **B1 form máy: lương 0 sau khi mở lại; Cập nhật ghi đè 0** + `TinhLuongSuDungMayChamCong`, `IpMayChamCong` thật | Nếu form có menu: nhập `TVAORA` (file mẫu hoặc tay), lưu bảng lương, mở lại, bấm Cập nhật **không** Refresh; `SELECT TONGLUONG, THUCNHAN FROM TBANGLUONGTONGHOP`; `SELECT NAME, INTVALUE, STRVALUE FROM SCONFIG WHERE NAME CONTAINING 'MayChamCong'` trên DB thật |
-| NS-R6 | Form lương máy có menu/dùng thật; "form thừa của DEMO" là form nào | `SELECT NAME FROM SFORM` trên DB thật (đã biết `Tính lương bằng máy` **có** trong export 111 form; tìm form DEMO thừa); `SELECT * FROM SMENU WHERE SFORMID=:id`. Lưu ý: thư mục `POS TAP` **không có `zkemkeeper\zkemkeeper.exe`** mà form lương máy cần để lấy dữ liệu máy chấm công → bản cài này không chạy được luồng đó (gợi ý quán không dùng lương máy; hỏi Chiến để chốt) |
+| NS-R6 | **Một phần đã trả lời bằng DB thật:** `Tính lương bằng máy` và `Lấy dữ liệu từ máy` **không có menu `STATUS=30` nào trỏ tới** (chỉ `Tính lương` có 2 menu); `TinhLuongSuDungMayChamCong` = NULL. Còn mở: có dùng thật hay không. Form lương máy có menu/dùng thật; "form thừa của DEMO" là form nào | `SELECT NAME FROM SFORM` trên DB thật (đã biết `Tính lương bằng máy` **có** trong export 111 form; tìm form DEMO thừa); `SELECT * FROM SMENU WHERE SFORMID=:id`. Lưu ý: thư mục `POS TAP` **không có `zkemkeeper\zkemkeeper.exe`** mà form lương máy cần để lấy dữ liệu máy chấm công → bản cài này không chạy được luồng đó (gợi ý quán không dùng lương máy; hỏi Chiến để chốt) |
 | NS-R8 | Lỗ hổng quyền Chấm công (lưu được tiền) | User chỉ có quyền Chấm công mở màn Chấm công, sửa công, bấm Cập nhật; `SELECT THUCNHAN FROM TBANGLUONGTONGHOP` (đổi?) |
 
 ### C5. Quản trị
@@ -451,7 +454,7 @@ Các mục này là phần còn mở của câu đã trả lời một phần. T
 | QT-V3 | **`ONLINE.FDB` chứa gì** (có sẵn `POS TAP\Database\ONLINE.FDB`, 2 MB) và **`WebService.exe` là gì** (có sẵn `POS TAP\WebService.exe` + `WebService.exe.config`) | Mở `ONLINE.FDB` bằng FlameRobin: danh sách bảng, `SELECT COUNT(*)`; so với `SCONFIG`/`SFUNCTION`/`SMENU`. Đọc `WebService.exe.config` (cổng, chuỗi kết nối, URL). Bật `KichHoatDongBo=30` trên bản sao, quan sát `onlineTimer_Tick` 5 phút có tự chạy `webservice.exe` không (Task Manager); ghi cổng/log |
 | QT-V11 | Registry `EasyReg` (hive + key cha) | Cấu hình máy in bếp một khu vực; mở `regedit`, tìm các key `_AN/_UONG/_KHAC/_DICHVU` hoặc `MAY_IN_DO_AN…` |
 | QT-V14/V15/Q18 | `DeleteSelectedRows()` xóa mềm/cứng (user, bản quyền MTB) | Xóa 1 user test / 1 dòng bản quyền test; `SELECT COUNT(*), STATUS FROM SUSER WHERE ...`; `SELECT * FROM DBANQUYEN` |
-| QT-V19 | `SCONFIG` thật: `LamTronTien`, `ThoiGianChoPhepHuyBill`, khóa thừa thứ 7, enum combo | `SELECT NAME, INTVALUE, STRVALUE FROM SCONFIG ORDER BY NAME` trên DB thật, diff với `sconfig.txt` DEMO; chụp tab Cấu hình |
+| QT-V19 | **Một phần đã trả lời bằng DB thật:** `LamTronTien` 1000, `ThoiGianChoPhepHuyBill` 50, 205 khóa (không có "khóa thừa" — các khóa DEMO thừa nằm ở DB khác). Còn mở: enum combo (đổi từng giá trị trên app) — `SCONFIG` thật: `LamTronTien`, `ThoiGianChoPhepHuyBill`, khóa thừa thứ 7, enum combo | `SELECT NAME, INTVALUE, STRVALUE FROM SCONFIG ORDER BY NAME` trên DB thật, diff với `sconfig.txt` DEMO; chụp tab Cấu hình |
 | QT-V20 | 50 khóa chưa thấy chỗ đọc | Đổi từng khóa quan trọng (`SuDungNhieuKho`, `CoManHinhPhu`, `ChonNgayLamViecKhiDangNhap`, `LuuVetTrong`/`SoNgayLuuVet`, `ChucNangMacDinh`, nhóm Cảnh báo) rồi quan sát hành vi |
 | QT-V21 | `PrintProcessor.exe` in gì; định dạng `_out` | **Thư mục `POS TAP` không có `PrintProcessor.exe`** (chỉ có `PrintService.exe`, 52 mục): code MTB gọi `<StartupPath>\PrintProcessor.exe <guid>`. Test: gửi POST in tới MTB và theo dõi `temp\<guid>`/`<guid>_out`, xem lỗi khi thiếu exe; kiểm tra `PrintService.exe` có phải bản thay thế (chạy với tham số `<guid>`); hỏi Chiến bản cài thật có `PrintProcessor.exe` không |
 | QT-V23 | `USERID` là mã quẹt thẻ hay mã tự đặt; `CARDCODE` | Tạo user có `USERID` = số; thử đăng nhập MTB bằng `matkhau` = `USERID` (đăng nhập không mật khẩu); quẹt thẻ cho `CARDCODE` có logic không (Chiến xác nhận) |
@@ -469,7 +472,7 @@ Các mục này là phần còn mở của câu đã trả lời một phần. T
 | ID | Việc cần xác minh | Thao tác + DB cần đọc |
 |---|---|---|
 | BC-PHU1 | WHERE chính xác của 73 báo cáo tự sinh | Seed bill cố ý: 1 bill chưa thanh toán, 1 bill hủy, 1 `LOAI=1`, 1 `LOAI=2`, 1 `LOAI=99`, 1 phiếu `STATUS=-30`; chạy mỗi **họ** báo cáo (bán hàng, kho, công nợ, quỹ, danh mục, đặt hàng — theo `deep/bao-cao.md` §b) và so tổng với SQL tay theo giả thuyết (`LOAI=0 AND DATHANHTOAN=30`…); loại trừ giả thuyết sai |
-| BC-PHU2 | Báo cáo thừa của DEMO (128 vs 127) | `SELECT NAME FROM SREPORT ORDER BY NAME` trên DB thật, diff với DEMO; `BÁO CÁO CHI TIẾT BÁN HÀNG THEO THU NGÂN` đã xác nhận **có** trong export thật |
+| BC-PHU2 | Báo cáo thừa của DEMO (128 vs 127) | **ĐÃ TRẢ LỜI bằng DB thật (19/11/2026):** `SREPORT` thật có 128 dòng, 127 `STATUS=30` + 1 `STATUS=0` ("BÁO CÁO CHI TIẾT BÁN HÀNG THEO THU NGÂN") → không có báo cáo thừa, chỉ là báo cáo bị tắt. Đóng |
 | BC-PHU3 | Mẫu in: biểu đồ doanh thu ngày trục X hỏng; Total sai ở 2 báo cáo tháng; `GIATRITON ≠ 0` khi `Ton=0` ở XNT | Chạy 3 báo cáo trên DB có dữ liệu, chụp màn hình; đối chiếu tổng tay |
 
 ## D. Tổng kết đếm
@@ -484,5 +487,7 @@ Các mục này là phần còn mở của câu đã trả lời một phần. T
 | Quản trị | 5 | 0 | 5 (V1, V5 cần APK/decompile/Chiến — app không đủ) |
 | Báo cáo | 20 | 1 (Q37) | 19 (Q6 kèm quyết định Chiến; Q4 trùng A3) |
 | **Tổng** | **55** | **5** | **50** |
+
+**Cập nhật sau khi đo `DATA.fdb` thật (19/11/2026):** đã đóng thêm KHO-R6/R7 (Q27), CN-12, BC-PHU2, một phần QT-V19/NS-R6; số câu cần test app giảm tương ứng (kho 3 thay vì 4, công nợ+quỹ 1 thay vì 2).
 
 Bảy câu chặn (Phần A) hợp nhất thành 7 thao tác test ở trên; thứ tự làm đề nghị: A1 → A2 → A3 → A4/A5/A6 (cùng một kịch bản NCC) → A7, rồi tới các nhóm B.
