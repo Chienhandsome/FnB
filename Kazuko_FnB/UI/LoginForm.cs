@@ -26,6 +26,7 @@ namespace Kazuko_FnB.UI
         private readonly Label _title = new Label();
         private readonly SegmentedTabs _tabs = new SegmentedTabs();
         private readonly Label _version = new Label();
+        private readonly MarqueeBar _marquee = new MarqueeBar();
 
         private readonly Panel _pageLogin = new Panel();
         private readonly Label _lblUser = new Label();
@@ -68,7 +69,7 @@ namespace Kazuko_FnB.UI
         {
             _settings = settings;
 
-            Text = "KAZUKO TEA - Đăng nhập";
+            Text = "KAZUKO FNB - Đăng nhập";
             FormBorderStyle = FormBorderStyle.None;
             WindowState = FormWindowState.Maximized;
             StartPosition = FormStartPosition.Manual;
@@ -137,7 +138,7 @@ namespace Kazuko_FnB.UI
 
         private void BuildControls()
         {
-            _bar.Text = "KAZUKO TEA";
+            _bar.Text = "KAZUKO FNB";
             _title.Text = "Đăng nhập";
             _title.Font = new Font("Segoe UI Semibold", 20f);
             _title.AutoSize = false;
@@ -145,7 +146,7 @@ namespace Kazuko_FnB.UI
             _tabs.Items = new[] { "Đăng nhập", "Cơ sở dữ liệu" };
             _tabs.SelectedIndexChanged += delegate { OnTabChanged(); };
 
-            _version.Text = "KAZUKO TEA v" + Application.ProductVersion;
+            _version.Text = "KAZUKO FNB v" + Application.ProductVersion;
             _version.Font = new Font("Segoe UI", 8.5f);
             _version.TextAlign = ContentAlignment.MiddleRight;
 
@@ -222,7 +223,9 @@ namespace Kazuko_FnB.UI
             _lblHost.Visible = _host.Visible = _lblPort.Visible = _port.Visible = false;
             _pageDb.Visible = false;
 
-            Controls.AddRange(new Control[] { _bar, _title, _tabs, _pageLogin, _pageDb, _version });
+            _marquee.Text = "Chào mừng đến với KAZUKO FNB  –  Giải pháp quản lý FnB: bán hàng, kho, công nợ, nhân sự  –  " +
+                            "Mỗi đơn hàng đúng giờ, mỗi khách hàng hài lòng!";
+            Controls.AddRange(new Control[] { _bar, _title, _tabs, _pageLogin, _pageDb, _version, _marquee });
 
             // Thứ tự Tab
             _tabs.TabIndex = 0;
@@ -299,6 +302,8 @@ namespace Kazuko_FnB.UI
 
             int barH = (int)(40 * s);
             _bar.SetBounds(0, 0, W, barH);
+            int marqueeH = (int)(34 * s);
+            _marquee.SetBounds(0, H - marqueeH, W, marqueeH);
 
             int cardW = (int)(440 * s);
             int cardH = CardHeight(s);
@@ -391,6 +396,11 @@ namespace Kazuko_FnB.UI
             _bar.BarColor = t.Primary;
             _bar.BarTextColor = t.OnPrimary;
             _bar.Invalidate();
+
+            _marquee.FromColor = Draw.GradFrom(t);
+            _marquee.ToColor = Draw.GradTo(t);
+            _marquee.TextColor = t.IsDark ? Color.FromArgb(40, 18, 6) : Color.White;
+            _marquee.Invalidate();
 
             foreach (Control c in new Control[] { _title, _version, _pageLogin, _pageDb })
                 c.BackColor = card;
@@ -497,9 +507,9 @@ namespace Kazuko_FnB.UI
                 {
                     var r = new Rectangle((int)(area.Width * 0.08), 0, Math.Max(10, _card.Left - (int)(area.Width * 0.12)), area.Height);
                     Color fg = t.IsDark ? t.Text : Color.White;
-                    TextRenderer.DrawText(g, "KAZUKO TEA", big, new Rectangle(r.X, area.Height / 2 - (int)(70 * s), r.Width, (int)(80 * s)), fg,
+                    TextRenderer.DrawText(g, "KAZUKO FNB", big, new Rectangle(r.X, area.Height / 2 - (int)(70 * s), r.Width, (int)(80 * s)), fg,
                         TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
-                    TextRenderer.DrawText(g, "Phần mềm quản lý quán trà sữa", sub, new Rectangle(r.X, area.Height / 2 + (int)(10 * s), r.Width, (int)(40 * s)),
+                    TextRenderer.DrawText(g, "Phần mềm quản lý FnB", sub, new Rectangle(r.X, area.Height / 2 + (int)(10 * s), r.Width, (int)(40 * s)),
                         Color.FromArgb(220, fg), TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
                 }
             }

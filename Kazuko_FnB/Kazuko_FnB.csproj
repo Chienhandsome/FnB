@@ -96,6 +96,9 @@
     <Compile Include="UI\Controls\IconToolbar.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="UI\Controls\MarqueeBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="UI\Controls\QuickAccessCard.cs">
       <SubType>Component</SubType>
     </Compile>

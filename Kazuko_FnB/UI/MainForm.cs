@@ -45,7 +45,7 @@ namespace Kazuko_FnB.UI
             _session = session;
             _model = MainMenuBuilder.Build(session);
 
-            Text = "KAZUKO TEA - " + session.DisplayName +
+            Text = "KAZUKO FNB - " + session.DisplayName +
                    (session.CurrentStore != null ? " - " + session.CurrentStore.Name : "");
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
@@ -55,7 +55,7 @@ namespace Kazuko_FnB.UI
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 10f);
 
-            _bar.Text = "PHẦN MỀM QUẢN LÝ TRÀ SỮA KAZUKO TEA  v" + Application.ProductVersion;
+            _bar.Text = "PHẦN MỀM QUẢN LÝ KAZUKO FNB  v" + Application.ProductVersion;
             _bar.ShowUser = true;
             _bar.ShowMaximize = true;
             _bar.EnableDrag = true;

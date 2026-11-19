@@ -4,7 +4,7 @@ using System.Drawing;
 namespace Kazuko_FnB.Theme
 {
     /// <summary>
-    /// Bảng màu dựng sẵn. Spec cần 10 bảng (đặt tên riêng cho quán trà sữa,
+    /// Bảng màu dựng sẵn. Spec cần 10 bảng (đặt tên riêng cho quán FnB,
     /// không dùng lại tên/mô tả của KAZUKO GOLD). Hiện có 3 bảng làm mẫu; bổ sung ở G5.
     /// </summary>
     public static class BuiltInThemes
