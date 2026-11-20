@@ -66,6 +66,12 @@ Services **không dính gì tới WinForms** (không nhận `Form`, `DataGridVie
 2. **Dapper hay ADO.NET thuần cho lớp Data.** Đề xuất Dapper: nhỏ, chạy tốt trên .NET Framework 4.8, tham số hóa mặc định. Nếu đã code theo hướng khác thì giữ hướng đó, đừng đổi giữa chừng.
 3. **Test cho công thức tiền/kho/nợ.** Bản rà soát cho sẵn "đáp án" (ví dụ: mua chịu 10M trả 4M thì nợ phải ra 6M, không phải 14M). Mỗi công thức viết xong phải có test khóa lại.
 
+**Câu hỏi cho sếp — VẪN MỞ, sếp chưa trả lời (cập nhật 20/11):**
+- Giấy phép FastReport: chọn license thương mại hay Open Source (xem mục 3, Mẫu in).
+- Lỗi tính sai tiền trong app cũ: sửa theo đúng công thức, hay giữ nguyên như app cũ?
+
+Hai câu này chưa có quyết định. Không viết code thanh toán/công nợ cho tới khi có đáp án (đúng theo mục 5).
+
 ## 3. Dựng lại UI y hệt nhưng restyle — nguồn dữ liệu trong DB
 
 App gốc metadata-driven: UI + logic nằm trong DB. Việc dựng lại dựa vào đó là **khả thi (~90%)**, đã chứng minh bằng script parse thử: form Hóa đơn bán hàng trích được **82 control + 34 event wiring** trong vài giây.
@@ -130,6 +136,12 @@ Tên thật trong code khác tên `Kz*` ghi ở trên; khi viết spec/màn mớ
 | Tô màu theme | `ThemeApplier.Apply(root, tokens)` | Hàm duy nhất tô cây control (tương đương `ThemeManager.ApplyTheme(form)` ở trên). Kiểu control qua `Control.Tag`. |
 | Form cha | `BaseForm` (`ThemedDialog` kế thừa cho hộp thoại) | Mọi form kế thừa `BaseForm` (font, icon, đăng ký/hủy `ThemeChanged`); chỉ ghi đè `ApplyFormTheme()`. Hộp thoại dùng `ThemedDialog` (có tiêu đề/thân/chân nút). |
 
+### Quy tắc nút (sếp nhắn 19/11, Chiến xác nhận 20/11)
+
+- **Nút chính:** màu cam (token `Primary`), có viền. Mọi nút chính trong app dùng đúng một màu cam này, không tự chọn màu khác.
+- **Nút Xóa:** nền đỏ (token `Danger`), chữ trắng, in đậm, rõ nét. Chỉ dùng cho thao tác xóa.
+- **Nút 3D (đã xác nhận):** kiểu nút nổi có viền và bóng, như 4 ô cam trên ảnh nền màn đăng nhập. Mỗi nút dẫn tới đúng chức năng nghiệp vụ tương ứng; không dùng nút trang trí không có chức năng.
+
 ### Quy tắc kích thước (ghi thành bảng, không để mỗi form tự chọn) - này chỉ là kích thước chọn trước thôi, có thể tôi sẽ yêu cầu chỉnh sửa lại cho phù hợp
 
 Nút chuẩn 90×32, nút chính 110×32; ô nhập cao 28; label 9pt, tiêu đề 10pt đậm; lề form 12px, khoảng cách giữa các control 8px; lưới: header cao 28, dòng cao 26. Các số này nằm chung trong `ThemeManager` dưới dạng hằng số. Font: **một** font cho toàn app (đề xuất Segoe UI 9pt), `AutoScaleMode` giống nhau ở mọi form.
@@ -165,3 +177,13 @@ Spec UI trích ra chỉ cần ghi **loại control** (nút, ô nhập, lưới, 
 2. Làm theo thứ tự menu gốc: Hoạt động (danh mục trước, luồng tiền/giá/kho sau) → Khách hàng → Kho → Công nợ → Quỹ → Nhân sự → Báo cáo.
 3. Chiến chốt các nghi vấn giống bug (giữ hay sửa) theo từng nhóm — danh sách trong mục (e) mỗi file `deep/*.md` + §12 của `quan-tri.md`.
 4. Chạy app gốc POS TAP trên DB mẫu để trả lời 7 câu chặn (mục 5) rồi mới viết code thanh toán/công nợ.
+
+## 7. Phạm vi giai đoạn 2 (làm SAU khi clone xong app cũ, không phải v1)
+
+Không đưa các mục này vào bản v1; chỉ chốt phương án kỹ thuật sau khi bản clone xong.
+
+- **Liên kết hóa đơn** (hóa đơn điện tử).
+- **Bán hàng bằng điện thoại.** Đây là đầu mới: app desktop WinForms không chạy trên Android, nên cần kiến trúc riêng.
+- **Cơ chế in từ điện thoại, máy tính, máy POS Android.** Phụ thuộc phương án kỹ thuật ở trên.
+
+Phương án kỹ thuật cho các mục bán hàng bằng điện thoại và máy POS Android sẽ chốt sau khi xong bản clone.
