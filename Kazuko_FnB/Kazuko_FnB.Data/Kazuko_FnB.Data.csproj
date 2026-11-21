@@ -59,10 +59,14 @@
     <Compile Include="FormRepository.cs" />
     <Compile Include="GroupRepository.cs" />
     <Compile Include="ImageRepository.cs" />
+    <Compile Include="BookingRepository.cs" />
+    <Compile Include="PhieuThuRepository.cs" />
     <Compile Include="KazukoConnection.cs" />
     <Compile Include="MenuRepository.cs" />
     <Compile Include="ProductGroupRepository.cs" />
     <Compile Include="ProductRepository.cs" />
+    <Compile Include="RoomRepository.cs" />
+    <Compile Include="AreaRepository.cs" />
     <Compile Include="ReferenceChecker.cs" />
     <Compile Include="RoleRepository.cs" />
     <Compile Include="ScreenLayout.cs" />

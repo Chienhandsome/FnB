@@ -41,11 +41,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdminModels.cs" />
+    <Compile Include="BookingModels.cs" />
     <Compile Include="CatalogModels.cs" />
     <Compile Include="ConfigModels.cs" />
+    <Compile Include="DocumentNumber.cs" />
     <Compile Include="MenuModels.cs" />
     <Compile Include="PhieuThuModels.cs" />
     <Compile Include="ProductModels.cs" />
+    <Compile Include="RoomModels.cs" />
     <Compile Include="ScreenLayoutModels.cs" />
     <Compile Include="SecurityModels.cs" />
   </ItemGroup>

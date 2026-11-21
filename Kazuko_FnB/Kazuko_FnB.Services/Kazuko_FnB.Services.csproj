@@ -57,11 +57,13 @@
     <Compile Include="AppSession.cs" />
     <Compile Include="ConfigViewModel.cs" />
     <Compile Include="DatabaseService.cs" />
+    <Compile Include="BookingRules.cs" />
     <Compile Include="LoginService.cs" />
     <Compile Include="MoneyRounding.cs" />
     <Compile Include="PasswordPolicy.cs" />
     <Compile Include="PhieuThuRules.cs" />
     <Compile Include="ProductRules.cs" />
+    <Compile Include="RoomRules.cs" />
     <Compile Include="RoleLogic.cs" />
     <Compile Include="SystemConfig.cs" />
   </ItemGroup>

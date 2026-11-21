@@ -74,6 +74,53 @@ namespace Kazuko_FnB.Data
         }
 
         /// <summary>
+        /// Mục menu không có SMENU.SFUNCTIONID (vd. "Khách đặt hàng": SFUNCTIONID = NULL) thì
+        /// lấy quyền từ STABLEDESC.SFUNCTIONID của bảng nhập liệu mà mục đó trỏ tới (§4 spec
+        /// Khách đặt hàng: SFUNCTION "Đặt hàng" dùng chung với "Theo dõi đặt phòng").
+        /// Một truy vấn cho cả cây; chỉ điền chỗ đang trống.
+        /// </summary>
+        public void FillFunctionIds(List<MenuNode> roots)
+        {
+            if (roots == null)
+                return;
+            var map = new Dictionary<string, string>(StringComparer.Ordinal);
+            DbHelper.Guard(delegate
+            {
+                using (var conn = KazukoConnection.Open(_databasePath))
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT \"ID\", \"SFUNCTIONID\" FROM \"STABLEDESC\" " +
+                        "WHERE \"SFUNCTIONID\" IS NOT NULL AND \"SFUNCTIONID\" <> ''";
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            string id = Str(r[0]);
+                            string fn = Str(r[1]);
+                            if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(fn))
+                                map[id] = fn;
+                        }
+                    }
+                }
+                return 0;
+            });
+            foreach (MenuNode root in roots)
+                FillNode(root, map);
+        }
+
+        private static void FillNode(MenuNode n, Dictionary<string, string> map)
+        {
+            if (string.IsNullOrEmpty(n.FunctionId) && !string.IsNullOrEmpty(n.StableDescId))
+            {
+                string fn;
+                if (map.TryGetValue(n.StableDescId, out fn))
+                    n.FunctionId = fn;
+            }
+            foreach (MenuNode c in n.Children)
+                FillNode(c, map);
+        }
+
+        /// <summary>
         /// DB lưu tên menu bằng CHỮ HOA ("HOẠT ĐỘNG"). Đổi thành chữ thường đầu câu ("Hoạt động")
         /// cho hợp giao diện; tên đã viết thường/hoa lẫn lộn thì giữ nguyên. Bỏ '&amp;' của mnemonic cũ.
         /// </summary>

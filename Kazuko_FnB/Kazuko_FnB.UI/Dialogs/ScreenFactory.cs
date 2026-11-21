@@ -46,7 +46,13 @@ namespace Kazuko_FnB.UI.Dialogs
             try
             {
                 if (!new Data.CatalogRepository(session.DatabasePath).IsSupported(node.StableDescId))
+                {
+                    // Màn chứng từ TDATHANG (TABLETYPE = 3) không mở được qua CatalogView: màn riêng.
+                    string table = new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId);
+                    if (string.Equals(table, "TDATHANG", StringComparison.OrdinalIgnoreCase))
+                        return new BookingListView(session.DatabasePath);
                     return null;
+                }
             }
             catch (Exception)
             {

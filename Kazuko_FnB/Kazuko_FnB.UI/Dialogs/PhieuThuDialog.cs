@@ -14,6 +14,8 @@ namespace Kazuko_FnB.UI.Dialogs
     /// <summary>
     /// Quỹ ▸ Tạo phiếu thu — BẢN THỬ dựng từ layout của app gốc (SFORM "Phiếu thu"), xem docs/specs/pilot-phieu-thu.md.
     /// Hiện đủ trường, chạy các luật bật/tắt ô và điền tên/địa chỉ; nút Lưu chỉ kiểm tra, KHÔNG ghi dữ liệu.
+    /// Ngoại lệ: chế độ đặt tiền trước (constructor có preset, §3.5 spec Khách đặt hàng) thì nút Lưu
+    /// GHI THẬT phiếu thu cọc xuống TTHUCHI qua PhieuThuRepository.
     /// </summary>
     internal sealed class PhieuThuDialog : ThemedDialog, IScreenPreview
     {
@@ -24,6 +26,16 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly FormRepository _repo;
         private readonly ScreenLayout _layout;
         private readonly DynamicForm _form;
+
+        private readonly PhieuThuRepository _phieuThuRepo;
+        private readonly PhieuThuDepositPreset _depositPreset;
+        private readonly bool _isDepositMode;
+
+        /// <summary>ID phiếu thu đã lưu ở chế độ cọc (null nếu chưa lưu).</summary>
+        public string SavedId { get; private set; }
+
+        /// <summary>Số phiếu thu đã lưu ở chế độ cọc (null nếu chưa lưu).</summary>
+        public string SavedNumber { get; private set; }
 
         private readonly ComboBox _objectType;
         private readonly TextBox _partyName, _partyAddress, _number;
@@ -36,6 +48,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             _session = session;
             _repo = new FormRepository(session.DatabasePath);
+            _phieuThuRepo = new PhieuThuRepository(session.DatabasePath);
             _layout = _repo.LoadLayout(FormName);
             if (_layout == null || !string.Equals(_layout.Table, "TTHUCHI", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Không đọc được layout form \"" + FormName + "\".");
@@ -67,6 +80,119 @@ namespace Kazuko_FnB.UI.Dialogs
             // Cao vừa đủ nội dung (không cuộn dọc nếu màn đủ cao).
             ClientSize = new Size(ClientSize.Width, (int)((60 + 56 + 24) * Dpi) + _form.ContentHeight + (int)(16 * Dpi));
             _number.Select();
+        }
+
+        /// <summary>
+        /// Chế độ đặt tiền trước (§3.5 spec Khách đặt hàng): mở phiếu thu với THU = TONGCONG của
+        /// phiếu đặt, lý do = lý do của phiếu cọc gần nhất; có phiếu cọc rồi thì nạp lại để sửa.
+        /// Nút Lưu ở chế độ này GHI THẬT xuống TTHUCHI.
+        /// </summary>
+        public PhieuThuDialog(UserSession session, PhieuThuDepositPreset preset)
+            : this(session)
+        {
+            if (preset == null)
+                throw new ArgumentNullException("preset");
+            _depositPreset = preset;
+            _isDepositMode = true;
+            SetTitle("PHIẾU THU — ĐẶT TIỀN TRƯỚC");
+            SubtitleText = "Đặt tiền trước cho phiếu đặt " + preset.BookingNumber + ". Lưu sẽ ghi phiếu thu vào cơ sở dữ liệu.";
+
+            BookingDeposit existing = null;
+            if (!string.IsNullOrEmpty(preset.ExistingReceiptId))
+            {
+                try
+                {
+                    existing = _phieuThuRepo.LoadReceipt(preset.ExistingReceiptId);
+                }
+                catch (DataAccessException)
+                {
+                    existing = null;
+                }
+            }
+
+            if (existing != null)
+            {
+                // Nạp lại phiếu cọc đã có để sửa (như btnDatTruoc_Click của app gốc).
+                _number.Text = existing.Number ?? "";
+                _number.ReadOnly = true;
+                _objectType.SelectedIndex = string.IsNullOrEmpty(existing.CustomerId)
+                    ? PhieuThuRules.OtherObject : PhieuThuRules.Customer;
+                _customer.SelectId(existing.CustomerId);
+                _partyName.Text = existing.CustomerName ?? "";
+                _partyAddress.Text = existing.Address ?? "";
+                _employee.SelectId(existing.EmployeeId);
+                _store.SelectId(existing.StoreId);
+                _reason.SelectId(existing.ReasonId);
+                SetAmount(existing.Amount);
+                _date.Value = existing.Date;
+                _transfer.Checked = existing.Transfer;
+                _bank.SelectId(existing.BankAccountId);
+                SetNote(existing.Note);
+            }
+            else
+            {
+                // Lập phiếu mới: điền sẵn theo phiếu đặt (§3.5).
+                string number;
+                try
+                {
+                    number = _phieuThuRepo.GenerateNumber();
+                }
+                catch (DataAccessException)
+                {
+                    number = "";
+                }
+                _number.Text = number;
+                _number.ReadOnly = true;
+                _objectType.SelectedIndex = string.IsNullOrEmpty(preset.CustomerId)
+                    ? PhieuThuRules.OtherObject : PhieuThuRules.Customer;
+                _customer.SelectId(preset.CustomerId);
+                _partyName.Text = preset.CustomerName ?? "";
+                _partyAddress.Text = preset.Address ?? "";
+                string reasonId = null;
+                try
+                {
+                    reasonId = _phieuThuRepo.LoadLatestDepositReasonId();
+                }
+                catch (DataAccessException)
+                {
+                    reasonId = null;
+                }
+                _reason.SelectId(reasonId);
+                SetAmount(preset.Amount);
+                SetNote(BookingText.DepositNote(preset.BookingNumber));
+            }
+            _form.ApplyTheme(ThemeManager.Current);
+        }
+
+        private void SetAmount(decimal amount)
+        {
+            var numThu = _form.Editor("numTHU") as NumericUpDown;
+            if (numThu == null)
+                return;
+            if (amount < numThu.Minimum)
+                amount = numThu.Minimum;
+            if (amount > numThu.Maximum)
+                amount = numThu.Maximum;
+            numThu.Value = amount;
+        }
+
+        private void SetNote(string note)
+        {
+            var tb = _form.Editor("txtDIENGIAI") as TextBox;
+            if (tb != null)
+                tb.Text = note ?? "";
+        }
+
+        private string GetNote()
+        {
+            var tb = _form.Editor("txtDIENGIAI") as TextBox;
+            return tb == null ? null : tb.Text;
+        }
+
+        private decimal GetAmount()
+        {
+            var numThu = _form.Editor("numTHU") as NumericUpDown;
+            return numThu == null ? 0m : numThu.Value;
         }
 
         private Control Need(string name)
@@ -172,7 +298,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _form.ApplyTheme(ThemeManager.Current);
         }
 
-        // ------------------------------------------------------------------ Lưu (chỉ kiểm tra)
+        // ------------------------------------------------------------------ Lưu
 
         private void Save()
         {
@@ -198,7 +324,72 @@ namespace Kazuko_FnB.UI.Dialogs
                     _bank.DroppedDown = true;
                 return;
             }
+
+            if (_isDepositMode)
+            {
+                SaveDeposit();
+                return;
+            }
             Msg.Info(this, "Bản thử giao diện: dữ liệu hợp lệ nhưng chưa được ghi vào cơ sở dữ liệu.");
+        }
+
+        /// <summary>
+        /// Chế độ cọc (§3.5): ghi thật phiếu thu xuống TTHUCHI. Số phiếu đã sinh sẵn ở ctor;
+        /// trùng số thì báo và giữ dialog để người dùng sửa.
+        /// </summary>
+        private void SaveDeposit()
+        {
+            BookingDeposit existing = null;
+            if (!string.IsNullOrEmpty(_depositPreset.ExistingReceiptId))
+            {
+                try
+                {
+                    existing = _phieuThuRepo.LoadReceipt(_depositPreset.ExistingReceiptId);
+                }
+                catch (DataAccessException)
+                {
+                    existing = null;
+                }
+            }
+            var dep = new BookingDeposit
+            {
+                Id = existing == null ? null : existing.Id,
+                BookingId = _depositPreset.BookingId,
+                Number = (_number.Text ?? "").Trim(),
+                Date = _date.Value.Date,
+                ObjectType = _objectType.SelectedIndex < 0 ? 0 : _objectType.SelectedIndex,
+                CustomerId = _objectType.SelectedIndex == PhieuThuRules.Customer ? _customer.SelectedId : null,
+                CustomerName = (_partyName.Text ?? "").Trim(),
+                Address = (_partyAddress.Text ?? "").Trim(),
+                EmployeeId = _employee.SelectedId,
+                StoreId = _store.SelectedId,
+                ReasonId = _reason.SelectedId,
+                Note = GetNote(),
+                Amount = GetAmount(),
+                Transfer = _transfer.Checked,
+                BankAccountId = _bank.SelectedId
+            };
+            string savedId;
+            try
+            {
+                savedId = _phieuThuRepo.SaveDeposit(dep, _session.UserId);
+            }
+            catch (DataAccessException ex)
+            {
+                Msg.Error(this, "Không ghi được dữ liệu: " + ex.Message);
+                return;
+            }
+            if (savedId == null)
+            {
+                Msg.Warning(this, "Số phiếu \"" + dep.Number + "\" đã tồn tại. Mời bạn nhập số phiếu khác.");
+                _number.Focus();
+                _number.SelectAll();
+                return;
+            }
+            SavedId = savedId;
+            SavedNumber = dep.Number;
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         private static bool IsEmpty(Control c)

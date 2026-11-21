@@ -21,7 +21,8 @@ namespace Kazuko_FnB.UI
     /// Màn danh mục dùng chung (chỉ xem): cây nhóm bên trái (nếu danh mục có nhóm), lưới bên phải, ô tìm (F3), Làm mới.
     /// Cột, nhãn, thứ tự lấy từ metadata của DB (SCOLUMN/SGRID); chỉ hiện dòng đang dùng (STATUS = 30).
     /// Tìm không phân biệt hoa thường và dấu tiếng Việt. Chọn một nhóm thì lọc theo nhóm đó và mọi nhóm con.
-    /// Thêm/Sửa/Xóa chưa có ở bản này (xem docs/specs/goi-demo-ui.md, B2).
+    /// Hai danh mục đã có Thêm/Sửa/Xóa: Danh mục mặt hàng (DMATHANG, _productMode) và Danh mục bàn khu vực
+    /// (DBAN, _roomMode, docs/specs/danh-muc-ban-khu-vuc.md); các danh mục khác vẫn chỉ xem (xem docs/specs/goi-demo-ui.md, B2).
     /// </summary>
     internal sealed class CatalogView : Panel
     {
@@ -86,6 +87,19 @@ namespace Kazuko_FnB.UI
         private ToolStripMenuItem _colSubmenu;
         private Font _removeFont;
 
+        // ---- Chế độ Danh mục bàn khu vực (DBAN, spec docs/specs/danh-muc-ban-khu-vuc.md §1) ----
+        // Cây khu vực (DKHUVUC) + lưới bàn (DBAN). Quyền dùng chung với "Danh mục bàn khu vực" (SFUNCTION
+        // 194c969a-962f-47c8-b808-0330e2a60350): Thêm nhanh + quản lý khu vực đi theo quyền Thêm/Sửa (Q13).
+        private bool _roomMode;
+        private List<RoomRow> _roomRows = new List<RoomRow>();
+        private RoomRepository _roomRepo;
+        private AreaRepository _areaRepo;
+        private readonly FlatButton _btnQuickAdd = new FlatButton { Text = "Thêm nhanh" };
+        private readonly FlatButton _btnTotal = new FlatButton { Text = "Tổng" };
+        private readonly ThemedContextMenu _roomGridMenu = new ThemedContextMenu();
+        private readonly ThemedContextMenu _roomTreeMenu = new ThemedContextMenu();
+        private TabPage _areaTabPage;
+
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
 
@@ -132,16 +146,28 @@ namespace Kazuko_FnB.UI
             _grid.RowPostPaint += DrawRowNumber;
             _grid.SelectionChanged += delegate
             {
-                if (_productMode && !_loading)
+                if (!_loading)
                 {
-                    UpdateAuditPanel();
-                    UpdateProductButtons();
+                    if (_productMode)
+                    {
+                        UpdateAuditPanel();
+                        UpdateProductButtons();
+                    }
+                    else if (_roomMode)
+                    {
+                        UpdateRoomAuditPanel();
+                        UpdateRoomButtons();
+                    }
                 }
             };
             _grid.CellDoubleClick += delegate(object sender, DataGridViewCellEventArgs e)
             {
-                if (_productMode && e.RowIndex >= 0)
+                if (e.RowIndex < 0)
+                    return;
+                if (_productMode)
                     EditProduct();
+                else if (_roomMode)
+                    EditRoom();
             };
             _grid.MouseDown += GridMouseDown;
             _tree.MouseDown += TreeMouseDown;
@@ -160,6 +186,8 @@ namespace Kazuko_FnB.UI
                 ApplyFilter();
                 if (_productMode)
                     UpdateProductButtons();
+                else if (_roomMode)
+                    UpdateRoomButtons();
             };
 
             _split.FixedPanel = FixedPanel.Panel1;
@@ -173,6 +201,7 @@ namespace Kazuko_FnB.UI
             _bar.Resize += delegate { LayoutBar(); };
 
             BuildProductUi();
+            BuildRoomUi();
             Reload();
             ApplyTheme(_theme, _page);
         }
@@ -212,9 +241,14 @@ namespace Kazuko_FnB.UI
                     throw new InvalidOperationException("Không tìm thấy định nghĩa danh mục.");
                 CatalogData data = repo.Load(_def);
                 _productMode = string.Equals(_def.TableName, "DMATHANG", StringComparison.OrdinalIgnoreCase);
+                _roomMode = string.Equals(_def.TableName, "DBAN", StringComparison.OrdinalIgnoreCase);
                 if (_productMode)
                 {
                     LoadProductData(data);
+                }
+                else if (_roomMode)
+                {
+                    LoadRoomData(data);
                 }
                 else
                 {
@@ -223,16 +257,19 @@ namespace Kazuko_FnB.UI
                     BuildTree(data);
                     BuildTable(data);
                 }
-                _groupBar.Visible = _productMode;
-                _bottom.Visible = _productMode;
-                _btnAdd.Visible = _productMode;
-                _btnEdit.Visible = _productMode;
-                _btnRemove.Visible = _productMode;
-                _btnExcelAdd.Visible = _productMode;
-                _btnExcelExport.Visible = _productMode;
+                _groupBar.Visible = _productMode || _roomMode;
+                _bottom.Visible = _productMode || _roomMode;
+                _btnAdd.Visible = _productMode || _roomMode;
+                _btnEdit.Visible = _productMode || _roomMode;
+                _btnRemove.Visible = _productMode || _roomMode;
+                _btnExcelAdd.Visible = _productMode || _roomMode;
+                _btnExcelExport.Visible = _productMode || _roomMode;
                 _btnExcelImport.Visible = _productMode;
-                _btnPrint.Visible = _productMode;
+                _btnPrint.Visible = _productMode || _roomMode;
                 _btnPrintBarcode.Visible = _productMode;
+                // Q16: Thêm excel / Xuất excel / In / Tổng có hiện trên toolbar ở chế độ bàn nhưng chưa implement.
+                _btnQuickAdd.Visible = _roomMode;
+                _btnTotal.Visible = _roomMode;
             }
             catch (Exception ex)
             {
@@ -329,7 +366,8 @@ namespace Kazuko_FnB.UI
 
             var root = new TreeNode("Tất cả") { Tag = null };
             _tree.Nodes.Add(root);
-            if (_productMode)
+            // Cây có "Chưa thiết lập" ở cả hai chế độ (Q2: app gốc CÓ "Chưa thiết lập" cho bàn khu vực).
+            if (_productMode || _roomMode)
                 root.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = UnsetTag });
 
             var byParent = new Dictionary<string, List<CatalogNode>>(StringComparer.Ordinal);
@@ -565,7 +603,10 @@ namespace Kazuko_FnB.UI
             }
             _search.SetBounds(pad, pad + (h - _search.Height) / 2, (int)(260 * s), _search.Height);
             int x = _search.Right + pad;
-            FlatButton[] buttons = { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode };
+            FlatButton[] buttons = _roomMode
+                // Q16: Thêm excel / Xuất excel / In / Tổng hiện ở chế độ bàn nhưng chưa implement.
+                ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnQuickAdd, _btnExcelAdd, _btnExcelExport, _btnPrint, _btnTotal }
+                : new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode };
             using (Graphics g = CreateGraphics())
             {
                 foreach (FlatButton b in buttons)
@@ -593,21 +634,21 @@ namespace Kazuko_FnB.UI
                 return true;
             }
             // Chỉ khi focus đang ở lưới/cây (không phải ô tìm): Insert thêm, F4 sửa, Del xóa.
-            if (_productMode && !_search.Focused && (_grid.Focused || _tree.Focused))
+            if ((_productMode || _roomMode) && !_search.Focused && (_grid.Focused || _tree.Focused))
             {
                 if (keyData == Keys.Insert)
                 {
-                    AddProduct();
+                    if (_productMode) AddProduct(); else AddRoom();
                     return true;
                 }
                 if (keyData == Keys.F4)
                 {
-                    EditProduct();
+                    if (_productMode) EditProduct(); else EditRoom();
                     return true;
                 }
                 if (keyData == Keys.Delete)
                 {
-                    DeleteProduct();
+                    if (_productMode) DeleteProduct(); else DeleteRoom();
                     return true;
                 }
             }
@@ -635,7 +676,7 @@ namespace Kazuko_FnB.UI
             _refresh.TextColor = t.Text;
             _refresh.BorderColor = Draw.StrongBorder(t);
             _refresh.Invalidate();
-            if (_productMode)
+            if (_productMode || _roomMode)
             {
                 _groupBar.BackColor = page;
                 _bottom.BackColor = page;
@@ -644,8 +685,16 @@ namespace Kazuko_FnB.UI
                 foreach (TabPage p in _infoTabs.TabPages)
                     p.BackColor = page;
                 _areaGrid.BackgroundColor = t.Surface;
-                UpdateProductButtons();
-                UpdateAuditPanel();
+                if (_productMode)
+                {
+                    UpdateProductButtons();
+                    UpdateAuditPanel();
+                }
+                else
+                {
+                    UpdateRoomButtons();
+                    UpdateRoomAuditPanel();
+                }
             }
             Invalidate(true);
         }
@@ -659,9 +708,9 @@ namespace Kazuko_FnB.UI
             _btnRemove.Tag = "danger";
             _removeFont = new Font("Segoe UI Semibold", 10f);
             _btnRemove.Font = _removeFont;
-            _btnAdd.Click += delegate { AddProduct(); };
-            _btnEdit.Click += delegate { EditProduct(); };
-            _btnRemove.Click += delegate { DeleteProduct(); };
+            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else AddProduct(); };
+            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else EditProduct(); };
+            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else DeleteProduct(); };
             _btnExcelAdd.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnExcelExport.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnExcelImport.Click += delegate { Msg.Info(this, UnsupportedText); };
@@ -677,8 +726,8 @@ namespace Kazuko_FnB.UI
             _groupBar.Height = (int)(36 * s);
             _groupAdd.SetBounds((int)(6 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
             _groupEdit.SetBounds((int)(40 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
-            _groupAdd.Click += delegate { AddGroup(null); };
-            _groupEdit.Click += delegate { EditGroup(); };
+            _groupAdd.Click += delegate { if (_roomMode) AddArea(null); else AddGroup(null); };
+            _groupEdit.Click += delegate { if (_roomMode) EditArea(); else EditGroup(); };
             _groupBar.Controls.Add(_groupAdd);
             _groupBar.Controls.Add(_groupEdit);
             _split.Panel1.Controls.Add(_groupBar);
@@ -734,6 +783,7 @@ namespace Kazuko_FnB.UI
                 _areaGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "a_" + i, HeaderText = cols[i], Width = 110, ReadOnly = true });
             _areaGrid.Columns[_areaGrid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             page.Controls.Add(_areaGrid);
+            _areaTabPage = page;
             _infoTabs.TabPages.Add(page);
         }
 
@@ -751,6 +801,9 @@ namespace Kazuko_FnB.UI
             BuildTree(data);
             BuildProductColumns();
             BuildProductTable();
+            // Tab "Khu vực" chỉ thuộc chế độ mặt hàng: thêm lại khi quay về chế độ này (chế độ bàn đã gỡ).
+            if (_areaTabPage != null && !_infoTabs.TabPages.Contains(_areaTabPage))
+                _infoTabs.TabPages.Add(_areaTabPage);
             UpdateProductButtons();
             UpdateAuditPanel();
         }
@@ -889,10 +942,518 @@ namespace Kazuko_FnB.UI
             _grid.ClearSelection();
         }
 
+        // ------------------------------------------------------------------ Danh mục bàn khu vực (DBAN)
+
+        private void BuildRoomUi()
+        {
+            _btnQuickAdd.Tag = "primary";
+            _btnQuickAdd.Click += delegate { QuickAddRooms(); };
+            _btnTotal.Click += delegate { Msg.Info(this, UnsupportedText); };
+            FlatButton[] barButtons = { _btnQuickAdd, _btnTotal };
+            foreach (FlatButton b in barButtons)
+            {
+                b.Visible = false;
+                _bar.Controls.Add(b);
+            }
+            BuildRoomGridMenu();
+            BuildRoomTreeMenu();
+        }
+
+        private void LoadRoomData(CatalogData data)
+        {
+            _roomRepo = _roomRepo ?? new RoomRepository(_databasePath);
+            _areaRepo = _areaRepo ?? new AreaRepository(_databasePath);
+            _canAdd = AppSession.Can(RoomRules.FunctionName, RoleModes.Add);
+            _canEdit = AppSession.Can(RoomRules.FunctionName, RoleModes.Edit);
+            _canRemove = AppSession.Can(RoomRules.FunctionName, RoleModes.Remove);
+            _roomRows = _roomRepo.LoadRooms();
+            _total = _roomRows.Count;
+            // BuildTree trước: BuildRoomTable cần _nodes để tính đường đi khu vực.
+            BuildTree(data);
+            BuildRoomColumns();
+            BuildRoomTable();
+            // Tab "Khu vực" là của chế độ mặt hàng, không có ở chế độ bàn (Q1: lưới bàn chỉ có 5 cột + panel Thông tin).
+            if (_areaTabPage != null && _infoTabs.TabPages.Contains(_areaTabPage))
+                _infoTabs.TabPages.Remove(_areaTabPage);
+            UpdateRoomButtons();
+            UpdateRoomAuditPanel();
+        }
+
+        /// <summary>Bộ cột lưới thật §1.1a + Q1 (KHÔNG dùng SGRID): Tên bàn, Khu vực, Nhóm hiển thị, Loại phòng, Ghi chú;
+        /// các cột giá theo giờ chỉ hiện khi CoTienGio bật (DB hiện = 0 nên ẩn), IP công tắc chỉ khi admin bật đủ 2 cấu hình.</summary>
+        private void BuildRoomColumns()
+        {
+            float s = DeviceDpi / 96f;
+            _grid.DataSource = null;
+            _grid.Columns.Clear();
+            _grid.RowHeadersVisible = true;
+            _grid.RowHeadersWidth = (int)(40 * s);
+            _grid.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            _grid.ColumnHeadersHeight = (int)(48 * s);
+
+            AddProductColumn("r_name", "Tên bàn", 150, typeof(string), null);
+            AddProductColumn("r_area", "Khu vực", 150, typeof(string), null);
+            AddProductColumn("r_group", "Nhóm hiển thị", 150, typeof(string), null);
+            AddProductColumn("r_type", "Loại phòng", 130, typeof(string), null);
+            if (SystemConfig.CoTienGio)
+            {
+                AddProductColumn("r_calc", "Cách tính giờ", 110, typeof(string), null);
+                AddProductColumn("r_price", "Đơn giá", 90, typeof(decimal), "#,##0.##");
+                AddProductColumn("r_pricelist", "Bảng giá", 130, typeof(string), null);
+                AddProductColumn("r_open", "Tiền mở bàn", 100, typeof(decimal), "#,##0.##");
+            }
+            AddProductColumn("r_note", "Ghi chú", 200, typeof(string), null);
+            if (SystemConfig.CoTienGio && SystemConfig.CoSuDungCongTacDienTu
+                && AppSession.Current != null && AppSession.Current.IsAdmin)
+                AddProductColumn("r_ip", "IP công tắc điện", 130, typeof(string), null);
+            if (_grid.Columns.Count > 0)
+                _grid.Columns[_grid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+        }
+
+        private void BuildRoomTable()
+        {
+            var dt = new DataTable();
+            dt.Columns.Add("r_name", typeof(string));
+            dt.Columns.Add("r_area", typeof(string));
+            dt.Columns.Add("r_group", typeof(string));
+            dt.Columns.Add("r_type", typeof(string));
+            dt.Columns.Add("r_calc", typeof(string));
+            dt.Columns.Add("r_price", typeof(decimal));
+            dt.Columns.Add("r_pricelist", typeof(string));
+            dt.Columns.Add("r_open", typeof(decimal));
+            dt.Columns.Add("r_note", typeof(string));
+            dt.Columns.Add("r_ip", typeof(string));
+            dt.Columns.Add(ColId, typeof(string));
+            dt.Columns.Add(ColSearch, typeof(string));
+            dt.Columns.Add(ColCategory, typeof(string));
+
+            var sb = new StringBuilder();
+            dt.BeginLoadData();
+            foreach (RoomRow r in _roomRows)
+            {
+                var values = new object[dt.Columns.Count];
+                values[0] = (object)r.Name ?? DBNull.Value;
+                values[1] = (object)r.AreaName ?? DBNull.Value;
+                values[2] = (object)r.DisplayGroupName ?? DBNull.Value;
+                values[3] = (object)r.RoomTypeName ?? DBNull.Value;
+                values[4] = RoomRules.CalcModeText(r.CalcHour);
+                values[5] = r.UnitPrice;
+                values[6] = (object)r.PriceListName ?? DBNull.Value;
+                values[7] = r.OpenAmount;
+                values[8] = (object)r.Note ?? DBNull.Value;
+                values[9] = (object)r.SwitchIp ?? DBNull.Value;
+                values[10] = r.Id;
+                sb.Length = 0;
+                sb.Append(r.Name).Append(' ');
+                sb.Append(r.AreaName).Append(' ');
+                sb.Append(r.DisplayGroupName).Append(' ');
+                sb.Append(r.RoomTypeName).Append(' ');
+                sb.Append(r.Note);
+                values[11] = CatalogRepository.Fold(sb.ToString());
+                values[12] = CatalogRepository.CategoryPath(_nodes, r.AreaId);
+                dt.Rows.Add(values);
+            }
+            dt.EndLoadData();
+
+            _table = dt;
+            _view = new DataView(dt);
+            _grid.DataSource = _view;
+            _grid.ClearSelection();
+        }
+
+        private string CurrentRoomId()
+        {
+            if (_grid.CurrentRow == null)
+                return null;
+            var drv = _grid.CurrentRow.DataBoundItem as DataRowView;
+            if (drv == null)
+                return null;
+            return drv[ColId] as string;
+        }
+
+        private RoomRow CurrentRoomRow()
+        {
+            string id = CurrentRoomId();
+            if (id == null)
+                return null;
+            foreach (RoomRow r in _roomRows)
+            {
+                if (r.Id == id)
+                    return r;
+            }
+            return null;
+        }
+
+        private List<string> RoomRowIds()
+        {
+            var ids = new List<string>();
+            foreach (DataRowView drv in _view)
+                ids.Add(drv[ColId] as string);
+            return ids;
+        }
+
+        private List<string> AreaRowIds()
+        {
+            var ids = new List<string>();
+            if (_tree.Nodes.Count > 0)
+            {
+                foreach (TreeNode n in _tree.Nodes[0].Nodes)
+                {
+                    string id = n.Tag as string;
+                    if (!string.IsNullOrEmpty(id) && id != UnsetTag)
+                        ids.Add(id);
+                }
+            }
+            return ids;
+        }
+
+        private void RefreshRoomAndSelect(string id)
+        {
+            Reload();
+            if (id != null)
+                SelectRoomRow(id);
+        }
+
+        private void SelectRoomRow(string id)
+        {
+            foreach (DataGridViewRow row in _grid.Rows)
+            {
+                var drv = row.DataBoundItem as DataRowView;
+                if (drv != null && (drv[ColId] as string) == id)
+                {
+                    _grid.CurrentCell = row.Cells[0];
+                    return;
+                }
+            }
+        }
+
+        private void AddRoom()
+        {
+            if (!_roomMode || !_canAdd)
+                return;
+            string areaId = SelectedGroupId();
+            if (string.IsNullOrEmpty(areaId) || areaId == UnsetTag)
+            {
+                // Chưa chọn khu vực (đang ở "Tất cả"/"Chưa thiết lập") → hỏi khu vực trước (§2.1).
+                using (var picker = new AreaPickerDialog(AppSession.Current))
+                {
+                    if (picker.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(picker.SelectedAreaId))
+                        return;
+                    areaId = picker.SelectedAreaId;
+                }
+            }
+            using (var dlg = new RoomEditDialog(AppSession.Current, null, areaId, RoomRowIds()))
+            {
+                dlg.ShowDialog(this);
+                if (dlg.SavedId != null || dlg.Deleted)
+                    RefreshRoomAndSelect(dlg.SavedId);
+            }
+        }
+
+        private void EditRoom()
+        {
+            if (!_roomMode || !_canEdit)
+                return;
+            RoomRow row = CurrentRoomRow();
+            if (row == null)
+                return;
+            using (var dlg = new RoomEditDialog(AppSession.Current, row.Id, row.AreaId, RoomRowIds()))
+            {
+                dlg.ShowDialog(this);
+                if (dlg.SavedId != null || dlg.Deleted)
+                    RefreshRoomAndSelect(dlg.SavedId);
+            }
+        }
+
+        private void DeleteRoom()
+        {
+            if (!_roomMode || !_canRemove)
+                return;
+            RoomRow row = CurrentRoomRow();
+            if (row == null)
+                return;
+            if (!Msg.Confirm(this, "Bạn có chắc chắn xóa bàn '" + row.Name + "' không?"))
+                return;
+            RoomDeleteResult result;
+            try
+            {
+                result = _roomRepo.DeleteRoom(row.Id);
+            }
+            catch (DataAccessException ex)
+            {
+                Msg.Error(this, "Không xóa được dữ liệu: " + ex.Message);
+                return;
+            }
+            if (!result.Ok)
+            {
+                Msg.Warning(this, result.ErrorMessage);
+                return;
+            }
+            Reload();
+        }
+
+        private void QuickAddRooms()
+        {
+            if (!_roomMode || !_canAdd)
+                return;
+            using (var dlg = new QuickAddRoomDialog(AppSession.Current))
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK && dlg.CreatedCount > 0)
+                    Reload();
+            }
+        }
+
+        // ---- Khu vực (DKHUVUC): + và ✎ trên thanh panel nhóm, đổi tên trực tiếp trên cây ----
+
+        private void AddArea(string parentId)
+        {
+            if (!_roomMode || !_canAdd)
+                return;
+            using (var dlg = new AreaEditDialog(AppSession.Current, null, AreaRowIds()))
+            {
+                dlg.ShowDialog(this);
+                if (dlg.SavedId != null || dlg.Deleted)
+                    RefreshRoomAndSelect(null);
+            }
+        }
+
+        private void EditArea()
+        {
+            if (!_roomMode || !_canEdit)
+                return;
+            string areaId = SelectedGroupId();
+            if (string.IsNullOrEmpty(areaId) || areaId == UnsetTag)
+                return;
+            AreaRow row = _areaRepo.Load(areaId);
+            if (row == null)
+            {
+                Msg.Warning(this, "Khu vực này không còn tồn tại trong dữ liệu.");
+                Reload();
+                return;
+            }
+            using (var dlg = new AreaEditDialog(AppSession.Current, row.Id, AreaRowIds()))
+            {
+                dlg.ShowDialog(this);
+                if (dlg.SavedId != null || dlg.Deleted)
+                    RefreshRoomAndSelect(null);
+            }
+        }
+
+        private void DeleteArea()
+        {
+            if (!_roomMode || !_canRemove)
+                return;
+            string areaId = SelectedGroupId();
+            if (string.IsNullOrEmpty(areaId) || areaId == UnsetTag)
+                return;
+            AreaRow row = _areaRepo.Load(areaId);
+            if (row == null)
+            {
+                Msg.Warning(this, "Khu vực này không còn tồn tại trong dữ liệu.");
+                Reload();
+                return;
+            }
+            if (!Msg.Confirm(this, "Bạn có chắc chắn xóa khu vực '" + row.Name + "' không?"))
+                return;
+            string error;
+            try
+            {
+                error = _areaRepo.Delete(areaId);
+            }
+            catch (DataAccessException ex)
+            {
+                Msg.Error(this, "Không xóa được dữ liệu: " + ex.Message);
+                return;
+            }
+            if (error != null)
+            {
+                Msg.Warning(this, error);
+                return;
+            }
+            Reload();
+        }
+
+        private void RenameSelectedArea()
+        {
+            if (!_roomMode || !_canEdit)
+                return;
+            if (_tree.SelectedNode != null && _tree.SelectedNode.Tag as string != null
+                && (string)_tree.SelectedNode.Tag != UnsetTag)
+                _tree.SelectedNode.BeginEdit();
+        }
+
+        private void RenameAreaLabel(NodeLabelEditEventArgs e)
+        {
+            if (e.Label == null || _tree.SelectedNode == null)
+            {
+                e.CancelEdit = true;
+                return;
+            }
+            string id = _tree.SelectedNode.Tag as string;
+            if (string.IsNullOrEmpty(id) || id == UnsetTag)
+            {
+                e.CancelEdit = true;
+                return;
+            }
+            string name = e.Label.Trim();
+            if (name.Length == 0)
+            {
+                Msg.Warning(this, RoomText.AreaNameEmpty);
+                e.CancelEdit = true;
+                return;
+            }
+            // Đổi tên = nạp khu vực rồi Save lại (giữ nguyên bảng giá/truy cập/mặt hàng mặc định gắn kèm).
+            AreaRow area = _areaRepo.Load(id);
+            if (area == null)
+            {
+                Msg.Warning(this, RoomText.AreaGone);
+                e.CancelEdit = true;
+                return;
+            }
+            area.Name = name;
+            AreaSaveResult saved;
+            try
+            {
+                saved = _areaRepo.Save(area, _areaRepo.LoadPriceAssignments(id), _areaRepo.LoadAccessUserIds(id),
+                    _areaRepo.LoadDefaultItems(id), AppSession.UserId);
+            }
+            catch (DataAccessException ex)
+            {
+                Msg.Error(this, "Không lưu được dữ liệu: " + ex.Message);
+                e.CancelEdit = true;
+                return;
+            }
+            if (!saved.Ok)
+            {
+                Msg.Warning(this, saved.ErrorMessage);
+                e.CancelEdit = true;
+                return;
+            }
+            Reload();
+        }
+
+        private void UpdateRoomButtons()
+        {
+            if (!_roomMode)
+                return;
+            bool hasRow = CurrentRoomId() != null;
+            _btnAdd.Enabled = _canAdd;
+            _btnEdit.Enabled = _canEdit && hasRow;
+            _btnRemove.Enabled = _canRemove && hasRow;
+            _btnQuickAdd.Enabled = _canAdd;
+            string areaId = SelectedGroupId();
+            bool realArea = !string.IsNullOrEmpty(areaId) && areaId != UnsetTag;
+            _groupAdd.Enabled = _canAdd;
+            _groupEdit.Enabled = _canEdit && realArea;
+            _tree.LabelEdit = _canEdit;
+        }
+
+        private void UpdateRoomAuditPanel()
+        {
+            RoomRow row = CurrentRoomRow();
+            if (row == null)
+            {
+                _lblCreated.Text = "";
+                _lblCreatedBy.Text = "";
+                _lblModified.Text = "";
+                _lblModifiedBy.Text = "";
+                return;
+            }
+            _lblCreated.Text = FormatAuditTime(row.CreatedAt);
+            _lblCreatedBy.Text = row.CreatedByName ?? "";
+            _lblModified.Text = FormatAuditTime(row.ModifiedAt);
+            _lblModifiedBy.Text = row.ModifiedByName ?? "";
+        }
+
+        private void SortRooms(string column, bool asc)
+        {
+            if (_view == null)
+                return;
+            _view.Sort = "[" + column + "] " + (asc ? "ASC" : "DESC");
+        }
+
+        // ---- Menu chuột phải (bàn/khu vực) ----
+
+        private void BuildRoomGridMenu()
+        {
+            _roomGridMenu.AddItem("Thêm bàn", Keys.Insert, delegate { AddRoom(); });
+            _roomGridMenu.AddItem("Thêm nhanh", delegate { QuickAddRooms(); });
+            _roomGridMenu.AddItem("Chỉnh sửa", Keys.F4, delegate { EditRoom(); });
+            _roomGridMenu.AddItem("Xóa", Keys.Delete, delegate { DeleteRoom(); });
+            _roomGridMenu.AddSeparator();
+            var sort = new ToolStripMenuItem("Sắp xếp theo") { Font = _roomGridMenu.Font };
+            AddRoomSortItem(sort, "Tên bàn (A → Z)", "r_name", true);
+            AddRoomSortItem(sort, "Tên bàn (Z → A)", "r_name", false);
+            _roomGridMenu.Items.Add(sort);
+            _roomGridMenu.AddItem("Refresh", delegate { Reload(); });
+            _roomGridMenu.AddItem("In danh sách", delegate { Msg.Info(this, UnsupportedText); });
+            _roomGridMenu.AddSeparator();
+            _roomGridMenu.AddItem("Sao chép ô", delegate { CopyCell(); });
+            _roomGridMenu.AddItem("Sao chép vùng chọn", delegate { CopySelection(); });
+            _roomGridMenu.AddItem("Tự động dãn cột", delegate { AutoFitColumns(); });
+            _roomGridMenu.Opening += delegate { UpdateRoomGridMenuState(); };
+        }
+
+        private void AddRoomSortItem(ToolStripMenuItem parent, string text, string key, bool asc)
+        {
+            var item = new ToolStripMenuItem(text) { Font = _roomGridMenu.Font };
+            item.Click += delegate { SortRooms(key, asc); };
+            parent.DropDownItems.Add(item);
+        }
+
+        private void UpdateRoomGridMenuState()
+        {
+            bool hasRow = CurrentRoomId() != null;
+            foreach (ToolStripItem item in _roomGridMenu.Items)
+            {
+                var mi = item as ToolStripMenuItem;
+                if (mi == null)
+                    continue;
+                switch (mi.Text)
+                {
+                    case "Thêm bàn": mi.Enabled = _canAdd; break;
+                    case "Thêm nhanh": mi.Enabled = _canAdd; break;
+                    case "Chỉnh sửa": mi.Enabled = _canEdit && hasRow; break;
+                    case "Xóa": mi.Enabled = _canRemove && hasRow; break;
+                }
+            }
+        }
+
+        private void BuildRoomTreeMenu()
+        {
+            _roomTreeMenu.AddItem("Thêm mới", Keys.Insert, delegate { AddArea(null); });
+            _roomTreeMenu.AddItem("Chỉnh sửa", Keys.F4, delegate { EditArea(); });
+            _roomTreeMenu.AddItem("Xóa", Keys.Delete, delegate { DeleteArea(); });
+            _roomTreeMenu.AddItem("Đổi tên", Keys.F2, delegate { RenameSelectedArea(); });
+            _roomTreeMenu.AddItem("Refresh", delegate { Reload(); });
+            _roomTreeMenu.AddItem("Mở rộng", delegate { ExpandSelectedGroup(true); });
+            _roomTreeMenu.AddItem("Thu gọn", delegate { ExpandSelectedGroup(false); });
+            _roomTreeMenu.Opening += delegate { UpdateRoomTreeMenuState(); };
+        }
+
+        private void UpdateRoomTreeMenuState()
+        {
+            string areaId = SelectedGroupId();
+            bool realArea = !string.IsNullOrEmpty(areaId) && areaId != UnsetTag;
+            foreach (ToolStripItem item in _roomTreeMenu.Items)
+            {
+                var mi = item as ToolStripMenuItem;
+                if (mi == null)
+                    continue;
+                switch (mi.Text)
+                {
+                    case "Thêm mới": mi.Enabled = _canAdd; break;
+                    case "Chỉnh sửa": mi.Enabled = _canEdit && realArea; break;
+                    case "Xóa": mi.Enabled = _canRemove && realArea; break;
+                    case "Đổi tên": mi.Enabled = _canEdit && realArea; break;
+                }
+            }
+        }
+
         /// <summary>Vẽ số thứ tự (STT) lên row header, theo thứ tự đang hiện trên lưới.</summary>
         private void DrawRowNumber(object sender, DataGridViewRowPostPaintEventArgs e)
         {
-            if (!_productMode || !_grid.RowHeadersVisible)
+            if ((!_productMode && !_roomMode) || !_grid.RowHeadersVisible)
                 return;
             string text = (e.RowIndex + 1).ToString(CultureInfo.InvariantCulture);
             var bounds = new Rectangle(0, e.RowBounds.Top, _grid.RowHeadersWidth, e.RowBounds.Height);
@@ -1160,6 +1721,11 @@ namespace Kazuko_FnB.UI
 
         private void TreeAfterLabelEdit(object sender, NodeLabelEditEventArgs e)
         {
+            if (_roomMode)
+            {
+                RenameAreaLabel(e);
+                return;
+            }
             if (!_productMode || e.Label == null)
                 return;
             string id = e.Node.Tag as string;
@@ -1358,7 +1924,7 @@ namespace Kazuko_FnB.UI
 
         private void GridMouseDown(object sender, MouseEventArgs e)
         {
-            if (!_productMode || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode) || e.Button != MouseButtons.Right)
                 return;
             DataGridView.HitTestInfo hit = _grid.HitTest(e.X, e.Y);
             if (hit.RowIndex >= 0)
@@ -1371,17 +1937,23 @@ namespace Kazuko_FnB.UI
             {
                 _grid.ClearSelection();
             }
-            _gridMenu.Show(_grid, e.Location);
+            if (_roomMode)
+                _roomGridMenu.Show(_grid, e.Location);
+            else
+                _gridMenu.Show(_grid, e.Location);
         }
 
         private void TreeMouseDown(object sender, MouseEventArgs e)
         {
-            if (!_productMode || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode) || e.Button != MouseButtons.Right)
                 return;
             TreeNode node = _tree.GetNodeAt(e.X, e.Y);
             if (node != null)
                 _tree.SelectedNode = node;
-            _treeMenu.Show(_tree, e.Location);
+            if (_roomMode)
+                _roomTreeMenu.Show(_tree, e.Location);
+            else
+                _treeMenu.Show(_tree, e.Location);
         }
 
         // ------------------------------------------------------------------ Hành động menu lưới
@@ -1466,6 +2038,8 @@ namespace Kazuko_FnB.UI
                     _gridMenu.Dispose();
                 if (_treeMenu != null)
                     _treeMenu.Dispose();
+                _roomGridMenu.Dispose();
+                _roomTreeMenu.Dispose();
             }
             base.Dispose(disposing);
         }

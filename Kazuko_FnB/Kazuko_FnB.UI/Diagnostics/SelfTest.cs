@@ -169,7 +169,9 @@ namespace Kazuko_FnB.UI.Diagnostics
             UserTests(db);
             RoleTests(db);
             PasswordTests(db);
+            BookingTests(db);
             ProductTests(db);
+            RoomTests(db);
         }
 
         // ------------------------------------------------------------------ H6 Danh mục mặt hàng
@@ -189,6 +191,408 @@ namespace Kazuko_FnB.UI.Diagnostics
                     new RecipeValidationLine { MaterialId = "m1", MaterialTypeId = "2", Quantity = 1m }
                 }
             };
+        }
+
+        // ------------------------------------------------------------------ H7 Khách đặt hàng
+
+        private static BookingRules.BookingValidationInput ValidBookingInput()
+        {
+            return new BookingRules.BookingValidationInput
+            {
+                RoomIds = new List<string> { "r1" },
+                Number = "DH26/00001",
+                TenKhach = "Nguyễn Văn A",
+                TuGio = new DateTime(2026, 11, 21, 18, 0, 0),
+                DenGio = new DateTime(2026, 11, 21, 20, 0, 0),
+                GioDat = new DateTime(2026, 11, 21, 10, 0, 0)
+            };
+        }
+
+        private static BookingRow NewTestBooking(string number, string customerId, string methodId, string purposeId, List<BookingLine> lines)
+        {
+            BookingRules.BookingTotals t = BookingRules.CalcTotals(lines, 0m, 0m, false, 0m, 0m, 1000m);
+            DateTime tuGio = DateTime.Today.AddHours(18);
+            DateTime denGio = DateTime.Today.AddHours(20);
+            DateTime tuNgay, denNgay;
+            BookingRules.DeriveDates(tuGio, denGio, out tuNgay, out denNgay);
+            return new BookingRow
+            {
+                Name = number,
+                Ngay = DateTime.Today,
+                GioDat = DateTime.Now,
+                TuGio = tuGio,
+                DenGio = denGio,
+                TuNgay = tuNgay,
+                DenNgay = denNgay,
+                CustomerId = customerId,
+                TenKhach = "Nguyễn Văn A",
+                DienThoai = "0901234567",
+                DiaChi = "12 Xuân Thủy",
+                MethodId = methodId,
+                PurposeId = purposeId,
+                Note = "Ghi chú thử",
+                ColorArgb = -23296,
+                TienHang = t.TienHang,
+                TileGiamGia = t.TileGiamGia,
+                TienGiamGia = t.TienGiamGia,
+                TileThue = 0m,
+                TienThue = t.TienThue,
+                PhiVanChuyen = 0m,
+                TongCong = t.TongCong
+            };
+        }
+
+        private static void BookingExec(string db, string sql, params object[] args)
+        {
+            DbHelper.Read(db, conn => DbHelper.Exec(conn, null, sql, args));
+        }
+
+        private static int BookingCount(string db, string sql, params object[] args)
+        {
+            return DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, sql, args)));
+        }
+
+        private static void BookingTests(string db)
+        {
+            // Luật thuần §2.1 (đúng thứ tự, dừng ở lỗi đầu).
+            BookingRules.BookingValidationInput input = ValidBookingInput();
+            input.RoomIds = new List<string>();
+            BookingRules.BookingValidationResult vr = BookingRules.ValidateBeforeSave(input);
+            Check("2.1 chưa chọn bàn → chặn đúng câu gốc", vr.Error == BookingText.SelectRoomFirst, vr.Error);
+            input = ValidBookingInput();
+            input.Number = "";
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("2.1 thiếu số phiếu → chặn", vr.Error == BookingText.Required("Số phiếu"), vr.Error);
+            input = ValidBookingInput();
+            input.TenKhach = "";
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("2.1 thiếu người đặt → chặn", vr.Error == BookingText.Required("Người đặt"), vr.Error);
+            input = ValidBookingInput();
+            input.TuGio = null;
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("2.1 thiếu giờ vào → chặn", vr.Error == BookingText.Required("Giờ vào"), vr.Error);
+            input = ValidBookingInput();
+            input.DenGio = null;
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("2.1 thiếu giờ ra → chặn", vr.Error == BookingText.Required("Giờ ra"), vr.Error);
+            input = ValidBookingInput();
+            input.GioDat = null;
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("2.1 thiếu đặt lúc → chặn", vr.Error == BookingText.Required("Đặt lúc"), vr.Error);
+            input = ValidBookingInput();
+            input.DenGio = new DateTime(2026, 11, 21, 17, 0, 0);
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("5.4 giờ ra trước giờ vào → chặn, câu đã sửa", vr.Error == BookingText.DateOrder, vr.Error);
+            input = ValidBookingInput();
+            input.DenGio = new DateTime(2026, 11, 22, 1, 0, 0);
+            vr = BookingRules.ValidateBeforeSave(input);
+            Check("5.4 giờ ra sau giờ vào (khác ngày) → hợp lệ", vr.IsValid, vr.Error);
+            Check("2.1 phiếu hợp lệ → lưu được", BookingRules.ValidateBeforeSave(ValidBookingInput()).IsValid);
+
+            // BeforeSave #3/#4: TUNGAY/DENNGAY = ngày của TUGIO/DENGIO lúc 00:00.
+            DateTime tuNgay, denNgay;
+            BookingRules.DeriveDates(new DateTime(2026, 11, 21, 18, 30, 0), new DateTime(2026, 11, 22, 1, 0, 0), out tuNgay, out denNgay);
+            Check("TUNGAY/DENNGAY suy từ giờ vào/ra", tuNgay == new DateTime(2026, 11, 21) && denNgay == new DateTime(2026, 11, 22),
+                tuNgay.ToString("dd/MM/yyyy") + "/" + denNgay.ToString("dd/MM/yyyy"));
+
+            // Tính tiền §3.3 + Q1 (LamTron 1000, ghi đè bội 100 của app gốc) + Q7.
+            Check("Q7 thành tiền dòng = SL × đơn giá × (1 - %giảm)", BookingRules.CalcLineAmount(2m, 30000m, 10m) == 54000m);
+            var lines155 = new List<BookingLine>
+            {
+                new BookingLine { ProductId = "p", UnitId = "u", Quantity = 1m, Price = 155000m, DiscountPct = 0m, Amount = 155000m }
+            };
+            BookingRules.BookingTotals t = BookingRules.CalcTotals(lines155, 10m, 0m, false, 10m, 0m, 1000m);
+            Check("Q1 giảm 10% trên 155000 → làm tròn 16000 (LamTron 1000, AwayFromZero)",
+                t.TienGiamGia == 16000m && t.TienHang == 155000m, t.TienGiamGia.ToString());
+            Check("Thuế 10% trên (155000-16000) = 13900; tổng 152900",
+                t.TienThue == 13900m && t.TongCong == 152900m, t.TienThue + "/" + t.TongCong);
+            t = BookingRules.CalcTotals(lines155, 0m, 5000m, true, 0m, 0m, 1000m);
+            Check("Giảm theo tiền 5000 → suy ngược tỉ lệ, tổng 150000",
+                t.TileGiamGia == 5000m * 100m / 155000m && t.TongCong == 150000m, t.TileGiamGia.ToString());
+            t = BookingRules.CalcTotals(lines155, 10m, 0m, false, 0m, 0m, 0m);
+            Check("roundStep = 0 → không làm tròn (15500)", t.TienGiamGia == 15500m, t.TienGiamGia.ToString());
+
+            // Sinh số DH(yy)/(*****).
+            Check("Sinh số DH26/00001", DocumentNumber.Format("DH(yy)/(*****)", new DateTime(2026, 11, 21), 1) == "DH26/00001");
+            Check("Sinh số PT26/00012", DocumentNumber.Format("PT(yy)/(*****)", new DateTime(2026, 11, 21), 12) == "PT26/00012");
+            Check("Tiền tố số DH26/", DocumentNumber.LiteralPrefix("DH(yy)/(*****)", new DateTime(2026, 11, 21)) == "DH26/");
+            Check("Số tiếp theo sau 00001/00009 là 10",
+                DocumentNumber.NextSequence(new[] { "DH26/00001", "DH26/00009" }, "DH26/") == 10);
+
+            // Gộp dòng trùng hàng + ĐVT (Q6.2: NhapMotMatHangNhieuLanTrongPhieu = 0 → cộng dồn).
+            var mergeLines = new List<BookingLine>
+            {
+                new BookingLine { ProductId = "p1", UnitId = "u1", Quantity = 2m, Price = 30000m, DiscountPct = 0m, Amount = 60000m }
+            };
+            Check("Không cho gộp → thêm dòng mới", !BookingRules.TryMergeLine(mergeLines,
+                new BookingLine { ProductId = "p1", UnitId = "u1", Quantity = 3m, Price = 30000m, DiscountPct = 0m }, false)
+                && mergeLines.Count == 1);
+            Check("Cho gộp: trùng hàng + ĐVT → cộng dồn SL (2+3=5)",
+                BookingRules.TryMergeLine(mergeLines,
+                    new BookingLine { ProductId = "p1", UnitId = "u1", Quantity = 3m, Price = 30000m, DiscountPct = 0m }, true)
+                && mergeLines[0].Quantity == 5m && mergeLines[0].Amount == 150000m, mergeLines[0].Quantity.ToString());
+            Check("Khác ĐVT → không gộp", !BookingRules.TryMergeLine(mergeLines,
+                new BookingLine { ProductId = "p1", UnitId = "u2", Quantity = 1m, Price = 30000m, DiscountPct = 0m }, true));
+
+            // Kế hoạch đoàn §3.1 (thuần).
+            var plan = BookingRules.PlanGroupChanges(
+                new List<GroupRowRef> { new GroupRowRef { Id = "A", RoomId = "r1", Name = "DH1" } }, "A",
+                new List<string> { "r1", "r2" });
+            Check("Đoàn: thêm bàn → giữ dòng cũ + tạo dòng mới",
+                plan.CurrentRoomId == "r1" && plan.Keep.Count == 1 && plan.CreateRoomIds.Count == 1 && plan.CreateRoomIds[0] == "r2"
+                && plan.Reuse.Count == 0 && plan.DeleteIds.Count == 0);
+            plan = BookingRules.PlanGroupChanges(
+                new List<GroupRowRef>(), "NEW", new List<string> { "r1", "r2" });
+            Check("Đoàn: phiếu mới — dòng đang sửa đã chiếm bàn đầu, chỉ tạo thêm bàn 2",
+                plan.CurrentRoomId == "r1" && plan.Keep.Count == 1 && plan.Keep[0].Id == "NEW" && plan.Keep[0].RoomId == "r1"
+                && plan.CreateRoomIds.Count == 1 && plan.CreateRoomIds[0] == "r2" && plan.DeleteIds.Count == 0);
+            plan = BookingRules.PlanGroupChanges(
+                new List<GroupRowRef> { new GroupRowRef { Id = "A", RoomId = "r1", Name = "DH1" } }, "A",
+                new List<string> { "r2" });
+            Check("Đoàn: bàn cũ bị bỏ → dòng đang sửa lấy bàn đầu",
+                plan.CurrentRoomId == "r2" && plan.Keep.Count == 1 && plan.Keep[0].RoomId == "r2" && plan.CreateRoomIds.Count == 0);
+            plan = BookingRules.PlanGroupChanges(
+                new List<GroupRowRef>
+                {
+                    new GroupRowRef { Id = "A", RoomId = "r1", Name = "DH1" },
+                    new GroupRowRef { Id = "B", RoomId = "r2", Name = "DH2" }
+                }, "A", new List<string> { "r2", "r3" });
+            Check("Đoàn: dòng đang sửa lấy bàn đầu, dòng bàn bị lấy tái dùng cho bàn mới",
+                plan.CurrentRoomId == "r2" && plan.Keep.Count == 1 && plan.Reuse.Count == 1 && plan.Reuse[0].Id == "B"
+                && plan.Reuse[0].RoomId == "r3" && plan.DeleteIds.Count == 0);
+            plan = BookingRules.PlanGroupChanges(
+                new List<GroupRowRef>
+                {
+                    new GroupRowRef { Id = "A", RoomId = "r1", Name = "DH1" },
+                    new GroupRowRef { Id = "B", RoomId = "r2", Name = "DH2" }
+                }, "A", new List<string> { "r1" });
+            Check("Đoàn: bớt bàn → dòng thừa bị xóa",
+                plan.Keep.Count == 1 && plan.DeleteIds.Count == 1 && plan.DeleteIds[0] == "B");
+
+            // Cấu hình + quyền §4: SFUNCTION "Đặt hàng" dùng chung với "Theo dõi đặt phòng".
+            Check("Nhãn bàn/phòng mặc định \"Phòng\" (POS)", BookingRules.RoomLabel == "Phòng", BookingRules.RoomLabel);
+            Check("App POS không phải HOTEL", !BookingRules.IsHotelApp);
+            var perms = new FunctionPermissions(false);
+            perms.Add(BookingText.FunctionId, BookingText.FunctionName, 0x50);
+            Check("4 Thu ngân: Xem + Thêm", perms.Can("Đặt hàng", RoleModes.View) && perms.Can("Đặt hàng", RoleModes.Add));
+            Check("4 Thu ngân: không Sửa/Xóa", !perms.Can("Đặt hàng", RoleModes.Edit) && !perms.Can("Đặt hàng", RoleModes.Remove));
+            Check("4 không có dòng quyền = khóa", !new FunctionPermissions(false).Can("Đặt hàng", RoleModes.View));
+            Check("4 Quản trị: đủ quyền", new FunctionPermissions(true).Can("Đặt hàng", RoleModes.Remove));
+
+            // DB: tạo khu vực/bàn/khách/mặt hàng → lưu đơn 1 bàn, trùng số, hồi quy, đoàn nhiều bàn, cọc, xóa chặn, dọn sạch.
+            var bookingRepo = new BookingRepository(db);
+            var phieuThuRepo = new PhieuThuRepository(db);
+            var productRepo = new ProductRepository(db);
+            var groupRepo = new ProductGroupRepository(db);
+            var formRepo = new FormRepository(db);
+            List<LookupItem> units = formRepo.LoadAll("DDONVITINH");
+            Check("Có đơn vị tính để thử", units.Count > 0, "n=" + units.Count);
+            if (units.Count == 0)
+                return;
+            string unitId = units[0].Id;
+            List<LookupItem> methods = formRepo.LoadAll("DPHUONGTHUCDAT");
+            List<LookupItem> purposes = formRepo.LoadAll("DMUCDICHDAT");
+            List<LookupItem> reasons = formRepo.LoadAll("DLYDOTHUCHI");
+            string methodId = methods.Count > 0 ? methods[0].Id : null;
+            string purposeId = purposes.Count > 0 ? purposes[0].Id : null;
+            string reasonId = reasons.Count > 0 ? reasons[0].Id : null;
+
+            string groupId = null;
+            string productId = null;
+            string bookingId = null;
+            string retryId = null;
+            string depositId = null;
+            string areaId = DbHelper.NewId();
+            string room1Id = DbHelper.NewId();
+            string room2Id = DbHelper.NewId();
+            string room3Id = DbHelper.NewId();
+            string customerId = DbHelper.NewId();
+            string groupGuid = null;
+            try
+            {
+                string gerr;
+                groupId = groupRepo.Save(new ProductGroupRow { Name = "NHÓM THỬ KĐH", Code = "KĐH" }, "selftest", out gerr);
+                Check("Tạo nhóm thử", gerr == null && groupId != null, gerr);
+                if (groupId == null)
+                    return;
+                var options = new ProductSaveOptions { AllowDuplicateName = false, CodeRequired = true, AutoUpdateBuyPrice = true, AutoUpdateCostPrice = true };
+                var product = ProductRow.NewDefault();
+                product.Name = "MẶT HÀNG THỬ KĐH";
+                product.TypeId = "0";
+                product.UnitId = unitId;
+                product.GroupId = groupId;
+                product.Code = "MHKDH001";
+                product.SellPrice = 30000m;
+                ProductSaveResult savedProduct = productRepo.SaveProduct(product, new List<RecipeLine>(), "selftest", options);
+                Check("Tạo mặt hàng thử", savedProduct.Ok && savedProduct.SavedId != null, savedProduct.ErrorMessage);
+                productId = savedProduct.SavedId;
+                if (productId == null)
+                    return;
+
+                BookingExec(db, "INSERT INTO \"DKHUVUC\" (\"ID\", \"NAME\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, 30, 'selftest')",
+                    "@id", areaId, "@n", "KHU VỰC THỬ KĐH");
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"DKHUVUCID\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, @a, 30, 'selftest')",
+                    "@id", room1Id, "@n", "BÀN THỬ KĐH 1", "@a", areaId);
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"DKHUVUCID\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, @a, 30, 'selftest')",
+                    "@id", room2Id, "@n", "BÀN THỬ KĐH 2", "@a", areaId);
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"DKHUVUCID\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, @a, 30, 'selftest')",
+                    "@id", room3Id, "@n", "BÀN THỬ KĐH 3", "@a", areaId);
+                BookingExec(db, "INSERT INTO \"DKHACHHANG\" (\"ID\", \"NAME\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, 30, 'selftest')",
+                    "@id", customerId, "@n", "KHÁCH THỬ KĐH");
+
+                List<BookingRoomItem> rooms = bookingRepo.LoadRooms();
+                Check("LoadRooms thấy 3 bàn thử", rooms.Exists(r => r.Id == room1Id) && rooms.Exists(r => r.Id == room2Id) && rooms.Exists(r => r.Id == room3Id),
+                    "n=" + rooms.Count);
+                List<BookingSaleItem> items = bookingRepo.LoadSaleItems(false);
+                Check("LoadSaleItems thấy mặt hàng thử", items.Exists(i => i.Id == productId), "n=" + items.Count);
+                BookingCustomerInfo cust = bookingRepo.LoadCustomer(customerId);
+                Check("LoadCustomer đúng tên", cust != null && cust.Name == "KHÁCH THỬ KĐH", cust == null ? "null" : cust.Name);
+
+                string number = bookingRepo.GenerateNumber();
+                Check("Sinh số phiếu DH26/00001 trên DB trống", number == "DH26/00001", number);
+                var lines = new List<BookingLine>
+                {
+                    new BookingLine { ProductId = productId, ProductName = "MẶT HÀNG THỬ KĐH", UnitId = unitId, UnitName = units[0].Name, Quantity = 2m, Price = 30000m, DiscountPct = 0m, Amount = 60000m }
+                };
+                BookingRow row = NewTestBooking(number, customerId, methodId, purposeId, lines);
+                BookingSaveResult saved = bookingRepo.SaveBooking(row, lines, new List<string> { room1Id }, "selftest");
+                Check("Lưu phiếu 1 bàn", saved.Ok && saved.SavedId != null, saved.ErrorMessage);
+                bookingId = saved.SavedId;
+                if (bookingId == null)
+                    return;
+                BookingRow back = bookingRepo.LoadBooking(bookingId);
+                Check("Đọc lại: đúng số phiếu/tên khách/tổng 60000",
+                    back != null && back.Name == number && back.TenKhach == "Nguyễn Văn A" && back.TongCong == 60000m,
+                    back == null ? "null" : back.Name + "/" + back.TongCong);
+                Check("Đọc lại: 1 dòng đoàn, 1 chi tiết",
+                    back.GroupRows != null && back.GroupRows.Count == 1 && back.Lines != null && back.Lines.Count == 1,
+                    back.GroupRows == null ? "null" : back.GroupRows.Count.ToString());
+                Check("Đọc lại: chi tiết đúng SL/đơn giá/thành tiền",
+                    back.Lines[0].Quantity == 2m && back.Lines[0].Price == 30000m && back.Lines[0].Amount == 60000m);
+                Check("Đọc lại: GUID đoàn đã sinh + STATUS 30",
+                    !string.IsNullOrEmpty(back.Guid) && back.Status == 30, back.Guid);
+                Check("Đọc lại: LOAI/LOAIGIA giữ 0", back.Loai == 0 && back.LoaiGia == 0);
+
+                List<BookingListRow> found = bookingRepo.LoadBookings(new BookingFilter
+                {
+                    NumberText = number,
+                    FromDate = DateTime.Today.AddDays(-30),
+                    ToDate = DateTime.Today,
+                    CustomerId = null,
+                    MethodId = null
+                });
+                Check("Lọc theo số phiếu thấy 1 dòng", found.Count == 1, "n=" + found.Count);
+
+                BookingRow dup = NewTestBooking(number, customerId, methodId, purposeId, lines);
+                BookingSaveResult d = bookingRepo.SaveBooking(dup, lines, new List<string> { room1Id }, "selftest");
+                Check("Trùng số phiếu bị chặn (nguyên văn)", !d.Ok && d.ErrorMessage == BookingText.NumberDuplicate(number), d.ErrorMessage);
+
+                // Hồi quy: lưu mới trùng số (lỗi) → đổi số → lưu lại phải ghi thật, không để dòng mồ côi.
+                BookingRow retry = NewTestBooking(number, customerId, methodId, purposeId, lines);
+                BookingSaveResult r1 = bookingRepo.SaveBooking(retry, lines, new List<string> { room1Id }, "selftest");
+                Check("Hồi quy: lưu trùng số → lỗi và row.Id vẫn rỗng", !r1.Ok && string.IsNullOrEmpty(retry.Id), "Id=" + retry.Id);
+                retry.Name = bookingRepo.GenerateNumber();
+                BookingSaveResult r2 = bookingRepo.SaveBooking(retry, lines, new List<string> { room1Id }, "selftest");
+                Check("Hồi quy: đổi số rồi lưu lại → Ok", r2.Ok && r2.SavedId != null, r2.ErrorMessage);
+                retryId = r2.SavedId;
+                if (retryId == null)
+                    return;
+                Check("Hồi quy: số mới là DH26/00002", retry.Name == "DH26/00002", retry.Name);
+
+                // Đoàn: thêm bàn → 2 dòng cùng GUID, chi tiết chép sang cả 2 dòng.
+                BookingRow retryBack = bookingRepo.LoadBooking(retryId);
+                BookingSaveResult m = bookingRepo.SaveBooking(retryBack, lines, new List<string> { room1Id, room2Id }, "selftest");
+                Check("Sửa: thêm bàn → đoàn 2 dòng", m.Ok && m.GroupIds != null && m.GroupIds.Count == 2, m.ErrorMessage);
+                BookingRow mBack = bookingRepo.LoadBooking(retryId);
+                groupGuid = mBack.Guid;
+                Check("Sửa: 2 dòng cùng GUID", mBack.GroupRows.Count == 2 && !string.IsNullOrEmpty(mBack.Guid),
+                    mBack.GroupRows.Count + "/" + mBack.Guid);
+                string secondId = null;
+                foreach (GroupRowRef gr in mBack.GroupRows)
+                    if (gr.Id != retryId)
+                        secondId = gr.Id;
+                Check("Sửa: chi tiết chép sang dòng đoàn thứ 2",
+                    secondId != null && BookingCount(db, "SELECT COUNT(*) FROM \"TDATHANGCHITIET\" WHERE \"TDATHANGID\" = @id", "@id", secondId) == 1,
+                    "second=" + secondId);
+
+                // Đoàn: đổi sang 2 bàn khác — dòng đang sửa lấy bàn đầu, dòng kia tái dùng cho bàn mới.
+                BookingSaveResult m2 = bookingRepo.SaveBooking(mBack, lines, new List<string> { room2Id, room3Id }, "selftest");
+                Check("Sửa: đổi đoàn sang 2 bàn khác", m2.Ok && m2.GroupIds != null && m2.GroupIds.Count == 2, m2.ErrorMessage);
+                BookingRow m2Back = bookingRepo.LoadBooking(retryId);
+                var roomSet = new HashSet<string>(StringComparer.Ordinal);
+                foreach (GroupRowRef gr in m2Back.GroupRows)
+                    roomSet.Add(gr.RoomId);
+                Check("Sửa: đoàn còn đúng bàn 2 + bàn 3, giữ nguyên số phiếu",
+                    m2Back.GroupRows.Count == 2 && roomSet.Contains(room2Id) && roomSet.Contains(room3Id)
+                    && m2Back.Name == retry.Name, m2Back.Name);
+
+                // Đoàn: bớt bàn → dòng thừa bị xóa.
+                BookingSaveResult m3 = bookingRepo.SaveBooking(m2Back, lines, new List<string> { room2Id }, "selftest");
+                Check("Sửa: bớt bàn → đoàn còn 1 dòng", m3.Ok && m3.GroupIds != null && m3.GroupIds.Count == 1, m3.ErrorMessage);
+                Check("Sửa: dòng thừa đã xóa khỏi DB",
+                    BookingCount(db, "SELECT COUNT(*) FROM \"TDATHANG\" WHERE \"GUID\" = @g", "@g", groupGuid) == 1, "");
+
+                // Đặt tiền trước §3.5: phiếu thu THU = TONGCONG, gắn TDATHANGID.
+                string ptNumber = phieuThuRepo.GenerateNumber();
+                Check("Sinh số phiếu thu PT26/00001", ptNumber == "PT26/00001", ptNumber);
+                var dep = new BookingDeposit
+                {
+                    BookingId = retryId,
+                    Number = ptNumber,
+                    Date = DateTime.Today,
+                    ObjectType = 2,
+                    CustomerId = customerId,
+                    CustomerName = "Nguyễn Văn A",
+                    Address = "12 Xuân Thủy",
+                    ReasonId = reasonId,
+                    Note = BookingText.DepositNote(m2Back.Name),
+                    Amount = 60000m,
+                    Transfer = false
+                };
+                depositId = phieuThuRepo.SaveDeposit(dep, "selftest");
+                Check("Lưu phiếu thu cọc THU = TONGCONG", depositId != null, depositId ?? "null");
+                BookingDepositInfo info = phieuThuRepo.LoadDeposit(retryId);
+                Check("Đọc lại cọc: đúng số phiếu + số tiền",
+                    info != null && info.Number == ptNumber && info.Amount == 60000m,
+                    info == null ? "null" : info.Number + "/" + info.Amount);
+                Check("Lý do cọc gần nhất = lý do vừa lưu", phieuThuRepo.LoadLatestDepositReasonId() == reasonId,
+                    phieuThuRepo.LoadLatestDepositReasonId() ?? "null");
+
+                BookingDeleteResult blocked = bookingRepo.DeleteBooking(retryId);
+                Check("Xóa bị chặn khi có phiếu thu cọc", !blocked.Ok && blocked.ErrorMessage == BookingText.DeleteBlocked, blocked.ErrorMessage);
+                BookingExec(db, "DELETE FROM \"TTHUCHI\" WHERE \"ID\" = @id", "@id", depositId);
+                depositId = null;
+                string deletedId = retryId;
+                BookingDeleteResult deleted = bookingRepo.DeleteBooking(retryId);
+                Check("Xóa đoàn sau khi gỡ cọc", deleted.Ok, deleted.ErrorMessage);
+                retryId = null;
+                Check("Xóa không để lại dòng TDATHANG",
+                    BookingCount(db, "SELECT COUNT(*) FROM \"TDATHANG\" WHERE \"GUID\" = @g", "@g", groupGuid) == 0, "");
+                Check("Xóa không để lại dòng chi tiết mồ côi",
+                    BookingCount(db, "SELECT COUNT(*) FROM \"TDATHANGCHITIET\" WHERE \"TDATHANGID\" = @id", "@id", deletedId) == 0, "");
+
+                BookingDeleteResult d1 = bookingRepo.DeleteBooking(bookingId);
+                Check("Xóa phiếu 1 bàn", d1.Ok, d1.ErrorMessage);
+                bookingId = null;
+
+                var ghost = NewTestBooking(bookingRepo.GenerateNumber(), customerId, methodId, purposeId, lines);
+                ghost.Id = "KHONG-TON-TAI-KDH";
+                BookingSaveResult g = bookingRepo.SaveBooking(ghost, lines, new List<string> { room1Id }, "selftest");
+                Check("Sửa dòng không tồn tại → lỗi, không báo Ok", !g.Ok && g.ErrorMessage == BookingText.NotFound, g.ErrorMessage);
+            }
+            finally
+            {
+                try { if (bookingId != null) bookingRepo.DeleteBooking(bookingId); } catch { }
+                try { if (retryId != null) bookingRepo.DeleteBooking(retryId); } catch { }
+                try { if (depositId != null) BookingExec(db, "DELETE FROM \"TTHUCHI\" WHERE \"ID\" = @id", "@id", depositId); } catch { }
+                try { if (productId != null) productRepo.DeleteProduct(productId); } catch { }
+                try { if (groupId != null) groupRepo.Delete(groupId); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DBAN\" WHERE \"ID\" = @id", "@id", room1Id); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DBAN\" WHERE \"ID\" = @id", "@id", room2Id); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DBAN\" WHERE \"ID\" = @id", "@id", room3Id); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DKHUVUC\" WHERE \"ID\" = @id", "@id", areaId); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DKHACHHANG\" WHERE \"ID\" = @id", "@id", customerId); } catch { }
+            }
         }
 
         private static void ProductTests(string db)
@@ -398,6 +802,251 @@ namespace Kazuko_FnB.UI.Diagnostics
                 try { if (brewId != null) productRepo.DeleteProduct(brewId); } catch { }
                 try { if (materialId != null) productRepo.DeleteProduct(materialId); } catch { }
                 try { if (groupId != null) groupRepo.Delete(groupId); } catch { }
+            }
+        }
+
+        // ------------------------------------------------------------------ H6b Danh mục bàn khu vực
+
+        private static void RoomTests(string db)
+        {
+            // Luật thuần (spec 3.11 + Q6): sinh tên, khoảng số, trùng trong lần sinh, kiểm tra, mức giá.
+            Check("3.11 TUSO=DENSO sinh đúng 1 bàn", RoomRules.GenerateNames("C", 5, 5, 2).Count == 1
+                && RoomRules.GenerateNames("C", 5, 5, 2)[0] == "C05");
+            Check("3.11 sinh tên đệm 0 theo chiều dài số",
+                string.Join(",", RoomRules.GenerateNames("B", 1, 3, 2).ToArray()) == "B01,B02,B03");
+            Check("3.11 xem trước DULIEU dạng 'đầu ... cuối'",
+                RoomRules.PreviewNames(RoomRules.GenerateNames("B", 1, 12, 2)) == "B01 ... B12");
+            Check("3.11 một tên → xem trước chính tên đó", RoomRules.PreviewNames(new List<string> { "B01" }) == "B01");
+            Check("Q6 TUSO > DENSO → lỗi 'Khoảng số không hợp lệ'", RoomRules.ValidateRange(5, 3) == "Khoảng số không hợp lệ");
+            Check("Q6 TUSO = DENSO hợp lệ", RoomRules.ValidateRange(3, 3) == null);
+            Check("Q6 TUSO < DENSO hợp lệ", RoomRules.ValidateRange(1, 3) == null);
+            Check("3.11 trùng trong lần sinh → phát hiện",
+                RoomRules.FindBatchDuplicate(new List<string> { "D01", "D02", "D01" }) == "D01");
+            Check("3.11 không trùng trong lần sinh",
+                RoomRules.FindBatchDuplicate(new List<string> { "D01", "D02" }) == null);
+            Check("3.11 DigitsOf", RoomRules.DigitsOf(0) == 1 && RoomRules.DigitsOf(9) == 1
+                && RoomRules.DigitsOf(10) == 2 && RoomRules.DigitsOf(100) == 3);
+            Check("Q8 cách tính giờ: 0 theo khu vực, 1 theo giờ, 2 theo bảng giá",
+                RoomRules.CalcModeText(RoomCalc.ByArea) == "Theo khu vực" && RoomRules.CalcModeText(RoomCalc.ByHour) == "Theo giờ"
+                && RoomRules.CalcModeText(RoomCalc.ByPriceList) == "Theo bảng giá");
+            Check("Q8 số lạ → nhãn chỉ-xem, không đoán", RoomRules.CalcModeText(99) == "Không rõ (99)");
+            Check("3.1 bàn thiếu tên → chặn", RoomRules.ValidateRoom("", "a") == RoomText.RoomNameEmpty);
+            Check("3.1 bàn thiếu khu vực → chặn", RoomRules.ValidateRoom("B01", "") == RoomText.RoomAreaEmpty);
+            Check("3.1 bàn hợp lệ", RoomRules.ValidateRoom("B01", "a") == null);
+            Check("3.2 khu vực thiếu tên → chặn", RoomRules.ValidateArea(" ") == RoomText.AreaNameEmpty);
+            Check("3.2 khu vực hợp lệ", RoomRules.ValidateArea("Lầu 1") == null);
+            var levels = new List<LookupItem>
+            {
+                new LookupItem { Id = "0", Name = "Hiển thị để lựa chọn" },
+                new LookupItem { Id = "1", Name = "Giá chung" },
+                new LookupItem { Id = "2", Name = "Giá bán t2" },
+                new LookupItem { Id = "3", Name = "Giá bán t3" },
+                new LookupItem { Id = "4", Name = "Giá cafe" }
+            };
+            List<LookupItem> filtered = RoomRules.FilterPriceLevels(levels, false, false, false, "2");
+            Check("3.10 mức giá 2/3/4 ẩn khi cấu hình tắt, giữ lại mức đang dùng",
+                filtered.Count == 3 && filtered[2].Id == "2", "n=" + filtered.Count);
+            Check("3.10 mức giá đủ khi cấu hình bật",
+                RoomRules.FilterPriceLevels(levels, true, true, true, "0").Count == 5);
+
+            // Quyền 4: Quản lý/Kế toán MODE 240 đủ 4 quyền; MODE 0 không quyền nào; không có dòng = khóa.
+            var perms = new FunctionPermissions(false);
+            perms.Add("194c969a-962f-47c8-b808-0330e2a60350", RoomRules.FunctionName, 240);
+            Check("4 Quản lý MODE 240: đủ Xem/Thêm/Sửa/Xóa",
+                perms.Can(RoomRules.FunctionName, RoleModes.View) && perms.Can(RoomRules.FunctionName, RoleModes.Add)
+                && perms.Can(RoomRules.FunctionName, RoleModes.Edit) && perms.Can(RoomRules.FunctionName, RoleModes.Remove));
+            perms = new FunctionPermissions(false);
+            perms.Add("194c969a-962f-47c8-b808-0330e2a60350", RoomRules.FunctionName, 0);
+            Check("4 Thu ngân MODE 0: không quyền nào",
+                !perms.Can(RoomRules.FunctionName, RoleModes.View) && !perms.Can(RoomRules.FunctionName, RoleModes.Add)
+                && !perms.Can(RoomRules.FunctionName, RoleModes.Edit) && !perms.Can(RoomRules.FunctionName, RoleModes.Remove));
+            Check("4 Thủ kho không có dòng quyền = khóa",
+                !new FunctionPermissions(false).Can(RoomRules.FunctionName, RoleModes.View));
+
+            // DB: tạo khu vực/bàn → trùng tên, Thêm nhanh, chặn xóa, xóa cứng, giữ cột thiết kế, dọn sạch.
+            var areaRepo = new AreaRepository(db);
+            var roomRepo = new RoomRepository(db);
+            string areaId = null, area2Id = null, roomId = null, orderId = null;
+            try
+            {
+                var area = AreaRow.NewDefault();
+                area.Name = "KHU VỰC THỬ BKV";
+                AreaSaveResult areaSaved = areaRepo.Save(area,
+                    new List<PriceAssignment>(), new List<string>(), new List<AreaDefaultItem>(), "selftest");
+                areaId = areaSaved.SavedId;
+                Check("Tạo khu vực thử", areaSaved.Ok && areaId != null, areaSaved.ErrorMessage);
+                if (areaId == null)
+                    return;
+                AreaRow areaBack = areaRepo.Load(areaId);
+                Check("3.2 thêm khu vực ghi đúng STATUS/người tạo",
+                    areaBack != null && areaBack.Status == 30 && areaBack.CreatedById == "selftest" && areaBack.CreatedAt.HasValue);
+                var dupArea = AreaRow.NewDefault();
+                dupArea.Name = "khu vực thử bkv"; // khác hoa thường → vẫn trùng (Q5)
+                AreaSaveResult dupA = areaRepo.Save(dupArea,
+                    new List<PriceAssignment>(), new List<string>(), new List<AreaDefaultItem>(), "selftest");
+                Check("Trùng tên khu vực không phân biệt hoa thường → chặn",
+                    !dupA.Ok && dupA.ErrorMessage == RoomText.AreaNameDuplicate("khu vực thử bkv"), dupA.ErrorMessage);
+
+                var room = RoomRow.NewDefault();
+                room.Name = "B01";
+                room.AreaId = areaId;
+                RoomSaveResult saved = roomRepo.SaveRoom(room, new List<PriceAssignment>(), "selftest");
+                Check("Lưu bàn", saved.Ok && saved.SavedId != null, saved.ErrorMessage);
+                roomId = saved.SavedId;
+                if (roomId == null)
+                    return;
+                RoomRow roomBack = roomRepo.LoadRoom(roomId);
+                Check("3.1 bàn mới: theo khu vực, giá 0",
+                    roomBack != null && roomBack.CalcHour == RoomCalc.ByArea && roomBack.UnitPrice == 0m && roomBack.OpenAmount == 0m);
+                var dupRoom = RoomRow.NewDefault();
+                dupRoom.Name = "b01";
+                dupRoom.AreaId = areaId;
+                RoomSaveResult dup = roomRepo.SaveRoom(dupRoom, new List<PriceAssignment>(), "selftest");
+                Check("Trùng tên bàn không phân biệt hoa thường → chặn",
+                    !dup.Ok && dup.ErrorMessage == RoomText.RoomNameDuplicate("b01"), dup.ErrorMessage);
+
+                // Thêm nhanh: B02, B03 vào cùng khu vực; trùng trong DB → không ghi dòng nào.
+                QuickAddResult qa = roomRepo.QuickAddRooms(new List<QuickAddRequest>
+                {
+                    new QuickAddRequest { AreaId = areaId, Names = new List<string> { "B02", "B03" } }
+                }, "selftest");
+                Check("3.11 Thêm nhanh B02, B03", qa.Ok && qa.CreatedCount == 2, qa.ErrorMessage);
+                int countBefore = roomRepo.LoadRooms().Count;
+                QuickAddResult qaDup = roomRepo.QuickAddRooms(new List<QuickAddRequest>
+                {
+                    new QuickAddRequest { AreaId = areaId, Names = new List<string> { "B04", "B01" } }
+                }, "selftest");
+                Check("3.11 Thêm nhanh trùng tên trong DB → lỗi, không ghi dòng nào",
+                    !qaDup.Ok && qaDup.ErrorMessage == RoomText.QuickAddExists("B01")
+                    && roomRepo.LoadRooms().Count == countBefore, qaDup.ErrorMessage);
+                QuickAddResult qaBatch = roomRepo.QuickAddRooms(new List<QuickAddRequest>
+                {
+                    new QuickAddRequest { AreaId = areaId, Names = new List<string> { "D01", "D01" } }
+                }, "selftest");
+                Check("3.11 Thêm nhanh trùng trong lần sinh → lỗi, không ghi dòng nào",
+                    !qaBatch.Ok && qaBatch.ErrorMessage == RoomText.QuickAddDuplicate("D01")
+                    && roomRepo.LoadRooms().Count == countBefore, qaBatch.ErrorMessage);
+
+                // Giữ cột thiết kế/runtime khi sửa (3.1): set trước bằng SQL rồi SaveRoom đổi tên + ghi chú.
+                DbHelper.Read(db, conn =>
+                {
+                    DbHelper.Exec(conn, null, "UPDATE DBAN SET POSLEFT = 10, WIDTH = 100, TRANGTHAI = 1 WHERE ID = @I", "@I", roomId);
+                    return 0;
+                });
+                RoomRow edit = roomRepo.LoadRoom(roomId);
+                edit.Name = "B01-ĐỔI";
+                edit.Note = "ghi chú thử";
+                RoomSaveResult edited = roomRepo.SaveRoom(edit, new List<PriceAssignment>(), "selftest");
+                Check("Sửa bàn", edited.Ok, edited.ErrorMessage);
+                int posLeft = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT POSLEFT FROM DBAN WHERE ID = @I", "@I", roomId)));
+                int width = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT WIDTH FROM DBAN WHERE ID = @I", "@I", roomId)));
+                int trangThai = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT TRANGTHAI FROM DBAN WHERE ID = @I", "@I", roomId)));
+                Check("3.1 sửa bàn giữ nguyên cột thiết kế/runtime",
+                    posLeft == 10 && width == 100 && trangThai == 1, posLeft + "/" + width + "/" + trangThai);
+
+                // Chặn xóa bàn có đơn chưa thanh toán (Q4): trigger tự gán DBAN.TDONHANGID khi INSERT đơn.
+                orderId = DbHelper.NewId();
+                DbHelper.Read(db, conn =>
+                {
+                    DbHelper.Exec(conn, null,
+                        "INSERT INTO TDONHANG (ID, NAME, STATUS, USERCREATEDID, LOAI, DATHANHTOAN, DBANID) VALUES (@I, @N, 30, 'selftest', 0, 0, @B)",
+                        "@I", orderId, "@N", "HĐ THỬ BKV", "@B", roomId);
+                    return 0;
+                });
+                string tdId = DbHelper.Read(db, conn => DbHelper.Str(DbHelper.Scalar(conn, null, "SELECT TDONHANGID FROM DBAN WHERE ID = @I", "@I", roomId)));
+                Check("Trigger gán TDONHANGID khi có đơn chưa thanh toán", tdId == orderId, tdId ?? "null");
+                RoomDeleteResult blocked = roomRepo.DeleteRoom(roomId);
+                Check("Q4 xóa bàn có đơn chưa thanh toán → chặn", !blocked.Ok, blocked.ErrorMessage);
+                DbHelper.Read(db, conn =>
+                {
+                    DbHelper.Exec(conn, null, "DELETE FROM TDONHANG WHERE ID = @I", "@I", orderId);
+                    return 0;
+                });
+                orderId = null;
+                string tdIdAfter = DbHelper.Read(db, conn => DbHelper.Str(DbHelper.Scalar(conn, null, "SELECT TDONHANGID FROM DBAN WHERE ID = @I", "@I", roomId)));
+                Check("Xóa đơn → trigger dọn TDONHANGID về NULL", tdIdAfter == null, tdIdAfter ?? "null");
+
+                // Xóa bàn xóa kèm bảng giá áp dụng, không để dòng mồ côi.
+                DbHelper.Read(db, conn =>
+                {
+                    DbHelper.Exec(conn, null,
+                        "INSERT INTO DBANGGIATHEOBAN (ID, DBANID, DBANGGIAID, STATUS, USERCREATEDID) VALUES (@I, @B, '0', 30, 'selftest')",
+                        "@I", DbHelper.NewId(), "@B", roomId);
+                    return 0;
+                });
+                RoomDeleteResult deleted = roomRepo.DeleteRoom(roomId);
+                Check("Xóa cứng bàn", deleted.Ok, deleted.ErrorMessage);
+                string deletedRoomId = saved.SavedId;
+                roomId = null;
+                int orphans = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
+                    "SELECT COUNT(*) FROM DBANGGIATHEOBAN WHERE DBANID = @B", "@B", deletedRoomId)));
+                Check("Xóa bàn không để dòng bảng giá mồ côi", orphans == 0, "n=" + orphans);
+
+                // Xóa khu vực bị chặn khi còn bàn; xóa khu vực xóa kèm 3 bảng con.
+                string areaErr = areaRepo.Delete(areaId);
+                Check("Q4 xóa khu vực còn bàn → chặn", areaErr != null, areaErr);
+                var area2 = AreaRow.NewDefault();
+                area2.Name = "KHU VỰC THỬ BKV 2";
+                AreaSaveResult area2Saved = areaRepo.Save(area2,
+                    new List<PriceAssignment>(), new List<string>(), new List<AreaDefaultItem>(), "selftest");
+                area2Id = area2Saved.SavedId;
+                Check("Tạo khu vực thử thứ hai", area2Saved.Ok && area2Id != null, area2Saved.ErrorMessage);
+                string area2IdSaved = area2Id;
+                DbHelper.Read(db, conn =>
+                {
+                    DbHelper.Exec(conn, null,
+                        "INSERT INTO DBANGGIATHEOKHUVUC (ID, DKHUVUCID, DBANGGIAID, STATUS, USERCREATEDID) VALUES (@I, @A, '0', 30, 'selftest')",
+                        "@I", DbHelper.NewId(), "@A", area2IdSaved);
+                    DbHelper.Exec(conn, null,
+                        "INSERT INTO DTKTHEOKHUVUC (ID, DKHUVUCID, SUSERID, STATUS, USERCREATEDID) VALUES (@I, @A, 'selftest', 30, 'selftest')",
+                        "@I", DbHelper.NewId(), "@A", area2IdSaved);
+                    DbHelper.Exec(conn, null,
+                        "INSERT INTO DMATHANGMACDINH (ID, DKHUVUCID, DMATHANGID, STATUS, USERCREATEDID) VALUES (@I, @A, 'x', 30, 'selftest')",
+                        "@I", DbHelper.NewId(), "@A", area2IdSaved);
+                    return 0;
+                });
+                string del2 = areaRepo.Delete(area2Id);
+                Check("Xóa khu vực không còn bàn", del2 == null, del2);
+                area2Id = null;
+                int c1 = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM DBANGGIATHEOKHUVUC WHERE DKHUVUCID = @A", "@A", area2IdSaved)));
+                int c2 = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM DTKTHEOKHUVUC WHERE DKHUVUCID = @A", "@A", area2IdSaved)));
+                int c3 = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM DMATHANGMACDINH WHERE DKHUVUCID = @A", "@A", area2IdSaved)));
+                Check("Xóa khu vực xóa kèm bảng giá/truy cập/mặt hàng mặc định", c1 + c2 + c3 == 0, c1 + "/" + c2 + "/" + c3);
+
+                // Dialog: tab giá ẩn khi CoTienGio = 0 (DB hiện = 0); dialog khu vực chỉ có tab chính khi mọi cấu hình tắt.
+                using (var dlg = new Kazuko_FnB.UI.Dialogs.RoomEditDialog(AppSession.Current, null, areaId, new List<string>()))
+                {
+                    Check("1.2 tab 'Bảng giá áp dụng' ẩn khi CoTienGio = 0", !dlg.HasPriceTab);
+                }
+                using (var dlg = new Kazuko_FnB.UI.Dialogs.AreaEditDialog(AppSession.Current, null, new List<string>()))
+                {
+                    Check("1.3 dialog khu vực chỉ có tab chính khi cấu hình tắt", dlg.TabCount == 1, "tabs=" + dlg.TabCount);
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (orderId != null)
+                        DbHelper.Read(db, conn =>
+                        {
+                            DbHelper.Exec(conn, null, "DELETE FROM TDONHANG WHERE ID = @I", "@I", orderId);
+                            return 0;
+                        });
+                }
+                catch { }
+                try { if (roomId != null) roomRepo.DeleteRoom(roomId); } catch { }
+                try
+                {
+                    DbHelper.Read(db, conn =>
+                    {
+                        DbHelper.Exec(conn, null, "DELETE FROM DBAN WHERE DKHUVUCID = @A AND NAME IN ('B02', 'B03')", "@A", areaId);
+                        return 0;
+                    });
+                }
+                catch { }
+                try { if (areaId != null) areaRepo.Delete(areaId); } catch { }
+                try { if (area2Id != null) areaRepo.Delete(area2Id); } catch { }
             }
         }
 

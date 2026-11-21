@@ -111,8 +111,30 @@ namespace Kazuko_FnB.Services
         public static string DienGiaiGia4 { get { return GetText("DienGiaiGia4", "Giá 4"); } }
         public static bool SuDung2DonViTinh { get { return GetBool("SuDung2DonViTinh"); } }
         public static bool KichHoatSuDungCanDienTu { get { return GetBool("KichHoatSuDungCanDienTu"); } }
+
+        // ---- Khách đặt hàng (docs/specs/khach-dat-hang.md §3.8) ----
+        /// <summary>Bước làm tròn tiền (LamTron): 1000 theo DB thật; luật chung dùng cho cả nhà hàng + bán lẻ.</summary>
+        public static int LamTronTien { get { return GetInt("LamTronTien", 1000); } }
+        /// <summary>Loại ứng dụng (TEXTVALUE): "1" = POS; "HOTEL" = khách sạn (không dùng ở F&B thuần).</summary>
+        public static string UngDung { get { return GetText("UngDung", "1"); } }
+        public static int SoHoaDonQuayVongTheo { get { return GetInt("SoHoaDonQuayVongTheo", 1); } }
+        public static bool SuDungTheTraTruoc { get { return GetBool("SuDungTheTraTruoc"); } }
+        public static bool CoThueSuat { get { return GetBool("CoThueSuat"); } }
+        public static bool CoPhiVanChuyen { get { return GetBool("CoPhiVanChuyen"); } }
+        public static bool NhapMotMatHangNhieuLanTrongPhieu { get { return GetBool("NhapMotMatHangNhieuLanTrongPhieu"); } }
+        /// <summary>Sắp xếp lưới mặt hàng: 1 = theo CODE, khác = theo NAME.</summary>
+        public static int SapXepThuTuTheo { get { return GetInt("SapXepThuTuTheo", 0); } }
         public static bool TuDongCapNhatGiaNhapDinhLuong { get { return GetBool("TuDongCapNhatGiaNhapCuaMatHangDinhLuong"); } }
         public static bool TuDongCapNhatGiaVonDinhLuong { get { return GetBool("TuDongCapNhatGiaVonCuaMatHangDinhLuong"); } }
         public static bool GiaBanLeUsd { get { return GetBool("GiaBanLeUsd"); } }
+
+        // ---- Khóa của chức năng Danh mục bàn khu vực (spec 3.10) ----
+
+        public static bool ChoPhepDungNhieuBangGiaTrenBill { get { return GetBool("ChoPhepDungNhieuBangGiaTrenBill"); } }
+        public static bool SuDungGiaTheoGio { get { return GetBool("SuDungGiaTheoGio"); } }
+        public static bool SuDungMatHangMacDinh { get { return GetBool("SuDungMatHangMacDinh"); } }
+        public static bool PhanQuyenTruyCapTheoKhuVuc { get { return GetBool("PhanQuyenTruyCapTheoKhuVuc"); } }
+        public static bool CoSuDungCongTacDienTu { get { return GetBool("CoSuDungCongTacDienTu"); } }
+        public static bool SuDungNhieuKho { get { return GetBool("SuDungNhieuKho"); } }
     }
 }

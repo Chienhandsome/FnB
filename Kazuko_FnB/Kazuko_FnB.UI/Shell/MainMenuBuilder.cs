@@ -29,7 +29,10 @@ namespace Kazuko_FnB.UI
                 {
                     var users = new UserRepository(session.DatabasePath);
                     perms = session.Permissions ?? users.GetFunctionPermissions(session.UserId, session.IsAdmin);
-                    dbRoots = new MenuRepository(session.DatabasePath).LoadTree();
+                    var menus = new MenuRepository(session.DatabasePath);
+                    dbRoots = menus.LoadTree();
+                    // Mục không có SMENU.SFUNCTIONID thì lấy quyền từ STABLEDESC (vd. "Khách đặt hàng").
+                    menus.FillFunctionIds(dbRoots);
                 }
                 catch (Kazuko_FnB.Data.DataAccessException)
                 {
