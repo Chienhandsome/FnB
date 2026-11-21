@@ -61,6 +61,8 @@
     <Compile Include="ImageRepository.cs" />
     <Compile Include="KazukoConnection.cs" />
     <Compile Include="MenuRepository.cs" />
+    <Compile Include="ProductGroupRepository.cs" />
+    <Compile Include="ProductRepository.cs" />
     <Compile Include="ReferenceChecker.cs" />
     <Compile Include="RoleRepository.cs" />
     <Compile Include="ScreenLayout.cs" />

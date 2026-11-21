@@ -169,6 +169,236 @@ namespace Kazuko_FnB.UI.Diagnostics
             UserTests(db);
             RoleTests(db);
             PasswordTests(db);
+            ProductTests(db);
+        }
+
+        // ------------------------------------------------------------------ H6 Danh mục mặt hàng
+
+        private static ProductValidationInput ValidBrewInput()
+        {
+            return new ProductValidationInput
+            {
+                TypeId = "1",
+                TypeHasRecipe = true,
+                UseTwoUnits = false,
+                QuyDoi = 0m,
+                UnitId = "u1",
+                BigUnitId = null,
+                Lines = new List<RecipeValidationLine>
+                {
+                    new RecipeValidationLine { MaterialId = "m1", MaterialTypeId = "2", Quantity = 1m }
+                }
+            };
+        }
+
+        private static void ProductTests(string db)
+        {
+            // Luật thuần 2.1 (dừng ở lỗi đầu, quyết định 5.6 gộp #1/#2).
+            ProductValidationInput input = ValidBrewInput();
+            input.UseTwoUnits = true;
+            input.BigUnitId = "u2";
+            input.QuyDoi = 0m;
+            ProductValidationResult vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #1 thiếu quy đổi → chặn + focus ô Quy đổi", vr.Error == "Mời bạn nhập quy đổi" && vr.FocusQuyDoi, vr.Error);
+            input.QuyDoi = 5m;
+            input.BigUnitId = "u1";
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #2 ĐVT lẻ = ĐVT chẵn → chặn", vr.Error == "Đơn vị lẻ và đơn vị chẵn không được trùng nhau", vr.Error);
+            input.QuyDoi = 0m;
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 gộp #1/#2: dừng ở lỗi đầu (#1)", vr.Error == "Mời bạn nhập quy đổi", vr.Error);
+            input = ValidBrewInput();
+            input.TypeId = "5";
+            input.Lines[0].MaterialTypeId = "1"; // tránh #8: Combo mở chứa nguyên liệu loại 2 sẽ bị chặn
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #3 Combo mở chỉ cảnh báo, vẫn lưu", vr.IsValid && vr.Warning == "Phiên bản hiện tại mới hỗ trợ combo mở ở giao diện quản trị", vr.Warning);
+            input = ValidBrewInput();
+            input.TypeId = "0";
+            input.TypeHasRecipe = false;
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #4 loại 0/2/6 có định lượng → chặn", vr.Error == "Mặt hàng này không có vật tư / định lượng đi kèm", vr.Error);
+            input = ValidBrewInput();
+            input.Lines = new List<RecipeValidationLine>();
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #5 pha chế không có định lượng → chặn", vr.Error == "Vui lòng nhập vật tư/định lượng cho mặt hàng", vr.Error);
+            input = ValidBrewInput();
+            input.Lines[0].Quantity = 0m;
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #6 số lượng 0 → chặn đúng dòng", vr.Error == "Mời bạn nhập số lượng cho định lượng" && vr.ErrorLineIndex == 0, vr.Error);
+            input = ValidBrewInput();
+            input.Lines[0].MaterialId = null;
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #7 chưa chọn vật tư → chặn", vr.Error == "Mời bạn nhập vật tư cho định lượng", vr.Error);
+            input = ValidBrewInput();
+            input.TypeId = "4";
+            vr = ProductRules.ValidateBeforeSave(input);
+            Check("2.1 #8 Combo chứa nguyên liệu → chặn", vr.Error == "Combo không được phép chứa nguyên vật liệu", vr.Error);
+            Check("2.1 pha chế hợp lệ → lưu được", ProductRules.ValidateBeforeSave(ValidBrewInput()).IsValid);
+
+            // Sinh mã 3.5 + công thức giá 3.4 + chuyển loại 3.2.
+            string code = ProductRules.GenerateCode("BIA", 7, new Random(1));
+            bool codeOk = code != null && code.Length == 7 && code.StartsWith("BIA", StringComparison.Ordinal);
+            if (codeOk)
+            {
+                for (int i = 3; i < code.Length; i++)
+                    codeOk = codeOk && char.IsDigit(code[i]);
+            }
+            Check("3.5 sinh mã = tiền tố + số ngẫu nhiên, đủ 7 ký tự", codeOk, code);
+            Check("3.5 nhóm không có tiền tố → không sinh mã", ProductRules.GenerateCode("", 7, new Random(1)) == null);
+            Check("3.5 sinh mã trùng hết → null sau 10 lần thử",
+                ProductRules.GenerateUniqueCode("BIA", 7, delegate { return true; }, new Random(1)) == null);
+            string unique = ProductRules.GenerateUniqueCode("BIA", 7, delegate { return false; }, new Random(1));
+            Check("3.5 sinh mã không trùng → trả mã hợp lệ", unique != null && unique.Length == 7 && unique.StartsWith("BIA", StringComparison.Ordinal), unique);
+            Check("3.4 giá nhập lẻ = GIANHAP / QUYDOI", ProductMath.UnitBuyPrice(12000m, 12m, true) == 1000m);
+            Check("3.4 không có ĐVT chẵn → giá nhập lẻ = GIANHAP", ProductMath.UnitBuyPrice(12000m, null, false) == 12000m);
+            Check("3.4 thành tiền nhập = SL × giá lẻ", ProductMath.AmountBuy(2m, 1000m) == 2000m);
+            Check("3.4 thành tiền vốn = SL × giá vốn", ProductMath.AmountCost(2m, 8000m) == 16000m);
+            decimal totalBuy, totalCost;
+            ProductRules.Totals(new[]
+            {
+                new RecipeLine { AmountBuy = 2000m, AmountCost = 16000m },
+                new RecipeLine { AmountBuy = 500m, AmountCost = 4000m }
+            }, out totalBuy, out totalCost);
+            Check("3.4 tổng định lượng", totalBuy == 2500m && totalCost == 20000m, totalBuy + "/" + totalCost);
+            Check("3.2 thêm dòng cho loại không định lượng → chuyển pha chế", ProductRules.SwitchTypeForRecipe("0", false) == "1");
+            Check("3.2 loại đã có định lượng giữ nguyên", ProductRules.SwitchTypeForRecipe("4", true) == "4");
+            Check("5.7 chỉ tạo mới được loại 0–3 qua dialog", ProductRules.CanCreateType("0") && ProductRules.CanCreateType("3") && !ProductRules.CanCreateType("4") && !ProductRules.CanCreateType("7"));
+
+            // Quyền 4: Thu ngân Xem + Thêm (0x50), không Sửa/Xóa, không Xem giá nhập.
+            var perms = new FunctionPermissions(false);
+            perms.Add("9bcaf32e-e0c6-4b62-8ab4-65afb965bd2e", "Danh mục mặt hàng", 0x50);
+            Check("4 Thu ngân: Xem + Thêm", perms.Can("Danh mục mặt hàng", RoleModes.View) && perms.Can("Danh mục mặt hàng", RoleModes.Add));
+            Check("4 Thu ngân: không Sửa/Xóa", !perms.Can("Danh mục mặt hàng", RoleModes.Edit) && !perms.Can("Danh mục mặt hàng", RoleModes.Remove));
+            Check("4 Thu ngân: không có Xem giá nhập", !perms.Can("Xem giá nhập", RoleModes.View));
+            Check("4 không có dòng quyền = khóa", !new FunctionPermissions(false).Can("Danh mục mặt hàng", RoleModes.View));
+
+            // DB: tạo nhóm/vật tư/mặt hàng pha chế → kiểm lưu, trùng, cascade giá, chặn xóa, dọn sạch.
+            var productRepo = new ProductRepository(db);
+            var groupRepo = new ProductGroupRepository(db);
+            List<LookupItem> units = new FormRepository(db).LoadAll("DDONVITINH");
+            Check("Có đơn vị tính để thử", units.Count > 0, "n=" + units.Count);
+            if (units.Count == 0)
+                return;
+            string unitId = units[0].Id;
+            string groupId = null;
+            string materialId = null;
+            string brewId = null;
+            try
+            {
+                string gerr;
+                groupId = groupRepo.Save(new ProductGroupRow { Name = "NHÓM THỬ DMH", Code = "THU" }, "selftest", out gerr);
+                Check("Tạo nhóm thử", gerr == null && groupId != null, gerr);
+                if (groupId == null)
+                    return;
+                var options = new ProductSaveOptions { AllowDuplicateName = false, CodeRequired = true, AutoUpdateBuyPrice = true, AutoUpdateCostPrice = true };
+                var material = ProductRow.NewDefault();
+                material.Name = "VẬT TƯ THỬ DMH";
+                material.TypeId = "2";
+                material.UnitId = unitId;
+                material.GroupId = groupId;
+                material.Code = "VTDMH001";
+                material.BuyPrice = 12000m;
+                material.CostPrice = 8000m;
+                ProductSaveResult saved = productRepo.SaveProduct(material, new List<RecipeLine>(), "selftest", options);
+                Check("Lưu vật tư", saved.Ok && saved.SavedId != null, saved.ErrorMessage);
+                materialId = saved.SavedId;
+                if (materialId == null)
+                    return;
+                ProductRow back = productRepo.LoadProduct(materialId);
+                Check("3.1b thêm mới ghi đúng STATUS/ID/người tạo", back != null && back.Status == 30 && back.CreatedById == "selftest" && back.CreatedAt.HasValue);
+                var dupName = ProductRow.NewDefault();
+                dupName.Name = "VẬT TƯ THỬ DMH";
+                dupName.TypeId = "2";
+                dupName.UnitId = unitId;
+                dupName.GroupId = groupId;
+                dupName.Code = "VTDMH002";
+                ProductSaveResult dup = productRepo.SaveProduct(dupName, new List<RecipeLine>(), "selftest", options);
+                Check("Trùng tên bị chặn (nguyên văn)", !dup.Ok && dup.ErrorMessage == ProductText.NameDuplicate("VẬT TƯ THỬ DMH"), dup.ErrorMessage);
+                var dupCode = ProductRow.NewDefault();
+                dupCode.Name = "VẬT TƯ KHÁC DMH";
+                dupCode.TypeId = "2";
+                dupCode.UnitId = unitId;
+                dupCode.GroupId = groupId;
+                dupCode.Code = "VTDMH001";
+                dup = productRepo.SaveProduct(dupCode, new List<RecipeLine>(), "selftest", options);
+                Check("Trùng mã bị chặn (nguyên văn)", !dup.Ok && dup.ErrorMessage == ProductText.CodeDuplicate("VTDMH001"), dup.ErrorMessage);
+
+                // Hồi quy: thêm mới → trùng tên (lỗi) → sửa tên → lưu lại phải ghi thật, không để định lượng mồ côi.
+                var retry = ProductRow.NewDefault();
+                retry.Name = "VẬT TƯ THỬ DMH";
+                retry.TypeId = "1";
+                retry.UnitId = unitId;
+                retry.GroupId = groupId;
+                retry.Code = "MHDMH0RT";
+                var retryLines = new List<RecipeLine> { new RecipeLine { MaterialId = materialId, Quantity = 1m } };
+                ProductSaveResult r1 = productRepo.SaveProduct(retry, retryLines, "selftest", options);
+                Check("Hồi quy: lưu mới trùng tên → lỗi và row.Id vẫn rỗng", !r1.Ok && string.IsNullOrEmpty(retry.Id), "Id=" + retry.Id);
+                retry.Name = "MẶT HÀNG THỬ LẠI DMH";
+                ProductSaveResult r2 = productRepo.SaveProduct(retry, retryLines, "selftest", options);
+                Check("Hồi quy: sửa tên rồi lưu lại → Ok", r2.Ok && !string.IsNullOrEmpty(r2.SavedId), r2.ErrorMessage);
+                if (r2.SavedId != null)
+                {
+                    ProductRow retryBack = productRepo.LoadProduct(r2.SavedId);
+                    Check("Hồi quy: ghi thật vào DMATHANG (STATUS 30, đúng tên)", retryBack != null && retryBack.Status == 30 && retryBack.Name == "MẶT HÀNG THỬ LẠI DMH");
+                    int retryLinesN = productRepo.LoadRecipeLines(r2.SavedId).Count;
+                    Check("Hồi quy: định lượng đúng 1 dòng", retryLinesN == 1, "n=" + retryLinesN);
+                    productRepo.DeleteProduct(r2.SavedId);
+                }
+                int retryOrphans = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
+                    "SELECT COUNT(*) FROM DDINHLUONG D WHERE D.DVATTUID = @M AND NOT EXISTS (SELECT 1 FROM DMATHANG P WHERE P.ID = D.DMATHANGID)", "@M", materialId)));
+                Check("Hồi quy: không có dòng DDINHLUONG mồ côi", retryOrphans == 0, "n=" + retryOrphans);
+                var ghost = ProductRow.NewDefault();
+                ghost.Id = "KHONG-TON-TAI-DMH";
+                ghost.Name = "MA DMH";
+                ghost.Code = "MADMH001";
+                ghost.TypeId = "2";
+                ghost.UnitId = unitId;
+                ghost.GroupId = groupId;
+                ProductSaveResult rg = productRepo.SaveProduct(ghost, new List<RecipeLine>(), "selftest", options);
+                Check("Sửa dòng không tồn tại → lỗi, không báo Ok", !rg.Ok && rg.ErrorMessage == "Mặt hàng không còn tồn tại.", rg.ErrorMessage);
+
+                var brew = ProductRow.NewDefault();
+                brew.Name = "MẶT HÀNG THỬ DMH";
+                brew.TypeId = "1";
+                brew.UnitId = unitId;
+                brew.GroupId = groupId;
+                brew.Code = "MHDMH001";
+                brew.SellPrice = 30000m;
+                ProductSaveResult savedBrew = productRepo.SaveProduct(brew,
+                    new List<RecipeLine> { new RecipeLine { MaterialId = materialId, Quantity = 2m } }, "selftest", options);
+                Check("Lưu mặt hàng pha chế + định lượng", savedBrew.Ok && savedBrew.SavedId != null, savedBrew.ErrorMessage);
+                brewId = savedBrew.SavedId;
+                if (brewId == null)
+                    return;
+                ProductRow brewBack = productRepo.LoadProduct(brewId);
+                Check("3.4 GIANHAP = tổng thành tiền nhập (2 × 12000)", brewBack != null && brewBack.BuyPrice == 24000m, brewBack == null ? "null" : brewBack.BuyPrice.ToString());
+                Check("3.4 GIAVON = tổng thành tiền vốn (2 × 8000)", brewBack != null && brewBack.CostPrice == 16000m, brewBack == null ? "null" : brewBack.CostPrice.ToString());
+                List<RecipeLine> lines = productRepo.LoadRecipeLines(brewId);
+                Check("Định lượng đọc lại đủ dòng", lines.Count == 1 && lines[0].MaterialId == materialId && lines[0].Quantity == 2m, "n=" + lines.Count);
+
+                ProductDeleteResult blocked = productRepo.DeleteProduct(materialId);
+                Check("3.6 xóa vật tư còn tham chiếu → chặn", !blocked.Ok, blocked.ErrorMessage);
+                ProductDeleteResult deletedBrew = productRepo.DeleteProduct(brewId);
+                Check("Xóa hẳn mặt hàng pha chế", deletedBrew.Ok, deletedBrew.ErrorMessage);
+                brewId = null;
+                int orphans = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
+                    "SELECT COUNT(*) FROM DDINHLUONG WHERE DMATHANGID = @P", "@P", savedBrew.SavedId)));
+                Check("Xóa không để lại dòng định lượng mồ côi", orphans == 0, "n=" + orphans);
+                ProductDeleteResult deletedMat = productRepo.DeleteProduct(materialId);
+                Check("Xóa vật tư sau khi hết tham chiếu", deletedMat.Ok, deletedMat.ErrorMessage);
+                materialId = null;
+                ProductDeleteResult km = productRepo.DeleteProduct(ProductRepository.SystemProductId);
+                Check("Không xóa được mặt hàng hệ thống 'Khuyến mại tự động'", !km.Ok, km.ErrorMessage);
+                string delGroup = groupRepo.Delete(groupId);
+                Check("Xóa nhóm thử", delGroup == null, delGroup);
+                groupId = null;
+            }
+            finally
+            {
+                try { if (brewId != null) productRepo.DeleteProduct(brewId); } catch { }
+                try { if (materialId != null) productRepo.DeleteProduct(materialId); } catch { }
+                try { if (groupId != null) groupRepo.Delete(groupId); } catch { }
+            }
         }
 
         // ------------------------------------------------------------------ H5 Đổi mật khẩu

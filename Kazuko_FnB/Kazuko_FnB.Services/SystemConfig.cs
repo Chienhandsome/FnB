@@ -93,5 +93,26 @@ namespace Kazuko_FnB.Services
         public static int DoanhSoTuongUngVoi1Diem { get { return GetInt("DoanhSoTuongUngVoi1Diem"); } }
         public static bool KichHoatLuuVetHoatDong { get { return GetBool("KichHoatLuuVetHoatDong"); } }
         public static bool TuDongSaoLuuDuLieu { get { return GetBool("TuDongSaoLuuDuLieu"); } }
+
+        // ---- Khóa của chức năng Danh mục mặt hàng (spec 3.7) ----
+
+        public static bool SuDungMaHang { get { return GetBool("SuDungMaHang"); } }
+        public static bool SuDungMaSanCo { get { return GetBool("SuDungMaSanCo"); } }
+        public static bool TuDongSinhMaVach { get { return GetBool("TuDongSinhMaVach"); } }
+        public static int ChieuDaiMaVach { get { return GetInt("ChieuDaiMaVach", 7); } }
+        public static bool ChoPhepTrungTenMatHang { get { return GetBool("ChoPhepTrungTenMatHang"); } }
+        public static bool SuDungTenTiengAnh { get { return GetBool("SuDungTenTiengAnh"); } }
+        public static bool SuDungGia2 { get { return GetBool("SuDungGia2"); } }
+        public static bool SuDungGia3 { get { return GetBool("SuDungGia3"); } }
+        public static bool SuDungGia4 { get { return GetBool("SuDungGia4"); } }
+        /// <summary>Nhãn Giá 2/3/4. Chú ý: giá trị seed của DienGiaiGia3 là "Giá 2" (sai chữ của app gốc).</summary>
+        public static string DienGiaiGia2 { get { return GetText("DienGiaiGia2", "Giá 2"); } }
+        public static string DienGiaiGia3 { get { return GetText("DienGiaiGia3", "Giá 3"); } }
+        public static string DienGiaiGia4 { get { return GetText("DienGiaiGia4", "Giá 4"); } }
+        public static bool SuDung2DonViTinh { get { return GetBool("SuDung2DonViTinh"); } }
+        public static bool KichHoatSuDungCanDienTu { get { return GetBool("KichHoatSuDungCanDienTu"); } }
+        public static bool TuDongCapNhatGiaNhapDinhLuong { get { return GetBool("TuDongCapNhatGiaNhapCuaMatHangDinhLuong"); } }
+        public static bool TuDongCapNhatGiaVonDinhLuong { get { return GetBool("TuDongCapNhatGiaVonCuaMatHangDinhLuong"); } }
+        public static bool GiaBanLeUsd { get { return GetBool("GiaBanLeUsd"); } }
     }
 }

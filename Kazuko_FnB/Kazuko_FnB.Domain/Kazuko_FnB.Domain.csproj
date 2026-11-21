@@ -45,6 +45,7 @@
     <Compile Include="ConfigModels.cs" />
     <Compile Include="MenuModels.cs" />
     <Compile Include="PhieuThuModels.cs" />
+    <Compile Include="ProductModels.cs" />
     <Compile Include="ScreenLayoutModels.cs" />
     <Compile Include="SecurityModels.cs" />
   </ItemGroup>

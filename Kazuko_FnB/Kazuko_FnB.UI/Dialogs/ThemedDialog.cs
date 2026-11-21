@@ -92,6 +92,28 @@ namespace Kazuko_FnB.UI.Dialogs
             set { _subtitle.Text = value ?? ""; }
         }
 
+        /// <summary>
+        /// Đặt kích thước dialog sao cho vùng Body (không trừ Padding — control đặt tọa độ tuyệt đối không bị Padding đẩy)
+        /// đúng widthAt96×heightAt96 ở 96 DPI, nhân theo DPI. Dùng cho dialog có kích thước nội dung ghi trong spec.
+        /// </summary>
+        protected void FitBody(int widthAt96, int heightAt96)
+        {
+            float s = Dpi;
+            ClientSize = new Size((int)(widthAt96 * s), (int)(heightAt96 * s) + _header.Height + _footer.Height);
+        }
+
+        /// <summary>
+        /// Thu hẹp khoảng cách/lề của hàng nút chân hộp để đủ 4 nút trong dialog hẹp (vd. nhóm 395 px).
+        /// Gọi sau khi đã AddButton xong.
+        /// </summary>
+        protected void CompactFooter()
+        {
+            float s = Dpi;
+            _buttons.Padding = new Padding((int)(6 * s), (int)(10 * s), (int)(6 * s), (int)(8 * s));
+            foreach (Control c in _buttons.Controls)
+                c.Margin = new Padding(0, 0, (int)(4 * s), 0);
+        }
+
         protected float Dpi
         {
             get { return DeviceDpi / 96f; }

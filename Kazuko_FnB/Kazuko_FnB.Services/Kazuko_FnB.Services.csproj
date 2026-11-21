@@ -61,6 +61,7 @@
     <Compile Include="MoneyRounding.cs" />
     <Compile Include="PasswordPolicy.cs" />
     <Compile Include="PhieuThuRules.cs" />
+    <Compile Include="ProductRules.cs" />
     <Compile Include="RoleLogic.cs" />
     <Compile Include="SystemConfig.cs" />
   </ItemGroup>

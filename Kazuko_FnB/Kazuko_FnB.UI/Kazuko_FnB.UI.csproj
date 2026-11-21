@@ -205,6 +205,10 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PromptDialog.cs" />
+    <Compile Include="Dialogs\ProductEditDialog.cs" />
+    <Compile Include="Dialogs\ProductGroupEditDialog.cs" />
+    <Compile Include="Dialogs\ProductGroupPickerDialog.cs" />
+    <Compile Include="Dialogs\ProductHistoryDialog.cs" />
     <Compile Include="Dialogs\RolesPanel.cs" />
     <Compile Include="Dialogs\ScreenFactory.cs" />
     <Compile Include="Dialogs\ThemeChooserDialog.cs" />

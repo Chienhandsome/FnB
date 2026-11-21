@@ -227,7 +227,7 @@ Bảng này thuộc luật bán hàng; spec chỉ ghi để biết cấu hình n
 - **DB không có khóa ngoại** nào trên `DBAN` hay `DKHUVUC` (chỉ `NOT NULL` và `PRIMARY KEY`) [DB]. Chặn tham chiếu **nếu có** phải nằm ở mã.
 - Mã đã xuất **không có** hàm chặn xóa trong `DBANAe` hay `DKHUVUCAe` [CODE].
 - Bảng có cột `DKHUVUCID` hoặc `DBANID` (đếm từ `RDB$RELATION_FIELDS` [DB]): `DANH`, `DBAN`, `DBANGGIATHEOBAN`, `DBANGGIATHEOKHUVUC`, `DMATHANGMACDINH`, `DTKTHEOKHUVUC`, `TDATHANG`, `TDONHANG`, `TDONHANGGIO`, `TSUACHUA`. Chưa xác minh từng cột trỏ bàn hay khu vực (Q4).
-- Trạng thái xóa mềm trong app: `STATUS = 0` bị lọc khỏi "Chọn bàn" và danh sách khu vực (`STATUS = 30`) [CODE]. Đây là **quy ước có sẵn**; chưa biết xóa bàn có đi qua `STATUS = 0` hay xóa cứng (Q3).
+- Trạng thái xóa mềm trong app: `STATUS = 0` bị lọc khỏi "Chọn bàn" và danh sách khu vực (`STATUS = 30`) [CODE]. Đây là **quy ước có sẵn**; app gốc xóa bàn qua `STATUS = 0` (Thùng rác), nhưng bản viết lại **không** làm xóa mềm: xóa cứng (Q3).
 - Xóa khu vực: `DBAN.DKHUVUCID` tham chiếu khu vực; xóa khu vực đang có bàn là rủi ro lớn. Mặc định tạm ở 6.2 (Q4).
 
 ### 3.10 Cấu hình `SCONFIG` ảnh hưởng (giá trị DB thật [DB])
@@ -288,7 +288,7 @@ Bit quyền theo khuôn (§2 của Danh mục mặt hàng): **Xem 0x10 (16)**, *
 | 5.3 | `DBANAe` **không** kiểm bảng giá bắt buộc khi chọn "theo bảng giá" (`DKHUVUCAe` có kiểm) | Thêm kiểm như khu vực | [CODE] |
 | 5.4 | `grTruyCap_CellMouseClick` của khu vực gọi `RaiseChangedEvent(grBangGia)` (copy-paste, lưới sai) | Sửa thành `grTruyCap` | [CODE] |
 | 5.5 | Combo mẫu hóa đơn lọc theo `SFORM` "Hóa đơn bán hàng", còn bill bàn là "Hóa đơn nhà hàng" | Xác nhận đúng `SFORM` (Q11) | [CODE] |
-| 5.6 | Thùng rác cho bàn / khu vực | Theo quyết định ở Q3 — không mặc định | [CODE] `STATUS = 0` |
+| 5.6 | Thùng rác cho bàn / khu vực | **Bỏ** (quyết định Q3): xóa cứng, không `STATUS = 0` khi xóa; chỉ đọc `STATUS = 30` | [CODE] `STATUS = 0` |
 | 5.7 | Dữ liệu `DienGiaiGia3 = "Giá 2"` | Không tự sửa DB; Chiến xác nhận giá trị đúng | [DB] |
 | 5.8 | Tách "Thiết kế" (34 cột sơ đồ của bàn, 7 cột thiết kế của khu vực) khỏi danh mục | Đã chọn ở phạm vi: **không** sửa các cột này từ danh mục | [DB] |
 
@@ -298,7 +298,20 @@ Bit quyền theo khuôn (§2 của Danh mục mặt hàng): **Xem 0x10 (16)**, *
 
 ### 6.1 Đã trả lời bằng app gốc [APP]
 
-Chưa có: vòng này **không chạy** app gốc. Mục này để trống cho đến khi có kết quả thử nghiệm.
+Chạy 21/11/2026 trên **bản sao** `D:\Test\POS_TAP_TEST` (không đụng `POS TAP\` gốc; DB sao có 1 khu vực "Lầu 1", 1 bàn "bàn 1"; `CoTienGio = 0`). App gốc có manifest admin nên phải chạy bằng `__COMPAT_LAYER=RunAsInvoker` mới điều khiển được. Ảnh ở `docs/specs/img/danh-muc-ban-khu-vuc/`.
+
+| # | Kết quả từ app gốc | Ảnh |
+|---|---|---|
+| Q1 | Lưới bàn 5 cột: **Tên bàn, Khu vực, Nhóm hiển thị, Loại phòng, Ghi chú**. Có thanh lọc (F3) và dòng **Tổng**. Dưới lưới có tab "Thông tin" (khởi tạo/sửa đổi) và các tab liên quan (Bảng giá theo bàn, Đặt hàng, Hóa đơn nhà hàng, Phiếu nhập/xuất/chuyển/kiểm kho…) | 01 |
+| Q2 | Cây khu vực có **Tất cả, Chưa thiết lập, từng khu vực (Lầu 1), Thùng rác** (bản viết lại **không** có Thùng rác, xem Q3). Thanh công cụ trên cây: **+** (thêm khu vực), **✎** (sửa, mờ khi chưa chọn), 2 nút kiểu xem cây, làm mới, nút cấu hình. → mặc định tạm "không có Chưa thiết lập" **sai**: app gốc có | 01 |
+| Q3 | Xóa bàn hỏi "chuyển (1) dữ liệu tới **thùng rác**?" — **xóa mềm**; **Shift+Delete** xóa hẳn. App gốc có Thùng rác cho bàn/khu vực. **Quyết định (Chiến, 21/11/2026): bản viết lại bỏ xóa mềm và Thùng rác** — giữ mặc định "xóa cứng khi không tham chiếu, chặn khi tham chiếu (Q4)"; không có mục "Thùng rác" trên cây, không khôi phục. Lệch có chủ ý so với app gốc | 07 |
+| Q5 | Trùng tên khu vực: gõ chữ thường "lầu 1" khi đã có "Lầu 1" → cảnh báo `Giá trị "Lầu 1" ở trường "Tên khu vực" đã tồn tại!` — **không phân biệt hoa thường**, khuôn lỗi như Thêm mới khác. (Trùng tên bàn chưa thử) | 06 |
+| Q16 | Có sẵn **Thêm excel, Xuất excel, In, Tổng** trên thanh công cụ bàn | 01 |
+| Q18 | **Thêm nhanh** là nút trên thanh công cụ của lưới bàn (giữa Xóa và Thêm excel). Dialog "THÊM NHANH BÀN VÀ KHU VỰC": lưới Khu vực / Bàn từ số / Bàn đến số / Bắt đầu bằng / Dữ liệu mẫu + ô "Chiều dài vùng số" (mặc định 0), nút Thực hiện/Thoát | 04 |
+| Q19 | Menu HOẠT ĐỘNG: Danh mục mặt hàng (Ctrl+M), **Danh mục bàn khu vực** (ngay sau), rồi Khách đặt hàng, Theo dõi đặt phòng… → đúng mặc định | — |
+| Khác | Thêm bàn: bước 1 hộp "Chọn dữ liệu — Mời bạn chọn Khu vực" (bắt buộc chọn), bước 2 dialog **BÀN – THÊM MỚI** chỉ có Tên bàn, Khu vực, Nhóm hiển thị, Loại phòng, Ghi chú (không có giá giờ vì `CoTienGio = 0`). Thêm khu vực: Tên khu vực, Ảnh, Biểu tượng, Tab hiển thị (trên/dưới), Giá mặt hàng ("Hiển thị để lựa chọn"), Kho hàng (mặc định KHO BÁN HÀNG), Mẫu hóa đơn, Ghi chú. Thoát dialog đã sửa → hỏi "Dữ liệu đã thay đổi, hủy các thay đổi?" | 02, 03, 05 |
+
+Chưa thử (cần tài khoản khác / dữ liệu đơn): Q4, Q6, Q9, Q13, Q14, Q15, Q17.
 
 ### 6.2 Còn mở — kèm mặc định tạm (Muse dùng mặc định cho đến khi Chiến chốt)
 
@@ -306,7 +319,7 @@ Chưa có: vòng này **không chạy** app gốc. Mục này để trống cho 
 |---|---|---|---|
 | Q1 | Cột lưới bàn thật là gì? `SGRID` không có cấu hình cho `DBAN` | Dùng cột đề xuất ở 1.1a | Chụp màn hình app gốc (1 ảnh) |
 | Q2 | Cây khu vực: có "Tất cả" và "Chưa thiết lập" không? Điểm mở **+ / ✎** nằm ở đâu? (`DKHUVUC` là `TABLETYPE = 0`, phẳng) | Không có "Chưa thiết lập" (bàn bắt buộc có khu vực); có "Tất cả" như khuôn | Mở app gốc, xem panel trái |
-| Q3 | Xóa bàn / khu vực: xóa cứng hay xóa mềm `STATUS = 0`? Có thùng rác không? | **Xóa cứng** khi không tham chiếu; **chặn** khi tham chiếu (Q4). Không thùng rác (theo quyết định cho mặt hàng) | Xóa bàn trống và bàn đã có đơn trên bản sao |
+| Q3 | Xóa bàn / khu vực: xóa cứng hay xóa mềm `STATUS = 0`? Có thùng rác không? | **Đã chốt: xóa cứng** khi không tham chiếu; **chặn** khi tham chiếu (Q4). Không thùng rác, không xóa mềm (Chiến 21/11/2026, áp dụng chung như danh mục mặt hàng) | Xóa bàn trống và bàn đã có đơn trên bản sao |
 | Q4 | Chặn tham chiếu: bảng nào, điều kiện nào? (`TDONHANG.DBANID` đã thanh toán có chặn không? `DBANGGIATHEOBAN`, `DTKTHEOKHUVUC` xóa theo bàn/khu vực?) | Chặn khi còn `TDONHANG` **chưa thanh toán** (`DATHANHTOAN = 0`) trỏ tới bàn, hoặc bàn đang có `TDONHANGID`. Khu vực chặn khi còn bàn. Bảng giá/truy cập gắn kèm bị xóa theo | Xóa bàn có đơn chưa thanh toán và đã thanh toán trên bản sao |
 | Q5 | Trùng tên: phạm vi (toàn bảng hay trong khu vực)? Hoa thường? Khoảng trắng? | Toàn bảng, không phân biệt hoa thường, cắt khoảng trắng đầu cuối (như Thêm nhanh) | Thêm "B01" ở khu vực khác; "b01"; "B01 " |
 | Q6 | `Thêm nhanh`: `TUSO = DENSO` làm gì? (5.1) | Báo lỗi "Khoảng số không hợp lệ" | Thử TUSO = DENSO trên bản sao |
@@ -352,4 +365,4 @@ Chưa có: vòng này **không chạy** app gốc. Mục này để trống cho 
 
 ## Phụ lục A — Ảnh chụp app gốc
 
-Chưa có. Vòng này không chạy app gốc và không chụp ảnh. Khi làm Q1, Q2, Q4, Q6, Q9, Q13 và Q18, nên chụp tối đa ~8 ảnh vào `docs/specs/img/danh-muc-ban-khu-vuc/`.
+7 ảnh trong `docs/specs/img/danh-muc-ban-khu-vuc/`: 01 màn danh mục, 02 chọn khu vực khi thêm bàn, 03 dialog bàn, 04 Thêm nhanh, 05 dialog khu vực, 06 cảnh báo trùng tên, 07 xác nhận xóa vào thùng rác. Còn thiếu cho Q4, Q6, Q9, Q13.
