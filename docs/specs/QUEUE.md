@@ -14,7 +14,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 - [ ] Điều chỉnh hóa đơn — spec `295df3f` (chung file như trên)
 
 ## Tiếp theo (Claude làm spec)
-- [ ] Báo giá bán hàng — LÀM TIẾP THEO (Chiến chốt 23/11, giữ đúng thứ tự menu)
+- [x] Báo giá bán hàng — spec `bao-gia-ban-hang.md` (24/11, commit xem git log `docs: spec Báo giá bán hàng`), chờ Chiến duyệt + Muse review
 - [ ] Lưu vết hoạt động
 - [ ] Thống kê doanh thu
 - [ ] Thống kê mặt hàng bán
@@ -23,6 +23,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 - [ ] Danh mục hóa đơn hủy
 
 ## Ghi chú
+- Review #1 (Sử dụng dịch vụ) và #2 (Quản lý bán hàng + Điều chỉnh hóa đơn) đã sửa spec 24/11 (commit `6d40f73`, `9e48bc8`); **chưa đóng issue** vì máy chạy loop không có `gh`/token — Chiến hoặc Muse đóng tay.
 - Quyết định chốt áp cho mọi spec: xóa cứng cả app, LamTron 1000, tiền decimal, F&B thuần COFFEE + POS, bán lẻ tự phục vụ.
 - Sử dụng dịch vụ (Chiến chốt 23/11): Q1 = chỉ VNĐ + LamTron 1000, bỏ nhánh USD; P3 = giữ trigger gốc — lấy thân trigger TDONHANG_TRIGGER từ DATA.fdb trước khi implement phần liên kết bàn–bill.
 - Review của Muse nằm ở GitHub Issues, label `spec-review` — kiểm tra trước mỗi spec mới.
