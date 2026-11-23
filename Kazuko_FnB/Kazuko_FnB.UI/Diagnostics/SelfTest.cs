@@ -249,6 +249,51 @@ namespace Kazuko_FnB.UI.Diagnostics
                 box.Text = "";
                 Check("Ô tìm (InputBox): xóa chữ → Text rỗng, không đệ quy khi đọc Text", box.Text.Length == 0 && box.Inner.TextLength == 0);
             }
+            // Thư mục "Phương thức đặt": thêm / sửa / xóa như thư mục thường.
+            var methods = new BookingMethodRepository(db);
+            string mErr;
+            string rootId = null;
+            string childId = null;
+            try
+            {
+                List<BookingMethodRow> baseline = methods.LoadAll();
+                Check("Phương thức đặt: có sẵn các thư mục tạo sẵn (Công văn, Điện thoại, Email, Tin nhắn, Trực tiếp)",
+                    baseline.Exists(r => r.Name == "Công văn") && baseline.Exists(r => r.Name == "Trực tiếp"), "n=" + baseline.Count);
+                var root = new BookingMethodRow { Name = "  THƯ MỤC THỬ KĐH  " };
+                rootId = methods.Save(root, "selftest", out mErr);
+                Check("Thêm thư mục gốc (cắt khoảng trắng hai đầu tên)", rootId != null && root.Name == "THƯ MỤC THỬ KĐH", mErr);
+                BookingMethodRow back = methods.Load(rootId);
+                Check("Thư mục mới: STATUS 30, người tạo, SORTORDER sau các thư mục cũ",
+                    back != null && back.Status == 30 && back.CreatedById == "selftest" && string.CompareOrdinal(back.SortOrder, "ZZZd") > 0,
+                    back == null ? "null" : back.SortOrder);
+                var dup = new BookingMethodRow { Name = "thư mục thử kđh" };
+                string dupId = methods.Save(dup, "selftest", out mErr);
+                Check("Trùng tên (không phân biệt hoa/thường) → chặn", dupId == null && mErr == BookingMethodRepository.NameDuplicate("thư mục thử kđh"), mErr);
+                Check("Tên trống → chặn", methods.Save(new BookingMethodRow { Name = "  " }, "selftest", out mErr) == null && mErr == BookingMethodRepository.NameEmpty);
+                var child = new BookingMethodRow { Name = "THƯ MỤC CON THỬ", ParentId = rootId };
+                childId = methods.Save(child, "selftest", out mErr);
+                BookingMethodRow childBack = methods.Load(childId);
+                Check("Thêm thư mục con: PARENTID và PARENTDIR đúng", childBack != null && childBack.ParentId == rootId && childBack.ParentDir == rootId + ":", mErr);
+                back.Name = "THƯ MỤC THỬ ĐỔI TÊN";
+                Check("Sửa tên thư mục", methods.Save(back, "selftest", out mErr) == rootId && methods.Load(rootId).Name == "THƯ MỤC THỬ ĐỔI TÊN" && methods.Load(rootId).ModifiedById == "selftest", mErr);
+                Check("Xóa thư mục còn thư mục con → chặn", methods.Delete(rootId) != null && methods.Load(rootId) != null);
+                var filtered = new BookingRepository(db).LoadBookings(new BookingFilter
+                {
+                    FromDate = new DateTime(2000, 1, 1), ToDate = DateTime.Today,
+                    MethodIds = new List<string> { rootId, childId }
+                });
+                Check("Lọc phiếu theo thư mục và thư mục con chạy được (IN tham số hóa)", filtered != null);
+            }
+            finally
+            {
+                if (childId != null)
+                    methods.Delete(childId);
+                if (rootId != null)
+                    methods.Delete(rootId);
+            }
+            Check("Xóa thư mục con rồi xóa thư mục cha → xóa được, không để lại dòng",
+                rootId != null && methods.Load(rootId) == null && methods.Load(childId) == null);
+
             using (var view = new BookingListView(db))
             {
                 var menuField = typeof(BookingListView).GetField("_gridMenu", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

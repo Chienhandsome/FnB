@@ -53,6 +53,13 @@ namespace Kazuko_FnB.UI
         private readonly Label _lblModified = new Label { AutoSize = true };
         private readonly Label _lblModifiedBy = new Label { AutoSize = true };
         private readonly ImageList _treeIcons = new ImageList { ColorDepth = ColorDepth.Depth32Bit };
+        // Thanh nút trên cây thư mục "Phương thức đặt" (icon vector Segoe MDL2 Assets, viền mảnh như màn mặt hàng/bàn).
+        private readonly Panel _treeBar = new Panel { Dock = DockStyle.Top };
+        private readonly FlatButton _folderAdd = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
+        private readonly FlatButton _folderEdit = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
+        private readonly FlatButton _folderDelete = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
+        private readonly FlatButton _folderRefresh = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
+        private BookingMethodRepository _methodRepo;
         private DetailTabsHost _detail;
 
         private List<BookingListRow> _rows = new List<BookingListRow>();
@@ -66,6 +73,7 @@ namespace Kazuko_FnB.UI
             _databasePath = databasePath;
             _repo = new BookingRepository(databasePath);
             _formRepo = new FormRepository(databasePath);
+            _methodRepo = new BookingMethodRepository(databasePath);
             DoubleBuffered = true;
             float s = DeviceDpi / 96f;
             // Chặn Reload từ AfterSelect của cây trong lúc dựng (lưới chưa có cột).
@@ -80,9 +88,12 @@ namespace Kazuko_FnB.UI
             BuildGrid(s);
             BuildBottom(s);
 
+            BuildFolderUi(s);
+            _split.Panel1.Controls.Add(_treeBar);
             _split.Panel1.Controls.Add(_tree);
-            // Dock theo thứ tự z từ SAU ra TRƯỚC: ô Fill phải ở trước cùng (BringToFront) để không bị panel lọc/tiêu đề đè
-            // (trước đây cây bị che nên chỉ thấy nút cuối).
+            // Dock theo thứ tự z từ SAU ra TRƯỚC: thanh nút rồi ô Fill phải ở trước cùng (BringToFront) để không bị
+            // panel lọc/tiêu đề đè (trước đây cây bị che nên chỉ thấy nút cuối).
+            _treeBar.BringToFront();
             _tree.BringToFront();
             _tree.Font = new Font("Segoe UI", 10f); // cùng font/chiều cao dòng với cây của CatalogView
             _tree.ItemHeight = (int)(26 * s);
@@ -285,15 +296,7 @@ namespace Kazuko_FnB.UI
             _tree.Nodes.Clear();
             _tree.Nodes.Add(new TreeNode("Tất cả") { Tag = null, ImageIndex = IconAll, SelectedImageIndex = IconAll });
             _tree.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = "", ImageIndex = IconUnset, SelectedImageIndex = IconUnset });
-            try
-            {
-                foreach (LookupItem m in _formRepo.LoadAll("DPHUONGTHUCDAT"))
-                    _tree.Nodes.Add(new TreeNode(m.Name) { Tag = m.Id, ImageIndex = IconMethod, SelectedImageIndex = IconMethod });
-            }
-            catch (DataAccessException)
-            {
-                // Cây vẫn có Tất cả / Chưa thiết lập; lưới báo lỗi khi nạp.
-            }
+            AddMethodFolders();
             try
             {
                 _customer.SetItems(_formRepo.LoadAll("DKHACHHANG"));
@@ -303,6 +306,235 @@ namespace Kazuko_FnB.UI
                 // Ô khách hàng để trống; lưới vẫn nạp được.
             }
             _tree.SelectedNode = _tree.Nodes[0];
+        }
+
+        // ------------------------------------------------------------------ Thư mục "Phương thức đặt" (thêm / sửa / xóa)
+
+        /// <summary>Nạp các thư mục (DPHUONGTHUCDAT) thành cây có cấp con, đặt sau nút "Tất cả" và "Chưa thiết lập".</summary>
+        private void AddMethodFolders()
+        {
+            try
+            {
+                List<BookingMethodRow> rows = _methodRepo.LoadAll();
+                var ids = new HashSet<string>(StringComparer.Ordinal);
+                foreach (BookingMethodRow r in rows)
+                    ids.Add(r.Id);
+                var byParent = new Dictionary<string, List<BookingMethodRow>>(StringComparer.Ordinal);
+                foreach (BookingMethodRow r in rows)
+                {
+                    // Cha rỗng hoặc không còn tồn tại → coi như thư mục gốc (không để mất nút).
+                    string key = string.IsNullOrEmpty(r.ParentId) || !ids.Contains(r.ParentId) ? "" : r.ParentId;
+                    List<BookingMethodRow> list;
+                    if (!byParent.TryGetValue(key, out list))
+                        byParent[key] = list = new List<BookingMethodRow>();
+                    list.Add(r);
+                }
+                AddFolderNodes(_tree.Nodes, "", byParent, new HashSet<string>(StringComparer.Ordinal), 0);
+            }
+            catch (DataAccessException)
+            {
+                // Cây vẫn có Tất cả / Chưa thiết lập; lưới báo lỗi khi nạp.
+            }
+        }
+
+        private void AddFolderNodes(TreeNodeCollection into, string parentKey, Dictionary<string, List<BookingMethodRow>> byParent,
+            HashSet<string> seen, int depth)
+        {
+            List<BookingMethodRow> kids;
+            if (depth > 32 || !byParent.TryGetValue(parentKey, out kids))
+                return;
+            foreach (BookingMethodRow m in kids)
+            {
+                if (!seen.Add(m.Id))
+                    continue; // chống vòng cha-con trong dữ liệu hỏng
+                var node = new TreeNode(m.Name) { Tag = m.Id, ImageIndex = IconMethod, SelectedImageIndex = IconMethod };
+                into.Add(node);
+                AddFolderNodes(node.Nodes, m.Id, byParent, seen, depth + 1);
+            }
+        }
+
+        /// <summary>Dựng lại cây sau khi thêm/sửa/xóa; chọn lại nút <paramref name="selectId"/> (không có thì "Tất cả").</summary>
+        private void ReloadTree(string selectId)
+        {
+            bool wasLoading = _loading;
+            _loading = true;
+            try
+            {
+                _tree.BeginUpdate();
+                _tree.Nodes.Clear();
+                _tree.Nodes.Add(new TreeNode("Tất cả") { Tag = null, ImageIndex = IconAll, SelectedImageIndex = IconAll });
+                _tree.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = "", ImageIndex = IconUnset, SelectedImageIndex = IconUnset });
+                AddMethodFolders();
+                TreeNode pick = string.IsNullOrEmpty(selectId) ? null : FindFolder(_tree.Nodes, selectId);
+                if (pick != null)
+                {
+                    for (TreeNode p = pick.Parent; p != null; p = p.Parent)
+                        p.Expand();
+                }
+                _tree.SelectedNode = pick ?? _tree.Nodes[0];
+                _tree.EndUpdate();
+            }
+            finally
+            {
+                _loading = wasLoading;
+            }
+            if (!wasLoading)
+                Reload();
+            UpdateTreeButtons();
+        }
+
+        private static TreeNode FindFolder(TreeNodeCollection nodes, string id)
+        {
+            foreach (TreeNode n in nodes)
+            {
+                if (string.Equals(n.Tag as string, id, StringComparison.Ordinal))
+                    return n;
+                TreeNode inner = FindFolder(n.Nodes, id);
+                if (inner != null)
+                    return inner;
+            }
+            return null;
+        }
+
+        /// <summary>Id thư mục đang chọn; null khi đang chọn "Tất cả"/"Chưa thiết lập" (không sửa/xóa được).</summary>
+        private string SelectedFolderId()
+        {
+            string id = _tree.SelectedNode == null ? null : _tree.SelectedNode.Tag as string;
+            return string.IsNullOrEmpty(id) ? null : id;
+        }
+
+        private static void CollectFolderIds(TreeNode node, List<string> ids)
+        {
+            string id = node.Tag as string;
+            if (!string.IsNullOrEmpty(id))
+                ids.Add(id);
+            foreach (TreeNode child in node.Nodes)
+                CollectFolderIds(child, ids);
+        }
+
+        private void AddFolder(bool underSelected)
+        {
+            if (!_canAdd)
+                return;
+            BookingMethodRow parent = null;
+            if (underSelected)
+            {
+                string pid = SelectedFolderId();
+                if (pid == null)
+                    return;
+                parent = _methodRepo.Load(pid);
+                if (parent == null)
+                {
+                    Msg.Warning(this, BookingMethodRepository.Gone);
+                    ReloadTree(null);
+                    return;
+                }
+            }
+            using (var dlg = new BookingMethodEditDialog(AppSession.Current, null, parent))
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                    ReloadTree(dlg.SavedId);
+            }
+        }
+
+        private void EditFolder()
+        {
+            string id = SelectedFolderId();
+            if (!_canEdit || id == null)
+                return;
+            BookingMethodRow row = _methodRepo.Load(id);
+            if (row == null)
+            {
+                Msg.Warning(this, BookingMethodRepository.Gone);
+                ReloadTree(null);
+                return;
+            }
+            using (var dlg = new BookingMethodEditDialog(AppSession.Current, row, null))
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK)
+                    ReloadTree(dlg.SavedId);
+            }
+        }
+
+        private void DeleteFolder()
+        {
+            string id = SelectedFolderId();
+            if (!_canRemove || id == null)
+                return;
+            string name = _tree.SelectedNode.Text;
+            if (!Msg.Confirm(this, "Bạn có muốn xóa thư mục '" + name + "' vĩnh viễn khỏi hệ thống không?"))
+                return;
+            string error;
+            try
+            {
+                error = _methodRepo.Delete(id);
+            }
+            catch (DataAccessException ex)
+            {
+                Msg.Error(this, "Không xóa được dữ liệu: " + ex.Message);
+                return;
+            }
+            if (error != null)
+            {
+                Msg.Warning(this, error);
+                return;
+            }
+            ReloadTree(null);
+        }
+
+        private void UpdateTreeButtons()
+        {
+            bool real = SelectedFolderId() != null;
+            _folderAdd.Enabled = _canAdd;
+            _folderEdit.Enabled = _canEdit && real;
+            _folderDelete.Enabled = _canRemove && real;
+        }
+
+        private ThemedContextMenu _treeMenu;
+
+        private void BuildFolderUi(float s)
+        {
+            // Thanh nút nhỏ trên cây (như màn mặt hàng/bàn): thêm, sửa, xóa thư mục, làm mới.
+            _treeBar.Height = (int)(36 * s);
+            int x = (int)(6 * s);
+            int size = (int)(28 * s);
+            foreach (FlatButton b in new[] { _folderAdd, _folderEdit, _folderDelete, _folderRefresh })
+            {
+                b.SetBounds(x, (int)(4 * s), size, size);
+                x += size + (int)(6 * s);
+                _treeBar.Controls.Add(b);
+            }
+            _folderAdd.Click += delegate { AddFolder(false); };
+            _folderEdit.Click += delegate { EditFolder(); };
+            _folderDelete.Click += delegate { DeleteFolder(); };
+            _folderRefresh.Click += delegate { ReloadTree(SelectedFolderId()); };
+
+            _treeMenu = new ThemedContextMenu();
+            ToolStripMenuItem add = _treeMenu.AddItem("Thêm thư mục", Keys.Insert, delegate { AddFolder(false); });
+            ToolStripMenuItem addChild = _treeMenu.AddItem("Thêm thư mục con", delegate { AddFolder(true); });
+            ToolStripMenuItem edit = _treeMenu.AddItem("Chỉnh sửa", Keys.F4, delegate { EditFolder(); });
+            ToolStripMenuItem del = _treeMenu.AddItem("Xóa", Keys.Delete, delegate { DeleteFolder(); });
+            _treeMenu.AddSeparator();
+            _treeMenu.AddItem("Refresh", delegate { ReloadTree(SelectedFolderId()); });
+            _treeMenu.Opening += delegate
+            {
+                bool real = SelectedFolderId() != null;
+                add.Enabled = _canAdd;
+                addChild.Enabled = _canAdd && real;
+                edit.Enabled = _canEdit && real;
+                del.Enabled = _canRemove && real;
+            };
+            _tree.MouseDown += delegate(object sender, MouseEventArgs e)
+            {
+                if (e.Button != MouseButtons.Right)
+                    return;
+                TreeNode node = _tree.GetNodeAt(e.X, e.Y);
+                if (node != null)
+                    _tree.SelectedNode = node;
+                _treeMenu.Show(_tree, e.Location);
+            };
+            _tree.AfterSelect += delegate { UpdateTreeButtons(); };
+            UpdateTreeButtons();
         }
 
         // ------------------------------------------------------------------ Menu chuột phải của lưới
@@ -550,15 +782,25 @@ namespace Kazuko_FnB.UI
         private BookingFilter CurrentFilter()
         {
             string method = null;
+            List<string> methodIds = null;
             if (_tree.SelectedNode != null)
+            {
                 method = _tree.SelectedNode.Tag as string;
+                if (!string.IsNullOrEmpty(method))
+                {
+                    // Chọn một thư mục = lấy cả các thư mục con của nó.
+                    methodIds = new List<string>();
+                    CollectFolderIds(_tree.SelectedNode, methodIds);
+                }
+            }
             return new BookingFilter
             {
                 NumberText = _txtNumber.Text,
                 FromDate = _dtFrom.Value.Date,
                 ToDate = _dtTo.Value.Date,
                 CustomerId = _customer.SelectedId,
-                MethodId = method
+                MethodId = method,
+                MethodIds = methodIds
             };
         }
 
@@ -711,6 +953,20 @@ namespace Kazuko_FnB.UI
             }
             if (inEditor)
                 return;
+            // Đang ở cây thư mục: Insert/F4/Del là thêm/sửa/xóa THƯ MỤC, không phải phiếu đặt.
+            if (sender == _tree)
+            {
+                if (e.KeyCode == Keys.Insert)
+                    AddFolder(false);
+                else if (e.KeyCode == Keys.F4)
+                    EditFolder();
+                else if (e.KeyCode == Keys.Delete)
+                    DeleteFolder();
+                else
+                    return;
+                e.Handled = true;
+                return;
+            }
             if (e.KeyCode == Keys.Insert && _canAdd)
             {
                 AddBooking();
@@ -775,6 +1031,8 @@ namespace Kazuko_FnB.UI
                 _treeIcons.Dispose();
                 if (_gridMenu != null)
                     _gridMenu.Dispose();
+                if (_treeMenu != null)
+                    _treeMenu.Dispose();
             }
             base.Dispose(disposing);
         }

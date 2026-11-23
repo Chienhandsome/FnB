@@ -55,7 +55,19 @@ namespace Kazuko_FnB.Data
                     sql += " AND B.\"DKHACHHANGID\" = @cust";
                     args.Add("@cust"); args.Add(filter.CustomerId);
                 }
-                if (filter.MethodId != null)
+                if (filter.MethodIds != null && filter.MethodIds.Count > 0)
+                {
+                    // Thư mục và mọi thư mục con của nó.
+                    var marks = new List<string>();
+                    for (int i = 0; i < filter.MethodIds.Count; i++)
+                    {
+                        marks.Add("@method" + i);
+                        args.Add("@method" + i);
+                        args.Add(filter.MethodIds[i]);
+                    }
+                    sql += " AND B.\"DPHUONGTHUCDATID\" IN (" + string.Join(", ", marks.ToArray()) + ")";
+                }
+                else if (filter.MethodId != null)
                 {
                     if (filter.MethodId.Length == 0)
                     {

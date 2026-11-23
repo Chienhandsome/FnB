@@ -111,6 +111,27 @@ namespace Kazuko_FnB.Domain
         public string ModifiedByName { get; set; }
     }
 
+    /// <summary>
+    /// Thư mục "Phương thức đặt" (DPHUONGTHUCDAT): cây thư mục thường (PARENTID/PARENTDIR/SORTORDER), cho thêm,
+    /// sửa, xóa như danh mục khác; Công văn/Điện thoại/Email/Tin nhắn/Trực tiếp chỉ là thư mục tạo sẵn.
+    /// </summary>
+    public sealed class BookingMethodRow
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Note { get; set; }
+        public string ParentId { get; set; }
+        public string ParentDir { get; set; }
+        public string SortOrder { get; set; }
+        public int AutoId { get; set; }
+        public int Status { get; set; }
+        public string ImageId { get; set; }
+        public string CreatedById { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string ModifiedById { get; set; }
+        public DateTime? ModifiedAt { get; set; }
+    }
+
     /// <summary>Điều kiện lọc màn danh sách (§1.1). MethodId: null = Tất cả, "" = Chưa thiết lập.</summary>
     public sealed class BookingFilter
     {
@@ -119,6 +140,8 @@ namespace Kazuko_FnB.Domain
         public DateTime ToDate { get; set; }
         public string CustomerId { get; set; }
         public string MethodId { get; set; }
+        /// <summary>Lọc theo cả thư mục và các thư mục con (ưu tiên hơn MethodId khi có phần tử).</summary>
+        public List<string> MethodIds { get; set; }
     }
 
     /// <summary>Mặt hàng để chọn vào phiếu đặt (lưới tìm mặt hàng, §1.2).</summary>

@@ -171,6 +171,7 @@
     <Compile Include="Controls\IconToolbar.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Dialogs\BookingMethodEditDialog.cs" />
     <Compile Include="Dialogs\BookingPreviewForm.cs" />
     <Compile Include="Controls\DateBox.cs" />
     <Compile Include="Controls\FieldFrame.cs" />
