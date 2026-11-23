@@ -1,14 +1,14 @@
 # Spec (delta): Sử dụng dịch vụ (màn bán hàng tại bàn)
 
 - Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
-- Ngày: 2026-11-23. Base: `main` @ `13d90f8` (đã `git fetch origin main`, working tree sạch)
+- Ngày: 2026-11-23. Base: `main` @ `13d90f8` (đã `git fetch origin main`, working tree sạch). Đã sửa theo review Muse (issue #1) ngày 23/11 + Chiến chốt Q1/P3.
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn.
-- Menu: **HOẠT ĐỘNG > Sử dụng dịch vụ** (`SMENU` `8e360da4-b18e-43ba-a0fe-aac67914aabf`, `SORTORDER = ZZZ013`, `MENUCODE = SuDungDichVu`, `OPERATION = 4`, `SFORMID` `141ca9a1-6819-49e2-b8a6-c1ac806ef0a9`, `SFUNCTIONID` `db591d0e-d671-42d0-b3b1-f705345cc641`). Không phải màn danh mục (không có `STABLEDESC`): là **form tùy biến** `SuDungDichVu` nhúng form hóa đơn `TDONHANG0Ae` ("Hóa đơn nhà hàng") ở chế độ `HoaDonMode.SuDungDichVu`.
+- Menu: **HOẠT ĐỘNG > Sử dụng dịch vụ** (`SMENU` `8e360da4-b18e-43ba-a0fe-aac67914aabf`, `SORTORDER = ZZZ013`, `MENUCODE = SuDungDichVu`, `OPERATION = 4`, `SFORMID` `141ca9a1-6819-49e2-b8a6-c1ac806ef0a9`, `SFUNCTIONID` `db591d0e-d671-42d0-b3b1-f705345cc641`). Không phải màn danh mục (form `141ca9a1` có `STABLEDESCID` rỗng; form hóa đơn `f3f7bb77` có `STABLEDESCID = 721de885-…`, chưa rõ desc bảng nào): là **form tùy biến** `SuDungDichVu` nhúng form hóa đơn `TDONHANG0Ae` ("Hóa đơn nhà hàng") ở chế độ `HoaDonMode.SuDungDichVu`.
 - Cùng lớp `TDONHANG0Ae` còn phục vụ **Điều chỉnh hóa đơn** (ZZZ014) và **Quản lý bán hàng** (ZZZ015) — hai màn đó sẽ có spec riêng, chỉ ghi phần khác chế độ. Spec này **là spec gốc của bộ máy hóa đơn nhà hàng**.
 
 ## 0. Nguồn, cách đọc, giới hạn
 
-- **[DB]** đo trên bản chép `DATA.fdb` (không mở file gốc). **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/`: `Sử dụng dịch vụ__141ca9a1`, `Hóa đơn nhà hàng__f3f7bb77` (4982 dòng), `Khu vực control__f842ff6f`, `Chuyển bàn__0001db41`, `Xác nhận thanh toán__96f6da47`. **[APP]** một ảnh màn chính.
+- **[DB]** đo trên bản chép `DATA.fdb` (không mở file gốc). Bản DEMO gần như trống (`DKHUVUC: 0, DBAN: 0, DMATHANG: 1, TDONHANG: 0`) nên không dùng để đo; selftest §7 phải tự tạo khu vực/bàn/bill/mặt hàng mẫu (seed), không trông vào dữ liệu có sẵn. **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/`: `Sử dụng dịch vụ__141ca9a1`, `Hóa đơn nhà hàng__f3f7bb77`, `Khu vực control__f842ff6f`, `Chuyển bàn__0001db41`, `Xác nhận thanh toán__96f6da47`. **[APP]** một ảnh màn chính.
 - **Đã có tài liệu nghiệp vụ chi tiết** (đọc rồi, KHÔNG chép lại ở đây; spec này trỏ tới): [`pos-tap-nghiep-vu-nha-hang.md`](../pos-tap-nghiep-vu-nha-hang.md) (tạo bill, thêm dòng, giá, công thức tổng bill, thanh toán, xuất vật tư), [`pos-tap-nghiep-vu-ban-khu-vuc.md`](../pos-tap-nghiep-vu-ban-khu-vuc.md) (chuyển/gộp bàn, trạng thái bàn, hủy bill), [`pos-tap-nghiep-vu-dat-phong-in-bep.md`](../pos-tap-nghiep-vu-dat-phong-in-bep.md) (in xuống bếp). Mục dưới ghi: **phạm vi v1, bố cục, luồng, danh sách luật được giữ/cắt, cấu hình, quyền, đề xuất, câu hỏi, nghiệm thu**.
 - **Giới hạn quan sát [APP]:** lần chụp này công cụ giả lập chuột/bàn phím của máy không tác động được lên app (Windows từ chối `SetCursorPos`), nên chỉ có **ảnh màn chính lúc mở** (1 ảnh). Các màn mở bàn, thêm món, thanh toán, chuyển bàn **chưa chụp**: bố cục lấy từ `layout.xml`/code, đánh dấu **[CHƯA XÁC MINH BẰNG APP]**. Cần chụp bổ sung nếu Chiến muốn (Q13).
 
@@ -49,7 +49,7 @@ Một tab "Sử dụng dịch vụ" (mở từ menu hoặc nút toolbar đầu t
 
 ### 3.1 Trạng thái bàn [CODE `KhuVucControl.SetItemInfo`, `LayDanhSachBan`]
 
-Thứ tự ưu tiên: (1) `DBAN.TDONHANGID` trỏ bill `DATHANHTOAN=0` → **Đã in tạm tính** nếu `SOLANINTAMTINH>0`, ngược lại **Đang sử dụng**; (2) `DBAN.TRANGTHAI=1` **Báo dọn**; `=2` **Dọn dẹp**; (3) có `TSUACHUA` chưa xong **Sửa chữa**; (4) có `TDATHANG` hôm nay `TUGIO` ±30 phút **Đặt** (hiện "tên khách [SĐT]-giờ"); (5) **Trống**. Chỉ lấy `DBAN.STATUS=30` và `DKHUVUC.STATUS=30`, sắp `DBAN.NAME`. Ô hiển thị tên bàn, ghi chú bill (khi `HienThiGhiChuTrenGiaoDienBan=30`), giờ bắt đầu; cỡ ô theo `KichThuocHienThiOGiaoDienDichVu` (0=64px, 1=48, 2=32, 3=24). Làm tươi: nền mỗi 30 giây (`tmrAutoRefresh`, chỉ khi `HeThongChayNhieuMayTram=30`) + sau mỗi thao tác; dùng kết nối riêng, lỗi bỏ qua.
+Thứ tự ưu tiên: (1) `DBAN.TDONHANGID` trỏ bill `DATHANHTOAN=0` → **Đã in tạm tính** nếu `SOLANINTAMTINH>0`, ngược lại **Đang sử dụng**; (2) `DBAN.TRANGTHAI=1` **Báo dọn**; `=2` **Dọn dẹp**; (3) có `TSUACHUA` chưa xong **Sửa chữa**; (4) có `TDATHANG` hôm nay `TUGIO` ±30 phút **Đặt** (hiện "tên khách [SĐT]-giờ"); (5) **Trống**. Chỉ lấy `DBAN.STATUS=30` và `DKHUVUC.STATUS=30`, sắp `DBAN.NAME`. Ô hiển thị tên bàn, ghi chú bill (khi `HienThiGhiChuTrenGiaoDienBan=30`), giờ bắt đầu; cỡ ô theo `KichThuocHienThiOGiaoDienDichVu` (0=64px, 1=48, 2=32, 3=24). Làm tươi: nền mỗi 20 giây (`refreshTimer.Interval = 20000`; `onlineTimer` 5 phút cho việc khác) + sau mỗi thao tác (tên timer cũ `tmrAutoRefresh` và điều kiện `HeThongChayNhieuMayTram=30` chưa xác minh); dùng kết nối riêng, lỗi bỏ qua.
 Menu chuột phải: Mở bàn / Mở bàn từ đặt (bàn không dùng), Thanh toán / Hủy hóa đơn / Chuyển / Gộp (bàn đang dùng hoặc đã in tạm tính). Double-click bàn = mở bàn/mở bill. Kéo thả bàn sang bàn khác = chuyển (đích trống) hoặc gộp (đích có bill).
 Phân quyền khu vực: `PhanQuyenTruyCapTheoKhuVuc=30` và không phải admin → chỉ khu vực có trong `DTKTHEOKHUVUC` của user (hiện = 0, [DB]).
 
@@ -61,15 +61,16 @@ Phân quyền khu vực: `PhanQuyenTruyCapTheoKhuVuc=30` và không phải admin
 
 ### 3.3 Mở bàn [CODE `btnBatDau_Click`, `TaoHoaDonTrang`] — chi tiết xem `nha-hang.md` §1
 
-Kiểm tra: đã chọn bàn ("Mời bạn chọn bàn trước khi thực hiện mở bàn!"); bản dùng thử ≥ 30 ngày có bill → chặn; bàn bị giữ (nhiều máy); bàn đã có bill → "Bàn này đang có khách". Tạo `TDONHANG` (`LOAI=0`, `DATHANHTOAN=0`, `SOKHACH=1`, `NGAY = ngày giao dịch`, `BATDAU = now − TuDongDoiGioVaoVeTruoc phút` bỏ giây, `DCUAHANGID` hiện tại, `TILEPHIDICHVU`/`TILETHUE` mặc định theo cấu hình, giảm giá khởi tạo = `MacDinhGiamGia`) và **liên kết bàn–bill**. Thêm món mặc định theo khu vực (`SuDungMatHangMacDinh=30`, `DMATHANGMACDINH`). Ghi lưu vết "Mở hóa đơn trên bàn". **`DBAN.TDONHANGID` không có chỗ ghi trong code export** (chỉ trigger `TDONHANG_TRIGGER`; xem `ban-khu-vuc.md` §6) → đề xuất P3.
+Kiểm tra: đã chọn bàn (câu thông báo **chưa tìm thấy nguyên văn** trong code export — khi implement dùng câu tương đương, ví dụ "Mời bạn chọn bàn trước khi mở bàn"; không coi là nguyên văn gốc); bản dùng thử ≥ 30 ngày có bill → chặn; bàn bị giữ (nhiều máy); bàn đã có bill → "Bàn này đang có khách". Tạo `TDONHANG` (`LOAI=0`, `DATHANHTOAN=0`, `SOKHACH=1`, `NGAY = ngày giao dịch`, `BATDAU = now − TuDongDoiGioVaoVeTruoc phút` bỏ giây, `DCUAHANGID` hiện tại, `TILEPHIDICHVU`/`TILETHUE` mặc định theo cấu hình, giảm giá khởi tạo = `MacDinhGiamGia`) và **liên kết bàn–bill**. Thêm món mặc định theo khu vực (`SuDungMatHangMacDinh=30`, `DMATHANGMACDINH`). Ghi lưu vết "Mở hóa đơn trên bàn". **`DBAN.TDONHANGID` không có chỗ ghi trong code export** (chỉ trigger `TDONHANG_TRIGGER`; xem `ban-khu-vuc.md` §6) → đề xuất P3.
 Số hóa đơn: `TSOHOADON` + quay vòng ngày/tháng/năm/không (`ddMM`+4 số, `MMyy`+5, `yy`+6, 7 số), `SOHD` = lớn nhất + 1, thử lại khi lỗi. `Shared.SoHDQuayVong`, `Shared.NgayGiaoDich` nằm trong DLL, giá trị hiện hành **[CHƯA XÁC MINH]** (Q6).
 
 ### 3.4 Gọi món [CODE `btnThem_Click`, `DoAddItemToGridWithoutTrack`]
 
 - Chỉ chạy khi bill chưa thanh toán (`IsDaThanhToan`: bill mất, bàn không còn trỏ bill, hoặc `DATHANHTOAN=30` → "Hóa đơn này đã thanh toán, không thể thay đổi").
 - Chưa chọn mặt hàng → "Mời bạn chọn mặt hàng trước!"; SL ≤ 0 → "Mời bạn nhập số lượng!"; mặt hàng đã xóa → "Mặt hàng này đã bị xóa ra khỏi danh mục"; `TAMKHOA=30` → "Mặt hàng này tạm khóa, không thể sử dụng".
-- Chọn giá theo khu vực; `HIENTHILUACHON` hỏi loại giá (trừ giá thời giá và mặt hàng mở); nhập SL qua hộp khi `HienThiCuaSoNhapSoLuongKhiQuetMaVach=30`.
-- Gộp dòng khi `NhapMotMatHangNhieuLanTrongPhieu=0` (hiện = 0 → **gộp**): cùng mặt hàng + cùng `TILEGIAMGIA` + không ghi chú + (`GIATHEOTHOIGIA=30` hoặc cùng đơn giá) → cộng SL. Mặt hàng mở / thời giá hỏi tên-giá. Combo, combo mở: dòng cha + dòng con (`DDINHLUONG`), đơn giá con 0. Chi tiết `nha-hang.md` §2.
+- Cột SL của dòng là **`SLXUAT`** (`TDONHANGCHITIET` không có cột `SOLUONG`; `SOLUONG` trong code chỉ là bí danh lưới).
+- Chọn giá theo khu vực; `HIENTHILUACHON` (biến/thuộc tính trong code, **không phải cột `DMATHANG`**; chưa rõ lấy từ đâu — xác minh khi implement) hỏi loại giá (trừ giá thời giá và mặt hàng mở); nhập SL qua hộp khi `HienThiCuaSoNhapSoLuongKhiQuetMaVach=30`.
+- Gộp dòng khi `NhapMotMatHangNhieuLanTrongPhieu=0` (hiện = 0 → **gộp**): cùng mặt hàng + cùng `TILEGIAMGIA` + không ghi chú + (`GIATHEOTHOIGIA=30` hoặc cùng đơn giá) → cộng SL. Mặt hàng mở / thời giá hỏi tên-giá. Combo, combo mở: dòng cha + dòng con nằm ở **`TDONHANGCHITIET`** (`COMBOID`/`COMBOPARENTID`), đơn giá con 0. `DDINHLUONG` chỉ là bảng định lượng nguyên liệu (10 cột, không có giá), không dùng cho combo. Chi tiết `nha-hang.md` §2.
 - Dòng mới: `DKHOHANGID = DKHUVUC.DKHOHANGID`, `GIAVON = DMATHANG.GIAVON`, `COMBOID = GUID mới`. **Mỗi thay đổi ghi vào DB ngay** (`mapper.Update` trong tính tổng, chỉ ở chế độ này) — v1 giữ hành vi: ghi sau mỗi thao tác chứ không có nút Lưu.
 - Sau khi gọi: tự đưa trỏ về ô Tìm; `StartAutoPrintTimer` (in chế biến tự động sau `ThoiGianTuDongIn` giây nếu bật).
 
@@ -96,15 +97,16 @@ sau giảm = TIENHANG − TIENGIAMGIA
 phí dịch vụ: theo tiền → TILEPHIDICHVU = Round(PHIDICHVU×100/sau giảm, 2); theo % → LamTron(TILE × sau giảm / 100)
 TIENTHUE = LamTron((sau giảm + PHIDICHVU) × TILETHUE / 100);  TONGCONG = LamTron(sau giảm + PHIDICHVU + TIENTHUE)
 TIENPHAITRA = TONGCONG + BILLKHAC   (BILLKHAC = Σ TONGCONG các bill khác cùng NHOMGUID)
+-- TIENPHAITRA và BILLKHAC là biến tính trong code, KHÔNG phải cột TDONHANG
 ```
-Dòng: `GIAMTHEOTIEN=30` → `THANHTIEN = DONGIA×SL − TIENGIAMGIA`; ngược lại `DONGIA×SL×(1−TL/100)`, `TIENGIAMGIA = DONGIA×SL − THANHTIEN`. **Điểm cần Chiến chốt:** `GiaBanLeUsd=30` trong DB hiện hành (hộp thanh toán hiển thị 2 số lẻ, tiền giờ không làm tròn nghìn) nhưng `LamTron(…, 1000)` vẫn áp cho tổng bill → hai quy tắc làm tròn trái nhau (Q1).
+Dòng: `GIAMTHEOTIEN=30` → `THANHTIEN = DONGIA×SL − TIENGIAMGIA`; ngược lại `DONGIA×SL×(1−TL/100)`, `TIENGIAMGIA = DONGIA×SL − THANHTIEN`. **Đã chốt (Chiến 23/11, Q1):** chỉ VNĐ, `LamTron` 1000 AwayFromZero; bỏ nhánh USD 2 số lẻ của `GiaBanLeUsd` (DB đang để 30, v1 bỏ qua cờ này).
 
 ### 3.7 Thanh toán [CODE `btnThanhToan_Click`, `XacNhanThanhToan`]
 
 Thứ tự kiểm tra: bill đã thanh toán → chặn; không có dòng (và tiền giờ 0) → "Mời bạn thêm mặt hàng vào phiếu"; nhiều máy → tải lại bill; bắt buộc chọn nhân viên nếu ô nhân viên hiện ("Mời bạn chọn nhân viên trước"); **kiểm soát order** (`BatChucNangKiemSoatOrder=30`, hiện 0): "Mời bạn nhập số order" / "Mời bạn nhập đúng định dạng số order, ví dụ: 12, 16, 17,19"; tính lại mọi dòng; in chế biến nốt; cảnh báo nếu bill từ ngày cũ ("…Hệ thống sẽ chuyển hóa đơn này sang ngày hiện tại …").
 **Hộp Xác nhận thanh toán**: nhận `TIENPHAITRA`, tiền đặt trước (`GetDatTruoc`), nợ cũ (`GetNoCu`), khách. `TONGTIEN = TIENPHAITRA + NợCũ − ĐặtTrước`. Ô: Khách đưa (mặc định = còn lại), Thẻ ATM (`CoThanhToanThe`, hiện 30), Chuyển khoản + tài khoản (`CoThanhToanChuyenKhoan`, hiện 0), Voucher (`CoThanhToanVoucher`, 0), Thẻ trả trước (`SuDungTheTraTruoc`, 0), Trừ tích lũy (`SuDungDiemTichLuyDeThanhToan`, 0), Trả lại (= max(0, Σ đã trả − TONGTIEN)). `TienTra = KhachDua+Voucher+TheTraTruoc+TruTichLuy+The+ChuyenKhoan`. Nút: **OK** (đóng + in), **Đóng bill không in** (F9; tắt nếu `BatBuocInKhiThanhToan=30`), **In thử bill** (F8, `ChoPhepInTamTinh=30`, quyền `InTamTinh`, kết quả Ignore = in tạm tính, bill giữ nguyên).
 Chặn khi bấm OK: thiếu quyền `ThanhToan`; `TONGTIEN > TienTra` và `ChoPhepKhachNo≠30` → "Chức năng này hiện tại chưa được kích hoạt. Bạn có thể kích hoạt trong menu 'Quản trị'|'Cấu hình toàn hệ thống'"; chưa chọn khách → "Bạn chưa chọn khách hàng, mời bạn chọn khách hàng trước!"; hỏi "Bạn có muốn cho khách hàng 'X' nợ số tiền 'N' không?"; thẻ trả trước vượt số dư; chuyển khoản mà chưa chọn tài khoản → "Mời bạn chọn tài khoản"; `Shared.DuLieuHoaDonOk` (trong DLL, **[CHƯA XÁC MINH]**).
-Ghi DB khi OK/Retry: xem `nha-hang.md` §7 (nhánh bill đơn và bill nhóm `NHOMGUID`, `TIENTHANHTOAN`, `CONLAI`, `CONGNO`, `TIENMAT`, `CHUYENKHOAN`, `THE`, `DIEM`, `SOTT`…, `DATHANHTOAN=30`); xóa dòng `XUATVATTU=30` cũ rồi `XuatVatTu`; xóa `TINCHEBIEN` của bill; nếu khách đã cọc dư thì tạo phiếu chi trả lại; nâng nhóm khách theo điểm (`TuDongNangCapThanhVienKhiDatHanMuc=30`, hiện 30); tạo bill trống cho bàn (`Reload("")`), nhả giữ bàn, làm tươi trạng thái bàn.
+Ghi DB khi OK/Retry: xem `nha-hang.md` §7 (nhánh bill đơn và bill nhóm `NHOMGUID`, `TIENTHANHTOAN`, `CONLAI`, `CONGNO`, `TIENMAT`, `CHUYENKHOAN`, `THE`, `DIEM`, `SOTT`…, `DATHANHTOAN=30`); xóa dòng `TDONHANGCHITIET` có `XUATVATTU=30` cũ (`XUATVATTU` là cột của `TDONHANGCHITIET`, không phải `TDONHANG`) rồi `XuatVatTu`; xóa `TINCHEBIEN` của bill; nếu khách đã cọc dư thì tạo phiếu chi trả lại; nâng nhóm khách theo điểm (`TuDongNangCapThanhVienKhiDatHanMuc=30`, hiện 30); tạo bill trống cho bàn (`Reload("")`), nhả giữ bàn, làm tươi trạng thái bàn.
 
 ### 3.8 Chuyển / gộp bàn, hủy bill
 
@@ -135,19 +137,41 @@ Các khóa còn lại ở mục 3 đều = 0 trừ ghi chú. Chỉ ghi giá tr�
 
 ## 4. Phân quyền
 
-Quyền chức năng dùng trong màn (SFUNCTION): `ChuyenBan`, `GopBan`, `HuyHoaDon`, `ThanhToan`, `InTamTinh`, `InLaiBill`, `XoaGiamMon`, `XoaGiamMonSauKhiInCheBien`, `DuocGiamDoSauKhiInTamTinh`, `SuaDonGia`, `GiamGiaMatHang`, `ThayDoiGiamGiaTongHoaDon`, `ThayDoiPhiDichVu`, `XemDonGiaTrongHoaDonBanHang` (không có quyền → ẩn giá, tổng, thanh toán; dành cho nhân viên chạy bàn), `ChuyenMatHangSangHoaDonKhac`, `ThongKeTrongSuDungDichVu`. Kiểu kiểm: `CanView` (xem, im lặng) hay `CanLogin` (yêu cầu đăng nhập lại, hiện hộp). Giữ nguyên hai kiểu. Mặc định tạm: admin có tất cả; các quyền chưa cấu hình trong DB bản chép coi như **không cấp** (Q5).
+Quyền chức năng dùng trong màn (bảng `SFUNCTION`; nhóm "Hóa đơn bán hàng" trừ khi ghi khác; `NAME` là tên hiển thị tiếng Việt, mã kiểu `ChuyenBan` là mã trong code, cột `ID` là `SFUNCTION.ID`):
+
+| Mã trong code | Tên hiển thị [DB] | `SFUNCTION.ID` |
+|---|---|---|
+| `ChuyenBan` | Chuyển bàn | `f3401c18-c9ce-4d97-92e3-ba1542671edb` |
+| `GopBan` | Gộp bàn | `7a46b358-71e7-4400-b480-e9f47f580f93` |
+| `HuyHoaDon` | Hủy hóa đơn | `912818cc-88a5-4b26-8aa3-8a9bb4a7c65b` |
+| `ThanhToan` | Thanh toán | `4ceaa330-c51a-41e9-80ae-a28ad69433b8` |
+| `InTamTinh` | In tạm tính | `d057c064-cedc-4429-bc41-e4e8e2472994` |
+| `InLaiBill` | In lại bill | `679ea71e-9921-4c39-9df3-74d292594de5` |
+| `XoaGiamMon` | Xóa giảm món | `83a0fd04-067c-46fd-857e-01cc70af7a23` |
+| `XoaGiamMonSauKhiInCheBien` | Xóa giảm món sau khi in chế biến | `d6579615-3967-4a7f-888e-2678f1abac4d` |
+| `DuocGiamDoSauKhiInTamTinh` | Được giảm đồ sau khi in tạm tính (nhóm **"Quản trị"**) | `af0cd926-4f9e-4e96-9049-a07716a1e038` |
+| `SuaDonGia` | Sửa đơn giá | `0f06705f-f59a-4252-893b-680a2baa3e27` |
+| `GiamGiaMatHang` | Giảm giá mặt hàng | `267fdc55-2f47-42d1-8ca7-4a6d92e73b15` |
+| `ThayDoiGiamGiaTongHoaDon` | Thay đổi giảm giá tổng hóa đơn | `e5f93aa1-50ff-4ea3-ab8b-117254c3c70e` |
+| `ThayDoiPhiDichVu` | Thay đổi phí dịch vụ | `326162e4-b204-4bb5-a8c5-c782c8cdc462` |
+| `XemDonGiaTrongHoaDonBanHang` | Xem đơn giá trong hóa đơn bán hàng | `8f35f8c3-f141-4099-a2d2-a3328d3ec949` |
+| `ChuyenMatHangSangHoaDonKhac` | Chuyển mặt hàng sang hóa đơn khác | `e35fe6b9-64b9-4461-87be-17a0565e914a` |
+| `ThongKeTrongSuDungDichVu` | Thống kê trong sử dụng dịch vụ | `43402cbf-c1b8-4a96-b10f-31b233925801` |
+| *(thêm, mã chưa rõ)* | Thu tạm ứng khách hàng (chỉ cần khi bật tạm ứng) | `8cbfb281-68ab-46df-b84d-ff8b530dbb07` |
+
+(Còn có quyền "Xem thống kê của các cài khoản khác", `6baaab2b-8d9f-4a7c-8644-d50651829421`, dùng ở màn Thống kê.) `XemDonGiaTrongHoaDonBanHang`: không có quyền → ẩn giá, tổng, thanh toán (dành cho nhân viên chạy bàn). Kiểu kiểm: `CanView` (xem, im lặng) hay `CanLogin` (yêu cầu đăng nhập lại, hiện hộp). Giữ nguyên hai kiểu. Mặc định tạm: admin có tất cả; các quyền chưa cấu hình trong DB bản chép coi như **không cấp** (Q5).
 
 ## 5. Chỗ khác app gốc (CHỈ đề xuất — Chiến quyết)
 
 - **P1** Mỗi thao tác ghi DB ngay (như gốc) nhưng gom trong một transaction ngắn và có kiểm tra `DATHANHTOAN` trong cùng câu lệnh để tránh ghi đè bill vừa thanh toán ở máy khác.
 - **P2** Tính tiền bằng `OrderCalculator` thuần `decimal`, **một bản duy nhất** dùng cho cả màn này, Điều chỉnh hóa đơn, Quản lý bán hàng (và tablet sau) — app gốc có bản sao lệch.
-- **P3** Liên kết bàn–bill: ghi `DBAN.TDONHANGID` trực tiếp khi mở bàn / xóa khi đóng bàn, hủy, chuyển, gộp (trigger gốc chỉ xử lý khi đổi `DATHANHTOAN`). Cần Chiến duyệt vì khác cơ chế gốc.
+- **P3** *(ĐÃ CHỐT 23/11: GIỮ trigger gốc, không ghi `DBAN.TDONHANGID` trực tiếp)*. Trước khi implement phần liên kết bàn–bill phải lấy thân trigger `TDONHANG_TRIGGER` từ DATA.fdb trên Windows (FlameRobin); thân trigger không có trong bản export nên tiền đề "trigger chỉ xử lý khi đổi `DATHANHTOAN`" **chưa xác minh được**.
 - **P4** Giữ bàn: dùng cùng các cột `TAIKHOANGIU`/`GIULUC` nhưng gia hạn mỗi 30 giây và nhả khi đóng tab; hết hạn 120 giây như gốc.
 - **P5** Sửa lỗi chính tả "muỗn" → "muốn".
-- **P6** `GiaBanLeUsd`: một chế độ tiền duy nhất ở v1 (VNĐ, bội `LamTronTien`); bỏ nhánh 2 số lẻ. Hỏi Q1.
+- **P6** `GiaBanLeUsd`: một chế độ tiền duy nhất ở v1 (VNĐ, bội `LamTronTien`); bỏ nhánh 2 số lẻ. ĐÃ CHỐT (Q1).
 - **P7** Trạng thái bàn **Sửa chữa** không chặn mở bill (như gốc) nhưng hiển thị cảnh báo trước khi mở.
 - **P8** Làm tươi sơ đồ bàn bằng poll nền 5–30 giây thay vì tải lại toàn bộ lưới.
-- **P9** Mật khẩu giảm đồ: kiểm với mật khẩu quản trị đã băm, không so chuỗi thô (cách gốc nằm trong DLL, chưa biết).
+- **P9** Mật khẩu giảm đồ: kiểm với mật khẩu quản trị đã băm, không so chuỗi thô (cách gốc nằm trong DLL, chưa biết). **Lưu ý:** đây là thay đổi hành vi bảo mật so với gốc, cần Chiến duyệt rõ, không phải cải tiến nhỏ.
 
 ## 6. Câu hỏi
 
@@ -157,7 +181,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 ### 6.2 Còn mở — kèm "mặc định tạm"
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|
-| Q1 | `GiaBanLeUsd=30` nhưng `LamTronTien=1000`: v1 chỉ VNĐ? | VNĐ, `LamTron` 1000 AwayFromZero |
+| Q1 | ~~`GiaBanLeUsd=30` nhưng `LamTronTien=1000`: v1 chỉ VNĐ?~~ **ĐÃ CHỐT 23/11** | VNĐ, `LamTron` 1000 AwayFromZero |
 | Q2 | Có giữ ghi DB tức thì mỗi thao tác (khác "Lưu" cuối)? | Giữ như gốc |
 | Q3 | `Shared.NgayGiaoDich` (theo ngày mở bàn hay theo giờ chốt)? Hiện chưa rõ giá trị | Ngày hiện tại của DB |
 | Q4 | Có cần màn hình hiển thị giá cho khách, cân điện tử, đèn bàn không? | Không (v1 cắt) |
@@ -173,7 +197,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 
 ## 7. Tiêu chí nghiệm thu (kiểm trên bản sao DB)
 
-- [ ] Mở màn: tab khu vực đúng số `DKHUVUC.STATUS=30`; bàn `DBAN.STATUS=30` sắp theo tên; khu vực `TABHIENTHI=1` ở hàng dưới.
+- [ ] (Seed trong selftest: ≥ 2 khu vực, vài bàn, vài mặt hàng, vài bill; không dựa vào DEMO trống.) Mở màn: tab khu vực đúng số `DKHUVUC.STATUS=30`; bàn `DBAN.STATUS=30` sắp theo tên; khu vực `TABHIENTHI=1` ở hàng dưới.
 - [ ] Trạng thái ô bàn đúng thứ tự ưu tiên 3.1 (dựng đủ 6 trạng thái bằng dữ liệu mẫu).
 - [ ] Mở bàn trống tạo đúng một `TDONHANG` (`DATHANHTOAN=0`, `SOHD`/`NAME` theo quy tắc quay vòng, `BATDAU` làm tròn phút); mở lần hai trên cùng bàn báo "Bàn này đang có khách".
 - [ ] Gọi món: gộp dòng theo luật 3.4; mặt hàng `TAMKHOA=30` bị chặn; combo sinh dòng con đơn giá 0 và đổi SL cha cập nhật con.
@@ -183,7 +207,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 - [ ] Chuyển bàn (đích trống) và gộp bàn (đích có bill) đúng điều kiện + thông báo 3.8; sau gộp bill nguồn bị xóa, dòng chuyển sang bill đích, ghi `TDONHANGHUY`.
 - [ ] Hủy bill: chặn quá `ThoiGianChoPhepHuyBill`, chặn nhóm gộp; hủy xong bàn trống.
 - [ ] Hai phiên cùng mở một bàn: phiên thứ hai bị chặn bằng "ĐANG ĐƯỢC THAO TÁC BỞI".
-- [ ] Không SQL trong View; màu/cỡ chữ lấy từ token; hoạt động ở 125% DPI; lưới nút đủ lớn cho cảm ứng (≥ 44 px).
+- [ ] Không SQL trong View; màu/cỡ chữ lấy từ token; hoạt động ở 125% DPI; lưới nút đủ lớn cho cảm ứng (≥ 44 px) — *yêu cầu v1, không phải hành vi app gốc (gốc là WinForms layout cố định).*
 - [ ] Nút In/Excel hiện, báo "chưa hỗ trợ"; không có thùng rác; không đọc `LOAIDINHLUONG`.
 
 ## 8. Gợi ý implement (không bắt buộc)
@@ -193,3 +217,5 @@ Thứ tự: (1) `OrderCalculator` + selftest; (2) `TableService`/`InvoiceNumberS
 ## Phụ lục A — Ảnh [APP]
 
 1. `img/su-dung-dich-vu/01-man-hinh-chinh.png` — màn lúc mở (khu vực "Lầu 1", 3 bàn demo, hóa đơn trống).
+
+Ghi chú: đường dẫn code `POS_TAP_SRC_EXPORT/SFORM/…` không có trên máy cloud (bản tương đương: `pos-tap-review/raw/sform_code/*.txt`). `OrderCalculator`: mặc định chỉ phục vụ 3 chế độ nhà hàng; form bán lẻ quyết khi có spec bán lẻ. Chỉ có 1 ảnh [APP]; cần chụp bổ sung phần dưới màn và các dialog (Q13).
