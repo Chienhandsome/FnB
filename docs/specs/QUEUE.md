@@ -20,7 +20,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 - [x] Thống kê mặt hàng bán — spec `thong-ke-mat-hang-ban.md` (24/11), chờ Chiến duyệt + Muse review
 - [x] Tổng hợp kết quả kinh doanh — spec `tong-hop-ket-qua-kinh-doanh.md` (24/11), chờ Chiến duyệt + Muse review
 - [x] Chi tiết hoạt động ngày — spec `chi-tiet-hoat-dong-ngay.md` (24/11), chờ Chiến duyệt + Muse review
-- [ ] Danh mục hóa đơn hủy
+- [x] Danh mục hóa đơn hủy — spec `danh-muc-hoa-don-huy.md` (24/11), chờ Chiến duyệt + Muse review
 
 ## Ghi chú
 - Review #1 (Sử dụng dịch vụ) và #2 (Quản lý bán hàng + Điều chỉnh hóa đơn) đã sửa spec 24/11 (commit `6d40f73`, `9e48bc8`); **chưa đóng issue** vì máy chạy loop không có `gh`/token — Chiến hoặc Muse đóng tay.
@@ -28,3 +28,4 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 - Sử dụng dịch vụ (Chiến chốt 23/11): Q1 = chỉ VNĐ + LamTron 1000, bỏ nhánh USD; P3 = giữ trigger gốc — lấy thân trigger TDONHANG_TRIGGER từ DATA.fdb trước khi implement phần liên kết bàn–bill.
 - Review của Muse nằm ở GitHub Issues, label `spec-review` — kiểm tra trước mỗi spec mới.
 - Dừng: hết queue / push conflict / app gốc lỗi / 6h30 sáng 24/11. Hết quota 5h thì chờ hồi, không dừng.
+- **24/11 00:10 — HẾT QUEUE** (7/7 spec của loop đêm đã viết, mỗi spec 1 commit). Chờ Chiến duyệt + Muse review; issue #1, #2 đã sửa spec nhưng chưa đóng (máy loop không có `gh`/token).
