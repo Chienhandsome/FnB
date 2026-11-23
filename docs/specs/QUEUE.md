@@ -16,7 +16,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 ## Tiếp theo (Claude làm spec)
 - [x] Báo giá bán hàng — spec `bao-gia-ban-hang.md` (24/11, commit xem git log `docs: spec Báo giá bán hàng`), chờ Chiến duyệt + Muse review
 - [x] Lưu vết hoạt động — spec `luu-vet-hoat-dong.md` (24/11), chờ Chiến duyệt + Muse review
-- [ ] Thống kê doanh thu
+- [x] Thống kê doanh thu — spec `thong-ke-doanh-thu.md` (24/11), chờ Chiến duyệt + Muse review
 - [ ] Thống kê mặt hàng bán
 - [ ] Tổng hợp kết quả kinh doanh
 - [ ] Chi tiết hoạt động ngày
