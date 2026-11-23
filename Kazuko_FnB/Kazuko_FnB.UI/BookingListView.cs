@@ -57,8 +57,6 @@ namespace Kazuko_FnB.UI
         private readonly Panel _treeBar = new Panel { Dock = DockStyle.Top };
         private readonly FlatButton _folderAdd = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
         private readonly FlatButton _folderEdit = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
-        private readonly FlatButton _folderDelete = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
-        private readonly FlatButton _folderRefresh = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
         private BookingMethodRepository _methodRepo;
         private DetailTabsHost _detail;
 
@@ -487,18 +485,17 @@ namespace Kazuko_FnB.UI
             bool real = SelectedFolderId() != null;
             _folderAdd.Enabled = _canAdd;
             _folderEdit.Enabled = _canEdit && real;
-            _folderDelete.Enabled = _canRemove && real;
         }
 
         private ThemedContextMenu _treeMenu;
 
         private void BuildFolderUi(float s)
         {
-            // Thanh nút nhỏ trên cây (như màn mặt hàng/bàn): thêm, sửa, xóa thư mục, làm mới.
+            // Thanh nút nhỏ trên cây: chỉ thêm và sửa, đồng nhất với màn mặt hàng/bàn (xóa/làm mới nằm ở menu chuột phải và phím Del).
             _treeBar.Height = (int)(36 * s);
             int x = (int)(6 * s);
             int size = (int)(28 * s);
-            foreach (FlatButton b in new[] { _folderAdd, _folderEdit, _folderDelete, _folderRefresh })
+            foreach (FlatButton b in new[] { _folderAdd, _folderEdit })
             {
                 b.SetBounds(x, (int)(4 * s), size, size);
                 x += size + (int)(6 * s);
@@ -506,8 +503,6 @@ namespace Kazuko_FnB.UI
             }
             _folderAdd.Click += delegate { AddFolder(false); };
             _folderEdit.Click += delegate { EditFolder(); };
-            _folderDelete.Click += delegate { DeleteFolder(); };
-            _folderRefresh.Click += delegate { ReloadTree(SelectedFolderId()); };
 
             _treeMenu = new ThemedContextMenu();
             ToolStripMenuItem add = _treeMenu.AddItem("Thêm thư mục", Keys.Insert, delegate { AddFolder(false); });
