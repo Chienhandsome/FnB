@@ -239,6 +239,16 @@ namespace Kazuko_FnB.UI.Diagnostics
                 }
             }
             Check("Mọi truy vấn tab chạy được (SQL đúng tên cột)", allOk, failed);
+            using (var box = new Kazuko_FnB.UI.Controls.InputBox())
+            {
+                int changed = 0;
+                box.TextChanged += delegate { changed++; };
+                box.Placeholder = "Tìm... (F3)";
+                box.Text = "abc";
+                Check("Ô tìm (InputBox): gõ chữ bắn TextChanged và đọc lại được Text", changed >= 1 && box.Text == "abc", "changed=" + changed);
+                box.Text = "";
+                Check("Ô tìm (InputBox): xóa chữ → Text rỗng, không đệ quy khi đọc Text", box.Text.Length == 0 && box.Inner.TextLength == 0);
+            }
             Check("Tên cột khóa lạ bị từ chối (không ghép vào SQL)",
                 repo.LoadRows(new DetailTab { TableName = "TDATHANG", KeyColumn = "ID; DROP TABLE X", Loai = -1 }, "x").Columns.Count == 0);
         }

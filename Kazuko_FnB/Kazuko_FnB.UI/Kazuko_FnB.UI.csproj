@@ -172,6 +172,8 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Dialogs\BookingPreviewForm.cs" />
+    <Compile Include="Controls\PlaceholderTextBox.cs" />
+    <Compile Include="Controls\ThemedTabControl.cs" />
     <Compile Include="Controls\DetailGridMenu.cs" />
     <Compile Include="Controls\DetailTabsHost.cs" />
     <Compile Include="Controls\ImageCombo.cs" />

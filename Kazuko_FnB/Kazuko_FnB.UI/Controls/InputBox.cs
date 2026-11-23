@@ -21,7 +21,7 @@ namespace Kazuko_FnB.UI.Controls
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
 
-        private readonly TextBox _box = new TextBox();
+        private readonly PlaceholderTextBox _box = new PlaceholderTextBox();
         private bool _focused;
         private bool _isPassword;
         private bool _reveal;
@@ -146,6 +146,8 @@ namespace Kazuko_FnB.UI.Controls
         {
             _box.BackColor = EffectiveFill;
             _box.ForeColor = _box.ReadOnly ? Draw.Mix(TextColor, MutedColor, 0.5f) : TextColor;
+            // Chữ gợi ý nhạt hơn chữ nhập (không còn xám hệ thống đậm của cue banner).
+            _box.PlaceholderColor = Draw.Mix(EffectiveFill, MutedColor, 0.75f);
             Invalidate();
         }
 
@@ -175,8 +177,7 @@ namespace Kazuko_FnB.UI.Controls
 
         private void ApplyPlaceholder()
         {
-            if (_box.IsHandleCreated)
-                SendMessage(_box.Handle, EM_SETCUEBANNER, (IntPtr)1, _placeholder ?? "");
+            _box.Placeholder = _placeholder ?? "";
         }
 
         protected override void OnMouseDown(MouseEventArgs e)

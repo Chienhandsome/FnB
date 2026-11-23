@@ -11,6 +11,69 @@ using Kazuko_FnB.Theme;
 namespace Kazuko_FnB.UI.Controls
 {
     /// <summary>
+    /// Kiểu lưới chung của các pane dưới (cùng cỡ chữ/chiều cao tiêu đề/dòng với lưới chính, tiêu đề cột không bị
+    /// cắt, dòng "Chưa có dữ liệu" khi rỗng).
+    /// </summary>
+    internal static class PaneGrid
+    {
+        public static void Configure(DataGridView g)
+        {
+            float s = g.DeviceDpi / 96f;
+            g.Font = new Font("Segoe UI", 10f);
+            g.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 10f);
+            g.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
+            g.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            g.ColumnHeadersHeight = (int)(32 * s);
+            g.RowTemplate.Height = (int)(28 * s);
+            g.RowHeadersVisible = false;
+            g.AllowUserToResizeRows = false;
+        }
+
+        /// <summary>Nới cột đủ rộng cho tiêu đề (chữ + lề + mũi tên sắp xếp) để không bị cắt.</summary>
+        public static void FitHeaderWidths(DataGridView g)
+        {
+            float s = g.DeviceDpi / 96f;
+            Font font = g.ColumnHeadersDefaultCellStyle.Font ?? g.Font;
+            foreach (DataGridViewColumn col in g.Columns)
+            {
+                if (string.IsNullOrEmpty(col.HeaderText))
+                    continue;
+                int need = TextRenderer.MeasureText(col.HeaderText, font).Width + (int)(34 * s);
+                if (col.Width < need)
+                    col.Width = need;
+            }
+        }
+
+        public static Label AttachEmpty(DataGridView g, string text)
+        {
+            var empty = new Label
+            {
+                Text = text,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 10.5f),
+                Visible = false
+            };
+            g.Controls.Add(empty);
+            g.Resize += delegate { Place(g, empty); };
+            return empty;
+        }
+
+        public static void Place(DataGridView g, Label empty)
+        {
+            int h = Math.Max(24, (int)(36 * g.DeviceDpi / 96f));
+            int free = g.ClientSize.Height - g.ColumnHeadersHeight - h;
+            empty.SetBounds(0, g.ColumnHeadersHeight + Math.Max(4, free / 2), g.ClientSize.Width, h);
+        }
+
+        public static void ApplyEmptyTheme(DataGridView g, Label empty, ThemeTokens t)
+        {
+            empty.BackColor = g.BackgroundColor;
+            empty.ForeColor = t.TextMuted;
+        }
+    }
+
+    /// <summary>
     /// Thêm các tab liên quan (xem DetailRepository) vào một TabControl có sẵn (sau tab "Thông tin"): mỗi tab một
     /// lưới chỉ-xem nạp theo dòng đang chọn, nạp lười khi bấm tab (như No1TreeGrid của app gốc). Lỗi đọc DB không
     /// làm hỏng màn hình: tab đó hiện lưới rỗng.
@@ -22,6 +85,7 @@ namespace Kazuko_FnB.UI.Controls
             public DetailTab Tab;
             public TabPage Control;
             public DataGridView Grid;
+            public Label Empty;
             public bool Stale = true;
         }
 
@@ -102,6 +166,8 @@ namespace Kazuko_FnB.UI.Controls
             {
                 p.Control.BackColor = t.Background;
                 ThemeApplier.ApplyGrid(p.Grid, t);
+                p.Grid.BorderStyle = BorderStyle.None; // viền đã có ở khung tab: tránh viền kép
+                PaneGrid.ApplyEmptyTheme(p.Grid, p.Empty, t);
             }
         }
 
@@ -119,6 +185,7 @@ namespace Kazuko_FnB.UI.Controls
                 MultiSelect = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect
             };
+            PaneGrid.Configure(grid);
             float s = grid.DeviceDpi / 96f;
             var vi = new CultureInfo("vi-VN");
             foreach (DetailColumn c in def.Columns)
@@ -151,8 +218,11 @@ namespace Kazuko_FnB.UI.Controls
                 }
                 grid.Columns.Add(col);
             }
+            PaneGrid.FitHeaderWidths(grid);
             if (grid.Columns.Count > 0)
                 grid.Columns[grid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            Label empty = PaneGrid.AttachEmpty(grid, "Chưa có dữ liệu");
+            empty.Visible = true;
             grid.CellFormatting += delegate(object sender, DataGridViewCellFormattingEventArgs e)
             {
                 if (e.ColumnIndex < 0 || e.ColumnIndex >= def.Columns.Count || def.Columns[e.ColumnIndex].Kind != DetailKind.Bool)
@@ -164,7 +234,7 @@ namespace Kazuko_FnB.UI.Controls
 
             var tab = new TabPage(def.Title);
             tab.Controls.Add(grid);
-            var page = new Page { Tab = def, Control = tab, Grid = grid };
+            var page = new Page { Tab = def, Control = tab, Grid = grid, Empty = empty };
             DetailGridMenu.Attach(grid, _owner, delegate { Reload(page); });
             return page;
         }
@@ -195,6 +265,8 @@ namespace Kazuko_FnB.UI.Controls
                 rows = new DataTable();
             }
             p.Grid.DataSource = rows.Columns.Count == 0 ? null : rows;
+            p.Empty.Visible = rows.Rows.Count == 0;
+            PaneGrid.Place(p.Grid, p.Empty);
         }
     }
 }

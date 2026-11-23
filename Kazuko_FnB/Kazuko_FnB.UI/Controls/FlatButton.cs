@@ -20,6 +20,8 @@ namespace Kazuko_FnB.UI.Controls
         /// <summary>Màu nền phía sau (lộ ra ở góc bo).</summary>
         public Color SurfaceColor { get; set; }
         public int Radius { get; set; }
+        /// <summary>Độ dày viền (96 DPI); nút icon nhỏ dùng viền mảnh hơn nút chữ.</summary>
+        public float BorderWidth { get; set; } = 1.8f;
         /// <summary>Màu viền; Empty = tự lấy màu nền tối hơn.</summary>
         public Color BorderColor { get; set; }
 
@@ -83,7 +85,7 @@ namespace Kazuko_FnB.UI.Controls
                 using (var brush = new SolidBrush(fill))
                     g.FillPath(brush, path);
                 Color border = BorderColor.IsEmpty ? Draw.Darken(fill, 0.28f) : BorderColor;
-                using (var pen = new Pen(border, 1.8f * s))
+                using (var pen = new Pen(border, BorderWidth * s))
                     g.DrawPath(pen, path);
             }
 

@@ -46,7 +46,7 @@ namespace Kazuko_FnB.UI
 
         // Pane dưới lưới (app gốc: Thông tin + các tab liên quan dựng từ metadata — xem DetailRepository).
         private readonly Panel _bottom = new Panel { Dock = DockStyle.Bottom };
-        private readonly TabControl _infoTabs = new TabControl { Dock = DockStyle.Fill };
+        private readonly TabControl _infoTabs = new ThemedTabControl { Dock = DockStyle.Fill };
         private readonly Label _lblCreated = new Label { AutoSize = true };
         private readonly Label _lblCreatedBy = new Label { AutoSize = true };
         private readonly Label _lblModified = new Label { AutoSize = true };
@@ -83,12 +83,15 @@ namespace Kazuko_FnB.UI
             // Dock theo thứ tự z từ SAU ra TRƯỚC: ô Fill phải ở trước cùng (BringToFront) để không bị panel lọc/tiêu đề đè
             // (trước đây cây bị che nên chỉ thấy nút cuối).
             _tree.BringToFront();
+            _tree.Font = new Font("Segoe UI", 10f); // cùng font/chiều cao dòng với cây của CatalogView
+            _tree.ItemHeight = (int)(26 * s);
             _split.Panel2.Controls.Add(_grid);
             _split.Panel2.Controls.Add(_bar);
+            _split.Panel2.Controls.Add(new PaneSplitter()); // thanh kéo đổi chiều cao pane dưới (dock ngay trên pane)
             _split.Panel2.Controls.Add(_bottom);
             _grid.BringToFront();
-            _split.SplitterDistance = (int)(300 * s);
             _split.FixedPanel = FixedPanel.Panel1;
+            _split.SizeChanged += delegate { PlaceSplit(); };
             Controls.Add(_split);
             _loading = false;
 
@@ -109,39 +112,50 @@ namespace Kazuko_FnB.UI
 
         // ------------------------------------------------------------------ Dựng giao diện
 
+        private bool _splitPlaced;
+
+        /// <summary>Đặt độ rộng cột trái = 300 (như CatalogView) khi vùng đã đủ rộng: SplitterDistance chỉ hợp lệ sau khi có kích thước.</summary>
+        private void PlaceSplit()
+        {
+            if (_splitPlaced)
+                return;
+            int want = (int)(300 * DeviceDpi / 96f);
+            if (_split.Width > want + (int)(200 * DeviceDpi / 96f))
+            {
+                _split.SplitterDistance = want;
+                _splitPlaced = true;
+            }
+        }
+
         private void BuildFilterPanel(float s)
         {
-            var panel = new Panel { Dock = DockStyle.Top, Height = (int)(132 * s) };
-            AddFilterLabel(panel, "Số phiếu", 8, 10, s);
-            _txtNumber.SetBounds((int)(80 * s), (int)(8 * s), (int)(200 * s), (int)(24 * s));
-            _txtNumber.Font = new Font("Segoe UI", 10f);
+            // Lưới 2 cột (nhãn cố định | ô nhập giãn hết chiều ngang) nên mọi ô cùng lề, cùng bề rộng, cùng font,
+            // ô ngày không bị cắt chữ (trước đây đặt từng ô theo tọa độ tay).
+            var panel = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                ColumnCount = 2,
+                RowCount = 4,
+                Padding = new Padding((int)(8 * s), (int)(6 * s), (int)(8 * s), (int)(6 * s)),
+                Height = (int)(4 * 36 * s) + (int)(12 * s)
+            };
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112 * s));
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            for (int i = 0; i < 4; i++)
+                panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 36 * s));
+            Font fieldFont = new Font("Segoe UI", 10f);
             _txtNumber.KeyDown += OnKeyDown;
-            panel.Controls.Add(_txtNumber);
-
-            AddFilterLabel(panel, "Ngày", 8, 42, s);
-            var lblFrom = new Label { Text = "Từ:", AutoSize = true };
-            lblFrom.SetBounds((int)(80 * s), (int)(44 * s), (int)(28 * s), (int)(20 * s));
-            _dtFrom.SetBounds((int)(110 * s), (int)(40 * s), (int)(120 * s), (int)(24 * s));
             _dtFrom.Value = DateTime.Today.AddDays(-30);
             _dtFrom.KeyDown += OnKeyDown;
-            var lblTo = new Label { Text = "Đến:", AutoSize = true };
-            lblTo.SetBounds((int)(80 * s), (int)(72 * s), (int)(28 * s), (int)(20 * s));
-            _dtTo.SetBounds((int)(110 * s), (int)(68 * s), (int)(120 * s), (int)(24 * s));
             _dtTo.Value = DateTime.Today;
             _dtTo.KeyDown += OnKeyDown;
-            panel.Controls.Add(lblFrom);
-            panel.Controls.Add(_dtFrom);
-            panel.Controls.Add(lblTo);
-            panel.Controls.Add(_dtTo);
-
-            AddFilterLabel(panel, "Khách hàng", 8, 100, s);
-            _customer.SetBounds((int)(80 * s), (int)(98 * s), (int)(200 * s), (int)(24 * s));
-            _customer.Font = new Font("Segoe UI", 10f);
             _customer.KeyDown += OnKeyDown;
-            panel.Controls.Add(_customer);
+            AddFilterRow(panel, 0, "Số phiếu", _txtNumber, fieldFont, s);
+            AddFilterRow(panel, 1, "Từ ngày", _dtFrom, fieldFont, s);
+            AddFilterRow(panel, 2, "Đến ngày", _dtTo, fieldFont, s);
+            AddFilterRow(panel, 3, "Khách hàng", _customer, fieldFont, s);
 
             // K4: nút "Lọc (F3)" nằm ở thanh nút bên phải (BuildBar), không ở panel lọc.
-            _btnFilter.Tag = "primary";
             _btnFilter.Click += delegate { Reload(); };
 
             _split.Panel1.Controls.Add(panel);
@@ -159,11 +173,21 @@ namespace Kazuko_FnB.UI
             LoadTreeNodes();
         }
 
-        private static void AddFilterLabel(Panel panel, string text, int x, int y, float s)
+        private static void AddFilterRow(TableLayoutPanel panel, int row, string caption, Control field, Font font, float s)
         {
-            var lbl = new Label { Text = text, AutoSize = true };
-            lbl.SetBounds((int)(x * s), (int)(y * s), (int)(68 * s), (int)(20 * s));
-            panel.Controls.Add(lbl);
+            var lbl = new Label
+            {
+                Text = caption,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = font
+            };
+            field.Font = font;
+            field.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            field.Margin = new Padding(0, (int)(3 * s), 0, (int)(3 * s));
+            panel.Controls.Add(lbl, 0, row);
+            panel.Controls.Add(field, 1, row);
         }
 
         // Icon cây như app gốc: Tất cả (quả cầu xanh), Chưa thiết lập (sao vàng), phương thức (thoi tím).
@@ -259,12 +283,12 @@ namespace Kazuko_FnB.UI
 
         private void BuildBottom(float s)
         {
-            _bottom.Height = (int)(190 * s);
-            var info = new TabPage("Thông tin");
-            AddInfoLabel(info, "Khởi tạo:", _lblCreated, 10, 12, 140, s);
-            AddInfoLabel(info, "Khởi tạo bởi:", _lblCreatedBy, 340, 12, 140, s);
-            AddInfoLabel(info, "Sửa đổi gần nhất:", _lblModified, 10, 42, 140, s);
-            AddInfoLabel(info, "Sửa đổi bởi:", _lblModifiedBy, 340, 42, 140, s);
+            _bottom.Height = (int)(220 * s);
+            var info = new TabPage("Thông tin") { Font = new Font("Segoe UI", 10f) };
+            AddInfoLabel(info, "Khởi tạo:", _lblCreated, 10, 12, 150, s);
+            AddInfoLabel(info, "Khởi tạo bởi:", _lblCreatedBy, 330, 12, 115, s);
+            AddInfoLabel(info, "Sửa đổi gần nhất:", _lblModified, 10, 42, 150, s);
+            AddInfoLabel(info, "Sửa đổi bởi:", _lblModifiedBy, 330, 42, 115, s);
             _infoTabs.TabPages.Add(info);
             _bottom.Controls.Add(_infoTabs);
             _detail = new DetailTabsHost(_infoTabs, _databasePath, "TDATHANG", this);
@@ -305,17 +329,18 @@ namespace Kazuko_FnB.UI
                 Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
-                Padding = new Padding((int)(8 * s), (int)(8 * s), (int)(8 * s), (int)(8 * s))
+                // Cùng số đo thanh nút của CatalogView (lề 10, nút cao 32) để các màn danh mục đồng bộ.
+                Padding = new Padding((int)(10 * s), (int)(10 * s), (int)(10 * s), (int)(10 * s))
             };
-            _btnAdd.Tag = null;
+            _btnAdd.Tag = "primary"; // "Thêm mới" là nút chính ở mọi màn danh mục
             _btnRemove.Tag = "danger";
             foreach (FlatButton b in new[] { _btnFilter, _btnAdd, _btnEdit, _btnRemove, _btnExcel, _btnPrint, _btnTotal, _btnAnalysis, _refresh })
             {
-                b.Height = (int)(34 * s);
-                b.Margin = new Padding(0, 0, (int)(6 * s), 0);
-                b.Font = new Font("Segoe UI", 10f);
+                b.Height = (int)(32 * s);
+                b.Margin = new Padding(0, 0, (int)(5 * s), 0);
+                b.Font = new Font("Segoe UI", 9.5f); // cùng cỡ chữ nút các màn danh mục khác → 9 nút vừa một hàng
                 // Rộng theo chữ (trước đây nút bị cắt "Thêm ...", "Chỉnh ...").
-                b.Width = TextRenderer.MeasureText(b.Text, b.Font).Width + (int)(28 * s);
+                b.Width = TextRenderer.MeasureText(b.Text, b.Font).Width + (int)(22 * s);
                 flow.Controls.Add(b);
             }
             _btnAdd.Click += delegate { AddBooking(); };
@@ -326,8 +351,9 @@ namespace Kazuko_FnB.UI
             _btnTotal.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
             _btnAnalysis.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
             _refresh.Click += delegate { Reload(); };
-            _count.Width = (int)(150 * s);
+            _count.Width = (int)(100 * s);
             _count.Dock = DockStyle.Right;
+            _count.Padding = new Padding(0, 0, (int)(12 * s), 0); // lề phải: nhãn đếm không còn sát mép
             _count.Font = new Font("Segoe UI", 9.5f);
             _bar.Controls.Add(flow);
             _bar.Controls.Add(_count);
@@ -357,7 +383,7 @@ namespace Kazuko_FnB.UI
             AddGridColumn("colPhone", "Điện thoại", 110, typeof(string), null);
             AddGridColumn("colEmail", "Email", 150, typeof(string), null);
             AddGridColumn("colTotal", "Tổng cộng", 110, typeof(decimal), "N0");
-            AddGridColumn("colMethod", "Phương thức đặt", 110, typeof(string), null);
+            AddGridColumn("colMethod", "Phương thức đặt", 150, typeof(string), null);
             AddGridColumn("colPurpose", "Mục đích đặt", 130, typeof(string), null);
             AddGridColumn("colFromTime", "Từ giờ", 80, typeof(DateTime), "HH:mm");
             AddGridColumn("colToTime", "Đến giờ", 80, typeof(DateTime), "HH:mm");
@@ -617,6 +643,8 @@ namespace Kazuko_FnB.UI
             _split.Panel1.BackColor = t.Background;
             _split.Panel2.BackColor = t.Background;
             _bottom.BackColor = t.Background;
+            _tree.BackColor = t.Surface;
+            _tree.ForeColor = t.Text;
             _infoTabs.BackColor = t.Background;
             _infoTabs.ForeColor = t.Text;
             foreach (TabPage p in _infoTabs.TabPages)

@@ -35,7 +35,7 @@ namespace Kazuko_FnB.UI
         private readonly string _title;
 
         private readonly Panel _bar = new Panel { Dock = DockStyle.Top };
-        private readonly TextBox _search = new TextBox();
+        private readonly InputBox _search = new InputBox(); // ô tìm bo góc, chữ gợi ý nhạt theo theme
         private readonly FlatButton _refresh = new FlatButton { Text = "Làm mới" };
         private readonly Label _count = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleRight };
         private readonly Label _empty = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Visible = false };
@@ -73,10 +73,14 @@ namespace Kazuko_FnB.UI
         private readonly FlatButton _btnPrint = new FlatButton { Text = "In" };
         private readonly FlatButton _btnPrintBarcode = new FlatButton { Text = "In mã vạch" };
         private readonly Panel _groupBar = new Panel { Dock = DockStyle.Top, Visible = false };
-        private readonly FlatButton _groupAdd = new FlatButton { Text = "+" };
-        private readonly FlatButton _groupEdit = new FlatButton { Text = "✎" };
+        // Icon vector (Segoe MDL2 Assets, như InputBox) thay cho ký tự "+" và "✎" bị răng cưa.
+        // Nút icon nhỏ: glyph 10 pt, viền mảnh 1.2 để khỏi nặng hơn các nút chữ trên thanh.
+        private readonly FlatButton _groupAdd = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
+        private readonly FlatButton _groupEdit = new FlatButton { Text = "", Font = new Font("Segoe MDL2 Assets", 10f), BorderWidth = 1.2f };
         private readonly Panel _bottom = new Panel { Dock = DockStyle.Bottom, Visible = false };
-        private readonly TabControl _infoTabs = new TabControl { Dock = DockStyle.Fill };
+        private readonly PaneSplitter _paneSplitter = new PaneSplitter { Visible = false };
+        private readonly TabControl _infoTabs = new ThemedTabControl { Dock = DockStyle.Fill };
+        private Label _areaEmpty;
         private readonly Label _lblCreated = new Label { AutoSize = true };
         private readonly Label _lblCreatedBy = new Label { AutoSize = true };
         private readonly Label _lblModified = new Label { AutoSize = true };
@@ -102,9 +106,6 @@ namespace Kazuko_FnB.UI
         // Các tab liên quan dưới lưới bàn (Bảng giá theo bàn, Đặt hàng, Đơn hàng…), dựng theo metadata như app gốc.
         private DetailTabsHost _roomDetail;
 
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
-
         public CatalogView(string databasePath, string stableDescId, string title)
         {
             _databasePath = databasePath;
@@ -118,9 +119,10 @@ namespace Kazuko_FnB.UI
             _bar.Controls.Add(_refresh);
             _bar.Controls.Add(_count);
 
-            _search.Font = new Font("Segoe UI", 10f);
+            _search.Inner.Font = new Font("Segoe UI", 10f);
+            _search.Placeholder = "Tìm... (F3)";
+            _search.Height = (int)(32 * s); // cao bằng nút trên thanh (LayoutBar: bar 52 - 2×lề 10)
             _search.TextChanged += delegate { ApplyFilter(); };
-            _search.HandleCreated += delegate { SendMessage(_search.Handle, 0x1501, (IntPtr)1, "Tìm... (F3)"); };
             _refresh.Click += delegate { Reload(); };
             _count.Font = new Font("Segoe UI", 9.5f);
             _empty.Font = new Font("Segoe UI", 11f);
@@ -261,6 +263,7 @@ namespace Kazuko_FnB.UI
                 }
                 _groupBar.Visible = _productMode || _roomMode;
                 _bottom.Visible = _productMode || _roomMode;
+                _paneSplitter.Visible = _bottom.Visible;
                 _btnAdd.Visible = _productMode || _roomMode;
                 _btnEdit.Visible = _productMode || _roomMode;
                 _btnRemove.Visible = _productMode || _roomMode;
@@ -584,8 +587,11 @@ namespace Kazuko_FnB.UI
         private void PositionEmpty()
         {
             float s = DeviceDpi / 96f;
-            int top = _grid.ColumnHeadersHeight + (int)(24 * s);
-            _empty.SetBounds(0, top, _grid.ClientSize.Width, (int)(60 * s));
+            int h = (int)(60 * s);
+            // Căn giữa vùng dưới tiêu đề (trước đây dính sát tiêu đề nên lưới rỗng nhìn lệch lên trên).
+            int free = _grid.ClientSize.Height - _grid.ColumnHeadersHeight - h;
+            int top = _grid.ColumnHeadersHeight + Math.Max((int)(24 * s), free / 2);
+            _empty.SetBounds(0, top, _grid.ClientSize.Width, h);
         }
 
         // ------------------------------------------------------------------ Bố cục và giao diện
@@ -631,12 +637,12 @@ namespace Kazuko_FnB.UI
         {
             if (keyData == Keys.F3 || keyData == (Keys.Control | Keys.F))
             {
-                _search.Focus();
-                _search.SelectAll();
+                _search.Inner.Focus();
+                _search.Inner.SelectAll();
                 return true;
             }
             // Chỉ khi focus đang ở lưới/cây (không phải ô tìm): Insert thêm, F4 sửa, Del xóa.
-            if ((_productMode || _roomMode) && !_search.Focused && (_grid.Focused || _tree.Focused))
+            if ((_productMode || _roomMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
             {
                 if (keyData == Keys.Insert)
                 {
@@ -668,8 +674,7 @@ namespace Kazuko_FnB.UI
             _count.ForeColor = t.TextMuted;
             _empty.BackColor = _grid.BackgroundColor;
             _empty.ForeColor = _error != null ? t.Danger : t.TextMuted;
-            _search.BackColor = t.Surface;
-            _search.ForeColor = t.Text;
+            ThemeApplier.ApplyInput(_search, t, page, Draw.StrongBorder(t));
             _split.BackColor = Draw.StrongBorder(t);
             _split.Panel1.BackColor = page;
             _split.Panel2.BackColor = page;
@@ -687,6 +692,10 @@ namespace Kazuko_FnB.UI
                 foreach (TabPage p in _infoTabs.TabPages)
                     p.BackColor = page;
                 _areaGrid.BackgroundColor = t.Surface;
+                ThemeApplier.ApplyGrid(_areaGrid, t);
+                _areaGrid.BorderStyle = BorderStyle.None;
+                if (_areaEmpty != null)
+                    PaneGrid.ApplyEmptyTheme(_areaGrid, _areaEmpty, t);
                 if (_roomDetail != null)
                     _roomDetail.ApplyTheme(t);
                 if (_productMode)
@@ -736,10 +745,12 @@ namespace Kazuko_FnB.UI
             _groupBar.Controls.Add(_groupEdit);
             _split.Panel1.Controls.Add(_groupBar);
 
-            _bottom.Height = (int)(150 * s);
+            _bottom.Height = (int)(220 * s);
             BuildInfoTab();
             BuildAreaTab();
             _bottom.Controls.Add(_infoTabs);
+            // Thanh kéo nằm giữa lưới và pane dưới (thêm trước pane để dock ngay trên nó).
+            _split.Panel2.Controls.Add(_paneSplitter);
             _split.Panel2.Controls.Add(_bottom);
 
             BuildGridMenu();
@@ -748,11 +759,11 @@ namespace Kazuko_FnB.UI
 
         private void BuildInfoTab()
         {
-            var page = new TabPage("Thông tin");
-            AddAuditLabel(page, "Khởi tạo:", _lblCreated, 10, 12, 140);
-            AddAuditLabel(page, "Khởi tạo bởi:", _lblCreatedBy, 340, 12, 140);
-            AddAuditLabel(page, "Sửa đổi gần nhất:", _lblModified, 10, 42, 140);
-            AddAuditLabel(page, "Sửa đổi bởi:", _lblModifiedBy, 340, 42, 140);
+            var page = new TabPage("Thông tin") { Font = new Font("Segoe UI", 10f) }; // cùng cỡ chữ lưới/cây
+            AddAuditLabel(page, "Khởi tạo:", _lblCreated, 10, 12, 150);
+            AddAuditLabel(page, "Khởi tạo bởi:", _lblCreatedBy, 330, 12, 115);
+            AddAuditLabel(page, "Sửa đổi gần nhất:", _lblModified, 10, 42, 150);
+            AddAuditLabel(page, "Sửa đổi bởi:", _lblModifiedBy, 330, 42, 115);
             _infoTabs.TabPages.Add(page);
         }
 
@@ -785,7 +796,11 @@ namespace Kazuko_FnB.UI
             string[] cols = { "Ghi chú", "Tên khu vực", "Mẫu hóa đơn", "Kho hàng", "Tab hiển thị", "Giá mặt hàng", "Biểu tượng", "Tiền mở bàn", "Giá theo giờ", "Từ giờ", "Đến giờ", "Đơn giá", "Bảng giá" };
             for (int i = 0; i < cols.Length; i++)
                 _areaGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "a_" + i, HeaderText = cols[i], Width = 110, ReadOnly = true });
+            PaneGrid.Configure(_areaGrid);
+            PaneGrid.FitHeaderWidths(_areaGrid); // tiêu đề như "Giá mặt hàng" không bị cắt
             _areaGrid.Columns[_areaGrid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            _areaEmpty = PaneGrid.AttachEmpty(_areaGrid, "Chưa có dữ liệu");
+            _areaEmpty.Visible = true;
             page.Controls.Add(_areaGrid);
             DetailGridMenu.Attach(_areaGrid, this, delegate { Reload(); }); // menu chuột phải của lưới pane (hình 1)
             _areaTabPage = page;
@@ -2026,8 +2041,8 @@ namespace Kazuko_FnB.UI
             if (v == null)
                 return;
             _search.Text = Convert.ToString(v, CultureInfo.InvariantCulture);
-            _search.Focus();
-            _search.SelectAll();
+            _search.Inner.Focus();
+            _search.Inner.SelectAll();
         }
 
         private void SortProducts(string key, bool asc)
@@ -2042,7 +2057,7 @@ namespace Kazuko_FnB.UI
         {
             if (disposing)
             {
-                _search.Font.Dispose();
+                _search.Inner.Font.Dispose();
                 _count.Font.Dispose();
                 _empty.Font.Dispose();
                 _tree.Font.Dispose();
