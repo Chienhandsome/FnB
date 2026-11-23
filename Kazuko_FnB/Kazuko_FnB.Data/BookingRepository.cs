@@ -4,7 +4,6 @@ using System.Data;
 using System.IO;
 using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Domain;
-using Kazuko_FnB.Services;
 
 namespace Kazuko_FnB.Data
 {
@@ -308,7 +307,7 @@ namespace Kazuko_FnB.Data
                     existing = LoadGroupRows(conn, tx, guid);
                 }
 
-                GroupChangePlan plan = BookingRules.PlanGroupChanges(existing, row.Id, roomIds);
+                GroupChangePlan plan = BookingGroupPlanner.Plan(existing, row.Id, roomIds);
                 var reserved = new HashSet<string>(StringComparer.Ordinal) { row.Name };
                 var groupIds = new List<string>();
 

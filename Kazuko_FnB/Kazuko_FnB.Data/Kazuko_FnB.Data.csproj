@@ -59,6 +59,7 @@
     <Compile Include="FormRepository.cs" />
     <Compile Include="GroupRepository.cs" />
     <Compile Include="ImageRepository.cs" />
+    <Compile Include="BookingGroupPlanner.cs" />
     <Compile Include="BookingRepository.cs" />
     <Compile Include="PhieuThuRepository.cs" />
     <Compile Include="KazukoConnection.cs" />
