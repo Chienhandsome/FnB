@@ -18,7 +18,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 - [x] Lưu vết hoạt động — spec `luu-vet-hoat-dong.md` (24/11), chờ Chiến duyệt + Muse review
 - [x] Thống kê doanh thu — spec `thong-ke-doanh-thu.md` (24/11), chờ Chiến duyệt + Muse review
 - [x] Thống kê mặt hàng bán — spec `thong-ke-mat-hang-ban.md` (24/11), chờ Chiến duyệt + Muse review
-- [ ] Tổng hợp kết quả kinh doanh
+- [x] Tổng hợp kết quả kinh doanh — spec `tong-hop-ket-qua-kinh-doanh.md` (24/11), chờ Chiến duyệt + Muse review
 - [ ] Chi tiết hoạt động ngày
 - [ ] Danh mục hóa đơn hủy
 
