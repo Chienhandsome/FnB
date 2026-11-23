@@ -37,7 +37,12 @@ namespace Kazuko_FnB.Services
         /// </summary>
         public static string ValidateRange(int from, int to)
         {
-            return from > to ? RoomText.InvalidRange : null;
+            if (from < 0 || from > to)
+                return RoomText.InvalidRange;
+            // R8: không sinh quá nhiều bàn một lần (tính bằng long để khỏi tràn số).
+            if ((long)to - from + 1 > RoomText.QuickAddMaxPerRange)
+                return RoomText.QuickAddTooMany;
+            return null;
         }
 
         /// <summary>
@@ -136,11 +141,42 @@ namespace Kazuko_FnB.Services
             return null;
         }
 
+        /// <summary>
+        /// Như trên, thêm R3/R4 khi nhóm giá đang hiện (checkPrice): chọn "theo bảng giá" thì bắt buộc có bảng giá;
+        /// đơn giá và tiền mở bàn không âm.
+        /// </summary>
+        public static string ValidateRoom(string name, string areaId, bool checkPrice, int calcHour,
+            string priceListId, decimal unitPrice, decimal openAmount)
+        {
+            string error = ValidateRoom(name, areaId);
+            return error ?? ValidatePrice(checkPrice, calcHour, priceListId, unitPrice, openAmount);
+        }
+
         /// <summary>Kiểm tra khu vực khi lưu: tên trống. Trả null khi hợp lệ.</summary>
         public static string ValidateArea(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return RoomText.AreaNameEmpty;
+            return null;
+        }
+
+        /// <summary>Như trên, thêm R3/R4 (xem ValidateRoom).</summary>
+        public static string ValidateArea(string name, bool checkPrice, int calcHour, string priceListId,
+            decimal unitPrice, decimal openAmount)
+        {
+            string error = ValidateArea(name);
+            return error ?? ValidatePrice(checkPrice, calcHour, priceListId, unitPrice, openAmount);
+        }
+
+        private static string ValidatePrice(bool checkPrice, int calcHour, string priceListId, decimal unitPrice,
+            decimal openAmount)
+        {
+            if (!checkPrice)
+                return null;
+            if (unitPrice < 0 || openAmount < 0)
+                return RoomText.MoneyNegative;
+            if (calcHour == RoomCalc.ByPriceList && string.IsNullOrEmpty(priceListId))
+                return RoomText.PriceListRequired;
             return null;
         }
 

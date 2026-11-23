@@ -84,12 +84,8 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly Label _lblInvoiceNo = new Label { AutoSize = true, Visible = false };
         private readonly DateTimePicker _dtTuGio = new DateTimePicker();
         private readonly DateTimePicker _dtDenGio = new DateTimePicker();
-        private readonly DateTimePicker _dtTuNgay = new DateTimePicker { Format = DateTimePickerFormat.Short, Visible = false };
-        private readonly DateTimePicker _dtDenNgay = new DateTimePicker { Format = DateTimePickerFormat.Short, Visible = false };
         private readonly Label _lblTuGio = new Label { Text = "Giờ vào", AutoSize = false };
         private readonly Label _lblDenGio = new Label { Text = "Giờ ra", AutoSize = false };
-        private readonly Label _lblTuNgay = new Label { Text = "Từ ngày", AutoSize = false, Visible = false };
-        private readonly Label _lblDenNgay = new Label { Text = "Đến ngày", AutoSize = false, Visible = false };
         private readonly Button _btnColor = new Button { Text = "Màu" };
         private readonly TextBox _txtRooms = new TextBox { ReadOnly = true };
         private readonly FlatButton _btnPickRoom = new FlatButton { Text = "Chọn (F8)" };
@@ -148,6 +144,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 ? !AppSession.Can(BookingText.FunctionName, RoleModes.Add)
                 : !AppSession.Can(BookingText.FunctionName, RoleModes.Edit);
 
+            // K3: FixedDialog (ThemedDialog) không cho phóng to/thu nhỏ → đổi sang Sizable để mở tối đa hóa (§1.2).
+            FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
             WindowState = FormWindowState.Maximized;
 
@@ -289,19 +287,13 @@ namespace Kazuko_FnB.UI.Dialogs
             Place(_lblDepositAmount, top, 522, 57, 200, 20);
             Place(_lblInvoiceNo, top, 522, 82, 200, 20);
 
-            // Hàng 2: Giờ vào / Giờ ra (+ Từ/Đến ngày khi HOTEL) / Màu.
+            // Hàng 2: Giờ vào / Giờ ra / Màu. (K2: nhánh HOTEL Từ/Đến ngày đã bỏ — F&B thuần chỉ dùng POS, quyết định 19/11.)
             Place(_lblTuGio, top, 0, 34, 86, 20);
             Place(_dtTuGio, top, 92, 34, 117, 20);
             SetupDateTime(_dtTuGio);
             Place(_lblDenGio, top, 214, 34, 51, 20);
             Place(_dtDenGio, top, 270, 34, 127, 20);
             SetupDateTime(_dtDenGio);
-            Place(_lblTuNgay, top, 0, 34, 86, 20);
-            Place(_dtTuNgay, top, 91, 34, 95, 20);
-            _dtTuNgay.Font = new Font("Segoe UI", 10f);
-            Place(_lblDenNgay, top, 191, 34, 74, 20);
-            Place(_dtDenNgay, top, 270, 34, 95, 20);
-            _dtDenNgay.Font = new Font("Segoe UI", 10f);
             Place(FieldLabel("Màu:"), top, 402, 34, 48, 20);
             Place(_btnColor, top, 456, 34, 60, 20);
             _btnColor.Click += delegate { PickColor(); };
@@ -540,7 +532,8 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             _useTwoUnits = SystemConfig.SuDung2DonViTinh;
             _mergeAllowed = !SystemConfig.NhapMotMatHangNhieuLanTrongPhieu;
-            _sortByCode = SystemConfig.SapXepThuTuTheo == 1;
+            // C1: app gốc (grMatHang_CustomLoadData) — SapXepThuTuTheo == 0 → sắp theo CODE, khác 0 → theo NAME.
+            _sortByCode = SystemConfig.SapXepThuTuTheo == 0;
             _roundStep = SystemConfig.LamTronTien;
             try
             {
@@ -674,11 +667,11 @@ namespace Kazuko_FnB.UI.Dialogs
                 _txtNumber.Text = _row.Name ?? "";
                 _dtGioDat.Value = _row.GioDat == DateTime.MinValue ? DateTime.Now : _row.GioDat;
                 _dtTuGio.Value = _row.TuGio ?? DateTime.Now;
-                _dtTuGio.Checked = _row.TuGio != null;
+                // K1: phiếu mới có sẵn giờ (đã tick) — ô DateTimePicker chưa tick thì bị khóa nhập,
+                // người dùng gõ giờ không được còn Lưu thì báo "Giờ vào không được trống".
+                _dtTuGio.Checked = _row.TuGio != null || _isNew;
                 _dtDenGio.Value = _row.DenGio ?? DateTime.Now;
-                _dtDenGio.Checked = _row.DenGio != null;
-                _dtTuNgay.Value = _row.TuNgay == DateTime.MinValue ? DateTime.Today : _row.TuNgay;
-                _dtDenNgay.Value = _row.DenNgay == DateTime.MinValue ? DateTime.Today : _row.DenNgay;
+                _dtDenGio.Checked = _row.DenGio != null || _isNew;
                 _txtRooms.Text = string.Join(", ", _roomNames.ToArray());
                 _customer.SelectId(_row.CustomerId);
                 _txtTenKhach.Text = _row.TenKhach ?? "";
@@ -1260,16 +1253,6 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void ApplyConfigAndPermissions()
         {
-            bool hotel = BookingRules.IsHotelApp;
-            _lblTuGio.Visible = !hotel;
-            _dtTuGio.Visible = !hotel;
-            _lblDenGio.Visible = !hotel;
-            _dtDenGio.Visible = !hotel;
-            _lblTuNgay.Visible = hotel;
-            _dtTuNgay.Visible = hotel;
-            _lblDenNgay.Visible = hotel;
-            _dtDenNgay.Visible = hotel;
-
             _numTileThue.Enabled = SystemConfig.CoThueSuat && !_readOnly;
             _numTienThue.Enabled = SystemConfig.CoThueSuat;
             _numPhiVanChuyen.Enabled = SystemConfig.CoPhiVanChuyen && !_readOnly;

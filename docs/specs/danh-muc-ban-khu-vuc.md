@@ -83,14 +83,14 @@ Dialog có trang chính và tối đa 4 trang phụ, theo `designcode` và `code
 | Khu vực | `numTIENMOBAN` | Tiền mở bàn — `TIENMOBAN` | `CoTienGio` |
 | Khu vực | `rdTheoGio` / `rdTheoBangGia` | Cách tính giờ — `CACHTINHGIO` (chỉ hai giá trị) | `CoTienGio` |
 | Khu vực | `numDONGIA`, `lueDBANGGIAID`, `lueDGIATHEOGIOID`, `dtTUGIO`, `dtDENGIO` | Đơn giá, Bảng giá, Giá theo giờ, Từ giờ, Đến giờ | theo cách tính giờ |
-| Khu vực | `rdTABHIENTHI` | Tab hiển thị — `TABHIENTHI` | [CHƯA XÁC MINH] ý nghĩa giá trị |
+| Khu vực | `rdTABHIENTHI` | Tab hiển thị — `TABHIENTHI` | **Đã xác minh (audit 21/11, từ `LoadKhuVuc` app gốc):** chỉ số dải tab màn Sử dụng dịch vụ — `0` = tab trên, `1` = tab dưới (`COALESCE(TABHIENTHI,0) = index`). Metadata SCOLUMN ghi CheckBox nhưng KHÔNG phải cờ 30/0; dialog dùng 2 radio Trên/Dưới |
 | Khu vực | `txtNOTE` | Ghi chú — `NOTE` | luôn |
 | Trang "Mặt hàng theo giờ" | (`pageMatHangTheoGio`) | `DGIATHEOGIO` | `SuDungGiaTheoGio` |
 | Trang "Mặt hàng mặc định" | `grMatHangMacDinh` (`GridMapper`, bảng `DMATHANGMACDINH`) | mặt hàng + số lượng | `SuDungMatHangMacDinh` |
 | Trang "Bảng giá áp dụng" | `grBangGia` | `DBANGGIATHEOKHUVUC` | `CoTienGio` và `ChoPhepDungNhieuBangGiaTrenBill` |
 | Trang "Truy cập" | `grTruyCap` | `DTKTHEOKHUVUC` | `PhanQuyenTruyCapTheoKhuVuc` |
 
-- Trang "Truy cập": lưới liệt kê người dùng `SUSER` có `ISADMIN` khác 30, cột tick → ghi/xóa `DTKTHEOKHUVUC` [CODE].
+- Trang "Truy cập": lưới liệt kê người dùng `SUSER` không phải admin (`COALESCE(ISADMIN,0) <> 1` — `ISADMIN = 1` là admin, khớp `LoginService`; bản cũ ghi "khác 30" là sai), cột tick → ghi/xóa `DTKTHEOKHUVUC` [CODE].
 - Cách tính giờ của khu vực: `CACHTINHGIO` có hai giá trị trên dialog, `THEOGIO` và `THEOBANGGIA` [CODE: `mapper_BeforeSave`].
 
 ### 1.4 Hộp thoại "Thêm nhanh bàn" (`SFORM` ff770199) — **chức năng mới so với khuôn**
@@ -302,7 +302,7 @@ Chạy 21/11/2026 trên **bản sao** `D:\Test\POS_TAP_TEST` (không đụng `PO
 
 | # | Kết quả từ app gốc | Ảnh |
 |---|---|---|
-| Q1 | Lưới bàn 5 cột: **Tên bàn, Khu vực, Nhóm hiển thị, Loại phòng, Ghi chú**. Có thanh lọc (F3) và dòng **Tổng**. Dưới lưới có tab "Thông tin" (khởi tạo/sửa đổi) và các tab liên quan (Bảng giá theo bàn, Đặt hàng, Hóa đơn nhà hàng, Phiếu nhập/xuất/chuyển/kiểm kho…) | 01 |
+| Q1 | Lưới bàn 5 cột: **Tên bàn, Khu vực, Nhóm hiển thị, Loại phòng, Ghi chú**. Có thanh lọc (F3) và dòng **Tổng** (bản clone dùng nhãn đếm "N dòng" thay dòng Tổng — quyết định tạm sau audit 21/11, chờ Chiến xác nhận). Dưới lưới có tab "Thông tin" (khởi tạo/sửa đổi) và các tab liên quan (Bảng giá theo bàn, Đặt hàng, Hóa đơn nhà hàng, Phiếu nhập/xuất/chuyển/kiểm kho…) | 01 |
 | Q2 | Cây khu vực có **Tất cả, Chưa thiết lập, từng khu vực (Lầu 1), Thùng rác** (bản viết lại **không** có Thùng rác, xem Q3). Thanh công cụ trên cây: **+** (thêm khu vực), **✎** (sửa, mờ khi chưa chọn), 2 nút kiểu xem cây, làm mới, nút cấu hình. → mặc định tạm "không có Chưa thiết lập" **sai**: app gốc có | 01 |
 | Q3 | Xóa bàn hỏi "chuyển (1) dữ liệu tới **thùng rác**?" — **xóa mềm**; **Shift+Delete** xóa hẳn. App gốc có Thùng rác cho bàn/khu vực. **Quyết định (Chiến, 21/11/2026): bản viết lại bỏ xóa mềm và Thùng rác** — giữ mặc định "xóa cứng khi không tham chiếu, chặn khi tham chiếu (Q4)"; không có mục "Thùng rác" trên cây, không khôi phục. Lệch có chủ ý so với app gốc | 07 |
 | Q5 | Trùng tên khu vực: gõ chữ thường "lầu 1" khi đã có "Lầu 1" → cảnh báo `Giá trị "Lầu 1" ở trường "Tên khu vực" đã tồn tại!` — **không phân biệt hoa thường**, khuôn lỗi như Thêm mới khác. (Trùng tên bàn chưa thử) | 06 |
@@ -348,7 +348,7 @@ Chưa thử (cần tài khoản khác / dữ liệu đơn): Q4, Q6, Q9, Q13, Q14
 5. Thêm nhanh: `BATDAU="B", TUSO=1, DENSO=3`, chiều dài 2 → sinh `B01, B02, B03`, `CACHTINHGIO = THEOKHUVUC`; có một tên đã tồn tại → không sinh dòng nào.
 6. Thêm nhanh với `TUSO = DENSO` → hành vi theo Q6.
 7. Quyền: Quản lý và Kế toán thấy và sửa được; Phục vụ và Thu ngân không thấy menu (`MODE = 0`); Thủ kho không thấy.
-8. Cấu hình `CoTienGio = 0` (DB hiện tại) → không hiện cách tính giờ, tiền mở bàn, trang bảng giá; lưu bàn không ghi `TIENMOBAN` khác 0.
+8. Cấu hình `CoTienGio = 0` (DB hiện tại) → không hiện cách tính giờ, tiền mở bàn, trang bảng giá; lưu **bàn mới** không ghi `TIENMOBAN` khác 0 (bàn đã có: giữ nguyên `DONGIA/TIENMOBAN/CACHTINHGIO` cũ, đúng §3.1).
 9. Xóa bàn đang có đơn chưa thanh toán → bị chặn (theo Q4 mặc định); thông báo chưa cố định (Q4).
 10. Không có SQL trong form/View; màu lấy từ `ThemeManager`; cỡ chữ không cố định.
 

@@ -29,14 +29,17 @@ namespace Kazuko_FnB.Data
             "R.ID, R.NAME, R.DKHUVUCID, R.DBANGGIAID, R.DONGIA, R.CACHTINHGIO, R.DNHOMHIENTHIID, " +
             "R.TIENMOBAN, R.DLOAIPHONGID, R.NOTE, R.IPCONGTAC, R.STATUS, " +
             "R.USERCREATEDID, R.TIMECREATED, R.USERMODIFIEDID, R.TIMEMODIFIED, " +
-            "A.NAME AS AREANAME, G.NAME AS GROUPNAME, T.NAME AS TYPENAME, P.NAME AS PRICENAME";
+            "A.NAME AS AREANAME, G.NAME AS GROUPNAME, T.NAME AS TYPENAME, P.NAME AS PRICENAME, " +
+            "UC.NAME AS CREATEDBY, UM.NAME AS MODIFIEDBY";
 
         private const string SelectFrom =
             "FROM DBAN R " +
             "LEFT JOIN DKHUVUC A ON A.ID = R.DKHUVUCID " +
             "LEFT JOIN DNHOMHIENTHI G ON G.ID = R.DNHOMHIENTHIID " +
             "LEFT JOIN DLOAIPHONG T ON T.ID = R.DLOAIPHONGID " +
-            "LEFT JOIN DBANGGIA P ON P.ID = R.DBANGGIAID ";
+            "LEFT JOIN DBANGGIA P ON P.ID = R.DBANGGIAID " +
+            "LEFT JOIN SUSER UC ON UC.ID = R.USERCREATEDID " +
+            "LEFT JOIN SUSER UM ON UM.ID = R.USERMODIFIEDID ";
 
         /// <summary>Mọi bàn đang dùng (STATUS = 30), xếp theo tên — dữ liệu cho lưới bàn.</summary>
         public List<RoomRow> LoadRooms()
@@ -216,7 +219,7 @@ namespace Kazuko_FnB.Data
 
         private static bool IsNameTakenIn(FbConnection conn, FbTransaction tx, string name, string excludeId)
         {
-            DataTable dt = DbHelper.Table(conn, tx, "SELECT ID, NAME FROM DBAN");
+            DataTable dt = DbHelper.Table(conn, tx, "SELECT ID, NAME FROM DBAN WHERE STATUS = 30");
             foreach (DataRow r in dt.Rows)
             {
                 if (string.Equals(DbHelper.Str(r["ID"]), excludeId ?? "", StringComparison.Ordinal))
@@ -286,7 +289,11 @@ namespace Kazuko_FnB.Data
                     }
                 }
                 DbHelper.Exec(conn, tx, "DELETE FROM DBANGGIATHEOBAN WHERE DBANID = @R", "@R", id);
-                DbHelper.Exec(conn, tx, "DELETE FROM DBAN WHERE ID = @I", "@I", id);
+                if (DbHelper.Exec(conn, tx, "DELETE FROM DBAN WHERE ID = @I", "@I", id) == 0)
+                {
+                    result.ErrorMessage = RoomText.RoomGone;
+                    return;
+                }
                 result.Ok = true;
             });
             return result;
@@ -310,6 +317,12 @@ namespace Kazuko_FnB.Data
                 "SELECT COUNT(*) FROM TDONHANG WHERE DBANID = @R AND COALESCE(DATHANHTOAN, 0) = 0",
                 "@R", id));
             blocks.Add(new ReferenceBlock { TableName = "TDONHANG", ColumnName = "DBANID", Count = unpaid });
+            // B3: đơn đặt (TDATHANG) trỏ tới bàn mà chưa chuyển thành hóa đơn -> xóa bàn sẽ làm đơn mồ côi.
+            int booked = DbHelper.Int(DbHelper.Scalar(conn, tx,
+                "SELECT COUNT(*) FROM TDATHANG D WHERE D.DBANID = @R AND D.STATUS = 30 " +
+                "AND NOT EXISTS (SELECT 1 FROM TDONHANG H WHERE H.TDATHANGID = D.ID)",
+                "@R", id));
+            blocks.Add(new ReferenceBlock { TableName = "TDATHANG", ColumnName = "DBANID", Count = booked });
             object current = DbHelper.Scalar(conn, tx,
                 "SELECT TDONHANGID FROM DBAN WHERE ID = @R", "@R", id);
             string currentId = DbHelper.Str(current);
@@ -428,7 +441,9 @@ namespace Kazuko_FnB.Data
                 AreaName = DbHelper.Str(r["AREANAME"]) ?? "",
                 DisplayGroupName = DbHelper.Str(r["GROUPNAME"]) ?? "",
                 RoomTypeName = DbHelper.Str(r["TYPENAME"]) ?? "",
-                PriceListName = DbHelper.Str(r["PRICENAME"]) ?? ""
+                PriceListName = DbHelper.Str(r["PRICENAME"]) ?? "",
+                CreatedByName = DbHelper.Str(r["CREATEDBY"]),
+                ModifiedByName = DbHelper.Str(r["MODIFIEDBY"])
             };
         }
 

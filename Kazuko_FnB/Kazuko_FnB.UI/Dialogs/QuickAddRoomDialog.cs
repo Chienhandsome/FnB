@@ -161,9 +161,10 @@ namespace Kazuko_FnB.UI.Dialogs
                     r.Cells["colPreview"].Value = "";
                     continue;
                 }
-                if (from > to)
+                string rangeError = RoomRules.ValidateRange(from, to);
+                if (rangeError != null)
                 {
-                    r.Cells["colPreview"].Value = RoomText.InvalidRange;
+                    r.Cells["colPreview"].Value = rangeError;
                     continue;
                 }
                 string prefix = Convert.ToString(r.Cells["colPrefix"].Value, CultureInfo.InvariantCulture) ?? "";
@@ -182,6 +183,12 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void Run()
         {
+            // Thêm nhanh theo quyền Thêm (quyết định 21/11) — tự kiểm, không chỉ dựa vào nút ở CatalogView.
+            if (!AppSession.Can(RoomRules.FunctionName, RoleModes.Add))
+            {
+                Msg.Warning(this, "Bạn không có quyền thêm bàn.");
+                return;
+            }
             _grid.EndEdit();
             var requests = new List<QuickAddRequest>();
             var allNames = new List<string>();

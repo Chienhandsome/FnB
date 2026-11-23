@@ -111,6 +111,9 @@ namespace Kazuko_FnB.Data
             }
             string savedId = null;
             string error = null;
+            bool idAssigned = false; // M5: Id GUID mới gán trong lần lưu này — phải trả về null nếu lưu lỗi.
+            try
+            {
             DbHelper.InTransaction(_databasePath, (conn, tx) =>
             {
                 bool isNew = string.IsNullOrEmpty(row.Id);
@@ -130,6 +133,7 @@ namespace Kazuko_FnB.Data
                 if (isNew)
                 {
                     row.Id = DbHelper.NewId();
+                    idAssigned = true;
                     row.Status = ActiveStatus;
                     row.CreatedById = actorId;
                     row.CreatedAt = DbHelper.Now();
@@ -164,13 +168,27 @@ namespace Kazuko_FnB.Data
                 {
                     row.ModifiedById = actorId;
                     row.ModifiedAt = DbHelper.Now();
-                    DbHelper.Exec(conn, tx,
+                    int updated = DbHelper.Exec(conn, tx,
                         "UPDATE DNHOMMATHANG SET NAME = @NAME, CODE = @CODE, DLOAIDOID = @DLOAIDOID, SIMAGEID = @SIMAGEID, " +
                         "USERMODIFIEDID = @USERMODIFIEDID, TIMEMODIFIED = @TIMEMODIFIED WHERE ID = @ID",
                         GroupParams(row));
+                    if (updated == 0)
+                    {
+                        error = "Nhóm không còn tồn tại.";
+                        return;
+                    }
                 }
                 savedId = row.Id;
             });
+            }
+            catch
+            {
+                if (idAssigned)
+                    row.Id = null;
+                throw;
+            }
+            if (error != null && idAssigned)
+                row.Id = null;
             errorMessage = error;
             return error == null ? savedId : null;
         }
@@ -186,20 +204,30 @@ namespace Kazuko_FnB.Data
             ProductGroupRow row = Load(groupId);
             if (row == null)
                 return "Nhóm không còn tồn tại.";
-            int products = CountProducts(groupId);
-            if (products > 0)
-                return ReferenceChecker.BlockedMessage("nhóm mặt hàng", row.Name, products);
-            if (HasChildren(groupId))
-            {
-                int children = DbHelper.Read(_databasePath, conn =>
-                    DbHelper.Int(DbHelper.Scalar(conn, null,
-                        "SELECT COUNT(*) FROM DNHOMMATHANG WHERE PARENTID = @G AND STATUS = @S",
-                        "@G", groupId, "@S", ActiveStatus)));
-                return ReferenceChecker.BlockedMessage("nhóm mặt hàng", row.Name, children);
-            }
+            // M6: đếm + xóa trong CÙNG một transaction (không để mặt hàng/nhóm con chen vào giữa).
+            string error = null;
             DbHelper.InTransaction(_databasePath, (conn, tx) =>
-                DbHelper.Exec(conn, tx, "DELETE FROM DNHOMMATHANG WHERE ID = @I", "@I", groupId));
-            return null;
+            {
+                int products = DbHelper.Int(DbHelper.Scalar(conn, tx,
+                    "SELECT COUNT(*) FROM DMATHANG WHERE DNHOMMATHANGID = @G AND STATUS = @S",
+                    "@G", groupId, "@S", ActiveStatus));
+                if (products > 0)
+                {
+                    error = ReferenceChecker.BlockedMessage("nhóm mặt hàng", row.Name, products);
+                    return;
+                }
+                int children = DbHelper.Int(DbHelper.Scalar(conn, tx,
+                    "SELECT COUNT(*) FROM DNHOMMATHANG WHERE PARENTID = @G AND STATUS = @S",
+                    "@G", groupId, "@S", ActiveStatus));
+                if (children > 0)
+                {
+                    error = ReferenceChecker.BlockedMessage("nhóm mặt hàng", row.Name, children);
+                    return;
+                }
+                if (DbHelper.Exec(conn, tx, "DELETE FROM DNHOMMATHANG WHERE ID = @I", "@I", groupId) == 0)
+                    error = "Nhóm không còn tồn tại.";
+            });
+            return error;
         }
 
         private static bool IsNameTakenIn(FbConnection conn, FbTransaction tx, string name, string excludeId)

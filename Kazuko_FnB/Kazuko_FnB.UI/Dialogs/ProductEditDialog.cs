@@ -150,11 +150,11 @@ namespace Kazuko_FnB.UI.Dialogs
 
             _canViewPrice = AppSession.Can("Xem giá nhập", RoleModes.View);
             _canViewSellHistory = AppSession.Can("Hóa đơn bán hàng", RoleModes.View);
-            _canRemove = AppSession.Can("Danh mục mặt hàng", RoleModes.Remove);
+            _canRemove = AppSession.Can(ProductText.FunctionName, RoleModes.Remove);
             // Chỉ có Xem (không Sửa, không Thêm) → mở dialog ở chế độ chỉ đọc (mục 4, mặc định tạm Q13).
             _readOnly = _isNew
-                ? !AppSession.Can("Danh mục mặt hàng", RoleModes.Add)
-                : !AppSession.Can("Danh mục mặt hàng", RoleModes.Edit);
+                ? !AppSession.Can(ProductText.FunctionName, RoleModes.Add)
+                : !AppSession.Can(ProductText.FunctionName, RoleModes.Edit);
 
             FlatButton exit = AddButton("Thoát", null, delegate { Close(); });
             _btnSaveClose = AddButton("Lưu & thoát", "primary", delegate { SaveAndClose(); });
@@ -217,8 +217,9 @@ namespace Kazuko_FnB.UI.Dialogs
             float s = Dpi;
             PerformLayout();
             _tabs.PerformLayout();
+            // M1: 636×387 là kích thước vùng TabControl (tab page bên trong là 628×361 theo spec §1.2).
             Size target = new Size((int)(ContentWidth96 * s), (int)(ContentHeight96 * s));
-            Size cur = _tabInfo.ClientSize;
+            Size cur = _tabs.Size;
             int dw = target.Width - cur.Width;
             int dh = target.Height - cur.Height;
             if (dw == 0 && dh == 0)
@@ -1018,15 +1019,18 @@ namespace Kazuko_FnB.UI.Dialogs
         /// Tính lại tổng định lượng + GIANHAP/GIAVON của mặt hàng (3.4, Q15):
         /// ghi đè theo tổng khi cấu hình tự cập nhật = 30; không thì giữ giá đã nhập tay.
         /// </summary>
-        private void UpdateRecipeTotals()
+        private void UpdateRecipeTotals(bool applyPrices = true)
         {
             if (_recipeTable == null)
                 return;
             var lines = new List<RecipeLine>();
+            bool hasMaterial = false; // M4: chỉ ghi đè giá khi có ít nhất một dòng đã chọn vật tư.
             foreach (System.Data.DataRow r in _recipeTable.Rows)
             {
                 if (r.RowState == System.Data.DataRowState.Deleted)
                     continue;
+                if (!(r["MatId"] is System.DBNull) && !string.IsNullOrEmpty((string)r["MatId"]))
+                    hasMaterial = true;
                 lines.Add(new RecipeLine
                 {
                     AmountBuy = r["AmtBuy"] is System.DBNull ? 0m : (decimal)r["AmtBuy"],
@@ -1036,11 +1040,13 @@ namespace Kazuko_FnB.UI.Dialogs
             decimal totalBuy, totalCost;
             ProductRules.Totals(lines, out totalBuy, out totalCost);
             var vi = new CultureInfo("vi-VN");
+            // M3 (§4): thiếu quyền "Xem giá nhập" thì không hiện tổng tiền nhập/vốn.
+            _recipeTotals.Visible = _canViewPrice;
             _recipeTotals.Text = string.Format("TỔNG:  Thành tiền nhập = {0}   ·   Thành tiền vốn = {1}",
                 totalBuy.ToString("#,##0.##", vi), totalCost.ToString("#,##0.##", vi));
             // Khi đang nạp (mở dialog) chỉ hiện tổng, KHÔNG ghi đè giá đã lưu; ghi đè chỉ xảy ra khi
-            // người dùng đổi định lượng hoặc khi lưu (Q15).
-            if (!_loading)
+            // người dùng đổi định lượng hoặc khi lưu (Q15), có dòng vật tư thật, và có quyền xem giá nhập.
+            if (!_loading && applyPrices && hasMaterial && _canViewPrice)
             {
                 if (SystemConfig.TuDongCapNhatGiaNhapDinhLuong)
                     _buy.Value = Clamp(_buy, totalBuy);
@@ -1206,8 +1212,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 if (recipeBinding != null)
                     recipeBinding.EndCurrentEdit();
             }
-            // Tính lại GIANHAP/GIAVON theo tổng định lượng (Q15) trước khi thu thập.
-            UpdateRecipeTotals();
+            // Chỉ cập nhật nhãn tổng ở bước này; ghi đè GIANHAP/GIAVON (Q15) làm SAU khi kiểm tra hợp lệ (M4).
+            UpdateRecipeTotals(false);
             CollectRow();
             List<RecipeLine> lines = CollectLines();
 
@@ -1264,6 +1270,10 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             if (vr.Warning != null)
                 Msg.Warning(this, vr.Warning);
+
+            // Q15: đã hợp lệ → mới ghi đè giá theo tổng định lượng rồi thu thập lại.
+            UpdateRecipeTotals();
+            CollectRow();
 
             var options = new ProductSaveOptions
             {

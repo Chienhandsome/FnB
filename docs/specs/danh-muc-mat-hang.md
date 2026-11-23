@@ -327,7 +327,7 @@ Luật:
     ```
     (`QUYDOI`, `DDONVITINHCHANID` trong `CASE` ở truy vấn con là của **vật tư `B`**.) Bản mới viết lại bằng truy vấn tham số hóa trong **cùng transaction** với lưu.
 - **`GIATHEOTHOIGIA`** (tick): bán hàng hỏi đơn giá mỗi lần bán (luật ở spec bán hàng). **`MACDINHGIAMGIA`/`MACDINHGIAMTIEN`**: giảm giá mặc định khi bán — cột có, dialog và lưới không có ô (không sửa được trên UI desktop, Q1 [APP]).
-- **Làm tròn tiền:** `LamTronTien` (1000, `AwayFromZero`) là luật **khi tính hóa đơn**, **không** áp lên giá nhập ở danh mục: các ô giá cho nhập 2 chữ số thập phân. Hiển thị trên lưới theo `GiaBanLeUsd` (`n2` khi = 30 như DB hiện tại).
+- **Làm tròn tiền:** `LamTronTien` (1000, `AwayFromZero`) là luật **khi tính hóa đơn**, **không** áp lên giá nhập ở danh mục: các ô giá cho nhập 2 chữ số thập phân. Hiển thị giá trên lưới/dialog: bản clone dùng `#,##0.##` (ví dụ `15,000` như §1.1), KHÔNG đổi theo `GiaBanLeUsd` — quyết định tạm sau audit 21/11, chờ Chiến xác nhận.
 - **Quyền xem giá nhập:** `GIANHAP`, `GIAVON` và các cột/giá trị liên quan định lượng chỉ hiện khi người dùng có quyền **"Xem giá nhập"** (mục 4).
 
 ### 3.5 Cây nhóm và sinh mã

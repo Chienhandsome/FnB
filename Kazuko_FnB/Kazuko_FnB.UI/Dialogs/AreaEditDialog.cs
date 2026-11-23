@@ -30,7 +30,6 @@ namespace Kazuko_FnB.UI.Dialogs
         private const int ContentHeight96 = 400;
         private const string ShortcutsHint = "(Ctrl+S: Lưu&Mới, Ctrl+L: Lưu, Ctrl+N: Mới, Ctrl+P: In, ESC: Thoát)";
         private const string UnsupportedText = "Chức năng chưa hỗ trợ trong phiên bản này.";
-        private const int FlagOn = 30;
 
         private readonly string _databasePath;
         private readonly AreaRepository _repo;
@@ -62,7 +61,10 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly ImageCombo _image = new ImageCombo();
         private readonly LookupCombo _icon = new LookupCombo();
         private readonly PictureBox _picIcon = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, BorderStyle = BorderStyle.FixedSingle };
-        private readonly CheckBox _chkShowTab = new CheckBox { Text = "Tab hiển thị" };
+        // B2: TABHIENTHI của app gốc là chỉ số dải tab màn bán hàng: 0 = tab trên, 1 = tab dưới (không phải cờ 30/0).
+        private readonly Label _lblShowTab = new Label { Text = "Tab hiển thị" };
+        private readonly RadioButton _rTabTop = new RadioButton { Text = "Trên" };
+        private readonly RadioButton _rTabBottom = new RadioButton { Text = "Dưới" };
         private readonly LookupCombo _priceLevel = new LookupCombo();
         private readonly LookupCombo _warehouse = new LookupCombo();
         private readonly LookupCombo _template = new LookupCombo();
@@ -301,7 +303,9 @@ namespace Kazuko_FnB.UI.Dialogs
             Place(_image, _tabMain, 118, 36, 150, 21, 1);
             Place(_icon, _tabMain, 360, 36, 140, 21, 2);
             Place(_picIcon, _tabMain, 508, 10, 54, 54, 3);
-            Place(_chkShowTab, _tabMain, 118, 68, 150, 17, 4);
+            PlaceLabel(_lblShowTab, _tabMain, 7, 66);
+            Place(_rTabTop, _tabMain, 118, 68, 70, 17, 4);
+            Place(_rTabBottom, _tabMain, 194, 68, 70, 17, 4);
             Place(_priceLevel, _tabMain, 118, 96, 280, 21, 5);
             Place(_warehouse, _tabMain, 118, 126, 280, 21, 6);
             Place(_template, _tabMain, 118, 156, 280, 21, 7);
@@ -326,11 +330,11 @@ namespace Kazuko_FnB.UI.Dialogs
             Place(_fromHour, _grpPrice, 330, 126, 100, 20, 16);
             Place(_toHour, _grpPrice, 490, 126, 90, 20, 17);
 
-            _unitPrice.Minimum = -1000000000000m;
+            _unitPrice.Minimum = 0m;
             _unitPrice.Maximum = 1000000000000m;
             _unitPrice.DecimalPlaces = 2;
             _unitPrice.ThousandsSeparator = true;
-            _openAmount.Minimum = -1000000000000m;
+            _openAmount.Minimum = 0m;
             _openAmount.Maximum = 1000000000000m;
             _openAmount.DecimalPlaces = 2;
             _openAmount.ThousandsSeparator = true;
@@ -350,7 +354,8 @@ namespace Kazuko_FnB.UI.Dialogs
             foreach (NumericUpDown n in new[] { _unitPrice, _openAmount })
                 n.ValueChanged += delegate { OnDirtyChanged(); };
             _image.SelectedIndexChanged += delegate { OnDirtyChanged(); };
-            _chkShowTab.CheckedChanged += delegate { OnDirtyChanged(); };
+            _rTabTop.CheckedChanged += delegate { OnDirtyChanged(); };
+            _rTabBottom.CheckedChanged += delegate { OnDirtyChanged(); };
             _priceLevel.SelectedIndexChanged += delegate { OnDirtyChanged(); };
             _warehouse.SelectedIndexChanged += delegate { OnDirtyChanged(); };
             _template.SelectedIndexChanged += delegate { OnDirtyChanged(); };
@@ -499,9 +504,13 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             _row = AreaRow.NewDefault();
             _isNew = true;
-            // Ảnh 05: Kho hàng mặc định là kho bán hàng (kho đầu danh sách khi chỉ có một kho).
+            // Ảnh 05: Kho hàng mặc định là "KHO BÁN HÀNG"; không có kho đó thì lấy kho đầu danh sách.
             if (_warehouses.Count > 0)
-                _row.WarehouseId = _warehouses[0].Id;
+            {
+                LookupItem def = _warehouses.Find(w => string.Equals(
+                    ProductText.NormalizeName(w.Name), "KHO BÁN HÀNG", StringComparison.OrdinalIgnoreCase));
+                _row.WarehouseId = (def ?? _warehouses[0]).Id;
+            }
             SetTitle("KHU VỰC - THÊM MỚI");
             FillControls(new List<PriceAssignment>(), new List<string>(), new List<AreaDefaultItem>());
         }
@@ -529,7 +538,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 _name.Text = _row.Name ?? "";
                 _image.SelectedId = _row.ImageId;
                 _icon.SelectId(_row.IconId);
-                _chkShowTab.Checked = _row.ShowTab != 0;
+                // Giá trị lạ (vd 30 do bản clone cũ đã ghi) hiện mặc định "Trên"; lưu lại sẽ chuẩn hóa về 0.
+                _rTabBottom.Checked = _row.ShowTab == 1;
+                _rTabTop.Checked = _row.ShowTab != 1;
                 _priceLevels = RoomRules.FilterPriceLevels(_formRepo.LoadAll("DGIAMATHANG"),
                     SystemConfig.SuDungGia2, SystemConfig.SuDungGia3, SystemConfig.SuDungGia4, _row.PriceLevelId);
                 _priceLevel.SetItems(_priceLevels);
@@ -689,7 +700,8 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 foreach (Control c in new Control[] { _name, _image, _icon, _priceLevel, _warehouse, _template, _note, _unitPrice, _openAmount, _priceList, _hourlyPrice, _fromHour, _toHour })
                     c.Enabled = false;
-                _chkShowTab.Enabled = false;
+                _rTabTop.Enabled = false;
+                _rTabBottom.Enabled = false;
                 foreach (RadioButton r in new[] { _rByHour, _rByPriceList })
                     r.Enabled = false;
                 _defaultsGrid.ReadOnly = true;
@@ -745,7 +757,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSave.Enabled = dirty && !_readOnly;
             _btnSaveNew.Enabled = dirty && !_readOnly;
             _btnSaveClose.Enabled = dirty && !_readOnly;
-            _btnDelete.Enabled = !_isNew && _canRemove && !_readOnly;
+            _btnDelete.Enabled = !_isNew && _canRemove; // Q13: xóa chỉ cần quyền Xóa, như xóa từ lưới.
         }
 
         private void UpdateNavButtons()
@@ -766,7 +778,7 @@ namespace Kazuko_FnB.UI.Dialogs
             sb.Append(_name.Text).Append('|');
             sb.Append(_image.SelectedId).Append('|');
             sb.Append(_icon.SelectedId).Append('|');
-            sb.Append(_chkShowTab.Checked).Append('|');
+            sb.Append(_rTabBottom.Checked).Append('|');
             sb.Append(_priceLevel.SelectedId).Append('|');
             sb.Append(_warehouse.SelectedId).Append('|');
             sb.Append(_template.SelectedId).Append('|');
@@ -831,13 +843,21 @@ namespace Kazuko_FnB.UI.Dialogs
             _defaultsGrid.EndEdit();
             CollectRow();
 
-            string error = RoomRules.ValidateArea(_row.Name);
+            string error = RoomRules.ValidateArea(_row.Name, SystemConfig.CoTienGio, _row.CalcHour,
+                _row.PriceListId, _row.UnitPrice, _row.OpenAmount);
             if (error != null)
             {
                 Msg.Warning(this, error);
                 _tabs.SelectedTab = _tabMain;
-                _name.Focus();
-                _name.SelectAll();
+                if (error == RoomText.AreaNameEmpty)
+                {
+                    _name.Focus();
+                    _name.SelectAll();
+                }
+                else if (error == RoomText.PriceListRequired)
+                    _priceList.Focus();
+                else
+                    _unitPrice.Focus();
                 return false;
             }
 
@@ -891,7 +911,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _row.Name = _name.Text;
             _row.ImageId = _image.SelectedId;
             _row.IconId = _icon.SelectedId;
-            _row.ShowTab = _chkShowTab.Checked ? FlagOn : 0;
+            _row.ShowTab = _rTabBottom.Checked ? 1 : 0;
             _row.PriceLevelId = _priceLevel.SelectedId;
             _row.WarehouseId = _warehouse.SelectedId;
             _row.TemplateId = _template.SelectedId;
@@ -949,7 +969,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void DeleteCurrent()
         {
-            if (_isNew || _readOnly || !_canRemove)
+            if (_isNew || !_canRemove)
                 return;
             if (!Msg.Confirm(this, ProductText.DeleteConfirm))
                 return;

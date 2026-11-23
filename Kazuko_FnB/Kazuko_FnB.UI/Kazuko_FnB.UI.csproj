@@ -171,6 +171,9 @@
     <Compile Include="Controls\IconToolbar.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Dialogs\BookingPreviewForm.cs" />
+    <Compile Include="Controls\DetailGridMenu.cs" />
+    <Compile Include="Controls\DetailTabsHost.cs" />
     <Compile Include="Controls\ImageCombo.cs" />
     <Compile Include="Controls\InputBox.cs">
       <SubType>UserControl</SubType>

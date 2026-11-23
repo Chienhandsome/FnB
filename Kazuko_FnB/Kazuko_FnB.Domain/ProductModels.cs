@@ -260,6 +260,9 @@ namespace Kazuko_FnB.Domain
     /// </summary>
     public static class ProductText
     {
+        /// <summary>Tên chức năng dùng cho kiểm quyền (SFUNCTION "Danh mục mặt hàng", spec §4).</summary>
+        public const string FunctionName = "Danh mục mặt hàng";
+
         /// <summary>Chuẩn hóa tên để kiểm trùng (Q21: không phân biệt hoa/thường, cắt khoảng trắng).</summary>
         public static string NormalizeName(string name)
         {

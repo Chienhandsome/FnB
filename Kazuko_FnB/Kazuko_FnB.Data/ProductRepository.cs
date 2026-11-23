@@ -536,17 +536,15 @@ namespace Kazuko_FnB.Data
                 return result;
             }
 
-            string name = DbHelper.Read(_databasePath, conn =>
-                DbHelper.Str(DbHelper.Scalar(conn, null, "SELECT NAME FROM DMATHANG WHERE ID = @I", "@I", id)));
-            if (name == null)
-            {
-                result.ErrorMessage = "Mặt hàng không còn tồn tại.";
-                return result;
-            }
-
-            // Kiểm tham chiếu và xóa trong CÙNG một giao dịch (không để tham chiếu mới chen vào giữa hai bước).
+            // Đọc tên, kiểm tham chiếu và xóa trong CÙNG một giao dịch (không để dòng đổi/tham chiếu mới chen vào giữa).
             DbHelper.InTransaction(_databasePath, (conn, tx) =>
             {
+                string name = DbHelper.Str(DbHelper.Scalar(conn, tx, "SELECT NAME FROM DMATHANG WHERE ID = @I", "@I", id));
+                if (name == null)
+                {
+                    result.ErrorMessage = "Mặt hàng không còn tồn tại.";
+                    return;
+                }
                 result.Blocks = CheckReferencesIn(conn, tx, id);
                 foreach (ReferenceBlock b in result.Blocks)
                 {
@@ -557,7 +555,11 @@ namespace Kazuko_FnB.Data
                     }
                 }
                 DbHelper.Exec(conn, tx, "DELETE FROM DDINHLUONG WHERE DMATHANGID = @P", "@P", id);
-                DbHelper.Exec(conn, tx, "DELETE FROM DMATHANG WHERE ID = @I", "@I", id);
+                if (DbHelper.Exec(conn, tx, "DELETE FROM DMATHANG WHERE ID = @I", "@I", id) == 0)
+                {
+                    result.ErrorMessage = "Mặt hàng không còn tồn tại.";
+                    return;
+                }
                 result.Ok = true;
             });
             return result;

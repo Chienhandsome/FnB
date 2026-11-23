@@ -116,9 +116,8 @@ namespace Kazuko_FnB.Domain
         /// <summary>Ảnh (SIMAGEID → SIMAGE). NULL khi không chọn.</summary>
         public string ImageId { get; set; }
         /// <summary>
-        /// Tab hiển thị (TABHIENTHI, kiểu CheckBox trong SCOLUMN): 30 = tích, 0 = không (quy ước checkbox
-        /// chung của app — cờ bật là 30; chưa xác minh riêng cho cột này). Ánh xạ "trên/dưới" chưa xác minh
-        /// (ảnh app gốc 05 ghi "Tab hiển thị (trên/dưới)" nhưng không rõ chiều nào là tích).
+        /// Tab hiển thị (TABHIENTHI): chỉ số dải tab màn Sử dụng dịch vụ — 0 = tab trên, 1 = tab dưới
+        /// (LoadKhuVuc app gốc: COALESCE(TABHIENTHI,0) = index). Metadata SCOLUMN ghi CheckBox nhưng KHÔNG phải cờ 30/0.
         /// </summary>
         public int ShowTab { get; set; }
         public string Note { get; set; }
@@ -260,6 +259,12 @@ namespace Kazuko_FnB.Domain
         public const string AreaGone = "Khu vực không còn tồn tại.";
         /// <summary>Thêm nhanh: TUSO &gt; DENSO (Q6, quyết định của Chiến 21/11).</summary>
         public const string InvalidRange = "Khoảng số không hợp lệ";
+        /// <summary>Số bàn tối đa mỗi khu vực trong một lần Thêm nhanh (R8 — đề xuất tạm, chờ Chiến chốt).</summary>
+        public const int QuickAddMaxPerRange = 500;
+        public static readonly string QuickAddTooMany = "Mỗi lần chỉ được thêm tối đa " + QuickAddMaxPerRange + " bàn cho một khu vực.";
+        /// <summary>Chọn "theo bảng giá" mà chưa chọn bảng giá (R3 — câu chữ tạm, chờ Chiến chốt).</summary>
+        public const string PriceListRequired = "Trường \"Bảng giá\" không được trống khi tính giờ theo bảng giá!";
+        public const string MoneyNegative = "Đơn giá và tiền mở bàn không được âm!";
 
         public static string RoomNameDuplicate(string name)
         {

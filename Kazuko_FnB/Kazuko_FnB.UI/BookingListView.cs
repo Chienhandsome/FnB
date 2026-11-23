@@ -25,8 +25,9 @@ namespace Kazuko_FnB.UI
 
         private readonly SplitContainer _split = new SplitContainer { Dock = DockStyle.Fill };
         private readonly TextBox _txtNumber = new TextBox();
-        private readonly DateTimePicker _dtFrom = new DateTimePicker { Format = DateTimePickerFormat.Short };
-        private readonly DateTimePicker _dtTo = new DateTimePicker { Format = DateTimePickerFormat.Short };
+        // dd/MM/yyyy cố định như app gốc (không theo định dạng ngày của máy, vd. M/d/yyyy).
+        private readonly DateTimePicker _dtFrom = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "dd/MM/yyyy" };
+        private readonly DateTimePicker _dtTo = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "dd/MM/yyyy" };
         private readonly LookupCombo _customer = new LookupCombo();
         private readonly FlatButton _btnFilter = new FlatButton { Text = "Lọc (F3)" };
         private readonly TreeView _tree = new TreeView { Dock = DockStyle.Fill };
@@ -42,6 +43,16 @@ namespace Kazuko_FnB.UI
         private readonly Label _count = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleRight };
         private readonly DataGridView _grid = new DataGridView();
         private readonly Label _empty = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleCenter, Visible = false };
+
+        // Pane dưới lưới (app gốc: Thông tin + các tab liên quan dựng từ metadata — xem DetailRepository).
+        private readonly Panel _bottom = new Panel { Dock = DockStyle.Bottom };
+        private readonly TabControl _infoTabs = new TabControl { Dock = DockStyle.Fill };
+        private readonly Label _lblCreated = new Label { AutoSize = true };
+        private readonly Label _lblCreatedBy = new Label { AutoSize = true };
+        private readonly Label _lblModified = new Label { AutoSize = true };
+        private readonly Label _lblModifiedBy = new Label { AutoSize = true };
+        private readonly ImageList _treeIcons = new ImageList { ColorDepth = ColorDepth.Depth32Bit };
+        private DetailTabsHost _detail;
 
         private List<BookingListRow> _rows = new List<BookingListRow>();
         private bool _canAdd;
@@ -66,10 +77,16 @@ namespace Kazuko_FnB.UI
             BuildFilterPanel(s);
             BuildBar(s);
             BuildGrid(s);
+            BuildBottom(s);
 
             _split.Panel1.Controls.Add(_tree);
+            // Dock theo thứ tự z từ SAU ra TRƯỚC: ô Fill phải ở trước cùng (BringToFront) để không bị panel lọc/tiêu đề đè
+            // (trước đây cây bị che nên chỉ thấy nút cuối).
+            _tree.BringToFront();
             _split.Panel2.Controls.Add(_grid);
             _split.Panel2.Controls.Add(_bar);
+            _split.Panel2.Controls.Add(_bottom);
+            _grid.BringToFront();
             _split.SplitterDistance = (int)(300 * s);
             _split.FixedPanel = FixedPanel.Panel1;
             Controls.Add(_split);
@@ -81,7 +98,7 @@ namespace Kazuko_FnB.UI
                 if (e.RowIndex >= 0)
                     EditBooking();
             };
-            _grid.SelectionChanged += delegate { if (!_loading) UpdateButtons(); };
+            _grid.SelectionChanged += delegate { if (!_loading) { UpdateButtons(); UpdateInfo(); } };
             _grid.KeyDown += OnKeyDown;
             _tree.KeyDown += OnKeyDown;
             KeyDown += OnKeyDown;
@@ -94,7 +111,7 @@ namespace Kazuko_FnB.UI
 
         private void BuildFilterPanel(float s)
         {
-            var panel = new Panel { Dock = DockStyle.Top, Height = (int)(168 * s) };
+            var panel = new Panel { Dock = DockStyle.Top, Height = (int)(132 * s) };
             AddFilterLabel(panel, "Số phiếu", 8, 10, s);
             _txtNumber.SetBounds((int)(80 * s), (int)(8 * s), (int)(200 * s), (int)(24 * s));
             _txtNumber.Font = new Font("Segoe UI", 10f);
@@ -123,10 +140,9 @@ namespace Kazuko_FnB.UI
             _customer.KeyDown += OnKeyDown;
             panel.Controls.Add(_customer);
 
+            // K4: nút "Lọc (F3)" nằm ở thanh nút bên phải (BuildBar), không ở panel lọc.
             _btnFilter.Tag = "primary";
-            _btnFilter.SetBounds((int)(80 * s), (int)(130 * s), (int)(110 * s), (int)(30 * s));
             _btnFilter.Click += delegate { Reload(); };
-            panel.Controls.Add(_btnFilter);
 
             _split.Panel1.Controls.Add(panel);
 
@@ -150,15 +166,81 @@ namespace Kazuko_FnB.UI
             panel.Controls.Add(lbl);
         }
 
+        // Icon cây như app gốc: Tất cả (quả cầu xanh), Chưa thiết lập (sao vàng), phương thức (thoi tím).
+        private const int IconAll = 0;
+        private const int IconUnset = 1;
+        private const int IconMethod = 2;
+
+        private void EnsureTreeIcons()
+        {
+            if (_treeIcons.Images.Count > 0)
+                return;
+            float s = DeviceDpi / 96f;
+            int size = Math.Max(16, (int)(16 * s));
+            _treeIcons.ImageSize = new Size(size, size);
+            for (int kind = 0; kind < 3; kind++)
+            {
+                var bmp = new Bitmap(size, size);
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    var box = new Rectangle(1, 1, size - 3, size - 3);
+                    if (kind == IconAll)
+                    {
+                        using (var fill = new SolidBrush(Color.FromArgb(60, 150, 220)))
+                        using (var line = new Pen(Color.FromArgb(30, 100, 170)))
+                        {
+                            g.FillEllipse(fill, box);
+                            g.DrawEllipse(line, box);
+                            g.DrawArc(line, box.X + box.Width / 4, box.Y, box.Width / 2, box.Height, 90, 180);
+                            g.DrawLine(line, box.X, box.Y + box.Height / 2, box.Right, box.Y + box.Height / 2);
+                        }
+                    }
+                    else if (kind == IconUnset)
+                    {
+                        using (var fill = new SolidBrush(Color.FromArgb(240, 190, 40)))
+                        {
+                            var pts = new PointF[10];
+                            float cx = size / 2f, cy = size / 2f, ro = size / 2f - 1, ri = ro * 0.45f;
+                            for (int i = 0; i < 10; i++)
+                            {
+                                double a = -Math.PI / 2 + i * Math.PI / 5;
+                                float r = i % 2 == 0 ? ro : ri;
+                                pts[i] = new PointF(cx + (float)(r * Math.Cos(a)), cy + (float)(r * Math.Sin(a)));
+                            }
+                            g.FillPolygon(fill, pts);
+                        }
+                    }
+                    else
+                    {
+                        using (var fill = new SolidBrush(Color.FromArgb(170, 80, 200)))
+                        using (var line = new Pen(Color.FromArgb(110, 40, 140)))
+                        {
+                            var pts = new[]
+                            {
+                                new Point(size / 2, 1), new Point(size - 2, size / 2),
+                                new Point(size / 2, size - 2), new Point(1, size / 2)
+                            };
+                            g.FillPolygon(fill, pts);
+                            g.DrawPolygon(line, pts);
+                        }
+                    }
+                }
+                _treeIcons.Images.Add(bmp);
+            }
+        }
+
         private void LoadTreeNodes()
         {
+            EnsureTreeIcons();
+            _tree.ImageList = _treeIcons;
             _tree.Nodes.Clear();
-            _tree.Nodes.Add(new TreeNode("Tất cả") { Tag = null });
-            _tree.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = "" });
+            _tree.Nodes.Add(new TreeNode("Tất cả") { Tag = null, ImageIndex = IconAll, SelectedImageIndex = IconAll });
+            _tree.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = "", ImageIndex = IconUnset, SelectedImageIndex = IconUnset });
             try
             {
                 foreach (LookupItem m in _formRepo.LoadAll("DPHUONGTHUCDAT"))
-                    _tree.Nodes.Add(new TreeNode(m.Name) { Tag = m.Id });
+                    _tree.Nodes.Add(new TreeNode(m.Name) { Tag = m.Id, ImageIndex = IconMethod, SelectedImageIndex = IconMethod });
             }
             catch (DataAccessException)
             {
@@ -175,6 +257,46 @@ namespace Kazuko_FnB.UI
             _tree.SelectedNode = _tree.Nodes[0];
         }
 
+        private void BuildBottom(float s)
+        {
+            _bottom.Height = (int)(190 * s);
+            var info = new TabPage("Thông tin");
+            AddInfoLabel(info, "Khởi tạo:", _lblCreated, 10, 12, 140, s);
+            AddInfoLabel(info, "Khởi tạo bởi:", _lblCreatedBy, 340, 12, 140, s);
+            AddInfoLabel(info, "Sửa đổi gần nhất:", _lblModified, 10, 42, 140, s);
+            AddInfoLabel(info, "Sửa đổi bởi:", _lblModifiedBy, 340, 42, 140, s);
+            _infoTabs.TabPages.Add(info);
+            _bottom.Controls.Add(_infoTabs);
+            _detail = new DetailTabsHost(_infoTabs, _databasePath, "TDATHANG", this);
+            _detail.Attach();
+        }
+
+        private static void AddInfoLabel(TabPage page, string caption, Label value, int x, int y, int capW, float s)
+        {
+            var cap = new Label { Text = caption, AutoSize = true };
+            cap.Location = new Point((int)(x * s), (int)(y * s));
+            value.Location = new Point((int)((x + capW) * s), (int)(y * s));
+            page.Controls.Add(cap);
+            page.Controls.Add(value);
+        }
+
+        private void UpdateInfo()
+        {
+            string id = CurrentBookingId();
+            if (_detail != null)
+                _detail.SetMaster(id);
+            var row = _grid.CurrentRow == null ? null : _grid.CurrentRow.Tag as BookingListRow;
+            _lblCreated.Text = row == null ? "" : FormatAuditTime(row.CreatedAt);
+            _lblCreatedBy.Text = row == null ? "" : (row.CreatedByName ?? "");
+            _lblModified.Text = row == null ? "" : FormatAuditTime(row.ModifiedAt);
+            _lblModifiedBy.Text = row == null ? "" : (row.ModifiedByName ?? "");
+        }
+
+        private static string FormatAuditTime(DateTime? t)
+        {
+            return t.HasValue ? t.Value.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture) : "";
+        }
+
         private void BuildBar(float s)
         {
             _bar.Height = (int)(52 * s);
@@ -185,13 +307,15 @@ namespace Kazuko_FnB.UI
                 WrapContents = false,
                 Padding = new Padding((int)(8 * s), (int)(8 * s), (int)(8 * s), (int)(8 * s))
             };
-            _btnAdd.Tag = "primary";
+            _btnAdd.Tag = null;
             _btnRemove.Tag = "danger";
-            foreach (FlatButton b in new[] { _btnAdd, _btnEdit, _btnRemove, _btnExcel, _btnPrint, _btnTotal, _btnAnalysis, _refresh })
+            foreach (FlatButton b in new[] { _btnFilter, _btnAdd, _btnEdit, _btnRemove, _btnExcel, _btnPrint, _btnTotal, _btnAnalysis, _refresh })
             {
                 b.Height = (int)(34 * s);
                 b.Margin = new Padding(0, 0, (int)(6 * s), 0);
                 b.Font = new Font("Segoe UI", 10f);
+                // Rộng theo chữ (trước đây nút bị cắt "Thêm ...", "Chỉnh ...").
+                b.Width = TextRenderer.MeasureText(b.Text, b.Font).Width + (int)(28 * s);
                 flow.Controls.Add(b);
             }
             _btnAdd.Click += delegate { AddBooking(); };
@@ -326,6 +450,7 @@ namespace Kazuko_FnB.UI
             _count.Text = _rows.Count + " phiếu";
             _loading = false;
             UpdateButtons();
+            UpdateInfo();
             ApplyTheme(ThemeManager.Current);
         }
 
@@ -374,6 +499,8 @@ namespace Kazuko_FnB.UI
 
         private void EditBooking()
         {
+            if (!_canEdit) // K5: thiếu quyền Sửa thì không mở dialog "SỬA".
+                return;
             string id = CurrentBookingId();
             if (string.IsNullOrEmpty(id))
                 return;
@@ -444,6 +571,8 @@ namespace Kazuko_FnB.UI
             bool inEditor = sender is TextBox || sender is ComboBox || sender is DateTimePicker;
             if (e.KeyCode == Keys.F3)
             {
+                // K4: F3 chạy lọc (như nút "Lọc (F3)"), rồi đưa con trỏ về ô Số phiếu.
+                Reload();
                 _txtNumber.Focus();
                 _txtNumber.SelectAll();
                 e.Handled = true;
@@ -487,6 +616,13 @@ namespace Kazuko_FnB.UI
             _split.BackColor = Draw.StrongBorder(t);
             _split.Panel1.BackColor = t.Background;
             _split.Panel2.BackColor = t.Background;
+            _bottom.BackColor = t.Background;
+            _infoTabs.BackColor = t.Background;
+            _infoTabs.ForeColor = t.Text;
+            foreach (TabPage p in _infoTabs.TabPages)
+                p.BackColor = t.Background;
+            if (_detail != null)
+                _detail.ApplyTheme(t);
             _refresh.SurfaceColor = t.Background;
             _refresh.FillColor = t.Surface;
             _refresh.TextColor = t.Text;
@@ -499,7 +635,10 @@ namespace Kazuko_FnB.UI
         protected override void Dispose(bool disposing)
         {
             if (disposing)
+            {
                 ThemeManager.ThemeChanged -= OnThemeChanged;
+                _treeIcons.Dispose();
+            }
             base.Dispose(disposing);
         }
     }

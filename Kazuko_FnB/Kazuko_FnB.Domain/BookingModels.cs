@@ -104,6 +104,11 @@ namespace Kazuko_FnB.Domain
         public string RoomName { get; set; }
         public string CustomerName { get; set; }
         public string Note { get; set; }
+        // Panel "Thông tin" dưới lưới (khởi tạo / sửa đổi).
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? ModifiedAt { get; set; }
+        public string CreatedByName { get; set; }
+        public string ModifiedByName { get; set; }
     }
 
     /// <summary>Điều kiện lọc màn danh sách (§1.1). MethodId: null = Tất cả, "" = Chưa thiết lập.</summary>

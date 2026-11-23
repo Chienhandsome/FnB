@@ -34,8 +34,11 @@ namespace Kazuko_FnB.Data
                     "SELECT B.\"ID\", B.\"GUID\", B.\"NGAY\", B.\"NAME\", B.\"TENKHACH\", B.\"DIACHI\", B.\"DIENTHOAI\", " +
                     "B.\"EMAIL\", B.\"TONGCONG\", B.\"TIENHANG\", B.\"TIENGIAMGIA\", B.\"TILEGIAMGIA\", B.\"NOTE\", " +
                     "B.\"TUGIO\", B.\"DENGIO\", B.\"GIODAT\", B.\"DKHACHHANGID\", " +
-                    "M.\"NAME\" AS METHODNAME, P.\"NAME\" AS PURPOSENAME, R.\"NAME\" AS ROOMNAME, C.\"NAME\" AS CUSTOMERNAME " +
+                    "M.\"NAME\" AS METHODNAME, P.\"NAME\" AS PURPOSENAME, R.\"NAME\" AS ROOMNAME, C.\"NAME\" AS CUSTOMERNAME, " +
+                    "B.\"TIMECREATED\" AS TCREATED, B.\"TIMEMODIFIED\" AS TMODIFIED, UC.\"NAME\" AS CREATEDBY, UM.\"NAME\" AS MODIFIEDBY " +
                     "FROM \"TDATHANG\" B " +
+                    "LEFT JOIN \"SUSER\" UC ON UC.\"ID\" = B.\"USERCREATEDID\" " +
+                    "LEFT JOIN \"SUSER\" UM ON UM.\"ID\" = B.\"USERMODIFIEDID\" " +
                     "LEFT JOIN \"DPHUONGTHUCDAT\" M ON M.\"ID\" = B.\"DPHUONGTHUCDATID\" " +
                     "LEFT JOIN \"DMUCDICHDAT\" P ON P.\"ID\" = B.\"DMUCDICHDATID\" " +
                     "LEFT JOIN \"DBAN\" R ON R.\"ID\" = B.\"DBANID\" " +
@@ -90,7 +93,11 @@ namespace Kazuko_FnB.Data
                         MethodName = DbHelper.Str(r["METHODNAME"]),
                         PurposeName = DbHelper.Str(r["PURPOSENAME"]),
                         RoomName = DbHelper.Str(r["ROOMNAME"]),
-                        CustomerName = DbHelper.Str(r["CUSTOMERNAME"])
+                        CustomerName = DbHelper.Str(r["CUSTOMERNAME"]),
+                        CreatedAt = r["TCREATED"] is DBNull ? (DateTime?)null : Convert.ToDateTime(r["TCREATED"]),
+                        ModifiedAt = r["TMODIFIED"] is DBNull ? (DateTime?)null : Convert.ToDateTime(r["TMODIFIED"]),
+                        CreatedByName = DbHelper.Str(r["CREATEDBY"]),
+                        ModifiedByName = DbHelper.Str(r["MODIFIEDBY"])
                     });
                 }
                 return list;

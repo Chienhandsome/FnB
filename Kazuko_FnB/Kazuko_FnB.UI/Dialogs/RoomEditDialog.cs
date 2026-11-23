@@ -291,11 +291,11 @@ namespace Kazuko_FnB.UI.Dialogs
             Place(_btnSwitchOn, _grpPrice, 306, 124, 60, 24, 13);
             Place(_btnSwitchOff, _grpPrice, 372, 124, 60, 24, 14);
 
-            _unitPrice.Minimum = -1000000000000m;
+            _unitPrice.Minimum = 0m;
             _unitPrice.Maximum = 1000000000000m;
             _unitPrice.DecimalPlaces = 2;
             _unitPrice.ThousandsSeparator = true;
-            _openAmount.Minimum = -1000000000000m;
+            _openAmount.Minimum = 0m;
             _openAmount.Maximum = 1000000000000m;
             _openAmount.DecimalPlaces = 2;
             _openAmount.ThousandsSeparator = true;
@@ -533,7 +533,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSave.Enabled = dirty && !_readOnly;
             _btnSaveNew.Enabled = dirty && !_readOnly;
             _btnSaveClose.Enabled = dirty && !_readOnly;
-            _btnDelete.Enabled = !_isNew && _canRemove && !_readOnly;
+            _btnDelete.Enabled = !_isNew && _canRemove; // Q13: xóa chỉ cần quyền Xóa, như xóa từ lưới.
         }
 
         private void UpdateNavButtons()
@@ -599,7 +599,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 return false;
             CollectRow();
 
-            string error = RoomRules.ValidateRoom(_row.Name, _row.AreaId);
+            string error = RoomRules.ValidateRoom(_row.Name, _row.AreaId, SystemConfig.CoTienGio, _row.CalcHour,
+                _row.PriceListId, _row.UnitPrice, _row.OpenAmount);
             if (error != null)
             {
                 Msg.Warning(this, error);
@@ -687,7 +688,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void DeleteCurrent()
         {
-            if (_isNew || _readOnly || !_canRemove)
+            if (_isNew || !_canRemove)
                 return;
             if (!Msg.Confirm(this, ProductText.DeleteConfirm))
                 return;

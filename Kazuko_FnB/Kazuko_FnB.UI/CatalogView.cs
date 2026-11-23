@@ -99,6 +99,8 @@ namespace Kazuko_FnB.UI
         private readonly ThemedContextMenu _roomGridMenu = new ThemedContextMenu();
         private readonly ThemedContextMenu _roomTreeMenu = new ThemedContextMenu();
         private TabPage _areaTabPage;
+        // Các tab liên quan dưới lưới bàn (Bảng giá theo bàn, Đặt hàng, Đơn hàng…), dựng theo metadata như app gốc.
+        private DetailTabsHost _roomDetail;
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
@@ -593,7 +595,7 @@ namespace Kazuko_FnB.UI
             float s = DeviceDpi / 96f;
             int pad = (int)(10 * s);
             int h = _bar.ClientSize.Height - 2 * pad;
-            if (!_productMode)
+            if (!_productMode && !_roomMode)
             {
                 int btnW = (int)(100 * s);
                 _search.SetBounds(pad, pad + (h - _search.Height) / 2, (int)(340 * s), _search.Height);
@@ -685,6 +687,8 @@ namespace Kazuko_FnB.UI
                 foreach (TabPage p in _infoTabs.TabPages)
                     p.BackColor = page;
                 _areaGrid.BackgroundColor = t.Surface;
+                if (_roomDetail != null)
+                    _roomDetail.ApplyTheme(t);
                 if (_productMode)
                 {
                     UpdateProductButtons();
@@ -783,6 +787,7 @@ namespace Kazuko_FnB.UI
                 _areaGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "a_" + i, HeaderText = cols[i], Width = 110, ReadOnly = true });
             _areaGrid.Columns[_areaGrid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             page.Controls.Add(_areaGrid);
+            DetailGridMenu.Attach(_areaGrid, this, delegate { Reload(); }); // menu chuột phải của lưới pane (hình 1)
             _areaTabPage = page;
             _infoTabs.TabPages.Add(page);
         }
@@ -791,9 +796,9 @@ namespace Kazuko_FnB.UI
         {
             _productRepo = _productRepo ?? new ProductRepository(_databasePath);
             _groupRepo = _groupRepo ?? new ProductGroupRepository(_databasePath);
-            _canAdd = AppSession.Can("Danh mục mặt hàng", RoleModes.Add);
-            _canEdit = AppSession.Can("Danh mục mặt hàng", RoleModes.Edit);
-            _canRemove = AppSession.Can("Danh mục mặt hàng", RoleModes.Remove);
+            _canAdd = AppSession.Can(ProductText.FunctionName, RoleModes.Add);
+            _canEdit = AppSession.Can(ProductText.FunctionName, RoleModes.Edit);
+            _canRemove = AppSession.Can(ProductText.FunctionName, RoleModes.Remove);
             _canViewBuyPrice = AppSession.Can("Xem giá nhập", RoleModes.View);
             _productRows = _productRepo.LoadProducts();
             _total = _productRows.Count;
@@ -802,6 +807,8 @@ namespace Kazuko_FnB.UI
             BuildProductColumns();
             BuildProductTable();
             // Tab "Khu vực" chỉ thuộc chế độ mặt hàng: thêm lại khi quay về chế độ này (chế độ bàn đã gỡ).
+            if (_roomDetail != null)
+                _roomDetail.Detach();
             if (_areaTabPage != null && !_infoTabs.TabPages.Contains(_areaTabPage))
                 _infoTabs.TabPages.Add(_areaTabPage);
             UpdateProductButtons();
@@ -820,8 +827,6 @@ namespace Kazuko_FnB.UI
             _grid.ColumnHeadersHeight = (int)(48 * s);
 
             AddProductColumn("p_name", "Tên mặt hàng", 141, typeof(string), null);
-            if (SystemConfig.SuDungMaHang)
-                AddProductColumn("p_code", "Mã hàng", 100, typeof(string), null);
             if (SystemConfig.SuDungMaSanCo)
                 AddProductColumn("p_barcode", "Mã sẵn có", 100, typeof(string), null);
             if (SystemConfig.SuDungTenTiengAnh)
@@ -843,6 +848,9 @@ namespace Kazuko_FnB.UI
             AddProductColumn("p_bigsell", "Giá bán chẵn", 80, typeof(decimal), "#,##0.##");
             AddProductColumn("p_locked", "Tạm khóa", 80, typeof(bool), null);
             AddProductColumn("p_timeprice", "Giá theo thời giá", 80, typeof(bool), null);
+            // Q12: cột Mã hàng nằm cuối cùng của lưới khi SuDungMaHang bật.
+            if (SystemConfig.SuDungMaHang)
+                AddProductColumn("p_code", "Mã hàng", 100, typeof(string), null);
             if (_grid.Columns.Count > 0)
                 _grid.Columns[_grid.Columns.Count - 1].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         }
@@ -918,7 +926,7 @@ namespace Kazuko_FnB.UI
                 values[10] = r.SellPrice4;
                 values[11] = r.BuyPrice;
                 values[12] = (object)r.BigUnitName ?? DBNull.Value;
-                values[13] = r.QuyDoi.HasValue ? (object)r.QuyDoi.Value : DBNull.Value;
+                values[13] = r.QuyDoi ?? 0m; // §1.1: hiện 0 khi chưa có ĐVT chẵn.
                 values[14] = r.BigSellPrice.HasValue ? (object)r.BigSellPrice.Value : DBNull.Value;
                 values[15] = r.TempLocked;
                 values[16] = r.PriceByTime;
@@ -975,6 +983,12 @@ namespace Kazuko_FnB.UI
             // Tab "Khu vực" là của chế độ mặt hàng, không có ở chế độ bàn (Q1: lưới bàn chỉ có 5 cột + panel Thông tin).
             if (_areaTabPage != null && _infoTabs.TabPages.Contains(_areaTabPage))
                 _infoTabs.TabPages.Remove(_areaTabPage);
+            // Các tab liên quan của bàn (như app gốc): Bảng giá theo bàn, Đặt hàng, Đơn hàng (5 form)…
+            if (_roomDetail == null)
+                _roomDetail = new DetailTabsHost(_infoTabs, _databasePath, "DBAN", this);
+            _roomDetail.Attach();
+            _roomDetail.ApplyTheme(ThemeManager.Current);
+            _roomDetail.Refresh();
             UpdateRoomButtons();
             UpdateRoomAuditPanel();
         }
@@ -1350,6 +1364,8 @@ namespace Kazuko_FnB.UI
 
         private void UpdateRoomAuditPanel()
         {
+            if (_roomDetail != null)
+                _roomDetail.SetMaster(CurrentRoomId());
             RoomRow row = CurrentRoomRow();
             if (row == null)
             {
@@ -1563,7 +1579,7 @@ namespace Kazuko_FnB.UI
 
         private void EditProduct()
         {
-            if (!_productMode)
+            if (!_productMode || !_canEdit)
                 return;
             string id = CurrentProductId();
             if (string.IsNullOrEmpty(id))

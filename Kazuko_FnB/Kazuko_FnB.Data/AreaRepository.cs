@@ -31,9 +31,15 @@ namespace Kazuko_FnB.Data
         }
 
         private const string SelectList =
-            "ID, NAME, STEMPLATEID, DKHOHANGID, DGIAMATHANGID, DGIATHEOGIOID, TUGIO, DENGIO, " +
-            "TIENMOBAN, DONGIA, DBANGGIAID, CACHTINHGIO, DBIEUTUONGID, SIMAGEID, TABHIENTHI, NOTE, STATUS, " +
-            "USERCREATEDID, TIMECREATED, USERMODIFIEDID, TIMEMODIFIED";
+            "K.ID, K.NAME, K.STEMPLATEID, K.DKHOHANGID, K.DGIAMATHANGID, K.DGIATHEOGIOID, K.TUGIO, K.DENGIO, " +
+            "K.TIENMOBAN, K.DONGIA, K.DBANGGIAID, K.CACHTINHGIO, K.DBIEUTUONGID, K.SIMAGEID, K.TABHIENTHI, K.NOTE, K.STATUS, " +
+            "K.USERCREATEDID, K.TIMECREATED, K.USERMODIFIEDID, K.TIMEMODIFIED, " +
+            "UC.NAME AS CREATEDBY, UM.NAME AS MODIFIEDBY";
+
+        private const string SelectFrom =
+            "FROM DKHUVUC K " +
+            "LEFT JOIN SUSER UC ON UC.ID = K.USERCREATEDID " +
+            "LEFT JOIN SUSER UM ON UM.ID = K.USERMODIFIEDID ";
 
         /// <summary>Mọi khu vực đang dùng (STATUS = 30), xếp theo tên — dữ liệu cho cây khu vực.</summary>
         public List<AreaRow> LoadAll()
@@ -41,7 +47,7 @@ namespace Kazuko_FnB.Data
             return DbHelper.Read(_databasePath, conn =>
             {
                 DataTable dt = DbHelper.Table(conn, null,
-                    "SELECT " + SelectList + " FROM DKHUVUC WHERE STATUS = @S ORDER BY NAME", "@S", ActiveStatus);
+                    "SELECT " + SelectList + " " + SelectFrom + "WHERE K.STATUS = @S ORDER BY K.NAME", "@S", ActiveStatus);
                 var list = new List<AreaRow>(dt.Rows.Count);
                 foreach (DataRow r in dt.Rows)
                     list.Add(RowFrom(r));
@@ -57,7 +63,7 @@ namespace Kazuko_FnB.Data
             return DbHelper.Read(_databasePath, conn =>
             {
                 DataTable dt = DbHelper.Table(conn, null,
-                    "SELECT " + SelectList + " FROM DKHUVUC WHERE ID = @I", "@I", id);
+                    "SELECT " + SelectList + " " + SelectFrom + "WHERE K.ID = @I", "@I", id);
                 return dt.Rows.Count == 0 ? null : RowFrom(dt.Rows[0]);
             });
         }
@@ -393,14 +399,15 @@ namespace Kazuko_FnB.Data
                 DbHelper.Exec(conn, tx, "DELETE FROM DBANGGIATHEOKHUVUC WHERE DKHUVUCID = @A", "@A", areaId);
                 DbHelper.Exec(conn, tx, "DELETE FROM DTKTHEOKHUVUC WHERE DKHUVUCID = @A", "@A", areaId);
                 DbHelper.Exec(conn, tx, "DELETE FROM DMATHANGMACDINH WHERE DKHUVUCID = @A", "@A", areaId);
-                DbHelper.Exec(conn, tx, "DELETE FROM DKHUVUC WHERE ID = @I", "@I", areaId);
+                if (DbHelper.Exec(conn, tx, "DELETE FROM DKHUVUC WHERE ID = @I", "@I", areaId) == 0)
+                    error = RoomText.AreaGone;
             });
             return error;
         }
 
         private static bool IsNameTakenIn(FbConnection conn, FbTransaction tx, string name, string excludeId)
         {
-            DataTable dt = DbHelper.Table(conn, tx, "SELECT ID, NAME FROM DKHUVUC");
+            DataTable dt = DbHelper.Table(conn, tx, "SELECT ID, NAME FROM DKHUVUC WHERE STATUS = 30");
             foreach (DataRow r in dt.Rows)
             {
                 if (string.Equals(DbHelper.Str(r["ID"]), excludeId ?? "", StringComparison.Ordinal))
@@ -471,7 +478,9 @@ namespace Kazuko_FnB.Data
                 CreatedById = DbHelper.Str(r["USERCREATEDID"]),
                 CreatedAt = DateN(r["TIMECREATED"]),
                 ModifiedById = DbHelper.Str(r["USERMODIFIEDID"]),
-                ModifiedAt = DateN(r["TIMEMODIFIED"])
+                ModifiedAt = DateN(r["TIMEMODIFIED"]),
+                CreatedByName = DbHelper.Str(r["CREATEDBY"]),
+                ModifiedByName = DbHelper.Str(r["MODIFIEDBY"])
             };
         }
 

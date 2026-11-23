@@ -62,6 +62,14 @@ namespace Kazuko_FnB.UI.Diagnostics
         }
 
         /// <summary>Danh sách bảng/cột người dùng (để so sánh trước/sau).</summary>
+        private static bool HasBlock(List<ReferenceBlock> blocks, string tableName)
+        {
+            foreach (ReferenceBlock b in blocks)
+                if (b.TableName == tableName && b.Count > 0)
+                    return true;
+            return false;
+        }
+
         private static string Schema(string db)
         {
             using (FbConnection conn = KazukoConnection.Open(db))
@@ -172,6 +180,67 @@ namespace Kazuko_FnB.UI.Diagnostics
             BookingTests(db);
             ProductTests(db);
             RoomTests(db);
+            DetailTabTests(db);
+        }
+
+        // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
+
+        private static string TabTitles(List<DetailTab> tabs)
+        {
+            var parts = new List<string>();
+            foreach (DetailTab t in tabs)
+                parts.Add(t.Title);
+            return string.Join(" | ", parts.ToArray());
+        }
+
+        private static void DetailTabTests(string db)
+        {
+            var repo = new DetailRepository(db);
+            List<DetailTab> room = repo.LoadTabs("DBAN");
+            Check("Tab bàn: đủ Bảng giá theo bàn, Đặt hàng, Hóa đơn nhà hàng, Phiếu nhập/xuất/chuyển kho, Phiếu kiểm kê, Sửa chữa",
+                room.Exists(t => t.Title == "Bảng giá theo bàn") && room.Exists(t => t.Title == "Đặt hàng")
+                && room.Exists(t => t.Title == "Hóa đơn nhà hàng") && room.Exists(t => t.Title == "Phiếu nhập kho")
+                && room.Exists(t => t.Title == "Phiếu xuất kho") && room.Exists(t => t.Title == "Phiếu chuyển kho")
+                && room.Exists(t => t.Title == "Phiếu kiểm kê") && room.Exists(t => t.Title == "Sửa chữa"), TabTitles(room));
+            Check("Tab bàn: nhóm Đơn hàng lặp 2 lần (TDONHANG và TDONHANGGIO, như app gốc)",
+                room.FindAll(t => t.Title == "Hóa đơn nhà hàng").Count == 2, TabTitles(room));
+            Check("Tab bàn: Bảng giá theo bàn đứng trước Đặt hàng",
+                room.FindIndex(t => t.Title == "Bảng giá theo bàn") < room.FindIndex(t => t.Title == "Đặt hàng"));
+
+            List<DetailTab> booking = repo.LoadTabs("TDATHANG");
+            string bookingTitles = TabTitles(booking);
+            Check("Tab đặt hàng: đúng 4 tab (REFCONFIG ẩn phiếu kho/lưu tạm/phiếu chi)",
+                bookingTitles == "Đặt hàng chi tiết | Hóa đơn nhà hàng | Phiếu thu | Phiếu thu công nợ", bookingTitles);
+
+            bool allOk = true;
+            string failed = "";
+            foreach (DetailTab t in room)
+            {
+                try
+                {
+                    repo.LoadRows(t, "khong-co-dong-nay");
+                }
+                catch (Exception ex)
+                {
+                    allOk = false;
+                    failed += t.Title + ": " + ex.Message + "; ";
+                }
+            }
+            foreach (DetailTab t in booking)
+            {
+                try
+                {
+                    repo.LoadRows(t, "khong-co-dong-nay");
+                }
+                catch (Exception ex)
+                {
+                    allOk = false;
+                    failed += t.Title + ": " + ex.Message + "; ";
+                }
+            }
+            Check("Mọi truy vấn tab chạy được (SQL đúng tên cột)", allOk, failed);
+            Check("Tên cột khóa lạ bị từ chối (không ghép vào SQL)",
+                repo.LoadRows(new DetailTab { TableName = "TDATHANG", KeyColumn = "ID; DROP TABLE X", Loai = -1 }, "x").Columns.Count == 0);
         }
 
         // ------------------------------------------------------------------ H6 Danh mục mặt hàng
@@ -826,7 +895,15 @@ namespace Kazuko_FnB.UI.Diagnostics
                 RoomRules.FindBatchDuplicate(new List<string> { "D01", "D02" }) == null);
             Check("3.11 DigitsOf", RoomRules.DigitsOf(0) == 1 && RoomRules.DigitsOf(9) == 1
                 && RoomRules.DigitsOf(10) == 2 && RoomRules.DigitsOf(100) == 3);
-            Check("Q8 cách tính giờ: 0 theo khu vực, 1 theo giờ, 2 theo bảng giá",
+            Check("R8 TUSO âm → lỗi; quá 500 bàn → lỗi; đúng 500 → hợp lệ",
+                RoomRules.ValidateRange(-1, 3) == RoomText.InvalidRange
+                && RoomRules.ValidateRange(1, 501) == RoomText.QuickAddTooMany && RoomRules.ValidateRange(1, 500) == null);
+            Check("R3/R4 theo bảng giá mà thiếu bảng giá → chặn; tiền âm → chặn; không CoTienGio → bỏ qua",
+                RoomRules.ValidateRoom("B01", "a", true, RoomCalc.ByPriceList, null, 0m, 0m) == RoomText.PriceListRequired
+                && RoomRules.ValidateRoom("B01", "a", true, RoomCalc.ByArea, null, -1m, 0m) == RoomText.MoneyNegative
+                && RoomRules.ValidateArea("Lầu 1", true, RoomCalc.ByPriceList, "p", 0m, 0m) == null
+                && RoomRules.ValidateRoom("B01", "a", false, RoomCalc.ByPriceList, null, -5m, -5m) == null);
+            Check("ánh xạ tạm Q8 (CHƯA XÁC MINH số 2): 0 theo khu vực, 1 theo giờ, 2 theo bảng giá",
                 RoomRules.CalcModeText(RoomCalc.ByArea) == "Theo khu vực" && RoomRules.CalcModeText(RoomCalc.ByHour) == "Theo giờ"
                 && RoomRules.CalcModeText(RoomCalc.ByPriceList) == "Theo bảng giá");
             Check("Q8 số lạ → nhãn chỉ-xem, không đoán", RoomRules.CalcModeText(99) == "Không rõ (99)");
@@ -965,6 +1042,42 @@ namespace Kazuko_FnB.UI.Diagnostics
                 orderId = null;
                 string tdIdAfter = DbHelper.Read(db, conn => DbHelper.Str(DbHelper.Scalar(conn, null, "SELECT TDONHANGID FROM DBAN WHERE ID = @I", "@I", roomId)));
                 Check("Xóa đơn → trigger dọn TDONHANGID về NULL", tdIdAfter == null, tdIdAfter ?? "null");
+
+                // B3: đơn đặt (TDATHANG) chưa có hóa đơn trỏ tới bàn → chặn xóa; đã chuyển hóa đơn → không chặn.
+                string bookId = DbHelper.NewId();
+                string bookOrderId = DbHelper.NewId();
+                try
+                {
+                    DbHelper.Read(db, conn =>
+                    {
+                        DbHelper.Exec(conn, null,
+                            "INSERT INTO TDATHANG (ID, NAME, STATUS, USERCREATEDID, DBANID) VALUES (@I, @N, 30, 'selftest', @B)",
+                            "@I", bookId, "@N", "ĐH THỬ BKV", "@B", roomId);
+                        return 0;
+                    });
+                    Check("B3 đơn đặt chưa có hóa đơn → xóa bàn bị chặn",
+                        HasBlock(roomRepo.CheckRoomReferences(roomId), "TDATHANG"));
+                    RoomDeleteResult blockedBook = roomRepo.DeleteRoom(roomId);
+                    Check("B3 DeleteRoom thật sự từ chối khi còn đơn đặt", !blockedBook.Ok, blockedBook.ErrorMessage);
+                    DbHelper.Read(db, conn =>
+                    {
+                        DbHelper.Exec(conn, null,
+                            "INSERT INTO TDONHANG (ID, NAME, STATUS, USERCREATEDID, LOAI, DATHANHTOAN, DBANID, TDATHANGID) VALUES (@I, @N, 30, 'selftest', 0, 1, @B, @D)",
+                            "@I", bookOrderId, "@N", "HĐ THỬ ĐẶT BKV", "@B", roomId, "@D", bookId);
+                        return 0;
+                    });
+                    Check("B3 đơn đặt đã chuyển hóa đơn → không chặn nữa",
+                        !HasBlock(roomRepo.CheckRoomReferences(roomId), "TDATHANG"));
+                }
+                finally
+                {
+                    DbHelper.Read(db, conn =>
+                    {
+                        DbHelper.Exec(conn, null, "DELETE FROM TDONHANG WHERE ID = @I", "@I", bookOrderId);
+                        DbHelper.Exec(conn, null, "DELETE FROM TDATHANG WHERE ID = @I", "@I", bookId);
+                        return 0;
+                    });
+                }
 
                 // Xóa bàn xóa kèm bảng giá áp dụng, không để dòng mồ côi.
                 DbHelper.Read(db, conn =>

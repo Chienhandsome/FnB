@@ -25,6 +25,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.phieuthu", session => new PhieuThuDialog(session) },
                 { "sys.password", session => new ChangePasswordDialog(session) },
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
+                { "preview.booking", session => new BookingPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };

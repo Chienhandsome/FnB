@@ -138,6 +138,25 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSaveClose.Enabled = ok;
         }
 
+        // M9: phím tắt như dialog mặt hàng (Ctrl+L = Lưu, Ctrl+S = Lưu & Mới). Thanh Trước/Sau/Tạo mới chưa dựng
+        // (lệch kích thước nội dung 395×137 của spec 1.3 — chờ Chiến chốt).
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.L))
+            {
+                if (_btnSave.Enabled)
+                    SaveStay();
+                return true;
+            }
+            if (keyData == (Keys.Control | Keys.S))
+            {
+                if (_btnSaveNew.Enabled)
+                    SaveAndNew();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         private void SaveStay()
         {
             DoSave();
