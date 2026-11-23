@@ -249,6 +249,27 @@ namespace Kazuko_FnB.UI.Diagnostics
                 box.Text = "";
                 Check("Ô tìm (InputBox): xóa chữ → Text rỗng, không đệ quy khi đọc Text", box.Text.Length == 0 && box.Inner.TextLength == 0);
             }
+            using (var view = new BookingListView(db))
+            {
+                var menuField = typeof(BookingListView).GetField("_gridMenu", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                var menu = menuField == null ? null : menuField.GetValue(view) as System.Windows.Forms.ContextMenuStrip;
+                var names = new List<string>();
+                if (menu != null)
+                    foreach (System.Windows.Forms.ToolStripItem i in menu.Items)
+                        names.Add(i.Text);
+                Check("Lưới Khách đặt hàng có menu chuột phải (Thêm mới/Chỉnh sửa/Xóa/Sắp xếp/Refresh/Sao chép/Cột hiển thị)",
+                    names.Contains("Thêm mới") && names.Contains("Chỉnh sửa") && names.Contains("Xóa") && names.Contains("Sắp xếp theo")
+                    && names.Contains("Refresh") && names.Contains("Sao chép") && names.Contains("Cột hiển thị"), string.Join(" | ", names.ToArray()));
+            }
+            using (var db2 = new Kazuko_FnB.UI.Controls.DateBox())
+            {
+                db2.Value = new DateTime(2026, 11, 23);
+                db2.Inner.Text = "5/1/2026";
+                DateTime parsed = db2.Value;
+                Check("DateBox: gõ 5/1/2026 → 05/01/2026", parsed == new DateTime(2026, 1, 5) && db2.Inner.Text == "05/01/2026", db2.Inner.Text);
+                db2.Inner.Text = "abc";
+                Check("DateBox: ngày sai → giữ ngày cũ", db2.Value == new DateTime(2026, 1, 5) && db2.Inner.Text == "05/01/2026", db2.Inner.Text);
+            }
             Check("Tên cột khóa lạ bị từ chối (không ghép vào SQL)",
                 repo.LoadRows(new DetailTab { TableName = "TDATHANG", KeyColumn = "ID; DROP TABLE X", Loai = -1 }, "x").Columns.Count == 0);
         }

@@ -22,7 +22,8 @@ namespace Kazuko_FnB.UI
         {
             ApplyOne(root, t);
             // InputBox tự quản TextBox bên trong (không viền); không tô đè lên nó.
-            if (root is InputBox)
+            // FieldFrame/DateBox cũng tự quản control con (khung bo góc + ô nhập không viền).
+            if (root is InputBox || root is FieldFrame)
                 return;
             foreach (Control c in root.Controls)
                 Apply(c, t);

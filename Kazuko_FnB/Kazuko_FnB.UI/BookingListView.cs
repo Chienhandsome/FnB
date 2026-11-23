@@ -24,10 +24,11 @@ namespace Kazuko_FnB.UI
         private readonly FormRepository _formRepo;
 
         private readonly SplitContainer _split = new SplitContainer { Dock = DockStyle.Fill };
-        private readonly TextBox _txtNumber = new TextBox();
+        private readonly InputBox _txtNumber = new InputBox(); // ô bo góc như ô tìm của các màn danh mục
+        private readonly List<FieldFrame> _frames = new List<FieldFrame>(); // khung bo góc bọc ô ngày/khách hàng
         // dd/MM/yyyy cố định như app gốc (không theo định dạng ngày của máy, vd. M/d/yyyy).
-        private readonly DateTimePicker _dtFrom = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "dd/MM/yyyy" };
-        private readonly DateTimePicker _dtTo = new DateTimePicker { Format = DateTimePickerFormat.Custom, CustomFormat = "dd/MM/yyyy" };
+        private readonly DateBox _dtFrom = new DateBox();
+        private readonly DateBox _dtTo = new DateBox();
         private readonly LookupCombo _customer = new LookupCombo();
         private readonly FlatButton _btnFilter = new FlatButton { Text = "Lọc (F3)" };
         private readonly TreeView _tree = new TreeView { Dock = DockStyle.Fill };
@@ -102,6 +103,8 @@ namespace Kazuko_FnB.UI
                     EditBooking();
             };
             _grid.SelectionChanged += delegate { if (!_loading) { UpdateButtons(); UpdateInfo(); } };
+            BuildGridMenu();
+            _grid.MouseDown += GridMouseDown;
             _grid.KeyDown += OnKeyDown;
             _tree.KeyDown += OnKeyDown;
             KeyDown += OnKeyDown;
@@ -144,11 +147,11 @@ namespace Kazuko_FnB.UI
             for (int i = 0; i < 4; i++)
                 panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 36 * s));
             Font fieldFont = new Font("Segoe UI", 10f);
-            _txtNumber.KeyDown += OnKeyDown;
+            _txtNumber.Inner.KeyDown += OnKeyDown;
             _dtFrom.Value = DateTime.Today.AddDays(-30);
-            _dtFrom.KeyDown += OnKeyDown;
+            _dtFrom.Inner.KeyDown += OnKeyDown;
             _dtTo.Value = DateTime.Today;
-            _dtTo.KeyDown += OnKeyDown;
+            _dtTo.Inner.KeyDown += OnKeyDown;
             _customer.KeyDown += OnKeyDown;
             AddFilterRow(panel, 0, "Số phiếu", _txtNumber, fieldFont, s);
             AddFilterRow(panel, 1, "Từ ngày", _dtFrom, fieldFont, s);
@@ -173,7 +176,7 @@ namespace Kazuko_FnB.UI
             LoadTreeNodes();
         }
 
-        private static void AddFilterRow(TableLayoutPanel panel, int row, string caption, Control field, Font font, float s)
+        private void AddFilterRow(TableLayoutPanel panel, int row, string caption, Control field, Font font, float s)
         {
             var lbl = new Label
             {
@@ -183,11 +186,32 @@ namespace Kazuko_FnB.UI
                 TextAlign = ContentAlignment.MiddleLeft,
                 Font = font
             };
-            field.Font = font;
-            field.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-            field.Margin = new Padding(0, (int)(3 * s), 0, (int)(3 * s));
+            var input = field as InputBox;
+            var date = field as DateBox;
+            if (input != null)
+                input.Inner.Font = font;
+            else if (date != null)
+                date.Inner.Font = font;
+            else
+                field.Font = font;
+            // Cả bốn ô lọc cùng kiểu bo góc: InputBox, DateBox (tự có khung), combo được bọc khung FieldFrame.
+            Control host = field;
+            if (date != null)
+            {
+                _frames.Add(date);
+            }
+            else if (field is ComboBox)
+            {
+                ((ComboBox)field).FlatStyle = FlatStyle.Flat;
+                var frame = new FieldFrame(field, 0);
+                _frames.Add(frame);
+                host = frame;
+            }
+            host.Height = (int)(32 * s);
+            host.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            host.Margin = new Padding(0, (int)(2 * s), 0, (int)(2 * s));
             panel.Controls.Add(lbl, 0, row);
-            panel.Controls.Add(field, 1, row);
+            panel.Controls.Add(host, 1, row);
         }
 
         // Icon cây như app gốc: Tất cả (quả cầu xanh), Chưa thiết lập (sao vàng), phương thức (thoi tím).
@@ -279,6 +303,87 @@ namespace Kazuko_FnB.UI
                 // Ô khách hàng để trống; lưới vẫn nạp được.
             }
             _tree.SelectedNode = _tree.Nodes[0];
+        }
+
+        // ------------------------------------------------------------------ Menu chuột phải của lưới
+
+        private ThemedContextMenu _gridMenu;
+
+        /// <summary>
+        /// Menu chuột phải lưới phiếu đặt, theo menu chuẩn của lưới app gốc (No1DataGrid) như các màn danh mục khác:
+        /// Thêm mới / Chỉnh sửa / Xóa, Sắp xếp theo, Refresh, In danh sách, Sao chép, Cột hiển thị, Tự động dãn cột, Thuộc tính.
+        /// (Bỏ Thùng rác/Khôi phục theo quyết định bỏ thùng rác; spec Q11 mặc định bỏ cả Sao chép — để lại cho thống nhất
+        /// với các màn khác, chờ Chiến chốt.)
+        /// </summary>
+        private void BuildGridMenu()
+        {
+            _gridMenu = new ThemedContextMenu();
+            ToolStripMenuItem add = _gridMenu.AddItem("Thêm mới", Keys.Insert, delegate { AddBooking(); });
+            ToolStripMenuItem edit = _gridMenu.AddItem("Chỉnh sửa", Keys.F4, delegate { EditBooking(); });
+            ToolStripMenuItem del = _gridMenu.AddItem("Xóa", Keys.Delete, delegate { DeleteBooking(); });
+            _gridMenu.AddSeparator();
+            ToolStripMenuItem sort = _gridMenu.AddItem("Sắp xếp theo", null);
+            AddSortItem(sort, "Ngày (mới nhất trước)", "colDate", false);
+            AddSortItem(sort, "Ngày (cũ nhất trước)", "colDate", true);
+            AddSortItem(sort, "Số phiếu (A → Z)", "colNumber", true);
+            AddSortItem(sort, "Số phiếu (Z → A)", "colNumber", false);
+            AddSortItem(sort, "Tên khách (A → Z)", "colCustomer", true);
+            AddSortItem(sort, "Tổng cộng (cao → thấp)", "colTotal", false);
+            AddSortItem(sort, "Tổng cộng (thấp → cao)", "colTotal", true);
+            _gridMenu.AddItem("Refresh", delegate { Reload(); });
+            _gridMenu.AddItem("In danh sách", delegate { Msg.Info(this, BookingText.Unsupported); });
+            _gridMenu.AddSeparator();
+            ToolStripMenuItem copy = _gridMenu.AddItem("Sao chép", null);
+            var copyCell = new ToolStripMenuItem("Sao chép ô") { Font = _gridMenu.Font };
+            copyCell.Click += delegate { DetailGridMenu.CopyCell(_grid); };
+            var copySel = new ToolStripMenuItem("Sao chép vùng chọn") { Font = _gridMenu.Font };
+            copySel.Click += delegate { DetailGridMenu.CopySelection(_grid); };
+            copy.DropDownItems.Add(copyCell);
+            copy.DropDownItems.Add(copySel);
+            ToolStripMenuItem columns = _gridMenu.AddItem("Cột hiển thị", null);
+            _gridMenu.AddItem("Tự động dãn cột", delegate { DetailGridMenu.AutoFit(_grid); });
+            _gridMenu.AddItem("Thuộc tính", delegate { Msg.Info(this, BookingText.Unsupported); });
+
+            _gridMenu.Opening += delegate
+            {
+                bool hasRow = CurrentBookingId() != null;
+                add.Enabled = _canAdd;
+                edit.Enabled = _canEdit && hasRow;
+                del.Enabled = _canRemove && hasRow;
+                copy.Enabled = _grid.CurrentCell != null;
+                DetailGridMenu.FillColumnsMenu(columns, _grid, _gridMenu.Font);
+            };
+        }
+
+        private void AddSortItem(ToolStripMenuItem parent, string text, string column, bool asc)
+        {
+            var item = new ToolStripMenuItem(text) { Font = _gridMenu.Font };
+            item.Click += delegate
+            {
+                DataGridViewColumn col = _grid.Columns[column];
+                if (col != null)
+                    _grid.Sort(col, asc ? System.ComponentModel.ListSortDirection.Ascending : System.ComponentModel.ListSortDirection.Descending);
+            };
+            parent.DropDownItems.Add(item);
+        }
+
+        private void GridMouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                return;
+            DataGridView.HitTestInfo hit = _grid.HitTest(e.X, e.Y);
+            if (hit.RowIndex >= 0)
+            {
+                _grid.ClearSelection();
+                int col = hit.ColumnIndex >= 0 ? hit.ColumnIndex : 0;
+                _grid.CurrentCell = _grid.Rows[hit.RowIndex].Cells[col];
+                _grid.Rows[hit.RowIndex].Selected = true;
+            }
+            else
+            {
+                _grid.ClearSelection();
+            }
+            _gridMenu.Show(_grid, e.Location);
         }
 
         private void BuildBottom(float s)
@@ -599,8 +704,8 @@ namespace Kazuko_FnB.UI
             {
                 // K4: F3 chạy lọc (như nút "Lọc (F3)"), rồi đưa con trỏ về ô Số phiếu.
                 Reload();
-                _txtNumber.Focus();
-                _txtNumber.SelectAll();
+                _txtNumber.Inner.Focus();
+                _txtNumber.Inner.SelectAll();
                 e.Handled = true;
                 return;
             }
@@ -645,6 +750,8 @@ namespace Kazuko_FnB.UI
             _bottom.BackColor = t.Background;
             _tree.BackColor = t.Surface;
             _tree.ForeColor = t.Text;
+            foreach (FieldFrame f in _frames)
+                f.ApplyTheme(t, t.Background);
             _infoTabs.BackColor = t.Background;
             _infoTabs.ForeColor = t.Text;
             foreach (TabPage p in _infoTabs.TabPages)
@@ -666,6 +773,8 @@ namespace Kazuko_FnB.UI
             {
                 ThemeManager.ThemeChanged -= OnThemeChanged;
                 _treeIcons.Dispose();
+                if (_gridMenu != null)
+                    _gridMenu.Dispose();
             }
             base.Dispose(disposing);
         }

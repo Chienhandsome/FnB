@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
@@ -37,22 +38,7 @@ namespace Kazuko_FnB.UI.Controls
                 bool hasCell = grid.CurrentCell != null;
                 foreach (ToolStripItem i in copy.DropDownItems)
                     i.Enabled = hasCell;
-                columns.DropDownItems.Clear();
-                foreach (DataGridViewColumn col in grid.Columns)
-                {
-                    if (string.IsNullOrEmpty(col.HeaderText))
-                        continue;
-                    DataGridViewColumn target = col;
-                    var item = new ToolStripMenuItem(col.HeaderText)
-                    {
-                        Font = menu.Font,
-                        CheckOnClick = true,
-                        Checked = col.Visible
-                    };
-                    item.Click += delegate { target.Visible = !target.Visible; };
-                    columns.DropDownItems.Add(item);
-                }
-                columns.Enabled = columns.DropDownItems.Count > 0;
+                FillColumnsMenu(columns, grid, menu.Font);
             };
 
             grid.MouseDown += delegate(object sender, MouseEventArgs e)
@@ -78,7 +64,23 @@ namespace Kazuko_FnB.UI.Controls
             return item;
         }
 
-        private static void CopyCell(DataGridView grid)
+        /// <summary>Đổ danh sách cột (đánh dấu = đang hiện) vào menu con "Cột hiển thị".</summary>
+        internal static void FillColumnsMenu(ToolStripMenuItem columns, DataGridView grid, Font font)
+        {
+            columns.DropDownItems.Clear();
+            foreach (DataGridViewColumn col in grid.Columns)
+            {
+                if (string.IsNullOrEmpty(col.HeaderText))
+                    continue;
+                DataGridViewColumn target = col;
+                var item = new ToolStripMenuItem(col.HeaderText) { Font = font, CheckOnClick = true, Checked = col.Visible };
+                item.Click += delegate { target.Visible = !target.Visible; };
+                columns.DropDownItems.Add(item);
+            }
+            columns.Enabled = columns.DropDownItems.Count > 0;
+        }
+
+        internal static void CopyCell(DataGridView grid)
         {
             if (grid.CurrentCell == null)
                 return;
@@ -86,7 +88,7 @@ namespace Kazuko_FnB.UI.Controls
             Clipboard.SetText(v == null ? "" : Convert.ToString(v, CultureInfo.InvariantCulture));
         }
 
-        private static void CopySelection(DataGridView grid)
+        internal static void CopySelection(DataGridView grid)
         {
             if (grid.SelectedCells.Count == 0)
                 return;
@@ -111,7 +113,7 @@ namespace Kazuko_FnB.UI.Controls
             Clipboard.SetText(sb.ToString());
         }
 
-        private static void AutoFit(DataGridView grid)
+        internal static void AutoFit(DataGridView grid)
         {
             foreach (DataGridViewColumn col in grid.Columns)
             {
