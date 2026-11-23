@@ -152,6 +152,9 @@
     <Compile Include="BookingListView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="BookingCalendarView.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BaseForm.cs">
       <SubType>Form</SubType>
     </Compile>

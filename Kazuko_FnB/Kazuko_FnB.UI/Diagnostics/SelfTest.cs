@@ -181,6 +181,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             ProductTests(db);
             RoomTests(db);
             DetailTabTests(db);
+            CalendarTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
@@ -736,6 +737,296 @@ namespace Kazuko_FnB.UI.Diagnostics
                 try { BookingExec(db, "DELETE FROM \"DBAN\" WHERE \"ID\" = @id", "@id", room2Id); } catch { }
                 try { BookingExec(db, "DELETE FROM \"DBAN\" WHERE \"ID\" = @id", "@id", room3Id); } catch { }
                 try { BookingExec(db, "DELETE FROM \"DKHUVUC\" WHERE \"ID\" = @id", "@id", areaId); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DKHACHHANG\" WHERE \"ID\" = @id", "@id", customerId); } catch { }
+            }
+        }
+
+        // ------------------------------------------------------------------ Theo dõi đặt phòng (lưới lịch)
+
+        private static BookingRow NewCalendarBooking(string number, string customerId, string methodId, string purposeId,
+            DateTime tuGio, DateTime denGio)
+        {
+            BookingRules.BookingTotals t = BookingRules.CalcTotals(new List<BookingLine>(), 0m, 0m, false, 0m, 0m, 1000m);
+            DateTime tuNgay, denNgay;
+            BookingRules.DeriveDates(tuGio, denGio, out tuNgay, out denNgay);
+            return new BookingRow
+            {
+                Name = number,
+                Ngay = DateTime.Today,
+                GioDat = DateTime.Now,
+                TuGio = tuGio,
+                DenGio = denGio,
+                TuNgay = tuNgay,
+                DenNgay = denNgay,
+                CustomerId = customerId,
+                TenKhach = "Nguyễn Văn A",
+                DienThoai = "0901234567",
+                DiaChi = "12 Xuân Thủy",
+                MethodId = methodId,
+                PurposeId = purposeId,
+                Note = "Ghi chú thử",
+                ColorArgb = -23296,
+                TienHang = t.TienHang,
+                TileGiamGia = t.TileGiamGia,
+                TienGiamGia = t.TienGiamGia,
+                TileThue = 0m,
+                TienThue = t.TienThue,
+                PhiVanChuyen = 0m,
+                TongCong = t.TongCong
+            };
+        }
+
+        private static string CalendarRowValues(string db, string bookingId)
+        {
+            return DbHelper.Read(db, conn =>
+            {
+                using (FbCommand cmd = new FbCommand(
+                    "SELECT \"DBANID\", \"TUNGAY\", \"DENNGAY\", \"TUGIO\", \"DENGIO\", \"GUID\" FROM \"TDATHANG\" WHERE \"ID\" = @id", conn))
+                {
+                    cmd.Parameters.Add("@id", FbDbType.VarChar).Value = bookingId;
+                    using (FbDataReader r = cmd.ExecuteReader())
+                    {
+                        if (!r.Read())
+                            return "MISSING";
+                        return r.GetString(0) + "|" + r.GetDateTime(1).ToString("yyyy-MM-dd") + "|" +
+                               r.GetDateTime(2).ToString("yyyy-MM-dd") + "|" +
+                               r.GetDateTime(3).ToString("yyyy-MM-dd HH:mm") + "|" +
+                               r.GetDateTime(4).ToString("yyyy-MM-dd HH:mm") + "|" + r.GetString(5);
+                    }
+                }
+            });
+        }
+
+        private static void CalendarTests(string db)
+        {
+            // --- Luật thuần (không cần DB) ---
+            Check("Lịch nhãn thứ: Thứ 2 = T2", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 23)) == "23.T2");
+            Check("Lịch nhãn thứ: Thứ 3 = T3", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 24)) == "24.T3");
+            Check("Lịch nhãn thứ: Thứ 4 hiện T5 (giữ bug app gốc)", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 25)) == "25.T5");
+            Check("Lịch nhãn thứ: Thứ 5 hiện T4 (giữ bug app gốc)", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 26)) == "26.T4");
+            Check("Lịch nhãn thứ: Thứ 6 = T6", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 27)) == "27.T6");
+            Check("Lịch nhãn thứ: Thứ 7 = T7", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 28)) == "28.T7");
+            Check("Lịch nhãn thứ: Chủ nhật = CN", BookingCalendarRules.WeekdayLabel(new DateTime(2026, 11, 29)) == "29.CN");
+            Check("Lịch rộng cột ngày: (1536,7)=181", BookingCalendarRules.DayColumnWidth(1536, 7) == 181);
+            Check("Lịch rộng cột ngày: tối thiểu 40",
+                BookingCalendarRules.DayColumnWidth(300, 7) == 40 && BookingCalendarRules.DayColumnWidth(1000, 90) == 40);
+            DateTime from = DateTime.Today.AddDays(1);
+            int days = 7;
+            int first, last;
+            Check("Lịch cắt thanh: trong cửa sổ [1,3]",
+                BookingCalendarRules.TryClipBar(from.AddDays(1), from.AddDays(3), from, days, out first, out last) && first == 1 && last == 3);
+            Check("Lịch cắt thanh: bao trùm cửa sổ → cắt còn [0,6]",
+                BookingCalendarRules.TryClipBar(from.AddDays(-2), from.AddDays(10), from, days, out first, out last) && first == 0 && last == 6);
+            Check("Lịch cắt thanh: ngoài hẳn (trước) → không vẽ",
+                !BookingCalendarRules.TryClipBar(from.AddDays(-3), from.AddDays(-1), from, days, out first, out last));
+            Check("Lịch cắt thanh: ngoài hẳn (sau) → không vẽ",
+                !BookingCalendarRules.TryClipBar(from.AddDays(7), from.AddDays(9), from, days, out first, out last));
+            Check("Lịch cắt thanh: phiếu 1 ngày [2,2]",
+                BookingCalendarRules.TryClipBar(from.AddDays(2), from.AddDays(2), from, days, out first, out last) && first == 2 && last == 2);
+            Check("Lịch cột Tổng: (1,3)=2; phiếu 1 ngày=0 (giữ bug thiếu +1)",
+                BookingCalendarRules.ClippedBarDays(1, 3) == 2 && BookingCalendarRules.ClippedBarDays(2, 2) == 0);
+            Check("Lịch vượt ngoài cửa sổ: bắt đầu trước",
+                BookingCalendarRules.IsOutOfWindow(from.AddDays(-1), from.AddDays(1), from, days));
+            Check("Lịch vượt ngoài cửa sổ: kết thúc sau",
+                BookingCalendarRules.IsOutOfWindow(from.AddDays(1), from.AddDays(7), from, days));
+            Check("Lịch trong cửa sổ: không vượt",
+                !BookingCalendarRules.IsOutOfWindow(from.AddDays(1), from.AddDays(3), from, days));
+            Check("Lịch đổi số ngày: 30 /2 = 15", BookingCalendarRules.ChangeDaysCount(30, "/2") == 15);
+            Check("Lịch đổi số ngày: 15 /2 = 8 (làm tròn lên)", BookingCalendarRules.ChangeDaysCount(15, "/2") == 8);
+            Check("Lịch đổi số ngày: 7 /4 kẹp tối thiểu 7", BookingCalendarRules.ChangeDaysCount(7, "/4") == 7);
+            Check("Lịch đổi số ngày: 30 2x = 60", BookingCalendarRules.ChangeDaysCount(30, "2x") == 60);
+            Check("Lịch đổi số ngày: 60 4x kẹp tối đa 90", BookingCalendarRules.ChangeDaysCount(60, "4x") == 90);
+            Check("Lịch đổi số ngày: 90 2x kẹp tối đa 90", BookingCalendarRules.ChangeDaysCount(90, "2x") == 90);
+            DateTime mFrom; int mDays;
+            BookingCalendarRules.MonthViewRange(new DateTime(2026, 11, 23), 0, out mFrom, out mDays);
+            Check("Lịch tháng này: 01/11, 30 ngày", mFrom == new DateTime(2026, 11, 1) && mDays == 30);
+            BookingCalendarRules.MonthViewRange(new DateTime(2026, 11, 23), -1, out mFrom, out mDays);
+            Check("Lịch tháng trước: 01/10, 31 ngày", mFrom == new DateTime(2026, 10, 1) && mDays == 31);
+            BookingCalendarRules.MonthViewRange(new DateTime(2026, 11, 23), 1, out mFrom, out mDays);
+            Check("Lịch tháng sau: 01/12, 31 ngày", mFrom == new DateTime(2026, 12, 1) && mDays == 31);
+            Check("Lịch vị trí thả: hợp lệ", BookingCalendarRules.ValidateDrop(0, 3, 1, 3, 7));
+            Check("Lịch vị trí thả: hàng ngoài → sai",
+                !BookingCalendarRules.ValidateDrop(3, 3, 1, 3, 7) && !BookingCalendarRules.ValidateDrop(-1, 3, 1, 3, 7));
+            Check("Lịch vị trí thả: ngày ngoài → sai",
+                !BookingCalendarRules.ValidateDrop(0, 3, -1, 3, 7) && !BookingCalendarRules.ValidateDrop(0, 3, 1, 7, 7));
+            Check("Lịch vị trí thả: bắt đầu sau kết thúc → sai", !BookingCalendarRules.ValidateDrop(0, 3, 3, 1, 7));
+            List<string> changes = BookingCalendarRules.BuildDragChanges("bàn 1", "bàn 2",
+                new DateTime(2026, 11, 24), new DateTime(2026, 11, 26),
+                new DateTime(2026, 11, 24), new DateTime(2026, 11, 26));
+            Check("Lịch kéo thả: chỉ đổi phòng → 1 dòng", changes.Count == 1 && changes[0] == "Phòng: bàn 1 --> bàn 2",
+                string.Join(";", changes.ToArray()));
+            changes = BookingCalendarRules.BuildDragChanges("bàn 1", "bàn 1",
+                new DateTime(2026, 11, 24), new DateTime(2026, 11, 26),
+                new DateTime(2026, 11, 25), new DateTime(2026, 11, 27));
+            Check("Lịch kéo thả: chỉ đổi ngày → 2 dòng", changes.Count == 2 &&
+                changes[0] == "Từ ngày: 24/11/2026 --> 25/11/2026" &&
+                changes[1] == "Đến ngày: 26/11/2026 --> 27/11/2026", string.Join(";", changes.ToArray()));
+            Check("Lịch kéo thả: không đổi → 0 dòng", BookingCalendarRules.BuildDragChanges("bàn 1", "bàn 1",
+                new DateTime(2026, 11, 24), new DateTime(2026, 11, 26),
+                new DateTime(2026, 11, 24), new DateTime(2026, 11, 26)).Count == 0);
+            string confirm = BookingCalendarRules.BuildDragConfirmMessage("Nguyễn Văn A",
+                new List<string> { "Phòng: bàn 1 --> bàn 2" });
+            Check("Lịch kéo thả: câu xác nhận đúng mẫu gốc",
+                confirm == "Bạn có muốn cập nhật thay đổi phiếu đặt phòng của 'Nguyễn Văn A'\nPhòng: bàn 1 --> bàn 2", confirm);
+            // 4 hàng tổng (thuần): trùng ngày trên cùng phòng chỉ tính 1 phòng.
+            var pure = new CalendarData { TotalRooms = 2 };
+            pure.Types.Add(new CalendarRoomType { Id = "t1", Name = "VIP" });
+            pure.Rooms.Add(new CalendarRoom { Id = "r1", Name = "bàn 1", TypeId = "t1" });
+            pure.Rooms.Add(new CalendarRoom { Id = "r2", Name = "bàn 2", TypeId = "t1" });
+            pure.Bars.Add(new CalendarBookingBar { Id = "b1", RoomId = "r1", TuNgay = from.AddDays(1), DenNgay = from.AddDays(3) });
+            pure.Bars.Add(new CalendarBookingBar { Id = "b2", RoomId = "r1", TuNgay = from.AddDays(2), DenNgay = from.AddDays(2) });
+            pure.Bars.Add(new CalendarBookingBar { Id = "b3", RoomId = "r2", TuNgay = from.AddDays(2), DenNgay = from.AddDays(2) });
+            BookingCalendarRules.CalendarTotals pt = BookingCalendarRules.BuildTotals(pure, from, days);
+            Check("Lịch tổng thuần: Đã bán ngày 1=1, ngày 2=2, ngày 3=1",
+                pt.SoldPerDay[1] == 1 && pt.SoldPerDay[2] == 2 && pt.SoldPerDay[3] == 1 && pt.SoldPerDay[0] == 0,
+                string.Join(",", Array.ConvertAll(pt.SoldPerDay, i => i.ToString())));
+            Check("Lịch tổng thuần: Còn lại = Tổng − Đã bán",
+                pt.RemainingPerDay[2] == 0 && pt.RemainingPerDay[0] == 2);
+            Check("Lịch tổng thuần: Công suất ngày 2 = 100.0%, ngày 1 = 50.0%",
+                pt.CapacityPerDay[2] == 100.0 && pt.CapacityPerDay[1] == 50.0);
+            Check("Lịch tổng thuần: hàng nhóm VIP ngày 2 = 2", pt.SoldPerDayByType["t1"][2] == 2);
+            Check("Lịch tổng thuần: cột Tổng phòng r1 = 2 (thiếu +1), r2 = 0",
+                pt.TotalDaysByRoom["r1"] == 2 && pt.TotalDaysByRoom["r2"] == 0);
+            Check("Lịch tổng thuần: tổng Đã bán = 4, Công suất tổng = 28.6%",
+                pt.TotalSoldDays == 4 && pt.TotalCapacity == 28.6,
+                pt.TotalSoldDays + "/" + pt.TotalCapacity);
+
+            // --- DB: tạo loại/phòng/khách/phiếu → tải lưới, kéo thả, dọn sạch ---
+            var calRepo = new BookingCalendarRepository(db);
+            var bookingRepo = new BookingRepository(db);
+            var formRepo = new FormRepository(db);
+            CalendarData before = calRepo.LoadCalendar(from, days, "");
+            Check("Lịch DB trống ban đầu: 0 loại, 0 phòng, 0 thanh (DEMO)",
+                before.Types.Count == 0 && before.Rooms.Count == 0 && before.Bars.Count == 0,
+                before.Types.Count + "/" + before.Rooms.Count + "/" + before.Bars.Count);
+            if (before.Types.Count != 0 || before.Rooms.Count != 0 || before.Bars.Count != 0)
+                return;
+            string typeVip = DbHelper.NewId();
+            string typeThuong = DbHelper.NewId();
+            string room1Id = DbHelper.NewId();
+            string room2Id = DbHelper.NewId();
+            string room3Id = DbHelper.NewId();
+            string room4Id = DbHelper.NewId();
+            string customerId = DbHelper.NewId();
+            string b1Id = null, b2Id = null, b3Id = null, b4Id = null;
+            try
+            {
+                BookingExec(db, "INSERT INTO \"DLOAIPHONG\" (\"ID\", \"NAME\", \"STATUS\", \"SORTORDER\", \"MAUCHU\", \"MAUNEN\", \"USERCREATEDID\") VALUES (@id, @n, 30, @s, @chu, @nen, 'selftest')",
+                    "@id", typeVip, "@n", "VIP", "@s", "1", "@chu", -16777216, "@nen", -1);
+                BookingExec(db, "INSERT INTO \"DLOAIPHONG\" (\"ID\", \"NAME\", \"STATUS\", \"SORTORDER\", \"MAUCHU\", \"MAUNEN\", \"USERCREATEDID\") VALUES (@id, @n, 30, @s, @chu, @nen, 'selftest')",
+                    "@id", typeThuong, "@n", "Thường", "@s", "2", "@chu", -1, "@nen", -65536);
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"DLOAIPHONGID\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, @t, 30, 'selftest')",
+                    "@id", room1Id, "@n", "bàn 1", "@t", typeVip);
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"DLOAIPHONGID\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, @t, 30, 'selftest')",
+                    "@id", room2Id, "@n", "bàn 2", "@t", typeVip);
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"DLOAIPHONGID\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, @t, 30, 'selftest')",
+                    "@id", room3Id, "@n", "bàn 3", "@t", typeThuong);
+                BookingExec(db, "INSERT INTO \"DBAN\" (\"ID\", \"NAME\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, 30, 'selftest')",
+                    "@id", room4Id, "@n", "bàn không loại");
+                BookingExec(db, "INSERT INTO \"DKHACHHANG\" (\"ID\", \"NAME\", \"STATUS\", \"USERCREATEDID\") VALUES (@id, @n, 30, 'selftest')",
+                    "@id", customerId, "@n", "KHÁCH THỬ LỊCH");
+                List<LookupItem> methods = formRepo.LoadAll("DPHUONGTHUCDAT");
+                List<LookupItem> purposes = formRepo.LoadAll("DMUCDICHDAT");
+                string methodId = methods.Count > 0 ? methods[0].Id : null;
+                string purposeId = purposes.Count > 0 ? purposes[0].Id : null;
+                var emptyLines = new List<BookingLine>();
+                // B1: bàn 1, [from+1, from+3]. B2: đoàn bàn 2 + bàn 3, 1 ngày [from+2].
+                // B3: bao trùm cửa sổ [from-2, from+10] (truy vấn BETWEEN loại — giữ bug app gốc).
+                // B4: bắt đầu trước cửa sổ, kết thúc trong [from-1, from+1] (DENNGAY BETWEEN nên hiện).
+                BookingRow row1 = NewCalendarBooking(bookingRepo.GenerateNumber(), customerId, methodId, purposeId,
+                    from.AddDays(1).AddHours(18), from.AddDays(3).AddHours(20));
+                BookingSaveResult s1 = bookingRepo.SaveBooking(row1, emptyLines, new List<string> { room1Id }, "selftest");
+                Check("Lịch lưu B1 (bàn 1, 3 ngày)", s1.Ok && s1.SavedId != null, s1.ErrorMessage);
+                b1Id = s1.SavedId;
+                BookingRow row2 = NewCalendarBooking(bookingRepo.GenerateNumber(), customerId, methodId, purposeId,
+                    from.AddDays(2).AddHours(18), from.AddDays(2).AddHours(20));
+                BookingSaveResult s2 = bookingRepo.SaveBooking(row2, emptyLines, new List<string> { room2Id, room3Id }, "selftest");
+                Check("Lịch lưu B2 (đoàn 2 bàn, 1 ngày)", s2.Ok && s2.SavedId != null, s2.ErrorMessage);
+                b2Id = s2.SavedId;
+                BookingRow row3 = NewCalendarBooking(bookingRepo.GenerateNumber(), customerId, methodId, purposeId,
+                    from.AddDays(-2).AddHours(18), from.AddDays(10).AddHours(20));
+                BookingSaveResult s3 = bookingRepo.SaveBooking(row3, emptyLines, new List<string> { room1Id }, "selftest");
+                Check("Lịch lưu B3 (bao trùm cửa sổ)", s3.Ok && s3.SavedId != null, s3.ErrorMessage);
+                b3Id = s3.SavedId;
+                BookingRow row4 = NewCalendarBooking(bookingRepo.GenerateNumber(), customerId, methodId, purposeId,
+                    from.AddDays(-1).AddHours(18), from.AddDays(1).AddHours(20));
+                BookingSaveResult s4 = bookingRepo.SaveBooking(row4, emptyLines, new List<string> { room2Id }, "selftest");
+                Check("Lịch lưu B4 (bắt đầu trước cửa sổ)", s4.Ok && s4.SavedId != null, s4.ErrorMessage);
+                b4Id = s4.SavedId;
+                if (b1Id == null || b2Id == null || b3Id == null || b4Id == null)
+                    return;
+
+                CalendarData loaded = calRepo.LoadCalendar(from, days, "");
+                Check("Lịch tải lưới: 2 loại theo SORTORDER",
+                    loaded.Types.Count == 2 && loaded.Types[0].Id == typeVip && loaded.Types[1].Id == typeThuong);
+                Check("Lịch tải lưới: màu loại VIP/Thường đúng ARGB",
+                    loaded.Types[0].ForeColorArgb == -16777216 && loaded.Types[0].BackColorArgb == -1 &&
+                    loaded.Types[1].ForeColorArgb == -1 && loaded.Types[1].BackColorArgb == -65536);
+                Check("Lịch tải lưới: 3 phòng có loại (phòng không loại không hiện)",
+                    loaded.Rooms.Count == 3 && loaded.Rooms.Exists(r => r.Id == room1Id) &&
+                    loaded.Rooms.Exists(r => r.Id == room2Id) && loaded.Rooms.Exists(r => r.Id == room3Id));
+                Check("Lịch tải lưới: tổng số phòng = 4 (kể cả phòng không loại)",
+                    loaded.TotalRooms == 4, loaded.TotalRooms.ToString());
+                Check("Lịch tải lưới: 4 thanh (B3 bao trùm không hiện)", loaded.Bars.Count == 4,
+                    loaded.Bars.Count.ToString());
+                Check("Lịch tải lưới: B3 không có trong danh sách", !loaded.Bars.Exists(b => b.Id == b3Id));
+                Check("Lịch tải lưới: B4 có (DENNGAY trong cửa sổ)", loaded.Bars.Exists(b => b.Id == b4Id));
+                CalendarData vipOnly = calRepo.LoadCalendar(from, days, typeVip);
+                Check("Lịch lọc loại VIP: 1 loại, 2 phòng, 3 thanh (B1+B2 bàn 2+B4)",
+                    vipOnly.Types.Count == 1 && vipOnly.Rooms.Count == 2 && vipOnly.Bars.Count == 3,
+                    vipOnly.Types.Count + "/" + vipOnly.Rooms.Count + "/" + vipOnly.Bars.Count);
+                Check("Lịch lọc loại VIP: tổng số phòng vẫn 4", vipOnly.TotalRooms == 4);
+
+                BookingCalendarRules.CalendarTotals lt = BookingCalendarRules.BuildTotals(loaded, from, days);
+                Check("Lịch tổng trên DB: Đã bán [1,2,3,1,0,0,0]",
+                    lt.SoldPerDay[0] == 1 && lt.SoldPerDay[1] == 2 && lt.SoldPerDay[2] == 3 &&
+                    lt.SoldPerDay[3] == 1 && lt.SoldPerDay[4] == 0,
+                    string.Join(",", Array.ConvertAll(lt.SoldPerDay, i => i.ToString())));
+                Check("Lịch tổng trên DB: Còn lại [3,2,1,3,4,4,4]",
+                    lt.RemainingPerDay[0] == 3 && lt.RemainingPerDay[2] == 1 && lt.RemainingPerDay[4] == 4);
+                Check("Lịch tổng trên DB: Công suất ngày 2 = 75.0%", lt.CapacityPerDay[2] == 75.0);
+                Check("Lịch tổng trên DB: hàng nhóm VIP ngày 2 = 2, Thường ngày 2 = 1",
+                    lt.SoldPerDayByType[typeVip][2] == 2 && lt.SoldPerDayByType[typeThuong][2] == 1);
+                Check("Lịch tổng trên DB: cột Tổng bàn 1 = 2, bàn 2 = 1, bàn 3 = 0",
+                    lt.TotalDaysByRoom[room1Id] == 2 && lt.TotalDaysByRoom[room2Id] == 1 &&
+                    lt.TotalDaysByRoom[room3Id] == 0,
+                    lt.TotalDaysByRoom[room1Id] + "/" + lt.TotalDaysByRoom[room2Id] + "/" + lt.TotalDaysByRoom[room3Id]);
+
+                // Kéo thả: B2 (bàn 2) → bàn 1, ngày [from+3, from+4].
+                string b2Guid = CalendarRowValues(db, b2Id).Split('|')[5];
+                string b2Room3Id = DbHelper.Read(db, conn => DbHelper.Str(DbHelper.Scalar(conn, null,
+                    "SELECT \"ID\" FROM \"TDATHANG\" WHERE \"GUID\" = @g AND \"DBANID\" = @r",
+                    "@g", b2Guid, "@r", room3Id)));
+                BookingCalendarMoveResult drag = calRepo.ApplyDragMove(b2Id, room1Id, from.AddDays(3), from.AddDays(4), "selftest");
+                Check("Lịch kéo thả: ghi thành công", drag.Ok, drag.ErrorMessage);
+                string moved = CalendarRowValues(db, b2Id);
+                string movedRoom3 = CalendarRowValues(db, b2Room3Id);
+                Check("Lịch kéo thả: phiếu kéo đổi bàn + ngày, giữ giờ vào/ra",
+                    moved.StartsWith(room1Id + "|" + from.AddDays(3).ToString("yyyy-MM-dd") + "|" +
+                        from.AddDays(4).ToString("yyyy-MM-dd") + "|" +
+                        from.AddDays(2).ToString("yyyy-MM-dd") + " 18:00|" +
+                        from.AddDays(2).ToString("yyyy-MM-dd") + " 20:00|"), moved);
+                Check("Lịch kéo thả: dòng cùng đoàn chỉ đổi ngày, không đổi bàn",
+                    movedRoom3.StartsWith(room3Id + "|" + from.AddDays(3).ToString("yyyy-MM-dd") + "|" +
+                        from.AddDays(4).ToString("yyyy-MM-dd") + "|"), movedRoom3);
+                Check("Lịch kéo thả: phiếu không tồn tại → lỗi",
+                    !calRepo.ApplyDragMove(DbHelper.NewId(), room1Id, from, from, "selftest").Ok);
+                CalendarData after = calRepo.LoadCalendar(from, days, "");
+                Check("Lịch kéo thả: tải lại thấy B2 trên bàn 1 [3,4]",
+                    after.Bars.Exists(b => b.Id == b2Id && b.RoomId == room1Id));
+            }
+            finally
+            {
+                // Dọn sạch: xóa phiếu (cả đoàn) rồi xóa phòng/loại/khách.
+                foreach (string id in new[] { b1Id, b2Id, b3Id, b4Id })
+                {
+                    if (id != null)
+                    {
+                        try { bookingRepo.DeleteBooking(id); } catch { }
+                    }
+                }
+                try { BookingExec(db, "DELETE FROM \"DBAN\" WHERE \"ID\" IN (@a, @b, @c, @d)", "@a", room1Id, "@b", room2Id, "@c", room3Id, "@d", room4Id); } catch { }
+                try { BookingExec(db, "DELETE FROM \"DLOAIPHONG\" WHERE \"ID\" IN (@a, @b)", "@a", typeVip, "@b", typeThuong); } catch { }
                 try { BookingExec(db, "DELETE FROM \"DKHACHHANG\" WHERE \"ID\" = @id", "@id", customerId); } catch { }
             }
         }

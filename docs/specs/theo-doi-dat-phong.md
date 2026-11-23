@@ -120,7 +120,7 @@ Chức năng **"Đặt hàng"** (`97487cfa-…`), [DB `SGROUPROLE`]: Quản lý 
 ## 5. Chỗ khác app gốc (đề xuất — CHỈ ghi, KHÔNG tự quyết, Chiến quyết)
 
 1. **Nhãn Thứ Tư/Thứ Năm** bị đảo (`T5` cho Thứ Tư, `T4` cho Thứ Năm). Đề xuất **sửa đúng** (Thứ Tư = `T4`, Thứ Năm = `T5`). Chờ Chiến quyết (giữ y hệt hay sửa).
-2. **Bàn không có loại phòng** không hiện trên lưới → với DB thật (0 loại phòng) màn **trống**. Đề xuất: thêm nhóm "Chưa có loại" hiển thị mọi bàn `DLOAIPHONGID` rỗng, **hoặc** giữ y hệt rồi hướng dẫn tạo loại phòng. Chờ Chiến quyết (có cần mục "Danh mục loại phòng" hiện lại không — Q6).
+2. **Chiến quyết 23/11: GIỮ Y HỆT app gốc** — không thêm nhóm "Chưa phân loại"/"Chưa có loại"; bàn không có `DLOAIPHONGID` không hiện trên lưới. Việc tạo loại phòng (menu "Danh mục loại phòng" bị ẩn) vẫn mở (Q6).
 3. **Phiếu bao trùm cửa sổ** (bắt đầu trước, kết thúc sau) không hiện: đề xuất điều kiện giao khoảng `TUNGAY <= @To AND DENNGAY >= @From`.
 4. **Cột Tổng của phòng thiếu +1** (đếm `kết thúc − bắt đầu`) — đề xuất đếm đúng số ngày (và "-" khi 0). Chờ xác nhận bằng app (Q4).
 5. **Kiểm tra trùng lịch** khi kéo thả/lưu (cùng phòng, khoảng ngày giao nhau): app gốc không kiểm. Đề xuất cảnh báo (không chặn). Chờ Chiến quyết.
@@ -153,7 +153,7 @@ Chức năng **"Đặt hàng"** (`97487cfa-…`), [DB `SGROUPROLE`]: Quản lý 
 | Q3 | Phiếu có phần giờ trong `TUNGAY/DENNGAY` (ví dụ lưu khác 00:00) hiển thị lệch ngày? Sửa thủ công cột ngày trong DB | So sánh phiếu `TUNGAY` có giờ | Chuẩn hóa `TUNGAY/DENNGAY` về ngày 00:00 khi vẽ |
 | Q4 | Cột "Tổng" của phòng và hàng tổng khi phiếu 1 ngày (đếm thiếu +1?) | Tạo phiếu 1 ngày, đọc cột Tổng (cuộn ngang tới cột Tổng) | Đếm đúng số ngày đặt (= kết thúc − bắt đầu + 1) |
 | Q5 | Tạo/kéo phiếu trùng lịch cùng phòng: cảnh báo/chặn/cho phép? | Tạo hai phiếu chồng ngày | Cho phép, không cảnh báo (như app gốc), vẽ chồng |
-| Q6 | "Danh mục loại phòng" ẩn thế nào trên POS (SMENU không ẩn); tạo loại phòng ở đâu | Tìm trong menu HỆ THỐNG/CƠ SỞ DỮ LIỆU; hỏi sếp | **Chiến quyết**; trong lúc chờ, lưới hiện thêm nhóm "Chưa phân loại" cho bàn thiếu loại (đề xuất 5.2) |
+| Q6 | "Danh mục loại phòng" ẩn thế nào trên POS (SMENU không ẩn); tạo loại phòng ở đâu | Tìm trong menu HỆ THỐNG/CƠ SỞ DỮ LIỆU; hỏi sếp | **Chiến quyết 23/11: GIỮ Y HỆT app gốc** — không thêm nhóm "Chưa phân loại"; bàn không có loại không hiện trên lưới; cách tạo loại phòng vẫn mở |
 | Q7 | Quyền Xem/Sửa/Thêm/Xóa có thật sự được kiểm ở màn này | Đăng nhập tài khoản Thu ngân | 4 mặc định tạm |
 | Q8 | Khi xóa phiếu có phiếu thu cọc hay hóa đơn: nguyên văn cảnh báo + có xóa dở dang | Tạo phiếu, Đặt tiền trước, xóa | Theo 2.2.4 |
 | Q9 | Nút "Đặt tiền trước" mở từ dialog tạo: có lưu trước không | Bấm | Như spec Khách đặt hàng 3.5 |

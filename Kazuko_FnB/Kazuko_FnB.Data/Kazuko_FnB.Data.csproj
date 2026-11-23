@@ -61,6 +61,7 @@
     <Compile Include="ImageRepository.cs" />
     <Compile Include="BookingGroupPlanner.cs" />
     <Compile Include="BookingRepository.cs" />
+    <Compile Include="BookingCalendarRepository.cs" />
     <Compile Include="PhieuThuRepository.cs" />
     <Compile Include="KazukoConnection.cs" />
     <Compile Include="MenuRepository.cs" />

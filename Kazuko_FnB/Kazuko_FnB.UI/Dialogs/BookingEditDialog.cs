@@ -33,6 +33,10 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly PhieuThuRepository _phieuThuRepo;
 
         private readonly List<string> _rowIds;
+
+        /// <summary>Mở từ màn lịch "Theo dõi đặt phòng": ẩn thanh công cụ Trước/Sau/Tạo mới.</summary>
+        private readonly bool _fromCalendar;
+
         private int _rowIndex;
 
         private BookingRow _row;
@@ -125,6 +129,13 @@ namespace Kazuko_FnB.UI.Dialogs
         /// <param name="bookingId">null = thêm mới.</param>
         /// <param name="rowIds">ID các dòng trên lưới theo thứ tự hiện tại (để F10/F11 chuyển dòng).</param>
         public BookingEditDialog(UserSession session, string bookingId, List<string> rowIds)
+            : this(session, bookingId, rowIds, false, null)
+        {
+        }
+
+        /// <param name="fromCalendar">true = mở từ màn lịch: ẩn thanh công cụ Trước/Sau/Tạo mới.</param>
+        /// <param name="preset">Dữ liệu mồi từ vùng ô đã chọn trên lưới lịch (null = không mồi).</param>
+        public BookingEditDialog(UserSession session, string bookingId, List<string> rowIds, bool fromCalendar, BookingCalendarPreset preset)
             : base("ĐẶT HÀNG - THÊM MỚI", ShortcutsHint, 1044, 571)
         {
             _session = session;
@@ -135,6 +146,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _rowIds = rowIds;
             _rowIndex = rowIds == null ? -1 : rowIds.IndexOf(bookingId ?? "");
             _isNew = string.IsNullOrEmpty(bookingId);
+            _fromCalendar = fromCalendar;
 
             _canAdd = AppSession.Can(BookingText.FunctionName, RoleModes.Add);
             _canEdit = AppSession.Can(BookingText.FunctionName, RoleModes.Edit);
@@ -155,14 +167,25 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSave = AddButton("Lưu", null, delegate { SaveStay(); });
             CancelButton = exit;
 
-            BuildToolbar();
+            if (!_fromCalendar)
+                BuildToolbar();
             BuildTopPanel();
             BuildBottom();
             WireDirty();
 
             LoadLookups();
             if (_isNew)
+            {
                 NewRecord();
+                if (preset != null && preset.RoomIds.Count > 0)
+                {
+                    _roomIds = new List<string>(preset.RoomIds);
+                    _roomNames = new List<string>(preset.RoomNames);
+                    _row.TuGio = preset.TuGio;
+                    _row.DenGio = preset.DenGio;
+                    FillControls();
+                }
+            }
             else
                 LoadRecord(bookingId);
 

@@ -41,8 +41,13 @@ namespace Kazuko_FnB.UI.Dialogs
         /// </summary>
         public static Control CreateView(MenuNode node, UserSession session)
         {
-            if (node == null || session == null || string.IsNullOrEmpty(node.StableDescId)
-                || node.Operation != 0 || string.IsNullOrEmpty(session.DatabasePath))
+            if (node == null || session == null || string.IsNullOrEmpty(session.DatabasePath))
+                return null;
+            // Màn lịch "Theo dõi đặt phòng": form tự viết, không gắn bảng chuẩn
+            // (STABLEDESCID = NULL, OPERATION = 4) nên không đi qua CatalogView.
+            if (string.Equals(node.Id, BookingCalendarView.MenuId, StringComparison.Ordinal))
+                return new BookingCalendarView(session.DatabasePath);
+            if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
             {
