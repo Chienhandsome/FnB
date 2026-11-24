@@ -10,7 +10,7 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`): cấu trúc `TLUUVET`, `SCONFIG.KichHoatLuuVetHoatDong = 30`, `SFUNCTION`.
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Lưu vết hoạt động__ac206bb6/` (`code.cs`, `layout.xml`), `Xác nhận xóa lưu vết__c73a5edd/`; tài liệu sẵn có [`pos-tap-nghiep-vu-quan-tri-tien-ich.md`](../pos-tap-nghiep-vu-quan-tri-tien-ich.md) §5 và `docs/deep/quan-tri.md` (b.6) — đã đọc, không chép lại.
-- **[APP]** chưa chụp (màn đơn giản, đủ từ code/layout). Ảnh cột lưới phải xem Q8.
+- **[APP]** đã chụp 24/11/2026 (bố cục + cột nhìn thấy của lưới phải); DB không có lưu vết nên chưa có dòng mẫu. Q8 giải quyết phần lớn.
 - **[CHƯA XÁC MINH]**: giá trị số của enum `LoaiLuuVet` (nằm trong thư viện No1Lib, không có trong export); 9 cột hiển thị của lưới phải (cấu hình `ViewConfig` trong `SFORM.AELAYOUT`, nhị phân chưa giải mã).
 
 ## 1. Bố cục UI (khác khuôn)
@@ -19,7 +19,8 @@ Một tab "Lưu vết hoạt động" gồm **bộ lọc trên cùng** và **hai
 
 - **Bộ lọc:** *Từ ngày – Đến ngày* (`dtNgay`, mặc định **hôm nay → hôm nay** theo ngày DB), *Tài khoản* (`lueNhanVien`, lookup `SUSER`), *Số HĐ* (`txtSoHoaDon`, Enter = tải), nút **Tải dữ liệu** (`btnRefresh`), ô **Lọc dữ liệu** (`txtLoc`, lọc lưới phải theo chuỗi gõ), nút **Xóa lưu vết** (`btnXoaLuuVet`, **ẩn** — xem §3.4). Đổi ngày hoặc tài khoản **tải lại ngay**.
 - **Lưới trái "HÓA ĐƠN"** (`grHoaDon`): cột **Hóa đơn** (`NAME`), **Bàn** (`BAN`), **Trạng thái** (`TRANGTHAI`). Dòng đỏ = bill đã **hủy** (`LOAI = 1`), xanh dương = bill **đang sử dụng** (`LOAI = 2`), mặc định = đã kết thúc (`LOAI = 0`).
-- **Lưới phải "CHI TIẾT THAO TÁC"** (`grMain`, chỉ đọc, **9 cột** `ViewConfig`; cột đầu có caption **"Nội dung"**; `GIO` hiển thị `HH:mm:ss`; mọi cột **không sắp xếp**): các cột tương ứng trường `TLUUVET` (mặc định tạm: Nội dung, Giờ, Ngày, Tài khoản, Thiết bị, Bàn, Chức năng, Tên hàng, Số lượng, Đơn giá, Thành tiền — chọn đủ 9 khi Chiến chụp ảnh gốc, Q8).
+- **Lưới phải "CHI TIẾT THAO TÁC"** (`grMain`, chỉ đọc, **9 cột** `ViewConfig`; cột đầu có caption **"Nội dung"**; `GIO` hiển thị `HH:mm:ss`; mọi cột **không sắp xếp**): các cột tương ứng trường `TLUUVET`. **[APP] đã chụp 24/11/2026**, thứ tự nhìn thấy (cột đầu là cột chọn dòng): **Ngày, Giờ, Số đơn hàng, Nội dung** (cột rộng nhất), **Tài khoản, Thiết bị, Bàn, Chức năng**, rồi còn cột nữa bên phải (có thanh cuộn ngang; từ trường `TLUUVET` đoán là Tên hàng/Số lượng/Đơn giá/Thành tiền, chưa kiểm). Tức "Nội dung" **không** đứng đầu như ghi chú trước; thứ tự thật bắt đầu bằng Ngày/Giờ/Số đơn hàng.
+- **[APP] vị trí điều khiển thật:** *Từ/Đến*, *Số HĐ* và nút **Tải dữ liệu** nằm ở khung **"HÓA ĐƠN"** bên trái (kèm mũi tên ▼ cạnh ô *Đến*); ô **Tài khoản** và **Lọc dữ liệu** nằm ở đầu khung **"CHI TIẾT THAO TÁC"** bên phải. Nút Xóa lưu vết không hiện (đúng ghi chú ẩn).
 - Chưa chọn hóa đơn nào ở lưới trái → lưới phải **trống** (`0 = 1`).
 
 ## 2. Luật và luồng (khác khuôn)
@@ -107,7 +108,7 @@ Lưu vết **không bị xóa** khi bill bị hủy/xóa (khóa mềm bằng `SO
 | Q5 | `TAIKHOAN`/`CHUCNANG` dài ≤ 36: cắt ngắn khi ghi hay báo lỗi? | Cắt ngắn, ghi cảnh báo trong log |
 | Q6 | Lưu vết có cần xuất Excel / in (gốc không có nút)? | Không |
 | Q7 | Dòng mồ côi (§3.5): có cần màn dọn? | Không |
-| Q8 | Chụp app gốc để lấy đủ 9 cột lưới phải + thứ tự | Có, sau |
+| Q8 | ~~Chụp app gốc để lấy cột lưới phải~~ **Đã chụp 24/11/2026** (§1): 8 cột đầu đã biết; còn cột thứ 9 (và các cột sau) bên phải chưa xem hết | Đã giải quyết một phần |
 
 ## 6. Quyết định đã chốt (áp, không hỏi lại)
 
