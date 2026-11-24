@@ -11,13 +11,14 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`): cấu trúc 2 bảng, `STABLEDESC`, `SMENU`, `SFUNCTION`.
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Danh sách bill hủy__a52478cf/` (`code.cs` ngắn, `layout.xml`); cách ghi bản lưu hủy: [`quan-ly-ban-hang-dieu-chinh-hoa-don.md`](quan-ly-ban-hang-dieu-chinh-hoa-don.md) §3.2 (đã sửa theo review) và [`su-dung-dich-vu.md`](su-dung-dich-vu.md) §3.8.
-- **[CHƯA XÁC MINH]**: danh sách cột và bộ lọc của hai lưới (cấu hình trong `ViewConfig`/`FILTERCONFIG` nhị phân, `STABLEDESC.FILTERCONFIG` = NULL cho cả hai bảng, chưa giải mã `SFORM.AELAYOUT`). **[APP]** chưa chụp (Q6).
+- **[CHƯA XÁC MINH]**: danh sách cột và bộ lọc của hai lưới (cấu hình trong `ViewConfig`/`FILTERCONFIG` nhị phân, `STABLEDESC.FILTERCONFIG` = NULL cho cả hai bảng, chưa giải mã `SFORM.AELAYOUT`). **[APP]** đã chụp thanh trên + cột master (24/11/2026); chưa xem được lưới chi tiết có dòng và các cột cuối bên phải (Q6 một phần).
 
 ## 1. Bố cục UI (khác khuôn)
 
 Một tab "Danh mục hóa đơn hủy":
 - **Thanh trên:** ô **Lọc** (`txtLoc`, lọc **lưới chi tiết** phía dưới theo chuỗi gõ — không lọc lưới master), nút **Refresh** (tải lại lưới master, chuỗi lọc rỗng). Có `FilterManager` cho lưới master (panel lọc theo cột như khuôn; **mặc định tạm: Ngày hủy `NGAYHUY` (khoảng), Số phiếu `NAME`, Khách hàng** — Q1).
-- **Lưới trên (master)** `grMain` = `TDONHANGHUY`: cột giờ hủy `GIOHUY` định dạng **`HH:mm`**, giờ thanh toán `GIOTHANHTOAN` định dạng **`dd/MM HH:mm`**. Cột đầy đủ **[CHƯA XÁC MINH]**; mặc định tạm theo bảng: Số phiếu (`NAME`), Ngày hủy (`NGAYHUY`), Giờ hủy, Bàn (`BAN`), Khách hàng (`KHACHHANG`), Nhân viên (`NHANVEN`), Thu ngân (`THUNGAN`), Người thanh toán (`THANHTOANBOI`), Tiền hàng, Giảm giá, Thuế, Phí dịch vụ, Phí vận chuyển, Tiền giờ, **Lý do hủy** (`LYDOHUY`), Ghi chú.
+- **[APP] đã chụp 24/11/2026 (DB không có bill hủy):** thanh trên thật gồm **Từ** và **Đến** (hai ô chọn ngày **để trống** mặc định, định dạng `__/__/____`, nên mở màn lên là tải toàn bộ), mũi tên ▼ (chưa thử), ô **Lọc**, nút **Refresh** — tức là bản trước **thiếu cặp ngày Từ/Đến**; ô Lọc nằm cạnh chúng.
+- **Lưới trên (master)** `grMain` = `TDONHANGHUY`: cột giờ hủy `GIOHUY` định dạng **`HH:mm`**, giờ thanh toán `GIOTHANHTOAN` định dạng **`dd/MM HH:mm`**. **[APP]** các cột nhìn thấy (theo thứ tự, cột đầu là cột chọn dòng): **Ngày, Số phiếu, Ghi chú, Khách hàng, Nhân viên, Thu ngân hủy, Giờ hủy, Ngày hủy, Đổi trả, Đã thanh toán, Giờ thanh toán, Trả lại, Tiền hàng, Tỉ lệ thuế, Tiền thuế, Tỉ lệ giảm giá (%), Tiền giảm giá, Thanh toán bởi** và có thanh cuộn ngang nên **còn cột nữa bên phải** chưa xem hết. Khác bản trước: thêm **Ngày** (ngày bill), **Đổi trả**, **Đã thanh toán**, **Trả lại**, **Tỉ lệ thuế**, **Tỉ lệ giảm giá (%)**; cột người thu tên **"Thu ngân hủy"**; chưa thấy **Bàn**, **Lý do hủy**, **Phí dịch vụ** trong phần nhìn thấy (có thể nằm ở phần cuộn phải — chưa kiểm).
 - **Lưới dưới (detail)** `grDetail` = `TDONHANGHUYCHITIET` của dòng master đang chọn (`TDONHANGHUYID = <ID master>`): Mã hàng (`MAHANG`), Tên hàng (`TENHANG`), ĐVT (`DVT`), Số lượng (`SOLUONG`), Đơn giá (`DONGIA`), Thành tiền (`THANHTIEN`), Ghi chú (`NOTE`).
 - Không có nút Thêm/Sửa/Xóa/Excel/In (gốc chỉ có Lọc + Refresh). **Không** có thùng rác (xóa cứng cả app; riêng danh mục này không xóa được qua giao diện).
 
