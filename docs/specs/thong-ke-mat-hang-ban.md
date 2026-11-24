@@ -10,14 +10,14 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Thống kê mặt hàng bán__67500401/` (`code.cs`, `layout.xml`), `Chi tiết bán hàng theo mặt hàng__5645abce/`; tài liệu sẵn có [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §1 (Thống kê mặt hàng bán) — đã đọc, không chép lại.
-- **[CHƯA XÁC MINH]**: (1) lệnh `SELECT` gốc của lưới `grDetail` (nằm trong cấu hình lưới, `code.cs` chỉ **thêm** vào `e.Select/GroupBy/Where`; theo dấu hiệu thì nhóm theo `DMATHANGID` + `DONGIA` + `GIAVON` + `TILEGIAMGIA` + `DNHOMMATHANGID`); (2) cột lưới đầy đủ; (3) mẫu in FastReport; (4) điều kiện bill nền của lưới (mặc định tạm: `LOAI = 0 AND DATHANHTOAN = 30`, giống truy vấn tổng bên dưới). **[APP]** chưa chụp (Q9).
+- **[CHƯA XÁC MINH]**: (1) lệnh `SELECT` gốc của lưới `grDetail` (nằm trong cấu hình lưới, `code.cs` chỉ **thêm** vào `e.Select/GroupBy/Where`; theo dấu hiệu thì nhóm theo `DMATHANGID` + `DONGIA` + `GIAVON` + `TILEGIAMGIA` + `DNHOMMATHANGID`); (2) mẫu in FastReport; (3) điều kiện bill nền của lưới (mặc định tạm: `LOAI = 0 AND DATHANHTOAN = 30`, giống truy vấn tổng bên dưới). **[APP]** đã chụp bố cục + cột lưới (24/11/2026); DB không có bill nên chưa đối chiếu số.
 
 ## 1. Bố cục UI (khác khuôn)
 
-- **Hàng lọc/nút:** *Từ ngày – Đến ngày* (mặc định **hôm nay → hôm nay**), *Cửa hàng* (`lueCuaHang`), nút **Refresh (F5)** (phím F5 cũng chạy), nút **In báo cáo**; chọn **cách tính vốn** (`rdCachTinh`, 2 lựa chọn: **0 = giá vốn dòng** `TDONHANGCHITIET.GIAVON` (mặc định), **1 = giá nhập hiện tại** `DMATHANG.GIANHAP`). Đổi bất kỳ lọc nào → tải lại ngay.
+- **Hàng lọc/nút:** *Từ ngày – Đến ngày* (mặc định **hôm nay → hôm nay**), *Cửa hàng* (`lueCuaHang`), nút **Refresh (F5)** (phím F5 cũng chạy), nút **In báo cáo**; chọn **cách tính vốn** (`rdCachTinh`, 2 lựa chọn: **0 = giá vốn dòng** `TDONHANGCHITIET.GIAVON` (mặc định), **1 = giá nhập hiện tại** `DMATHANG.GIANHAP`). Đổi bất kỳ lọc nào → tải lại ngay. **[APP]** nhãn 2 nút radio thật là **"Theo giá vốn"** (chọn sẵn) / **"Theo giá nhập"**; có thêm ô nhập **"Lọc"** (nằm giữa radio và nút Refresh) mà bản trước không ghi — lọc lưới theo chuỗi gõ (phạm vi lọc theo cột nào chưa thử, Q10). Cạnh ô *Đến ngày* có mũi tên ▼ (chưa thử).
 - **Trái:** cây **nhóm mặt hàng** (`tvNhom`, có nút "Tất cả"; **loại** các nhóm có `DLOAIDOID = LoaiDo.NguyenLieu`). Chọn nhóm → lọc lưới theo `DNHOMMATHANGID`.
-- **Giữa:** lưới `grDetail` "Mặt hàng bán" (theo mặt hàng/đơn giá/giảm giá). Cột có: Tên hàng (`TENHANG`), Nhóm hàng (`NHOMHANG`), Đơn giá, Giá vốn (`GIAVON`), SL (`SLXUATCHUAQUYDOI`), Thành tiền (`THANHTIEN`), Thành tiền nhập (`THANHTIENNHAP`), **Lãi** (`LAI`), **Tỉ lệ lãi** (`TILELAI`), % giảm (`TILEGIAMGIA`). Cột chính xác **[CHƯA XÁC MINH]**. Sắp theo **mã hàng** (`DMATHANG.CODE`) nếu `Shared.SapXepTheoMa()` bật, ngược lại theo **tên hàng**. **Nhấp đúp** một dòng → mở dialog chi tiết (§2.4).
-- **Khối tổng (dưới)** (`pnlBottom`): Tổng tiền bán · Tổng tiền nhập · Giảm giá · **Tổng lãi** · Tiền giờ · Phí dịch vụ · Thuế · **Thực lãi** (nhãn gốc: "Tổng tiền bán:", "Tổng tiền nhập", "(Tổng tiền lãi)", "(Tổng tiền giảm giá)", "(Tiền giờ)", "(Phí dịch vụ)", "(Thuế)", "(Tổng tiền lãi bán hàng)").
+- **Giữa:** lưới `grDetail` "Mặt hàng bán" (theo mặt hàng/đơn giá/giảm giá). **[APP] đã chụp 24/11/2026**, 11 cột theo thứ tự (cột đầu là cột chọn dòng): **Mặt hàng** (`TENHANG`), **Số lượng** (`SLXUATCHUAQUYDOI`), **ĐVT**, **Đơn giá**, **Tiền giảm**, **Thành tiền bán** (`THANHTIEN`), **Giá vốn** (`GIAVON`), **Giảm giá %** (`TILEGIAMGIA`), **Thành tiền nhập** (`THANHTIENNHAP`), **Lãi** (`LAI`), **Tỉ lệ lãi** (`TILELAI`). **Không có cột "Nhóm hàng"** (nhóm chỉ lọc qua cây bên trái) và có thêm **ĐVT** + **Tiền giảm**. Sắp theo **mã hàng** (`DMATHANG.CODE`) nếu `Shared.SapXepTheoMa()` bật, ngược lại theo **tên hàng**. **Nhấp đúp** một dòng → mở dialog chi tiết (§2.4).
+- **Khối tổng (dưới)** (`pnlBottom`): **[APP]** hàng trên: "Tổng tiền bán:" · "Tổng tiền nhập" · số kèm nhãn "(Tổng tiền lãi bán hàng)"; bên dưới xếp dọc 4 dòng "(Tiền giờ)", "(Tổng tiền giảm giá)", "(Phí dịch vụ)", "(Thuế)", rồi đường kẻ và dòng cuối **"(Tổng tiền lãi)"** màu đỏ cỡ lớn. Quan hệ số học giữa các dòng chưa kiểm được (mọi tổng đang là 0, không có bill); giữ công thức §2.3. Nhãn "(Tổng tiền lãi)" nằm ở dòng cuối cùng (Thực lãi), không phải ở dòng lãi bán hàng như bản trước.
 - **Karaoke** (tab "Trả tiền dịch vụ" — dịch vụ theo giờ, nút "Điều chỉnh giờ tính lương"): **cắt** (đã bỏ karaoke + tính giờ). Chỉ giữ một khung "Mặt hàng bán" (không tab).
 
 ## 2. Luật và luồng (khác khuôn)
@@ -83,7 +83,8 @@ Nhấp đúp dòng → dialog (tiêu đề nút "DANH MỤC HÓA ĐƠN", nút **
 | Q6 | Lưới gộp theo (mặt hàng, đơn giá, giá vốn, % giảm) hay chỉ mặt hàng? | Như dấu hiệu gốc (theo 4 trường) |
 | Q7 | Mặt hàng loại dịch vụ theo giờ (karaoke) có hiện trong lưới? | Cắt (không có mặt hàng này trong F&B thuần) |
 | Q8 | Có thêm xuất Excel (gốc không có)? | Không |
-| Q9 | Chụp app gốc để lấy đủ cột lưới | Có, sau |
+| Q9 | ~~Chụp app gốc để lấy đủ cột lưới~~ **Đã chụp 24/11/2026** (§1) | Đã giải quyết phần cột |
+| Q10 | Ô "Lọc" (gốc có, bản trước chưa ghi): lọc theo cột nào, có bắt buộc làm không | Lọc theo tên hàng, làm |
 
 ## 5. Quyết định đã chốt (áp, không hỏi lại)
 
