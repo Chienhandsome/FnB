@@ -10,7 +10,7 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`): `TDONHANG`, `TTHUCHI` hiện **0 bản ghi** → selftest tự tạo dữ liệu.
 - **[CODE]** `POS_TAP_SRC_EXPORT/SREPORT/CHI TIẾT HOẠT ĐỘNG TRONG NGÀY__5b986bf4/` (`query.sql` 4 truy vấn, `code.cs`); tài liệu [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) (nhóm báo cáo chi tiết theo ngày). Đã đọc, không chép lại.
-- **[CHƯA XÁC MINH]**: bố cục/nhóm cột/tổng của mẫu in FastReport (`.frx` không có trong bản export); cách mẫu dùng tham số `rpt.Parameters[0]`. **[APP]** chưa chụp (Q8).
+- **[CHƯA XÁC MINH]**: bố cục/nhóm cột/tổng của mẫu in FastReport (`.frx` không có trong bản export); cách mẫu dùng tham số `rpt.Parameters[0]`. **[APP]** đã chụp phần khung + đầu báo cáo (Q8 đã xử lý một phần; thiếu ảnh khi có dữ liệu).
 
 ## 1. Giao diện (khác khuôn)
 
@@ -22,6 +22,10 @@ Màn chạy báo cáo chuẩn của khung:
   3. **Thu chi**: Số phiếu, Diễn giải, Tên đối tượng, Thu tiền mặt, Thu chuyển khoản, Chi tiền mặt, Chi chuyển khoản.
   4. **Phiếu nhập (mua hàng)**: Số phiếu, Nhà cung cấp, Tổng cộng, Đã thanh toán, Còn nợ.
   - Cuối báo cáo hiển thị **Giảm giá tổng bill** (tham số, §2.5).
+- **[APP] đã chụp 24/11/2026 (DB không có bill nên báo cáo rỗng):**
+  - Thanh lọc thật: **Từ ngày** (mặc định **ngày 01 của tháng hiện tại**, không phải hôm nay), **Đến ngày** (hôm nay), **Thu ngân** (trống = "Tất cả"), **Cửa hàng** (tự chọn sẵn cửa hàng của user, ví dụ "TRỤ SỞ CHÍNH", chứ không để trống), nút **Tải dữ liệu (F5)**. Dưới là thanh công cụ trình xem FastReport (In, mở, lưu, gửi mail, tìm, chuyển trang, Close).
+  - Đầu trang mẫu in: khối **tên công ty / địa chỉ / điện thoại / email** (đang là chỗ trống `(TÊN CÔNG TY)`… vì chưa cấu hình), tiêu đề **"CHI TIẾT HOẠT ĐỘNG TRONG NGÀY"**, dòng "Từ ngày … Đến ngày …", "Thu ngân: Tất cả", "Ngày dd tháng MM năm yyyy", ô ký "Người lập (Ký, họ tên)".
+  - **Có một khối tổng hợp ở đầu báo cáo** mà bản trước chưa ghi, gồm 8 dòng nhãn in hoa: **TIỀN MẶT, CHUYỂN KHOẢN, TIỀN THẺ, VOUCHER, THẺ TRẢ TRƯỚC, TRỪ TÍCH LŨY, KHÁCH HÀNG NỢ, NỢ NHÀ CUNG CẤP** (có số 0 cạnh Tiền mặt và Chuyển khoản; các dòng còn lại để trống khi không có dữ liệu). Cách tính từng dòng (đối chiếu `query.sql`) và 4 khối chi tiết bên dưới **chưa thấy được** vì không có dữ liệu → vẫn **[CHƯA XÁC MINH]**.
 - v1: bốn khối là **bốn lưới/khối chỉ đọc** trên một tab cuộn, **và** nút In (mẫu FastReport → "chưa hỗ trợ" nếu chưa có mẫu, Q5). Tên cột lấy từ `AS` của truy vấn; nhãn tiếng Việt như trên là **[CHƯA XÁC MINH]** (mẫu in quyết định nhãn thật).
 
 ## 2. Luật và luồng (khác khuôn) [CODE `query.sql`, `AfterGetData`]
