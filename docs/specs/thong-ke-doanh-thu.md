@@ -63,7 +63,7 @@ THU KHÁC = Σ COALESCE(THU,0) , CHI KHÁC = Σ COALESCE(CHI,0)   của TTHUCHI 
 TỔNG THỰC THU = TIỀN MẶT + TIỀN THẺ + CHUYỂN KHOẢN + THU KHÁC − CHI KHÁC
 ```
 - Ba dòng "Thực thu" **không** cộng VOUCHER, TRỪ TÍCH LŨY, THẺ TRẢ TRƯỚC, CÔNG NỢ (không phải tiền thực nhận) — đúng như gốc, nhưng nhãn không nói rõ → ghi chú trong tooltip (P2).
-- `TTHUCHI` lọc **chỉ theo ngày**, **không** theo cửa hàng, **không** theo `STATUS` (hóa đơn khác cửa hàng vẫn tính thu/chi khác) → lệch với phần bill; xem P1/Q3.
+- `TTHUCHI` lọc **chỉ theo ngày**, **không** theo cửa hàng, **không** theo `STATUS` (hóa đơn khác cửa hàng vẫn tính thu/chi khác) → lệch với phần bill; **v1 sửa: lọc theo cửa hàng (P1/Q3, đã chốt)**.
 - Định dạng: `GiaBanLeUsd = 30` ([DB]) → gốc hiển thị `n2` (2 số lẻ), ngược lại `n0`. **Đã chốt (Q1 Sử dụng dịch vụ):** v1 chỉ VNĐ, hiển thị số nguyên có dấu phân nhóm nghìn; tiền `decimal`.
 
 ### 2.4 Tự làm tươi [CODE `IRefreshable`]
@@ -80,7 +80,7 @@ Quyền xem màn = `SFUNCTION` `b2a025da-…` "Thống kê doanh thu". Mặc đ�
 
 ## 3. Chỗ đề xuất khác app gốc (CHỈ đề xuất — Chiến quyết)
 
-- **P1** Lọc thu/chi khác theo **cửa hàng** giống bill (gốc không lọc; `TTHUCHI` **có** cột `DCUAHANGID` [DB], cũng có `STATUS`, `TDONHANGID`, `LOAI`, `CHUYENKHOAN`, `LATAMUNG` — gốc không lọc các cột này nên phiếu chi trả lại khách từ bill hoặc phiếu tạm ứng cũng được cộng vào THU/CHI KHÁC; cần Chiến xác nhận có đúng ý, Q3). *Mặc định tạm: giữ y hệt gốc (không lọc cửa hàng).*
+- **P1** Lọc thu/chi khác theo **cửa hàng** giống bill (gốc không lọc; `TTHUCHI` **có** cột `DCUAHANGID` [DB], cũng có `STATUS`, `TDONHANGID`, `LOAI`, `CHUYENKHOAN`, `LATAMUNG` — gốc không lọc các cột này nên phiếu chi trả lại khách từ bill hoặc phiếu tạm ứng cũng được cộng vào THU/CHI KHÁC; cần Chiến xác nhận có đúng ý, Q3). **Đã chốt 24/11/2026 (Q13a, theo review issue #3): LỌC thu/chi khác theo cửa hàng** (như bill: chọn cửa hàng → `DCUAHANGID` đó; để trống + không phải admin → các cửa hàng của user), áp chung cho Thống kê doanh thu, Tổng hợp KQKD, Chi tiết hoạt động ngày. Các cột `STATUS`/`LOAI`/`LATAMUNG` vẫn **không** lọc (giữ như gốc).
 - **P2** Thêm chú thích/tooltip cho dòng "TỔNG THỰC THU" liệt kê các khoản được cộng.
 - **P3** Giữ dòng đang chọn khi tự làm tươi.
 - **P4** Truy vấn cửa hàng dùng **tham số**, không nối chuỗi ID (gốc nối chuỗi `'` + ID + `'`).
@@ -92,7 +92,7 @@ Quyền xem màn = `SFUNCTION` `b2a025da-…` "Thống kê doanh thu". Mặc đ�
 |---|---|---|
 | Q1 | Điều kiện bill nền của lưới chính (chưa giải mã `ViewConfig`) | `LOAI = 0 AND DATHANHTOAN = 30` |
 | Q2 | Có đưa `LOAI = 5, 6` (phiếu thu bán chưa rõ nguồn) vào không? | Không (như điều kiện trên) |
-| Q3 | Thu/chi khác có lọc theo cửa hàng (P1)? | Giữ như gốc, không lọc |
+| Q3 | ~~Thu/chi khác có lọc theo cửa hàng (P1)?~~ **Đã chốt: lọc (Q13a)** | — |
 | Q4 | Mã số `LoaiMatHang.NguyenLieu` (hằng trong thư viện) | Nhận diện nguyên liệu bằng loại mặt hàng tương ứng trong DB, **không đọc `LOAIDINHLUONG`** |
 | Q5 | Mẫu in: tạo mới FastReport hay "chưa hỗ trợ" | "Chưa hỗ trợ" |
 | Q6 | Hiển thị `n2` khi `GiaBanLeUsd = 30` (đã chốt bỏ USD → luôn số nguyên) | Số nguyên |
@@ -110,7 +110,7 @@ LamTron 1000 AwayFromZero (chỉ khi **tính** tiền, màn này chỉ cộng n�
 - [ ] Admin không chọn cửa hàng → thấy mọi cửa hàng; user thường không chọn → chỉ cửa hàng gắn trong `TNGUOIDUNGTHEOCUAHANG`; chọn cửa hàng → chỉ cửa hàng đó.
 - [ ] Từng dòng khối tổng khớp công thức §2.3 trên bộ bill mẫu (kiểm số tay), kể cả dấu `−` ở 3 dòng giảm giá; TỔNG THỰC THU không cộng voucher/tích lũy/thẻ trả trước/công nợ.
 - [ ] Bill chi tiết loại bỏ dòng xuất vật tư, nguyên liệu, combo con; chưa chọn bill → lưới chi tiết trống.
-- [ ] THU/CHI khác lọc theo ngày đúng; ghi nhận giữ như gốc về cửa hàng (hoặc P1 nếu Chiến duyệt).
+- [ ] THU/CHI khác lọc theo ngày đúng; phiếu thu/chi của cửa hàng khác **không** được cộng khi đã chọn cửa hàng (P1 đã chốt, Q13a).
 - [ ] Đổi ngày/cửa hàng tải lại ngay; F5 tải lại; thay đổi `TDONHANG`/`TTHUCHI` từ máy khác tự làm tươi.
 - [ ] Nút In báo "chưa hỗ trợ" (hoặc in đúng mẫu nếu có); không SQL trong View; màu/cỡ chữ từ token; 125% DPI; lưới đủ lớn cho cảm ứng (yêu cầu v1, không phải gốc).
 

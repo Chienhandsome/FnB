@@ -42,7 +42,7 @@ Gộp dòng chi tiết của các bill ở §2.1 (cùng điều kiện, **cùng 
 
 ### 2.3 Thu chi
 
-`TTHUCHI` theo `NGAY`; thu ngân = **`USERCREATEDID`** (người **tạo phiếu**, khác tiêu chí `USERTHANHTOANID` ở bill); cửa hàng = `DCUAHANGID`. Tách tiền mặt / chuyển khoản theo `CHUYENKHOAN`: `CHUYENKHOAN = 0` hoặc NULL → tiền mặt, ≠ 0 → chuyển khoản; 4 cột `THUTM`, `THUCK`, `CHITM`, `CHICK`. Cột còn lại: `NAME`, `DIENGIAI`, `TENDOITUONG`. Sắp `NGAY, NAME`. **Không lọc `STATUS`, `LATAMUNG`, `LOAI`** (cả phiếu tạm ứng lẫn phiếu chi trả khách từ bill đều vào).
+`TTHUCHI` theo `NGAY`; thu ngân = **`USERCREATEDID`** (người **tạo phiếu**, khác tiêu chí `USERTHANHTOANID` ở bill); cửa hàng = `DCUAHANGID` (**Q13a đã chốt 24/11: để trống cửa hàng + không phải admin → giới hạn theo các cửa hàng của user, giống bill**). Tách tiền mặt / chuyển khoản theo `CHUYENKHOAN`: `CHUYENKHOAN = 0` hoặc NULL → tiền mặt, ≠ 0 → chuyển khoản; 4 cột `THUTM`, `THUCK`, `CHITM`, `CHICK`. Cột còn lại: `NAME`, `DIENGIAI`, `TENDOITUONG`. Sắp `NGAY, NAME`. **Không lọc `STATUS`, `LATAMUNG`, `LOAI`** (cả phiếu tạm ứng lẫn phiếu chi trả khách từ bill đều vào).
 
 ### 2.4 Phiếu nhập (mua hàng)
 
