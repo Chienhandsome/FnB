@@ -10,13 +10,18 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`): `TDONHANG` 0 bản ghi, `TTHUCHI` 0 bản ghi; `DLYDOTHUCHI` **23 lý do** (8 `LOAILYDO = 1` "định phí", 7 `LOAILYDO = 2` "chi khác", 5 `-1`, 1 `0`, 2 NULL).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SREPORT/BÁO CÁO KẾT QUẢ KINH DOANH__9c30f012/` (`query.sql` rỗng-có-cột, `code.cs` lớp `BaoCaoKetQuaKinhDoanh` tính toàn bộ); tài liệu [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §4 và `docs/deep/bao-cao.md` (C20, C21) — đã đọc, không chép lại.
-- **[CHƯA XÁC MINH]**: bố cục mẫu in FastReport (`.frx` nằm trong `SREPORTTEMPLATE`, bản export không có); ý nghĩa `LOAI = 5, 6` của bill (không có chỗ nào sinh ra, xem Q1); font biểu tượng ▲/▼. **[APP]** chưa chụp (Q9).
+- **[CHƯA XÁC MINH]**: bố cục mẫu in FastReport (`.frx` nằm trong `SREPORTTEMPLATE`, bản export không có); ý nghĩa `LOAI = 5, 6` của bill (không có chỗ nào sinh ra, xem Q1); font biểu tượng ▲/▼. **[APP]** đã chụp bố cục (24/11/2026); chưa cuộn tới dòng LÃI LỖ và chưa có số liệu thật.
 
 ## 1. Giao diện (khác khuôn)
 
 Màn chạy báo cáo chuẩn của khung (không phải form tùy biến):
 - **Bộ lọc trên cùng** (`PARAMS`): **Từ ngày** (`@FromDate`, ngày, **bắt buộc**), **Đến ngày** (`@ToDate`, ngày, **bắt buộc**), **Cửa hàng** (`@DCUAHANGID`, lookup `DCUAHANG`, không bắt buộc; user **không phải admin** chỉ thấy cửa hàng gắn trong `TNGUOIDUNGTHEOCUAHANG`, admin thấy tất cả). Để trống cửa hàng = mọi cửa hàng (xem lệch §3-1).
 - Nút **Xem/In báo cáo** (mẫu "BÁO CÁO KẾT QUẢ KINH DOANH"); bảng kết quả hiển thị theo cột: **Nội dung · Tháng này · Tỉ lệ · Tăng/giảm · Tháng trước** (cột biểu tượng ▲/▼ cạnh Tăng/giảm). Dòng **cấp**: `LOAI` 0 DOANH THU (đậm), 1 dòng con (nhóm hàng/Tiền giờ/Giảm giá/Phí dịch vụ/Thuế), 2 CHI PHÍ (đậm), 3 Định phí, 4 chi tiết định phí, 5 Biến phí, 6 chi tiết biến phí (theo nhóm hàng), 7 Chi khác, 8 chi tiết chi khác, 9 LÃI LỖ (đậm). Bố cục chính xác theo mẫu in **[CHƯA XÁC MINH]**.
+- **[APP] đã chụp 24/11/2026 (DB không có bill, mọi số 0):**
+  - Thanh lọc thật: **Từ ngày** mặc định **ngày 01 của tháng hiện tại**, **Đến ngày** hôm nay, **Cửa hàng** tự chọn sẵn cửa hàng của user (ví dụ "TRỤ SỞ CHÍNH"), nút **Tải dữ liệu (F5)**; dưới là thanh công cụ trình xem FastReport (In, mở, lưu, gửi mail, tìm, chuyển trang, Close). Báo cáo hiển thị dạng **trang in** chứ không phải lưới chỉ đọc; đầu trang có khối công ty (đang là `(TÊN CÔNG TY)`, `(ĐỊA CHỈ)`…) và tiêu đề **"BÁO CÁO KẾT QUẢ KINH DOANH"**.
+  - **Cột thật** (từ trái): số mục (I., 1, A.…) · Nội dung · `%/DT` (nhỏ, nằm dưới tiêu đề Giá trị) · **Giá trị** · **%** · `%/CP` · **Tăng giảm so với tháng trước** (một cột biểu tượng + một cột số) · **KQKD tháng trước**. Hàng nhỏ `%/DT` và `%/CP` chèn giữa các nhóm làm chú thích cột tỉ lệ.
+  - **Dòng cố định** thấy được: **I. DOANH THU** (1 Tiền giờ, 2 Giảm giá, 3 Phí dịch vụ, 4 Thuế); **II. CHI PHÍ**: **A. Định phí** (1 Tiền nhà, 2 Tiền điện thoại, 3 Tiền nước, 4 Tiền điện, 5 Lương nhân viên, 6 Lương vệ sỹ, 7 Thưởng nhân viên, 8 Chi lương nhân viên), **B. Biến phí** (chưa có dòng con khi rỗng), **C. Chi khác** (1 Văn phòng phẩm, in ấn; 2 Xây dựng, sửa chữa, thiết kế; 3 Đồ dùng, dụng cụ; 4 Vận chuyển; 5 Ngoại giao; 6 Chi khác; 7 Đặt trước). Các dòng này hiện ngay cả khi không có số liệu (số 0, `-`). Phần dưới (LÃI LỖ) chưa cuộn tới để chụp.
+  - Dòng "Tiền giờ" vẫn nằm trong mẫu gốc dù v1 cắt tiền giờ → v1 ghi 0 hoặc bỏ dòng (xem Q7).
 - v1: hiển thị bảng trên màn (lưới chỉ đọc, dòng cấp 0/2/9 đậm) **và** nút In (mẫu in → "chưa hỗ trợ" nếu chưa có FastReport, Q5).
 
 ## 2. Luật tính [CODE `AfterGetData`] — mọi giá trị là **tổng theo khoảng ngày** của `NGAY`
@@ -76,7 +81,7 @@ Màn chạy báo cáo chuẩn của khung (không phải form tùy biến):
 | Q6 | Lọc cửa hàng theo user khi để trống (P2)? | Áp |
 | Q7 | Dòng "Tiền giờ": ẩn hay hiện 0? | Ẩn (đã cắt tiền giờ) |
 | Q8 | Thêm xuất Excel? | Không |
-| Q9 | Chụp app gốc/mẫu in thật để xác minh bố cục | Có, sau |
+| Q9 | ~~Chụp app gốc để xác minh bố cục~~ **Đã chụp 24/11/2026** (§1); còn thiếu ảnh phần LÃI LỖ và ảnh có số liệu thật | Đã giải quyết phần bố cục |
 
 ## 6. Quyết định đã chốt (áp, không hỏi lại)
 
