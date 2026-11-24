@@ -10,7 +10,7 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Thống kê doanh thu__d913c8d9/` (`code.cs`, `layout.xml`); tài liệu sẵn có [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §1 và `docs/deep/bao-cao.md` (C3) — đã đọc, không chép lại.
-- **[CHƯA XÁC MINH]**: (1) điều kiện **lọc bill nền** của lưới chính (nằm trong cấu hình `ViewConfig`/`AELAYOUT` nhị phân, chưa giải mã; `code.cs` chỉ thêm điều kiện ngày + cửa hàng); (2) danh sách cột lưới chính/chi tiết; (3) mẫu in FastReport. **[APP]** chưa chụp (Q9).
+- **[CHƯA XÁC MINH]**: (1) điều kiện **lọc bill nền** của lưới chính (nằm trong cấu hình `ViewConfig`/`AELAYOUT` nhị phân, chưa giải mã; `code.cs` chỉ thêm điều kiện ngày + cửa hàng); (2) mẫu in FastReport. **[APP]** đã chụp bố cục và cột lưới (24/11/2026, bản chạy thử, DB không có bill nên chưa đối chiếu số liệu thật); điều kiện lọc bill (1) vẫn **chưa xác minh** vì không có bill để thử.
 - Mặc định tạm cho (1): bill đã thanh toán, `LOAI = 0 AND DATHANHTOAN = 30` (khớp điều kiện chuẩn của các báo cáo khác trong `deep/bao-cao.md` C1).
 
 ## 1. Bố cục UI (khác khuôn)
@@ -18,8 +18,9 @@
 Một tab "Thống kê doanh thu":
 
 - **Hàng lọc/nút:** *Từ ngày – Đến ngày* (`dtNgay`, mặc định **hôm nay → hôm nay** theo ngày DB), *Cửa hàng* (`lueCuaHang`, lookup `DCUAHANG`), nút **Refresh (F5)**, nút **In báo cáo**. Đổi ngày hoặc cửa hàng **tải lại ngay**.
-- **Lưới chính** (`grMain`, danh sách bill, sắp `NGAY, GIOTHANHTOAN`): mỗi dòng một bill; cột giờ `BATDAU`, `KETTHUC` định dạng `HH:mm`. Cột đầy đủ **[CHƯA XÁC MINH]**; mặc định tạm theo họ cột đã biết của `TDONHANG`: Số phiếu, Ngày, Giờ thanh toán, Bàn, Khách hàng, Bắt đầu, Kết thúc, Tiền hàng (chưa giảm), Giảm giá, Phí dịch vụ, Thuế, Tổng cộng, Tiền mặt, Thẻ, Chuyển khoản, Voucher, Trừ tích lũy, Thẻ trả trước, Công nợ.
-- **Lưới chi tiết** (`grDetail`, dưới lưới chính): các dòng `TDONHANGCHITIET` của **bill đang chọn** (đổi dòng = tải lại; chưa chọn → trống).
+- **Lưới chính** (`grMain`, danh sách bill, sắp `NGAY, GIOTHANHTOAN`): mỗi dòng một bill; cột giờ `BATDAU`, `KETTHUC` định dạng `HH:mm`. **[APP] đã chụp 24/11/2026**, 14 cột theo thứ tự (cột đầu là cột chọn dòng, không tiêu đề): **Số phiếu, Ngày, Bàn, Giờ vào, Giờ ra, Giờ thanh toán, Khách hàng, Tiền giảm giá, Tổng cộng, Thanh toán bởi, Tiền hàng, Ghi chú, Địa chỉ, Mã khách**. Lưới **không** có cột tiền mặt/thẻ/chuyển khoản/công nợ (các khoản này chỉ có ở khối tổng dưới); có thanh cuộn ngang. DB mẫu không có bill nên chưa thấy được định dạng số/ngày trong ô.
+- **Lưới chi tiết** (`grDetail`, **bên phải** lưới chính, không phải dưới như ghi trước đó): các dòng `TDONHANGCHITIET` của **bill đang chọn** (đổi dòng = tải lại; chưa chọn → trống). **[APP]** cột: **Mặt hàng, ĐVT, Đơn giá, CK%, Thành tiền** (có thanh cuộn ngang nên có thể còn cột khác ngoài vùng nhìn thấy).
+- Cạnh ô *Đến ngày* có mũi tên ▼ (thu/mở thanh lọc) **[APP]**; hành vi chưa thử.
 - **Khối tổng cộng** (nhãn in hoa, 3 nhóm; số căn phải): 
 
 | Nhóm | Dòng (nhãn nguyên văn) |
@@ -97,7 +98,7 @@ Quyền xem màn = `SFUNCTION` `b2a025da-…` "Thống kê doanh thu". Mặc đ�
 | Q6 | Hiển thị `n2` khi `GiaBanLeUsd = 30` (đã chốt bỏ USD → luôn số nguyên) | Số nguyên |
 | Q7 | Tiền giờ/giảm giá giờ: ẩn dòng hay hiện 0 (v1 đã cắt tiền giờ) | Ẩn 2 dòng giờ, vẫn tính vào tổng (0) |
 | Q8 | Xuất Excel lưới chính (gốc không có nút) | Không |
-| Q9 | Chụp app gốc để lấy đủ cột lưới | Có, sau |
+| Q9 | ~~Chụp app gốc để lấy đủ cột lưới~~ **Đã chụp 24/11/2026** (xem §1); còn thiếu ảnh khi có bill thật | Đã giải quyết phần cột |
 
 ## 5. Quyết định đã chốt (áp, không hỏi lại)
 
