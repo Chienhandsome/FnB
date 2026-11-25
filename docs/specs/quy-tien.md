@@ -1,6 +1,6 @@
 # Spec: Quỹ tiền (quỹ tiền mặt và quỹ tài khoản)
 
-- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026). Implement: **bước 1** (§8) đã code và commit; bước 2–5 chưa làm
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026). Implement: **bước 1** (§8) đã code và commit; **bước 2** đã code (25/11), chưa commit; bước 3–5 chưa làm
 - Ngày: 2026-11-25. Base: `main` @ `954f133`
 - Vai trò: **nguồn chuẩn** về việc giao dịch nào làm quỹ nào thay đổi. Các spec bán hàng, nhập hàng, thu chi, báo cáo theo spec này.
 
@@ -8,7 +8,8 @@
 
 - **[CODE]** `POS_TAP_SRC_EXPORT`: form `Xác nhận thanh toán`, `Hóa đơn nhà hàng`, `Hóa đơn bán hàng`, `Phiếu thu`, `Phiếu chi`, `Phiếu nhập kho`, `Tồn quỹ`; tài liệu [`../deep/cong-no-quy.md`](../deep/cong-no-quy.md) (§b.7, §b.8, §b.10).
 - **[DB]** bản sao `DATA.fdb`: `DLOAIQUY` có 3 loại (Tiền mặt, Ngân hàng, Tiền thẻ); `DTAIKHOANNGANHANG` có 3 dòng; `TTHUCHI` 0 dòng. `TDONHANG` và `TTHUCHI` đều có `CHUYENKHOAN`, `DTAIKHOANNGANHANGID`.
-- **[CHƯA XÁC MINH]**: những gì khung app gốc (DLL) hoặc trigger DB làm ngầm với các cột tiền; chưa chạy thử giao dịch thật trên app gốc.
+- **[DB]** trigger duy nhất của `TDONHANG` (`TDONHANG_TRIGGER`, đọc trên bản sao ngày 25/11) chỉ cập nhật `DBAN.TDONHANGID`, **không ghi cột tiền**.
+- **[CHƯA XÁC MINH]**: những gì khung app gốc (DLL) làm ngầm với các cột tiền; chưa chạy thử giao dịch thật trên app gốc.
 
 ## 1. Bối cảnh
 
@@ -71,10 +72,12 @@ Ví dụ hóa đơn 480.000, khách chuyển 500.000, quán trả lại 20.000 t
 
 - Nhập cho quỹ Tiền mặt (**mỗi cửa hàng một số, một mốc**) và cho từng tài khoản (**mỗi tài khoản một số, một mốc chung cho mọi cửa hàng**, Q13), kèm **thời điểm mốc**. Sửa số dư đầu kỳ là sửa chính giao dịch đó. Số dư đầu kỳ của tài khoản không bị bộ lọc cửa hàng chia nhỏ.
 - Số nhập phải là **số tiền thực có tại thời điểm mốc** (đếm két, xem sao kê). **Quỹ chỉ cộng giao dịch phát sinh sau mốc**; giao dịch trước mốc không tính vào số dư nên không cần sửa bù (Q8).
-- "Phát sinh sau mốc" so theo thời điểm tiền đổi tay: hóa đơn theo `GIOTHANHTOAN`; chứng từ khác theo ngày giờ chứng từ (`NGAY`), nếu `NGAY` không có giờ thì theo `TIMECREATED` [cần kiểm trên dữ liệu thật khi implement].
+- **Thời điểm quỹ** (chốt 25/11 khi duyệt kế hoạch bước 2), dùng cho **cả lọc Từ/Đến lẫn so mốc**: hóa đơn bán theo `GIOTHANHTOAN` (trống thì `NGAY`), nên bill qua đêm tính vào ngày thu tiền và có thể lệch báo cáo doanh thu theo `NGAY`. Chứng từ khác theo `NGAY` nếu có giờ; không có giờ thì giữ ngày của `NGAY` và chỉ lấy giờ từ `TIMECREATED` khi cùng ngày (phiếu lùi ngày vẫn nằm đúng ngày của phiếu). Cả ba cột là `TIMESTAMP`.
+- Giao dịch đúng bằng thời điểm mốc (trừ chính phiếu mốc) không tính. Một quỹ có nhiều phiếu mốc thì lấy mốc mới nhất. Phiếu mốc số tiền 0 vẫn là mốc.
 - Quỹ **chưa nhập mốc**: tính từ giao dịch đầu tiên và màn Tồn quỹ ghi rõ "chưa nhập số dư đầu kỳ".
 - Lưu bằng `TTHUCHI` (số dương → `THU`, âm → `CHI`) với **lý do dành riêng** "Số dư đầu kỳ" trong `DLYDOTHUCHI` (`LOAILYDO = -1`, ID cố định). Thêm dòng dữ liệu, không đổi cấu trúc.
 - Loại khỏi doanh thu, chi phí, "thu khác", "chi khác" và công nợ.
+- ID cố định (khai trong `FundReasons`): "Số dư đầu kỳ" `4abb531f-99bd-435a-8c30-e8b9007d3fd7`, "Chuyển quỹ" `01aff53e-1c11-4b96-8430-6c74a190de1d`. Dòng `DLYDOTHUCHI` được thêm ở bước 4.
 
 ### 4.5 Phiếu nhập hàng (đã chốt)
 
@@ -99,6 +102,7 @@ Ví dụ hóa đơn 480.000, khách chuyển 500.000, quán trả lại 20.000 t
 - Bộ lọc Từ/Đến (tính trọn ngày Đến), Cửa hàng (theo ràng buộc user, giống Q13a).
 - Hiện **tồn đầu kỳ**, từng dòng thu/chi kèm tồn cộng dồn, **tồn cuối kỳ**. Chọn một tài khoản thì thấy thêm tổng chuyển khoản và tổng quẹt thẻ.
 - Tồn đầu kỳ và phát sinh trong kỳ **dùng chung một công thức** (§4.2), chỉ khác khoảng ngày.
+- Chốt 25/11 (bước 2): khoảng ngày mặc định từ **ngày 01 tháng này** đến hôm nay. Dòng "Số dư đầu kỳ" nằm trong khoảng **không cộng vào tổng Thu/Chi**, hiện riêng "Nhập số dư đầu kỳ". User không phải admin và chưa được gán cửa hàng: hệ thống một cửa hàng thì xem cửa hàng đó, nhiều cửa hàng thì không thấy dữ liệu và có thông báo. Tài khoản ngừng dùng chỉ hiện trên cây khi còn số liệu.
 - Quyền xem: theo quyền Tồn quỹ của app gốc (Kế toán, Quản lý; xem `deep/cong-no-quy.md` §b.12). **Nhập/sửa số dư đầu kỳ và chuyển quỹ: Quản lý và Kế toán** (Q10).
 - Cả hai quỹ lọc theo **cửa hàng ghi trên giao dịch** (`DCUAHANGID`; phiếu nhập/xuất trả theo cửa hàng của kho khi bill không có `DCUAHANGID`) (Q6).
 - **Tài khoản dùng chung nhiều cửa hàng (Q13, đã chốt 25/11):** tồn đầu kỳ, tồn cộng dồn và tồn cuối kỳ của tài khoản (và tổng quỹ Tài khoản) **chỉ hiện khi xem tất cả cửa hàng**; lọc một cửa hàng thì chỉ hiện thu/chi phát sinh của cửa hàng đó. Nút "Tất cả" của cây (gộp hai quỹ) theo cùng quy tắc vì có chứa quỹ Tài khoản. Người bị giới hạn cửa hàng nên không thấy tồn tài khoản. Hệ thống chỉ có **một** cửa hàng thì lọc cửa hàng đó coi như xem tất cả. Quỹ Tiền mặt luôn hiện đủ tồn theo cửa hàng đang xem.
@@ -122,7 +126,7 @@ Ví dụ chia: bill 1 = 300.000, bill 2 = 200.000; khách trả 350.000 chuyển
 
 ## 5. Lỗi / chỗ thiếu của app gốc liên quan quỹ
 
-1. **Thanh toán gộp nhiều bàn (`NHOMGUID`) không ghi hình thức tiền:** nhánh nhóm trong `Hóa đơn nhà hàng` chỉ ghi `TIENTHANHTOAN`, `TRALAI`, `KHACHDUA`…, **không ghi `TIENMAT`, `CHUYENKHOAN`, `THE`, `DTAIKHOANNGANHANGID`** [CODE]. Nếu không có gì khác ghi ngầm [CHƯA XÁC MINH] thì tiền các bill gộp **không vào quỹ nào**. v1 ghi theo §4.8.
+1. **Thanh toán gộp nhiều bàn (`NHOMGUID`) không ghi hình thức tiền:** nhánh nhóm trong `Hóa đơn nhà hàng` chỉ ghi `TIENTHANHTOAN`, `TRALAI`, `KHACHDUA`…, **không ghi `TIENMAT`, `CHUYENKHOAN`, `THE`, `DTAIKHOANNGANHANGID`** [CODE]. Trigger DB không ghi bù (§0). Nếu khung app gốc cũng không ghi ngầm [CHƯA XÁC MINH] thì tiền các bill gộp **không vào quỹ nào**. v1 ghi theo §4.8.
 2. Khách chuyển khoản dư, trả lại tiền mặt: không trừ quỹ tiền mặt (§4.3).
 3. Phiếu nhập không chọn được hình thức trả (§4.5).
 4. Báo cáo Tồn quỹ **đảo dấu** phiếu `LOAI = 2` có nhà cung cấp: trong kỳ tính thu, tồn đầu kỳ tính chi. v1: luôn là tiền vào (Q3).
@@ -201,7 +205,7 @@ Migration: không. Chỉ thêm 2 dòng danh mục ở bước 4.
 
 **Rủi ro:** app gốc nếu còn chạy chung DB sẽ coi phiếu chuyển quỹ và số dư đầu kỳ là thu/chi thường (ví dụ tính vào "thu khác", "chi khác"). Số quỹ và một số báo cáo của bản viết lại sẽ khác app gốc.
 
-Q1–Q13 đã chốt hết ngày 25/11. Việc còn phải kiểm khi implement: hành vi ngầm của khung/trigger gốc với cột tiền; bill `LOAI` 5, 6; giờ của cột `NGAY` (§4.4).
+Q1–Q13 đã chốt hết ngày 25/11. Việc còn phải kiểm khi implement: hành vi ngầm của khung app gốc với cột tiền (trigger đã kiểm); bill `LOAI` 5, 6; dữ liệu thật có ghi giờ trong cột `NGAY` hay không (§4.4).
 
 | # | Câu hỏi | Mặc định |
 |---|---|---|

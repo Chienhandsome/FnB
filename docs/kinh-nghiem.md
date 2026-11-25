@@ -35,6 +35,8 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - MSBuild: `D:\VisualStudioInstallation\MSBuild\Current\Bin\MSBuild.exe`. Các project hiện chỉ cấu hình AnyCPU (exe ưu tiên 32-bit): thêm `Platform=x86` báo MSB4126, nên build cấu hình mặc định. Cảnh báo MSB3270 (FastReport x86) đã có sẵn.
 - Không đụng app đang chạy của Chiến: build ra thư mục tạm bằng `-p:OutDir=<thư mục tạm>\build\`.
 - Selftest: `Kazuko_FnB.exe --selftest <bản chép DATA.fdb> <file kết quả.txt>`. Luôn dùng bản chép. Tại `b35e58b` có sẵn **2 ca lỗi** ở phần xóa nhóm người dùng (chưa tìm nguyên nhân). So với bản gốc chưa sửa trước khi kết luận lỗi do mình.
+- Seed dữ liệu thử vào bản chép DB: `TDONHANG`, `TTHUCHI`, `DKHOHANG` bắt buộc có `ID`, `NAME`, `STATUS`, `USERCREATEDID`. Nên đọc trigger (`RDB$TRIGGERS.RDB$TRIGGER_SOURCE`) trước khi kết luận app gốc có ghi ngầm hay không.
+- Chụp màn nội dung (Panel) bằng `--render-screen` cần một form bọc `preview.*`; xem `FundPreviewForm`. Xem ảnh để bắt chữ bị cắt, build qua chưa đủ.
 - Xem giao diện không cần mở app: `--render-login`, `--render-main`, `--render-screen` (xem `Program.cs`). Lưu ý `--render-main` ghi file ngày cài vào `%PROGRAMDATA%\KazukoFnB\install-date.txt` nếu chưa có.
 - Kiểm patch trên bản gốc sạch bằng `git worktree`: build ở đó cần chép thêm các thứ không có trong git là `Kazuko_FnB/lib/` và `POS TAP/Data/TEMPLATE.FDB`. Xong thì `git worktree remove`.
 - GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.
