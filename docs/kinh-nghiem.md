@@ -26,6 +26,10 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Thao tác app gốc:** bấm chọn dòng mặt hàng rồi Enter mới thêm vào bill. Ô tiền không bôi chọn được (số mới nối vào số cũ): bấm vào ô, End, Backspace nhiều lần rồi mới gõ. Telex trong app đổi chữ gõ thử. Báo Chiến đừng dùng chuột phím trong lúc thao tác.
 - **Cấu hình lưới (`ViewConfig`) không cho biết thứ tự cột hiển thị:** muốn đúng thứ tự thì nhìn app gốc, cuộn hết sang phải (đã ghi sai chỗ cột S.lượng). Đã thử dịch ngược 25/11 (một lần, chưa tìm ra nguồn thứ tự hiển thị): `ViewConfig` là mảng byte bọc kiểu .NET chứa XML của một `DataTable` (cắt đoạn `<DocumentElement>…</DocumentElement>`, đọc được ngay, không cần giải tuần tự); ở màn Thống kê doanh thu `SELECTORDER` để trống, và thứ tự dòng (xuôi lẫn ngược) đều không khớp ảnh app; bảng `SGRID` không có dòng cho `grDetail`. Đừng thử lại nếu không có đầu mối mới.
 
+- **Mã dùng chung** (`Shared`, các enum, `DuLieuHoaDonOk`, `TableLocker`): `SCONFIG` bản ghi `SharedCode`, cột `BLOBVALUE`; xuất bằng `BLOBDUMP`. **Đọc trước khi ghi "nằm trong DLL" hoặc hỏi Chiến.** 25/11 đã bỏ qua, tin spec, phải hỏi lại 4 câu.
+- **Giá trị cấu hình:** đọc `SCONFIG.INTVALUE` của bản chép trước khi hỏi hay đề xuất mặc định.
+- **Công thức cột lưới** (ví dụ thành tiền dòng): giải base64 `ViewConfig` của `GridMapper` trong `layout.xml`, đọc thẻ `FORMULA`.
+
 ## 2. Viết và sửa spec
 
 - Quy tắc dùng chung nhiều spec (biên "Đến ngày", `STATUS = 30`, lọc cửa hàng, quỹ) **chốt một lần**, rồi đồng bộ mọi spec liên quan. Quỹ tiền: [`specs/quy-tien.md`](specs/quy-tien.md) là nguồn chuẩn.

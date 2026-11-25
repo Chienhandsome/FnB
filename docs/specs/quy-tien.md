@@ -57,6 +57,8 @@ Mỗi đồng tiền thật ra hoặc vào được tính **đúng một lần**
 
 **Hóa đơn âm** (đặt trước lớn hơn tiền phải trả): hóa đơn không đổi quỹ phần trả lại; app gốc mở phiếu chi "Trả lại tiền đặt trước" [CODE `TraLaiKhach`] và phiếu chi đó trừ quỹ. Nếu người dùng đóng phiếu chi mà không lưu, v1 **cảnh báo rõ và hỏi xác nhận**; xác nhận bỏ qua thì quỹ chưa trừ khoản này (Q7).
 
+**Ngoại lệ khi sửa bill đã thanh toán (Chiến chốt 25/11):** phiếu chi trả cọc dư mở như app gốc với toàn bộ phần dư, kèm cảnh báo số đã chi trước đó; người dùng tự sửa số. Nếu lưu nguyên, quỹ bị trừ thừa. Chi tiết: [`quan-ly-ban-hang-dieu-chinh-hoa-don.md`](quan-ly-ban-hang-dieu-chinh-hoa-don.md) §6.4.
+
 **Sửa / xóa:** số dư tính từ giao dịch nên tự đúng. Hủy hóa đơn xóa cứng bill nên tiền của bill rời quỹ; phiếu thu/chi liên quan **không** tự xóa.
 
 ### 4.3 Khách chuyển khoản dư, quán trả lại tiền mặt (đã chốt)
@@ -168,7 +170,7 @@ Ví dụ chia: bill 1 = 300.000, bill 2 = 200.000; khách trả 350.000 chuyển
 - [ ] Chuyển khoản 500.000 cho bill 480.000 → Tài khoản +500.000, Tiền mặt −20.000.
 - [ ] Voucher / thẻ trả trước / tích lũy / ghi nợ không làm đổi quỹ.
 - [ ] Đặt trước 200.000 (tiền mặt) rồi đóng bill 480.000 trả tiền mặt phần còn lại → tổng Tiền mặt tăng đúng 480.000, không phải 680.000.
-- [ ] Đặt trước lớn hơn tiền bill → phiếu chi trả lại trừ đúng quỹ theo hình thức trên phiếu, không trừ hai lần.
+- [ ] Đặt trước lớn hơn tiền bill → phiếu chi trả lại trừ đúng quỹ theo hình thức trên phiếu, không trừ hai lần. (Áp cho lần đóng bill; sửa bill sau đó theo ngoại lệ ở §4.2.)
 - [ ] Phiếu thu/chi: `CHUYENKHOAN` NULL/0 → Tiền mặt; ≠ 0 → đúng tài khoản; thiếu tài khoản không lưu được (gồm phiếu thu công nợ).
 - [ ] Phiếu nhập có thanh toán không chọn hình thức thì không lưu được; mỗi hình thức trừ đúng quỹ; phiếu cũ (`TIENMAT = 0`, `CHUYENKHOAN = 0`) trừ Tiền mặt.
 - [ ] Chuyển quỹ: hai phiếu tạo/sửa/xóa cùng nhau trong một transaction; tổng hai quỹ không đổi; Thống kê doanh thu, KQKD, công nợ không đổi.

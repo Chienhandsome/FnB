@@ -264,6 +264,30 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 | Q19 | ~~Gộp bàn khi bill nguồn có tạm ứng~~ | **Chiến chốt 25/11: không cho gộp** (§3.8). Khác đề xuất cũ (chuyển phiếu tạm ứng) |
 | Q20 | ~~Hủy bill khi đã có tạm ứng~~ | **Chiến chốt 25/11: chặn hủy** (§3.8) |
 
+### 6.4 Chiến chốt 25/11/2026 (hỏi trong phiên). Mục này thắng §1–§6.2 nếu khác
+
+- **Q3, ngày giao dịch:** theo **ngày mở bàn** (mở 23:50 ngày 25, trả 00:30 ngày 26 → bill ngày 25). Vì vậy bỏ bước ở §3.7 cảnh báo và chuyển bill ngày cũ sang ngày hiện tại (mã gốc chỉ xét bước này khi `Shared.NgayGiaoDich != TheoNgayMoBan`).
+- **Q6, số hóa đơn:** quay vòng theo **ngày**, `ddMM` + 4 số.
+- **Q8, kiểm trước thanh toán:** bill có dòng hàng và tổng khớp tổng các dòng.
+- **Q10, in:** bản đầu báo "chưa hỗ trợ", làm in sau; **chưa dùng thật ở quán cho tới khi có in**. Khi chưa in được phiếu bếp thì luật cấm giảm món đã in bếp chưa có tác dụng.
+- **Phạm vi (§1, Q4, Q9, Q11):** đồng ý. Làm chuyển món sang bill khác và mở bàn từ phiếu đặt; cắt màn hình khách, cân điện tử, đèn bàn cùng các mục "Cắt" ở §1.
+- **Q5, quyền:** quyền chưa cấu hình thì không cấp; admin toàn quyền.
+- **P9, mật khẩu giảm đồ:** để sau. Vẫn kiểm quyền "Xóa giảm món"; nếu `NhapMatKhauGiamDo = 30` thì **chặn giảm**.
+- **Gói kỹ thuật (Q2, Q7, Q12, P1, P4, P5, P7, P8):** đồng ý. Ghi DB sau mỗi thao tác kèm kiểm `DATHANHTOAN`; gia hạn giữ bàn 30 giây, hết hạn 120 giây; làm tươi sơ đồ bàn 5–30 giây; cảnh báo trước khi mở bàn đang sửa chữa; sửa "muỗn" thành "muốn".
+- Còn mở: Q13 (chụp bổ sung app gốc) và các chỗ đánh dấu **[CHƯA XÁC MINH]** trong spec.
+
+### 6.5 Xác minh và chốt lại 25/11/2026. Mục này thắng §1–§6.4 nếu khác
+
+Mã dùng chung **không nằm trong DLL**: ở `SCONFIG` bản ghi `SharedCode` (cột `BLOBVALUE`) của `DATA.fdb`. Các chỗ spec ghi "trong DLL" cho `NgayGiaoDich`, `SoHDQuayVong`, `DuLieuHoaDonOk`, `CoNgatGio` là sai. Bốn điểm ở §6.4 hỏi khi chưa đọc mã này, Chiến chốt lại:
+
+- **Ngày giao dịch (thay Q3 ở §6.4):** **đọc cấu hình `CachChonNgayGiaoDich` như gốc**. Enum: 0 theo ngày mở bàn, 1 theo ngày thanh toán, 2 hiện chọn, 3 đóng mở chủ động, 4 theo giờ. Bản chép `DATA.fdb` = 1. v1 làm 0 và 1; chế độ khác hỏi thêm khi cần. Với 0 và 1, `GetNgayGiaoDich` trả ngày của máy chủ DB. Chế độ khác 0: khi đóng bill ở Sử dụng dịch vụ, `NGAY` = ngày giao dịch lúc thanh toán, **giữ bước cảnh báo chuyển bill ngày cũ ở §3.7** (bỏ câu "bỏ bước" ở §6.4).
+- **Số hóa đơn (thay Q6):** **đọc cấu hình `SoHoaDonQuayVongTheo`**, đủ 4 kiểu: 0 ngày (`ddMM`+4), 1 tháng (`MMyy`+5), 2 năm (`yy`+6), 3 không quay vòng (7 số). Bản chép = 1 (tháng). Cách lấy số: `TaoSoHoaDon` trong form Hóa đơn nhà hàng.
+- **Kiểm hóa đơn (thay Q8):** **như `DuLieuHoaDonOk`**, bỏ tiền giờ (= 0). Mỗi dòng: tính lại từ `SLXUATCHUAQUYDOI`, `DONGIA` và giảm giá theo tiền hoặc %, làm tròn tới đồng AwayFromZero, lệch tối đa 10đ so với `THANHTIEN`. Tiền hàng = `LamTron`(tổng các dòng tính lại). Tính lại giảm giá, phí dịch vụ, thuế theo `LamTron`; tiền hàng, giảm giá, phí, thuế lệch tối đa 10đ; tổng cộng sau `LamTron` lệch tối đa 1.000đ. Thông báo: "Tổng tiền hóa đơn bị sai, vui lòng kiểm tra lại", thêm " (1)" cho các khoản thành phần, " (2)" cho tổng cộng.
+- **Giữ bàn (thay chu kỳ ở §6.4):** gia hạn mỗi **20 giây** như `TableLocker`; ghi `GIULUC = CURRENT_TIMESTAMP`, `TAIKHOANGIU` = tên đăng nhập; nhả (đặt NULL) khi đóng form hoặc gọi `UnLockAndStop`.
+- `HIENTHILUACHON` là giá trị 0 của enum `GiaMatHang`.
+- `CoNgatGio` = ứng dụng là BIDA hoặc `ChoPhepDungNhieuBangGiaTrenBill = 30` (bản chép = 0).
+- Còn chưa xác minh: câu báo khi chưa chọn bàn, bảng mô tả của form `f3f7bb77`, mã quyền "Thu tạm ứng khách hàng", loại `UngDung` của bản F&B, và Q13.
+
 ## 7. Tiêu chí nghiệm thu (kiểm trên bản sao DB)
 
 - [ ] Quẹt thẻ quá số phải trả bị chặn (gồm ca chuyển khoản 300.000 + thẻ 200.000 cho bill 480.000); voucher lớn hơn bill không sinh tiền trả lại.
@@ -291,6 +315,11 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 - [ ] Hai phiên cùng mở một bàn: phiên thứ hai bị chặn bằng "ĐANG ĐƯỢC THAO TÁC BỞI".
 - [ ] Không SQL trong View; màu/cỡ chữ lấy từ token; hoạt động ở 125% DPI; lưới nút đủ lớn cho cảm ứng (≥ 44 px) — *yêu cầu v1, không phải hành vi app gốc (gốc là WinForms layout cố định).*
 - [ ] Nút In/Excel hiện, báo "chưa hỗ trợ"; không có thùng rác; không đọc `LOAIDINHLUONG`.
+- [ ] (§6.5) `CachChonNgayGiaoDich` = 0 và 1: mở bàn ngày D, trả ngày D+1 thì `NGAY` lần lượt là D và D+1; chế độ 1 có cảnh báo chuyển ngày.
+- [ ] (§6.5) Số hóa đơn đúng định dạng cho cả 4 kiểu quay vòng; số tiếp nối đúng dữ liệu có sẵn.
+- [ ] (§6.5) Kiểm hóa đơn: lệch dòng 10đ qua, 11đ chặn; tổng cộng lệch 1.000đ qua, 1.001đ chặn.
+- [ ] (§6.5) Giữ bàn gia hạn 20 giây, hết hạn 120 giây.
+- [ ] (§6.4) Quyền chưa cấu hình thì tài khoản không phải admin không làm được; `NhapMatKhauGiamDo = 30` thì chặn giảm; mở bàn đang sửa chữa có cảnh báo.
 
 ## 8. Gợi ý implement (không bắt buộc)
 

@@ -175,6 +175,11 @@ Kiểm trên **bản sao** `DATA.FDB` (bản sao trống khách hàng, nên mỗ
 - [ ] Thao tác chính (chọn nhóm, thêm, sửa, xóa, tìm) dùng được bằng cảm ứng.
 - [ ] Không có SQL trong View/ViewModel (kiểm bằng grep).
 
+**Theo §9.0**
+- [ ] Xóa khách đã có phát sinh ở bất kỳ bảng nào tại §4.4 bị chặn; khách chưa phát sinh xóa cứng được. Xóa nhóm còn khách bị chặn.
+- [ ] Điểm tích lũy ban đầu không nhận số âm, số thập phân. Tỉ lệ giảm ngoài 0–100 bị chặn.
+- [ ] Ô "Tỉ lệ giảm giá" luôn hiện trên dialog nhóm. "Giá bán", "Thẻ trả trước" bị khóa khi cấu hình tắt. Thiếu quyền nào thì ẩn nút đó.
+
 ## 7. Kế hoạch implement (chỉ chạy sau khi Chiến duyệt)
 
 1. **Data**: `CustomerRepository` (tìm/lọc, theo ID, thêm, sửa, xóa, kiểm tra trùng Mã/Tên, sinh mã tiếp theo), `CustomerGroupRepository`, `LookupRepository` (nhân viên, tỉnh thành), đọc cấu hình `SCONFIG` cần dùng (`ChoPhepTrungTenKhachHang`, `GopChungGiamGiaTienGioVaTienHangLamMot`, `SuDungGiaTheoKhach`, cờ có tiền giờ). Tham số hóa SQL, transaction cho xóa/chuyển nhóm.
@@ -203,6 +208,26 @@ Chụp toàn cửa sổ, ghi chú dưới mỗi ảnh nếu có thao tác đặc
 13. (Nếu có) Mở lại sau khi tắt app: màn có nhớ độ rộng/ẩn hiện cột không.
 
 ## 9. Rủi ro / câu hỏi mở
+
+### 9.0 Chiến chốt 25/11/2026 (hỏi trong phiên). Mục này thắng phần khác của spec nếu khác
+
+- **Xóa khách (Q2):** khách đã có phát sinh thì **chặn xóa**; khách chưa phát sinh thì xóa cứng. Bảng cần kiểm: các bảng tham chiếu ở §4.4.
+- **Xóa nhóm (Q2):** nhóm còn khách thì **chặn xóa**.
+- **Điểm tích lũy ban đầu (Q5):** chỉ nhận số nguyên từ 0.
+- **Tỉ lệ giảm của nhóm (Q9):** chặn ngoài 0–100.
+- **Ô "Tỉ lệ giảm giá" / giảm tổng (A2):** **luôn hiện** (khác app gốc). Ảnh hưởng lên tiền hóa đơn phải đối chiếu ở spec bán hàng.
+- **"Giá bán", "Thẻ trả trước" khi cấu hình tắt (Q6, A3):** làm mờ, khóa.
+- **Thiếu quyền Thêm/Sửa/Xóa (Q10):** **ẩn nút**. Chiến chưa chốt riêng việc chỉ có quyền Xem thì hộp thoại có mở ở chế độ chỉ đọc không.
+- **Phạm vi (A1, Q11):** quản lý nhóm nằm trong spec này; Khách hàng thân thiết, Gửi tin nhắn, Nhập từ hệ thống cũ, Công nợ làm spec sau.
+- Còn phải xác minh trước khi duyệt: Q3, Q4, Q7, Q8, Q12 và phần chỉ đọc của Q10.
+
+### 9.0.1 Xác minh 25/11/2026
+
+- **A2:** `Hóa đơn nhà hàng` chỉ dùng `DNHOMKHACHHANG.TILEGIAMGIA` khi `GopChungGiamGiaTienGioVaTienHangLamMot = 30` (đang 0; khi đó dùng `TILEGIAMGIATIENHANG`). Nhưng `Hóa đơn bán hàng` (bán lẻ), hàm `GetTiLeGiamTheoKhach`, lấy `TILEGIAMGIA` khi khách có nhóm tồn tại và thay cho `MacDinhGiamGia`. Vì vậy sửa ô này ảnh hưởng tiền ở bán lẻ.
+- **Q12, một phần:** `STABLEDESC` của `DKHACHHANG` và `DNHOMKHACHHANG` có `INVOICEPRINT = 0`, `BARCODEPRINT = 0`. Nút xuất Excel chưa xác minh.
+- **Q7, một phần:** `SCOLUMN.FORMAT` của Điện thoại, Email, Mã số thuế rỗng, nên không thấy luật định dạng trong metadata này. Cách ô tìm lọc và bỏ dấu chưa xác minh.
+- **Q8, một phần:** màn `Khách hàng thân thiết` chỉ lọc đúng nhóm đang chọn (`DNHOMKHACHHANGID = SelectedID`), không gồm nhóm con. Màn danh mục do khung dựng, chưa xác minh.
+- **Chưa xác minh:** Q3 (sinh mã), Q4 (so trùng hoa/thường, dấu, khoảng trắng; metadata chỉ cho biết cột nào cấm trùng), chế độ chỉ đọc ở Q10. Nhiều khả năng thuộc khung `No1Lib`; cần thử trên app gốc.
 
 **Rủi ro**
 - Hành vi thêm/sửa/xóa/tìm nằm trong framework `No1Lib.*` (không có mã) → chỉ chắc khi có ảnh/đối chiếu; phần "nguyên văn thông báo lỗi" và "xóa khi có phát sinh" là nơi dễ lệch nhất.

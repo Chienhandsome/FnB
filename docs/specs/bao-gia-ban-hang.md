@@ -94,6 +94,22 @@ Một quyền: "Báo giá" (`SFUNCTION` `7be6722c-…`, nhóm "Bán hàng", ki�
 
 ## 5. Câu hỏi chờ Chiến quyết
 
+### 5.0 Chiến chốt 25/11/2026 (hỏi trong phiên). Mục này thắng §2, §5.1, §5.2 nếu khác
+
+- **Q1/P1:** `LamTron` 1000 AwayFromZero cho `TIENGIAMGIA`, `TIENTHUE`, `TONGCONG`, tiền `decimal`. Ca số: tiền hàng 235.000, giảm 7%, thuế 8%, phí 0 → giảm 16.000, thuế 18.000, tổng 237.000.
+- **P2:** giữ như app gốc (`code.cs:75-83`, `:181-198`): dòng đơn vị lẻ luôn gộp; dòng đơn vị chẵn gộp khi `NhapMotMatHangNhieuLanTrongPhieu` khác 30. Thay đề xuất ở §2.1 và §5.1.
+- **P3:** trước mắt chặn số lượng <= 0. Sau này bổ sung cấu hình toàn hệ thống cho phép số âm (chưa thuộc spec này).
+- **Q4:** nút In báo "chưa hỗ trợ".
+- Còn phải xác minh trước khi duyệt: Q2, Q5, Q7 (phần hiện ô thuế), Q9.
+
+### 5.0.1 Xác minh 25/11/2026
+
+- **Q9, đã xác minh:** `ViewConfig` của lưới chi tiết `detail` (`layout.xml`, giải base64) lưu công thức `SOLUONG*DONGIA*(1-TILEGIAMGIA/100)`. Thay ghi chú [CHƯA XÁC MINH] ở §2.2.
+- **Q7, đã xác minh:** `SCOLUMN.ENABLECONFIGID` của `TILETHUE`, `TIENTHUE` = `CoThueSuat` → cấu hình đang 0 thì ô bị khóa.
+- **Q5, một phần:** `DMATHANG` không có cột `GIABANLE`, `GIABANBUON` (chỉ `GIABAN`, `GIABAN2`–`4`, `GIABANCHAN`). Giá ghi vào phiếu: lẻ = `GIABAN`, chẵn = `GIABANCHAN` (`code.cs`). Hai cột lưới "Giá bán lẻ/buôn" của gốc gắn với tên không có trong bảng; gốc hiển thị gì chưa xác minh. Bản mới hiển thị `GIABAN`, `GIABANCHAN` (chỉ là hiển thị).
+- **Q3, Q6, Q10, giống app gốc:** `code.cs` của form không có chức năng chuyển báo giá, không đọc hay gán `LOAI`; đơn giá Excel trống thành 0 (`detail_OnImpExcelRowAdding`). Mới rà form này.
+- **Q2, chưa xác minh:** `STABLEDESC` có `GENNO = 30`, mẫu `BG(yy)/(*****)`; chưa tìm thấy mã quay vòng theo năm.
+
 ### 5.1 Chỗ đề xuất khác app gốc (CHỈ đề xuất)
 
 - **P1** Làm tròn: `TIENGIAMGIA`, `TIENTHUE`, `TONGCONG` dùng `LamTron` 1000 AwayFromZero, tiền `decimal` (gốc: bội 100 cho giảm giá, thuế/tổng không làm tròn). *Mặc định tạm: áp P1, nhưng đây là phiếu báo giá, không phải tiền thật ⇒ có thể giữ nguyên gốc.*
@@ -129,6 +145,9 @@ Xóa cứng; tiền `NUMERIC(18,2)`/`decimal`; F&B thuần COFFEE + POS; bán l�
 - [ ] Nhập Excel: đủ 3 thông báo lỗi gốc, bỏ dòng thiếu SL, mã/tên không phân biệt hoa thường.
 - [ ] Xóa phiếu xóa cả chi tiết; không dư bản ghi `TBAOGIACHITIET` mồ côi.
 - [ ] Nút In/Excel hiện, báo "chưa hỗ trợ" nếu chưa có mẫu; không SQL trong View; màu/cỡ chữ từ token; 125% DPI; nút đủ lớn cảm ứng (yêu cầu v1, không phải hành vi gốc).
+- [ ] (§5.0) Tiền hàng 235.000, giảm 7%, thuế 8% (bật `CoThueSuat` trên bản chép), phí 0 → giảm 16.000, thuế 18.000, tổng 237.000. Thay yêu cầu "khớp §2.2" ở phần làm tròn.
+- [ ] (§5.0) Số lượng <= 0 bị chặn ở mọi đường nhập, gồm nhập Excel và sửa trên lưới.
+- [ ] (§5.0.1) `CoThueSuat = 0` thì hai ô thuế bị khóa.
 
 ## 8. Gợi ý implement (không bắt buộc)
 

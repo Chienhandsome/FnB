@@ -119,17 +119,42 @@ Lưới lọc `LOAI=0`, `DATHANHTOAN=30` ✔ · sắp `NGAY, GIOTHANHTOAN` ✔ �
 | Q8 | Hủy phiếu có cần đăng nhập lại bằng mật khẩu quản lý? | Có, như `CanLogin` gốc |
 | Q9 | Chụp bổ sung bằng app gốc (có bill đã thanh toán trong DB mẫu) khi máy cho phép? | Có, sau |
 
+### 6.3 Chiến chốt 25/11/2026 (hỏi trong phiên). Mục này thắng §1–§6.2 nếu khác
+
+- **Cọc dư khi sửa bill:** giữ như app gốc. Theo mã đọc ngày 25/11 (`Hóa đơn nhà hàng` `code.cs`: `GetDatTruoc` chỉ `SUM(THU)`; `TraLaiKhach` không gắn phiếu chi với bill), mỗi lần cập nhật bill còn dư cọc sẽ mở phiếu chi cho **toàn bộ** phần dư, không trừ phần đã chi. Ví dụ bill 300.000, cọc 400.000, đã chi 100.000, sửa còn 250.000 → phiếu chi mở với 150.000 (chỉ cần 50.000). Hệ quả đã nêu cho Chiến; suy từ mã, chưa chạy trên app gốc. Chưa chốt: việc không tính phiếu thu `STATUS = -30` (`su-dung-dich-vu.md` §3.7.2) có áp cho màn này không.
+- **Đổi khách (Q4):** áp lại giảm giá theo nhóm như gốc, ở cả hai chế độ.
+- **Bill nhóm (`NHOMGUID`, Q5):** bản đầu **chặn sửa và hủy**; chỉ xem và in lại. Thay cho nhánh bill nhóm ở §2.2, đề xuất P6 và phần bill nhóm trong tiêu chí §7.
+- **Hủy bill đã thanh toán có cọc/tạm ứng:** **cho hủy, có cảnh báo** nhắc kiểm phiếu thu, chi liên quan. Phiếu không tự xóa. Khác luật chặn hủy bill chưa thanh toán ở `su-dung-dich-vu.md` §3.8.
+- **Tính lại sau khi sửa (Q1, P7):** như app gốc, chỉ ghi các cột trên bill (gồm `DIEM`), không nâng hay hạ nhóm khách.
+- **P4:** sửa cả ba: `TDONHANGHUY.TIENGIAMGIA` ghi tiền giảm; lưu vết hủy ở màn này ghi `CHUCNANG` = "Quản lý bán hàng"; "muỗn" thành "muốn".
+- **Điều chỉnh hóa đơn (Q2, P2):** khóa chọn ngày như gốc. Bill tính theo ngày mở bàn (`su-dung-dich-vu.md` §6.4).
+- **Gói còn lại (P1, P3, Q6, Q7, Q8):** đồng ý. Cập nhật trong một transaction; hỏi trước khi bỏ thay đổi chưa cập nhật; hủy phiếu phải đăng nhập lại; in "chưa hỗ trợ"; chỉ ô Lọc; làm sau Sử dụng dịch vụ, tách 2 patch.
+- Còn mở: Q3 (`GIOTRADO`), Q9 (chụp app gốc), các chỗ **[CHƯA XÁC MINH]**, và nơi tính số dư thẻ trả trước, voucher sau khi sửa hoặc hủy.
+
+### 6.4 Xác minh và chốt lại 25/11/2026. Mục này thắng §1–§6.3 nếu khác
+
+- **Cọc dư khi sửa bill (thay dòng đầu §6.3):** vì mâu thuẫn tiêu chí "không trừ hai lần" của `quy-tien.md`, Chiến chốt: **tính và mở phiếu chi như gốc, thêm cảnh báo ghi rõ số đã chi trả trước đó** (ví dụ "đã chi trước đó 100.000" khi phiếu mở sẵn 150.000). Người dùng tự sửa số. Đã ghi ngoại lệ vào `quy-tien.md`.
+- **Cần thiết kế khi implement:** phiếu chi của gốc không gắn mã bill. Đề xuất ghi `TTHUCHI.TDONHANGID` cho phiếu chi trả cọc do bản mới tạo (`GetDatTruoc` chỉ cộng `THU`); **chưa rà** nơi khác đọc cột này. Phiếu do app gốc tạo không gắn bill nên số "đã chi" có thể thiếu; cảnh báo phải nói rõ điều đó.
+- Phiếu thu `STATUS = -30` không tính vào đặt trước (theo `su-dung-dich-vu.md` §3.7.2 và `quy-tien.md` Q4).
+- **Ngày của Điều chỉnh hóa đơn:** ngày giao dịch theo `su-dung-dich-vu.md` §6.5; chế độ 0, 1 là ngày máy chủ DB. Câu "bill tính theo ngày mở bàn" ở §6.3 không còn đúng.
+- **Q3, `GIOTRADO`:** thấy nơi ghi (`Hóa đơn nhà hàng`, bản desktop và tablet), không thấy nơi đọc trong `.cs` bản xuất, `SharedCode`, `SREPORT.SQL/CODE/SERVERCODE`, `STABLEDESC.CODE`, `SFORM.SERVERCODE`, trigger. Chưa rà mẫu in và layout. Giữ "chỉ ghi".
+- **Thẻ trả trước:** form `Nhập thẻ trả trước` tính số dư từ Σ(`THU` − `CHI`) của `TTHUCHI` theo thẻ trừ Σ `THETRATRUOC` của các bill khác, nên sửa hoặc hủy bill tự đổi số dư. Câu SQL đọc được không lọc `STATUS`. **Voucher:** chưa thấy lệnh cập nhật `DVOUCHER` trong `.cs` bản xuất; cách xác định voucher đã dùng chưa xác minh.
+
 ## 7. Tiêu chí nghiệm thu (kiểm trên bản sao DB)
 
 - [ ] Tạo ≥ 3 bill đã thanh toán + 1 bill đang mở trong ngày; danh sách chỉ hiện đúng 3 bill (`LOAI=0`, `DATHANHTOAN=30`) theo thứ tự `NGAY, GIOTHANHTOAN`; đổi ngày lọc đúng (Quản lý bán hàng); Điều chỉnh hóa đơn khóa ô ngày.
 - [ ] Chưa chọn dòng: form phải bị khóa; chọn dòng: nạp đúng bill sau một nhịp gỡ nhiễu.
 - [ ] Chế độ Quản lý bán hàng: hiện đủ nút giảm/xóa/đổi giá…; ẩn Chuyển bàn/Gộp bàn/Thống kê; In lại bill luôn hiện (chế độ Điều chỉnh hóa đơn: ẩn).
 - [ ] Chế độ Điều chỉnh hóa đơn: khối tổng cộng và các nút chỉnh dòng bị khóa; nút "Trả đồ" hiện; chỉ ô Khách hàng bật và chỉ khi có quyền `ThayDoiKhachHangTrongDieuChinhHoaDon`.
-- [ ] Sửa (đổi SL, đơn giá, giảm giá) **không ghi DB cho đến khi bấm Thanh toán**; bấm cập nhật ghi bill + dòng + xuất vật tư lại + lưu vết trong một transaction; `USERTHANHTOANID`, `GIOTHANHTOAN`, `NGAY` giữ nguyên (**chỉ bill đơn**; bill nhóm ghi đè theo §2.2); hộp thanh toán mở với giá trị thanh toán cũ của bill.
+- [ ] Sửa (đổi SL, đơn giá, giảm giá) **không ghi DB cho đến khi bấm Thanh toán**; bấm cập nhật ghi bill + dòng + xuất vật tư lại + lưu vết trong một transaction; `USERTHANHTOANID`, `GIOTHANHTOAN`, `NGAY` giữ nguyên (bill nhóm bị chặn, xem tiêu chí dưới); hộp thanh toán mở với giá trị thanh toán cũ của bill.
 - [ ] Trả đồ: dòng SL âm đúng đơn giá và % giảm gốc, `GIOTRADO` = now, tổng giảm tương ứng; `SLTRALAI + SLSUDUNG = SLORDER`.
 - [ ] Hủy phiếu: đủ quyền → nhập lý do (khi cờ bật) → xóa cứng bill + dòng + `TINCHEBIEN`, có đúng 1 `TDONHANGHUY` + n `TDONHANGHUYCHITIET` với `TIENGIAMGIA` là **tiền**; thiếu quyền → không làm gì.
 - [ ] Tiền `decimal`, `LamTron` 1000 AwayFromZero chỉ khi tính tiền; không đọc `LOAIDINHLUONG`; không thùng rác; nút In "chưa hỗ trợ".
 - [ ] Không SQL trong View; màu/cỡ chữ theo token; 125% DPI.
+- [ ] (§6.3) Bill thuộc nhóm: không sửa, không trả đồ, không hủy được; vẫn xem được.
+- [ ] (§6.3) Đổi khách thì áp lại giảm giá theo nhóm ở cả hai chế độ; không nâng hay hạ nhóm khách.
+- [ ] (§6.4) Bill 300.000, cọc 400.000, đã chi 100.000, sửa còn 250.000: phiếu chi mở 150.000 và cảnh báo "đã chi trước đó 100.000".
+- [ ] (§6.3) Hủy bill có phiếu thu/chi liên quan: có cảnh báo, vẫn hủy được, phiếu giữ nguyên.
 
 ## 8. Gợi ý implement (không bắt buộc)
 
