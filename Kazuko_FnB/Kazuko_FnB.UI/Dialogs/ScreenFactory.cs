@@ -26,6 +26,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "sys.password", session => new ChangePasswordDialog(session) },
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
                 { "preview.booking", session => new BookingPreviewForm(session) },
+                { "preview.fund", session => new FundPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -47,6 +48,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // (STABLEDESCID = NULL, OPERATION = 4) nên không đi qua CatalogView.
             if (string.Equals(node.Id, BookingCalendarView.MenuId, StringComparison.Ordinal))
                 return new BookingCalendarView(session.DatabasePath);
+            // Màn "Tồn quỹ": form tự viết (OPERATION = 3, không có STABLEDESCID).
+            if (string.Equals(node.Id, FundBalanceView.MenuId, StringComparison.Ordinal))
+                return new FundBalanceView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

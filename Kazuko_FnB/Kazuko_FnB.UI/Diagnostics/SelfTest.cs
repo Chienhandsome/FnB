@@ -278,11 +278,267 @@ namespace Kazuko_FnB.UI.Diagnostics
             Check("Quỹ: phiếu nhập chưa trả tiền không cần hình thức", s.Error == null && s.Cash == 0m && s.Transfer == 0m);
         }
 
+        // ------------------------------------------------------------------ Sổ quỹ (docs/specs/quy-tien.md §4.4, §4.7)
+
+        private static DateTime Day(int day, int hour = 0, int minute = 0)
+        {
+            return new DateTime(2026, 11, day, hour, minute, 0);
+        }
+
+        private static FundSource Receipt(string number, DateTime time, string store, decimal income, decimal expense = 0m,
+            string account = null, string reason = null)
+        {
+            return new FundSource
+            {
+                Kind = FundSourceKind.Voucher, Number = number, DocumentDate = time, StoreId = store, ReasonId = reason,
+                Voucher = new FundVoucher { Income = income, Expense = expense, TransferFlag = account == null ? 0 : 30, AccountId = account }
+            };
+        }
+
+        private static FundSource Opening(string number, DateTime time, string store, decimal amount, string account = null)
+        {
+            return Receipt(number, time, store, amount, 0m, account, FundReasons.OpeningBalanceId);
+        }
+
+        private static FundLedger Ledger(List<FundSource> sources, FundNodeKind node, int from, int to,
+            string account = null, string onlyStore = null)
+        {
+            var stores = new List<string> { "CHA", "CHB" };
+            return FundLedgerRules.Build(sources, new FundQuery
+            {
+                From = Day(from), To = Day(to), Node = node, AccountId = account,
+                KnownAccountIds = new List<string> { "TK1", "TK2" },
+                Scope = FundLedgerRules.ResolveScope(true, stores, new List<string>(), onlyStore)
+            });
+        }
+
+        private static string Totals(FundLedger l)
+        {
+            return "đầu " + l.OpeningBalance + ", nhập " + l.OpeningEntered + ", thu " + l.Income + ", chi " + l.Expense +
+                   ", cuối " + l.ClosingBalance + ", " + l.Lines.Count + " dòng";
+        }
+
+        private static void CheckLedger(string name, FundLedger l, decimal opening, decimal entered, decimal income,
+            decimal expense, decimal closing)
+        {
+            Check("Sổ quỹ: " + name, l.OpeningBalance == opening && l.OpeningEntered == entered && l.Income == income &&
+                                     l.Expense == expense && l.ClosingBalance == closing, Totals(l));
+        }
+
+        private static void FundLedgerTests()
+        {
+            // Q13: hai cửa hàng chung tài khoản.
+            var shared = new List<FundSource>
+            {
+                Opening("DK", Day(1, 8), "CHA", 10000000m, "TK1"),
+                Receipt("A1", Day(2, 9), "CHA", 2000000m, 0m, "TK1"),
+                Receipt("B1", Day(2, 10), "CHB", 3000000m, 0m, "TK1")
+            };
+            CheckLedger("Q13 xem tất cả cửa hàng", Ledger(shared, FundNodeKind.Account, 1, 30, "TK1"), 0m, 10000000m, 5000000m, 0m, 15000000m);
+            FundLedger onlyA = Ledger(shared, FundNodeKind.Account, 1, 30, "TK1", "CHA");
+            Check("Sổ quỹ: Q13 lọc A chỉ có thu của A, không có tồn",
+                  !onlyA.ShowBalance && onlyA.Income == 2000000m && onlyA.Lines.Count == 1 && onlyA.Lines[0].Balance == null
+                  && onlyA.OpeningBalance == 0m && onlyA.ClosingBalance == 0m, Totals(onlyA));
+            Check("Sổ quỹ: Q13 nút Tất cả khi lọc cửa hàng cũng không có tồn", !Ledger(shared, FundNodeKind.All, 1, 30, null, "CHA").ShowBalance);
+            Check("Sổ quỹ: Q13 tiền mặt vẫn có tồn khi lọc cửa hàng", Ledger(shared, FundNodeKind.Cash, 1, 30, null, "CHA").ShowBalance);
+            FundStoreScope one = FundLedgerRules.ResolveScope(false, new List<string> { "CHA" }, new List<string> { "CHA" }, "CHA");
+            Check("Sổ quỹ: hệ thống một cửa hàng thì lọc nó vẫn là xem tất cả", one.CoversAll);
+            FundStoreScope limited = FundLedgerRules.ResolveScope(false, new List<string> { "CHA", "CHB" }, new List<string> { "CHA" }, "");
+            Check("Sổ quỹ: user bị giới hạn cửa hàng không phải xem tất cả", !limited.CoversAll && limited.StoreIds.Count == 1);
+            FundStoreScope outside = FundLedgerRules.ResolveScope(false, new List<string> { "CHA", "CHB" }, new List<string> { "CHA" }, "CHB");
+            Check("Sổ quỹ: chọn cửa hàng ngoài quyền thì không thấy gì", !outside.CoversAll && outside.StoreIds.Count == 0);
+            Check("Sổ quỹ: chưa gán cửa hàng, một cửa hàng thì xem được",
+                  FundLedgerRules.ResolveScope(false, new List<string> { "CHA" }, new List<string>(), "").StoreIds.Count == 1);
+            Check("Sổ quỹ: chưa gán cửa hàng, nhiều cửa hàng thì không thấy",
+                  FundLedgerRules.ResolveScope(false, new List<string> { "CHA", "CHB" }, new List<string>(), "").StoreIds.Count == 0);
+
+            // Mốc số dư đầu kỳ tiền mặt: theo từng cửa hàng.
+            var cash = new List<FundSource>
+            {
+                Receipt("TRUOC", Day(4, 9), "CHA", 111m),
+                Receipt("CUNGNGAY-TRUOC", Day(5, 7), "CHA", 222m),
+                Opening("DK-A", Day(5, 8), "CHA", 1000m),
+                Receipt("CUNGNGAY-SAU", Day(5, 9), "CHA", 50m),
+                Receipt("SAU", Day(6, 9), "CHA", 0m, 30m),
+                Receipt("B-CHUAMOC", Day(3, 9), "CHB", 7m)
+            };
+            CheckLedger("mốc: chỉ cộng giao dịch sau mốc", Ledger(cash, FundNodeKind.Cash, 1, 30, null, "CHA"), 0m, 1000m, 50m, 30m, 1020m);
+            CheckLedger("cửa hàng chưa có mốc tính từ đầu", Ledger(cash, FundNodeKind.Cash, 1, 30, null, "CHB"), 0m, 0m, 7m, 0m, 7m);
+            CheckLedger("hai cửa hàng, mỗi quỹ một mốc", Ledger(cash, FundNodeKind.Cash, 1, 30), 0m, 1000m, 57m, 30m, 1027m);
+            FundLedger missing = Ledger(cash, FundNodeKind.Cash, 1, 30);
+            Check("Sổ quỹ: ghi chú cửa hàng chưa nhập số đầu kỳ",
+                  missing.CashStoresWithoutOpening.Count == 1 && missing.CashStoresWithoutOpening[0] == "CHB");
+            CheckLedger("xem khoảng trước ngày mốc không cộng giao dịch cũ", Ledger(cash, FundNodeKind.Cash, 1, 4, null, "CHA"), 0m, 0m, 0m, 0m, 0m);
+
+            var zero = new List<FundSource> { Receipt("CU", Day(1, 9), "CHA", 500m), Opening("DK0", Day(2, 8), "CHA", 0m) };
+            CheckLedger("số dư đầu kỳ bằng 0 vẫn là mốc", Ledger(zero, FundNodeKind.Cash, 1, 30, null, "CHA"), 0m, 0m, 0m, 0m, 0m);
+
+            // Hai tài khoản mốc khác nhau + khoản chưa xác định.
+            var banks = new List<FundSource>
+            {
+                Opening("DK1", Day(2, 8), "CHA", 100m, "TK1"),
+                Opening("DK2", Day(10, 8), "CHA", 200m, "TK2"),
+                Receipt("T1", Day(5, 9), "CHA", 10m, 0m, "TK1"),
+                Receipt("T2-TRUOC", Day(5, 9), "CHA", 20m, 0m, "TK2"),
+                Receipt("T2-SAU", Day(12, 9), "CHB", 5m, 0m, "TK2"),
+                Receipt("LA", Day(13, 9), "CHA", 3m, 0m, "KHONG-CO"),
+                new FundSource
+                {
+                    Kind = FundSourceKind.Sale, Number = "HD-THE", DocumentDate = Day(14), PaidTime = Day(14, 20), StoreId = "CHA",
+                    Bill = new FundBill { PaidFlag = 30, Card = 7m }
+                }
+            };
+            decimal total = Ledger(banks, FundNodeKind.AccountAll, 1, 30).ClosingBalance;
+            decimal sum = Ledger(banks, FundNodeKind.Account, 1, 30, "TK1").ClosingBalance +
+                          Ledger(banks, FundNodeKind.Account, 1, 30, "TK2").ClosingBalance +
+                          Ledger(banks, FundNodeKind.UnknownAccount, 1, 30).ClosingBalance;
+            Check("Sổ quỹ: hai tài khoản mốc khác nhau tính độc lập",
+                  Ledger(banks, FundNodeKind.Account, 1, 30, "TK1").ClosingBalance == 110m &&
+                  Ledger(banks, FundNodeKind.Account, 1, 30, "TK2").ClosingBalance == 205m);
+            Check("Sổ quỹ: tổng tài khoản + chưa xác định = quỹ Tài khoản", total == sum && total == 325m, total + " / " + sum);
+            Check("Sổ quỹ: có nút chưa xác định tài khoản", Ledger(banks, FundNodeKind.All, 1, 30).HasUnknownAccount);
+
+            var mixed = new List<FundSource>
+            {
+                Receipt("CK", Day(3, 9), "CHA", 40m, 0m, "TK1"),
+                new FundSource
+                {
+                    Kind = FundSourceKind.Sale, Number = "HD", DocumentDate = Day(3), PaidTime = Day(3, 10), StoreId = "CHA",
+                    Bill = new FundBill { PaidFlag = 30, Cash = -20m, Transfer = 500m, Card = 60m, AccountId = "TK1" }
+                }
+            };
+            FundLedger detail = Ledger(mixed, FundNodeKind.Account, 1, 30, "TK1");
+            Check("Sổ quỹ: tách tổng chuyển khoản và quẹt thẻ", detail.TransferNet == 540m && detail.CardNet == 60m,
+                  detail.TransferNet + " / " + detail.CardNet);
+            CheckLedger("tiền trả lại hiện ở cột chi tiền mặt", Ledger(mixed, FundNodeKind.Cash, 1, 30), 0m, 0m, 0m, 20m, -20m);
+
+            // Tồn đầu D+1 = tồn cuối D, mọi ngày, mọi nút.
+            var all = new List<FundSource>();
+            all.AddRange(cash);
+            all.AddRange(banks);
+            all.AddRange(mixed);
+            all.Add(new FundSource
+            {
+                Kind = FundSourceKind.Stock, Number = "PN", DocumentDate = Day(11), CreatedTime = Day(11, 15), StoreId = "CHA",
+                Stock = new FundStockDocument { Type = 1, PaidAmount = 300m }
+            });
+            string broken = "";
+            foreach (FundNodeKind node in new[] { FundNodeKind.All, FundNodeKind.Cash, FundNodeKind.AccountAll })
+                for (int d = 1; d < 20; d++)
+                {
+                    FundLedger today = Ledger(all, node, d, d);
+                    FundLedger next = Ledger(all, node, d + 1, d + 1);
+                    if (today.ClosingBalance != next.OpeningBalance)
+                        broken += node + " ngày " + d + "; ";
+                    if (today.ClosingBalance != today.OpeningBalance + today.OpeningEntered + today.Income - today.Expense)
+                        broken += "cộng sai " + node + " ngày " + d + "; ";
+                }
+            Check("Sổ quỹ: tồn đầu hôm sau = tồn cuối hôm trước", broken.Length == 0, broken);
+
+            // Thời điểm quỹ.
+            Check("Sổ quỹ: bill qua đêm tính theo giờ thanh toán",
+                  FundLedgerRules.FundTime(new FundSource { Kind = FundSourceKind.Sale, DocumentDate = Day(1), PaidTime = Day(2, 1) }) == Day(2, 1));
+            Check("Sổ quỹ: NGAY không giờ, tạo cùng ngày thì lấy giờ tạo",
+                  FundLedgerRules.FundTime(new FundSource { Kind = FundSourceKind.Voucher, DocumentDate = Day(3), CreatedTime = Day(3, 14) }) == Day(3, 14));
+            Check("Sổ quỹ: phiếu lùi ngày vẫn nằm đúng ngày của phiếu",
+                  FundLedgerRules.FundTime(new FundSource { Kind = FundSourceKind.Stock, DocumentDate = Day(3), CreatedTime = Day(9, 14) }) == Day(3));
+            Check("Sổ quỹ: NGAY có giờ thì dùng NGAY",
+                  FundLedgerRules.FundTime(new FundSource { Kind = FundSourceKind.Voucher, DocumentDate = Day(3, 6), CreatedTime = Day(3, 14) }) == Day(3, 6));
+        }
+
+        /// <summary>Seed giao dịch vào bản sao DB, đọc qua FundRepository rồi xóa. Dùng năm 2001 để không đụng dữ liệu khác.</summary>
+        private static void FundRepositoryTests(string db)
+        {
+            var repo = new FundRepository(db);
+            FundData before = repo.Load(new DateTime(2001, 3, 31));
+            string store = before.Stores.Count > 0 ? before.Stores[0].Id : "";
+            string account = before.Accounts.Count > 0 ? before.Accounts[0].Id : "";
+            Check("Quỹ DB: đọc được cửa hàng và tài khoản", store.Length > 0 && account.Length > 0);
+            var orders = new List<string>();
+            var vouchers = new List<string>();
+            string warehouse = DbHelper.NewId();
+            try
+            {
+                BookingExec(db, "INSERT INTO DKHOHANG (ID, NAME, STATUS, DCUAHANGID, USERCREATEDID) VALUES (@I, 'KHO SELFTEST QUY', 30, @S, 'selftest')",
+                    "@I", warehouse, "@S", store);
+
+                Action<string, int, int, DateTime, decimal, decimal, decimal, decimal, string> order =
+                    (name, type, status, date, cashAmount, transfer, card, paid, orderStore) =>
+                    {
+                        string id = DbHelper.NewId();
+                        orders.Add(id);
+                        BookingExec(db,
+                            "INSERT INTO TDONHANG (ID, NAME, LOAI, STATUS, DATHANHTOAN, NGAY, GIOTHANHTOAN, TIENMAT, CHUYENKHOAN, THE, " +
+                            "TIENTHANHTOAN, DTAIKHOANNGANHANGID, DCUAHANGID, DKHONHAPID, USERCREATEDID) VALUES (@I, @N, @L, @S, @P, @D, @G, @M, @C, @T, @A, @K, @H, @W, 'selftest')",
+                            "@I", id, "@N", name, "@L", type, "@S", status, "@P", type == 0 ? (object)30 : 0,
+                            "@D", date.Date, "@G", type == 0 ? (object)date : null,
+                            "@M", cashAmount, "@C", transfer, "@T", card, "@A", paid,
+                            "@K", transfer != 0m || card != 0m ? account : null,
+                            "@H", orderStore, "@W", type == 1 ? warehouse : null);
+                    };
+                order("STQ-HD", 0, 30, new DateTime(2001, 3, 5, 10, 0, 0), -20000m, 500000m, 100000m, 580000m, store);
+                order("STQ-HD-XOA", 0, -30, new DateTime(2001, 3, 5, 11, 0, 0), 999m, 0m, 0m, 999m, store);
+                order("STQ-PN-CU", 1, 30, new DateTime(2001, 3, 6), 0m, 0m, 0m, 70000m, null); // cửa hàng lấy theo kho
+                order("STQ-PN-CK", 1, 30, new DateTime(2001, 3, 7), 0m, 30000m, 0m, 30000m, store);
+                order("STQ-SAU", 0, 30, new DateTime(2001, 4, 2, 9, 0, 0), 888m, 0m, 0m, 888m, store);
+
+                Action<string, DateTime, decimal, decimal, int, string, int> voucher =
+                    (name, date, income, expense, flag, reason, status) =>
+                    {
+                        string id = DbHelper.NewId();
+                        vouchers.Add(id);
+                        BookingExec(db,
+                            "INSERT INTO TTHUCHI (ID, NAME, NGAY, TIMECREATED, THU, CHI, CHUYENKHOAN, DTAIKHOANNGANHANGID, DCUAHANGID, DLYDOTHUCHIID, STATUS, USERCREATEDID) " +
+                            "VALUES (@I, @N, @D, @D, @T, @C, @F, @K, @H, @R, @S, 'selftest')",
+                            "@I", id, "@N", name, "@D", date, "@T", income, "@C", expense, "@F", flag,
+                            "@K", flag != 0 ? account : null, "@H", store, "@R", reason, "@S", status);
+                    };
+                voucher("STQ-PT", new DateTime(2001, 3, 8, 8, 0, 0), 150000m, 0m, 0, null, 30);
+                voucher("STQ-PC", new DateTime(2001, 3, 8, 9, 0, 0), 0m, 40000m, 30, null, 30);
+                voucher("STQ-PT-XOA", new DateTime(2001, 3, 8, 10, 0, 0), 777m, 0m, 0, null, -30);
+
+                FundData data = repo.Load(new DateTime(2001, 3, 31));
+                Func<FundNodeKind, string, FundLedger> read = (node, accountId) => FundLedgerRules.Build(
+                    data.Sources.FindAll(x => x.Number != null && x.Number.StartsWith("STQ-", StringComparison.Ordinal)),
+                    new FundQuery
+                    {
+                        From = new DateTime(2001, 3, 1), To = new DateTime(2001, 3, 31), Node = node, AccountId = accountId,
+                        KnownAccountIds = new List<string> { account },
+                        Scope = new FundStoreScope { CoversAll = false, StoreIds = new List<string> { store } }
+                    });
+                // Tiền mặt: -20.000 (bill) - 70.000 (phiếu nhập cũ) + 150.000 (phiếu thu) = 60.000.
+                CheckLedger("DB tiền mặt khớp số tính tay", read(FundNodeKind.Cash, null), 0m, 0m, 150000m, 90000m, 60000m);
+                // Tài khoản (lọc cửa hàng nên chỉ xét phát sinh): thu 600.000; chi 30.000 (nhập CK) + 40.000 (phiếu chi).
+                FundLedger bank = read(FundNodeKind.Account, account);
+                Check("Quỹ DB: tài khoản khớp số tính tay", bank.Income == 600000m && bank.Expense == 70000m &&
+                      bank.CardNet == 100000m && bank.TransferNet == 430000m, Totals(bank) + " thẻ " + bank.CardNet);
+                Check("Quỹ DB: không lấy giao dịch sau ngày Đến", !data.Sources.Exists(x => x.Number == "STQ-SAU"));
+                Check("Quỹ DB: không lấy bản ghi đã xóa mềm",
+                      !data.Sources.Exists(x => x.Number == "STQ-HD-XOA" || x.Number == "STQ-PT-XOA"));
+                Check("Quỹ DB: phiếu nhập không ghi cửa hàng lấy theo kho",
+                      data.Sources.Exists(x => x.Number == "STQ-PN-CU" && x.StoreId == store));
+
+                voucher("STQ-DK", new DateTime(2001, 4, 20, 8, 0, 0), 5000m, 0m, 0, FundReasons.OpeningBalanceId, 30);
+                Check("Quỹ DB: phiếu số dư đầu kỳ sau ngày Đến vẫn được lấy làm mốc",
+                      repo.Load(new DateTime(2001, 3, 31)).Sources.Exists(x => x.Number == "STQ-DK"));
+            }
+            finally
+            {
+                foreach (string id in orders)
+                    BookingExec(db, "DELETE FROM TDONHANG WHERE ID = @I", "@I", id);
+                foreach (string id in vouchers)
+                    BookingExec(db, "DELETE FROM TTHUCHI WHERE ID = @I", "@I", id);
+                BookingExec(db, "DELETE FROM DKHOHANG WHERE ID = @I", "@I", warehouse);
+            }
+        }
+
         // Các bước sau (ảnh, người dùng, quyền, mật khẩu) đăng ký thêm ở đây.
         private static void RunExtra(string db)
         {
             ThemeTests();
             FundTests();
+            FundLedgerTests();
+            FundRepositoryTests(db);
             CatalogTests(db);
             PhieuThuTests(db);
             ImageTests(db);

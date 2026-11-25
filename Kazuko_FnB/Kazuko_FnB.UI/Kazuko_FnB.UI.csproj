@@ -152,6 +152,12 @@
     <Compile Include="BookingListView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="FundBalanceView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Dialogs\FundPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="BookingCalendarView.cs">
       <SubType>Component</SubType>
     </Compile>
