@@ -36,7 +36,8 @@ Invoke-Git $P.Worktree 'fetch' '-q' 'origin' 'main' | Out-Null
 $remote = (Invoke-Git $P.Worktree 'rev-parse' 'origin/main')[0]
 $head = (Invoke-Git $P.Worktree 'rev-parse' 'HEAD')[0]
 if ($remote -ne $head) {
-    $moved = @(Invoke-Git $P.Worktree 'diff' '--name-only' $head $remote)
+    # Không bọc @( ) quanh Invoke-Git: hàm đã trả mảng, bọc thêm thành mảng lồng mảng và bộ lọc dưới bỏ sót file code.
+    $moved = Invoke-Git $P.Worktree 'diff' '--name-only' $head $remote
     $nonDocs = @($moved | Where-Object { $_ -and -not $_.StartsWith('docs/') })
     if ($nonDocs.Count -gt 0) { throw "origin/main đã đổi code từ $($head.Substring(0,7)): $($nonDocs -join ', '). Dừng; giao lại agy từ main mới." }
     # Chỉ docs/ đổi: đưa worktree lên main mới (stash các thay đổi chưa commit, checkout, áp lại), rồi bắt kiểm lại.
@@ -63,9 +64,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 $msgFile = Join-Path $P.Tmp "commit-msg-r$Round.txt"
 Write-Utf8 $msgFile $msg
 Invoke-Git $P.Worktree 'add' '--' 'Kazuko_FnB' | Out-Null
-$staged = @(Invoke-Git $P.Worktree 'diff' '--cached' '--name-only' | Where-Object { $_ })
+$staged = @((Invoke-Git $P.Worktree 'diff' '--cached' '--name-only') | Where-Object { $_ })
 if ($staged.Count -eq 0) { throw 'Không có gì để commit.' }
-$other = @(Invoke-Git $P.Worktree 'status' '--porcelain' | Where-Object { $_ -and $_ -notmatch '^[AMDR]  ' })
+$other = @((Invoke-Git $P.Worktree 'status' '--porcelain') | Where-Object { $_ -and $_ -notmatch '^[AMDR]  ' })
 if ($other.Count -gt 0) { throw "Còn thay đổi ngoài Kazuko_FnB/ chưa xử lý: $($other -join '; ')" }
 Invoke-Git $P.Worktree 'commit' '-q' '-F' $msgFile | Out-Null
 $commit = (Invoke-Git $P.Worktree 'rev-parse' 'HEAD')[0]

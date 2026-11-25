@@ -36,7 +36,7 @@ New-Item -ItemType Directory -Force $runDir | Out-Null
 $before = [pscustomobject]@{
     time       = (Get-Date).ToString('o')
     repoHead   = (Invoke-Git $script:AgyRepo 'rev-parse' 'HEAD')[0]
-    repoStatus = @(Invoke-Git $script:AgyRepo 'status' '--porcelain')
+    repoStatus = (Invoke-Git $script:AgyRepo 'status' '--porcelain')
     wtHead     = (Invoke-Git $P.Worktree 'rev-parse' 'HEAD')[0]
     # agy tự sửa file cấu hình chung của nó (nới quyền) phải bị phát hiện.
     agySettingsHash = $(if (Test-Path $script:AgyGlobalSettings) { (Get-FileHash -Algorithm SHA256 $script:AgyGlobalSettings).Hash } else { '' })

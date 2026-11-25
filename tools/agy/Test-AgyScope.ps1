@@ -23,7 +23,7 @@ $warnings = New-Object System.Collections.Generic.List[string]
 if ($BeforeFile -and (Test-Path $BeforeFile)) {
     $before = Read-Json $BeforeFile
     $head = (Invoke-Git $script:AgyRepo 'rev-parse' 'HEAD')[0]
-    $status = @(Invoke-Git $script:AgyRepo 'status' '--porcelain')
+    $status = Invoke-Git $script:AgyRepo 'status' '--porcelain'
     if ($head -ne $before.repoHead -or (($status -join '|') -ne (@($before.repoStatus) -join '|'))) {
         $blocking.Add("Thư mục chính $($script:AgyRepo) đã đổi trong lúc agy chạy (HEAD hoặc trạng thái file).")
     }
