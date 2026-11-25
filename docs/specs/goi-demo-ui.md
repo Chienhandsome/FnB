@@ -1,6 +1,6 @@
 # Spec: Gói demo UI (desktop, POS TAP)
 
-- Trạng thái: **ĐÃ DUYỆT** (Chiến, 2026-11-19: D1 bốn bảng màu, D2 B1 chỉ xem, D4 dùng DEMO.FDB, D5 tính sau). **A và B1 đã code (chưa commit)**; C (kịch bản demo) chưa chạy trọn vẹn; DPI 125%/150% và phân quyền ẩn menu chưa kiểm.
+- Trạng thái: **ĐÃ DUYỆT** (Chiến, 2026-11-19: D1 bốn bảng màu, D2 B1 chỉ xem, D4 dùng DEMO.FDB, D5 tính sau). **A và B1 đã code** (đã nằm trên `main`, ghi nhận 25/11); C (kịch bản demo) chưa chạy trọn vẹn; DPI 125%/150% và phân quyền ẩn menu chưa kiểm.
 - Ngày: 2026-11-19
 - Base: `origin/main` @ `b0d15db` (đã `git fetch origin main`, không có commit mới hơn); nhánh `main` local đang ở `20aaee2`, đi trước origin
 - Spec tổng: `docs/specs/kazuko-tea-clone.md` (mục 0 quyết định đã chốt, câu hỏi mở 11)

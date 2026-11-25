@@ -1,6 +1,6 @@
 # Spec: Bản thử "Phiếu thu" — dựng màn hình từ layout của app gốc
 
-- Trạng thái: **ĐÃ DUYỆT làm bản thử** (Chiến, 2026-11-19: "Làm thử Phiếu thu"). Bản thử **không ghi dữ liệu**. **Đã code (chưa commit)**; xem mục 7 về kết quả.
+- Trạng thái: **ĐÃ DUYỆT làm bản thử** (Chiến, 2026-11-19: "Làm thử Phiếu thu"). Code đã nằm trên `main`. Mở từ menu Quỹ ▸ Tạo phiếu thu thì **không ghi dữ liệu** (chỉ kiểm tra hợp lệ). **Cập nhật 25/11:** cùng hộp thoại này, khi mở từ Khách đặt hàng để thu tiền cọc, **có ghi phiếu thu thật vào `TTHUCHI`**. Xem mục 7 về kết quả bản thử ban đầu.
 - Ngày: 2026-11-19
 - Base: `origin/main` @ `b0d15db` (đã `git fetch origin main`); nhánh `main` local đang ở `9a233c9`
 - Liên quan: `docs/specs/kazuko-tea-clone.md` (mục 4.5 Quỹ), `docs/specs/goi-demo-ui.md`

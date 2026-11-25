@@ -1,6 +1,6 @@
 # Spec: Nhóm "Hệ thống" (G1)
 
-- Trạng thái: **Đã chốt các câu hỏi chính (2026-11-19) — chờ Chiến duyệt để bắt đầu code** (chưa code)
+- Trạng thái: **ĐÃ CÓ CODE MỘT PHẦN trên `main`** (từ commit `9152133`): màn người dùng, nhóm và phân quyền, cấu hình hệ thống, thư viện ảnh, đổi mật khẩu. **Chưa thấy code** sao lưu, phục hồi, tạo mới CSDL (§4.7; menu mở tab tạm). Các câu hỏi chính đã chốt 19/11; file chưa ghi việc duyệt để code. Đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí**.
 - Ngày: 2026-11-19
 - Base: `origin/main` @ `b0d15db` (đã `git fetch origin main`)
 - Spec tổng: `docs/specs/kazuko-tea-clone.md` (mục 4.7, mục 6 G1). Spec "Danh mục khách hàng" (`danh-muc-khach-hang.md`) đang gác lại; nó **phụ thuộc** spec này ở phần Cấu hình (mục 4.4).

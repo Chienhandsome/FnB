@@ -1,6 +1,6 @@
 # Spec (delta): Theo dõi đặt phòng (lịch đặt bàn/phòng theo ngày)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ CÓ CODE trên `main`** (từ commit `ab440dd`; theo `QUEUE.md`: Q6 và 5 mục §5 đã chốt "giữ y hệt hết" ngày 23/11). Lỗi build do kiểu `internal` đã sửa ngày 25/11. Đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí** trong spec.
 - Ngày: 2026-11-23. Base: `main` @ `c1a4343` (đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này chỉ ghi phần khác khuôn; chỗ nào không nói = **như khuôn**. Dữ liệu và dialog dùng chung với [`khach-dat-hang.md`](khach-dat-hang.md) (cùng bảng `TDATHANG`, cùng dialog `TDATHANGAe`): **không lặp lại** ở đây, chỉ nêu phần riêng của màn lịch.
 - Menu: **HOẠT ĐỘNG > Theo dõi đặt phòng** (`SMENU` `a5142f0f-bc85-4b6e-b1da-6c4436e07a3f`, `SORTORDER = ZZZ011`, `OPERATION = 4` = mở form, `MENUCODE = TheoDoiDatPhong`, `TOOLBAR = 30`, **không phím tắt**). Form: `SFORM` **"Theo dõi đặt phòng"** `11f4bf28-9dd4-4a22-8c5c-e912a637576a` (`SFORM.STABLEDESCID = NULL`, lớp `TheoDoiDatPhong`, `No1UserControl` 681×544). `SMENU.SFUNCTIONID` = `97487cfa-66f6-415e-9046-9a245c61f2ae` ("Đặt hàng") — **cùng chức năng quyền với "Khách đặt hàng"**.

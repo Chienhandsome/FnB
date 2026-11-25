@@ -1,6 +1,6 @@
 # Spec: Danh mục bàn khu vực (DBAN + DKHUVUC) — DELTA theo khuôn Danh mục mặt hàng
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ CÓ CODE trên `main`** (từ commit `a67513f`; theo `QUEUE.md`: patch 2 đã giao). Đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí** trong spec; file chưa ghi việc duyệt spec.
 - Ngày: 2026-11-21. Base: `main` @ `6a57cd3` (đã `git fetch origin main`, commit mới nhất là `6a57cd3 add spec DANHMUCMATHANG`)
 - Khuôn: [danh-muc-mat-hang.md](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác**; phần giống hệt ghi "**theo khuôn Danh mục mặt hàng**" (bố cục cây + lưới, flow thêm/sửa/xóa, phân quyền theo bit, kiểu kiểm tra, thông báo, thanh nút, phím tắt).
 - Phạm vi: màn **Danh mục bàn khu vực** (quản lý cây khu vực + lưới bàn). **Không** gồm:

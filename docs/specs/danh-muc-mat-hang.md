@@ -1,6 +1,6 @@
 # Spec: Danh mục mặt hàng (DMATHANG) — pilot workflow Claude viết spec → Muse implement
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ CÓ CODE trên `main`** (từ commit `6a87224`; theo `QUEUE.md`: patch 1 đã giao). Đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí** trong spec; file chưa ghi việc duyệt spec.
 - Ngày: 2026-11-21. Base: `main` @ `a1cb39f` (đã `git fetch origin main`, working tree sạch)
 - Menu: **HOẠT ĐỘNG > Danh mục mặt hàng** (`SMENU` thứ tự `ZZZ004`, phím tắt `131149` = **Ctrl+M**). Chức năng quyền: `SFUNCTION` "Danh mục mặt hàng" (`9bcaf32e-e0c6-4b62-8ab4-65afb965bd2e`, nhóm "Bán hàng").
 - Bảng chính `DMATHANG` (`STABLEDESC` `a4a16216-aee9-4dd3-9f92-c1e4d85c06a2`, `TABLETYPE = 2` = cây nhóm bên trái + lưới bên phải, `CATEGORYCOL = DNHOMMATHANGID`, `READONLY = 0`, `MUSTSELECTCATEGORY = 30`). Bảng liên quan: `DNHOMMATHANG` (nhóm, dạng cây), `DLOAIMATHANG`, `DLOAIDO`, `DGIAMATHANG`, `DDONVITINH`, `DDINHLUONG` (định lượng), `DHANGSANXUAT`, `DDOITACKYGUI`.
