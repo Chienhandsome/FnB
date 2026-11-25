@@ -65,6 +65,7 @@
     <Compile Include="ItemSalesRepository.cs" />
     <Compile Include="RevenueReportRepository.cs" />
     <Compile Include="DailyActivityRepository.cs" />
+    <Compile Include="BusinessResultRepository.cs" />
     <Compile Include="BookingGroupPlanner.cs" />
     <Compile Include="BookingRepository.cs" />
     <Compile Include="BookingCalendarRepository.cs" />

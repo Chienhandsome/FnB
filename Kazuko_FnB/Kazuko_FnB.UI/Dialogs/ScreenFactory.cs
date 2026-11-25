@@ -33,6 +33,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.itemsalesdetail", session => ItemSalesDetailDialog.CreateForPreview(session) },
                 { "preview.revenue", session => new RevenueReportPreviewForm(session) },
                 { "preview.dailyactivity", session => new DailyActivityPreviewForm(session) },
+                { "preview.businessresult", session => new BusinessResultPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -72,6 +73,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Chi tiết hoạt động ngày": báo cáo chỉ xem (OPERATION = 5).
             if (string.Equals(node.Id, DailyActivityView.MenuId, StringComparison.Ordinal))
                 return new DailyActivityView(session);
+            // Màn "Tổng hợp kết quả kinh doanh": báo cáo chỉ xem (OPERATION = 5).
+            if (string.Equals(node.Id, BusinessResultView.MenuId, StringComparison.Ordinal))
+                return new BusinessResultView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

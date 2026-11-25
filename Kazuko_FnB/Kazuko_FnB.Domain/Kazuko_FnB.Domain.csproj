@@ -45,6 +45,7 @@
     <Compile Include="BillReportScope.cs" />
     <Compile Include="BookingModels.cs" />
     <Compile Include="BookingCalendarModels.cs" />
+    <Compile Include="BusinessResultModels.cs" />
     <Compile Include="CancelledBillModels.cs" />
     <Compile Include="CatalogModels.cs" />
     <Compile Include="ConfigModels.cs" />

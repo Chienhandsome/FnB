@@ -555,6 +555,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             ItemSalesTests(db);
             RevenueReportTests(db);
             DailyActivityTests(db);
+            BusinessResultTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
