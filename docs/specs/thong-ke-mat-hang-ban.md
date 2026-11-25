@@ -1,6 +1,6 @@
 # Spec (delta): Thống kê mặt hàng bán
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **NHÁP — chờ Chiến trả lời** [issue #8](https://github.com/Chienhandsome/FnB/issues/8) (chưa code). Rà lại 25/11: xem "Đã xác minh thêm" ở §0.
 - Ngày: 2026-11-24. Base: `main` @ `e9de6de` (đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md) và [`thong-ke-doanh-thu.md`](thong-ke-doanh-thu.md) (cùng họ "báo cáo chỉ xem", cùng lọc ngày + cửa hàng + ràng buộc cửa hàng theo user). Spec này **chỉ ghi phần khác**; chỗ không nói = như hai spec trên.
 - Menu: **HOẠT ĐỘNG > Thống kê mặt hàng bán** (`SMENU` `a5810c3b-e57a-4cca-99c7-ed89d5dff667`, `SORTORDER = ZZZ021`, `OPERATION = 4`, không `MENUCODE`, `SFORMID` `67500401-1f1e-4c18-a0fc-f487c43f4b0c`, `SFUNCTIONID` `ff5edbec-dee4-4fe8-9315-30c96dec1c4e` "Thống kê mặt hàng bán", nhóm "Bán hàng", `NOTE = View`). Form tùy biến `ThongKeMatHangBan`; nút mở dialog con `ChiTietBanHangTheoMatHang` (`5645abce-…`).
@@ -10,7 +10,8 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Thống kê mặt hàng bán__67500401/` (`code.cs`, `layout.xml`), `Chi tiết bán hàng theo mặt hàng__5645abce/`; tài liệu sẵn có [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §1 (Thống kê mặt hàng bán) — đã đọc, không chép lại.
-- **[CHƯA XÁC MINH]**: (1) lệnh `SELECT` gốc của lưới `grDetail` (nằm trong cấu hình lưới, `code.cs` chỉ **thêm** vào `e.Select/GroupBy/Where`; theo dấu hiệu thì nhóm theo `DMATHANGID` + `DONGIA` + `GIAVON` + `TILEGIAMGIA` + `DNHOMMATHANGID`); (2) mẫu in FastReport; (3) điều kiện bill nền của lưới (mặc định tạm: `LOAI = 0 AND DATHANHTOAN = 30`, giống truy vấn tổng bên dưới). **[APP]** đã chụp bố cục + cột lưới (24/11/2026); DB không có bill nên chưa đối chiếu số.
+- **[CHƯA XÁC MINH]**: (1) mẫu in FastReport; (2) khung lưới có áp điều kiện `DATHANHTOAN = 30` trong cấu hình hay không (cờ `CHECKED` của điều kiện này là `false`; mặc định: chỉ bill đã thanh toán, xem Q12). **[APP]** đã chụp bố cục + cột lưới (24/11/2026); DB không có bill nên chưa đối chiếu số.
+- **Đã xác minh thêm 25/11** (giải mã cấu hình lưới base64 trong `layout.xml`, đổi `COLID` qua `SCOLUMN`; đọc mã dùng chung trong `DATA.fdb`): lưới lọc `TDONHANG.NGAY BETWEEN @FromDate AND @ToDate`, `TDONHANG.LOAI = 0`. Cột cộng (`SUM`): `SLXUATCHUAQUYDOI` được thay bằng `COALESCE(SLXUATCHUAQUYDOI,0) − COALESCE(SLNHAPCHUAQUYDOI,0)` (**đã trừ hàng trả**, nên "Tổng tiền bán" ở §2.3 cũng đã trừ); `THANHTIEN`; `THANHTIENNHAP = TDONHANGCHITIET.GIAVON × (COALESCE(SLXUAT,0) − COALESCE(SLNHAP,0))` (cách tính 1 thay `GIAVON` bằng `DMATHANG.GIANHAP`). Các cột còn lại được nhóm: mã hàng, mã sẵn có, tên hàng, ĐVT, đơn giá, % giảm, tiền giảm, giá vốn; code thêm `DNHOMMATHANGID`, `DMATHANGID`. `LAI`, `TILELAI` tính ở máy. `LoaiMatHang.NguyenLieu = 2`; `LoaiDo.NguyenLieu = 4`. `GIAMGIAMATHANG = TIENHANGCHUAGIAM − TIENHANG` (tổng giảm trên dòng).
 
 ## 1. Bố cục UI (khác khuôn)
 
@@ -24,7 +25,7 @@
 
 ### 2.1 Quyền xem giá nhập [CODE `xemGiaNhap`]
 
-`CanView(XemGiaNhap)` (`SFUNCTION` `1edce531-ffba-4b06-be16-3d7d6bbedb9e` "Xem giá nhập", nhóm "Quản trị"). **Không có quyền** → ẩn cột `GIAVON`, `THANHTIENNHAP`, `THANHTIEN`, `LAI`, `TILELAI`; **ẩn cả khối tổng dưới và nút In** (người dùng chỉ thấy tên hàng, SL, đơn giá, nhóm). Mặc định tạm: admin có; tài khoản khác **không cấp** (Q5 spec Sử dụng dịch vụ).
+`CanView(XemGiaNhap)` (`SFUNCTION` `1edce531-ffba-4b06-be16-3d7d6bbedb9e` "Xem giá nhập", nhóm "Quản trị"). **Không có quyền** → ẩn cột `GIAVON`, `THANHTIENNHAP`, `THANHTIEN`, `LAI`, `TILELAI`; **ẩn cả khối tổng dưới và nút In**. Quyền theo `SGROUPROLE` trong DB (đo 25/11): Quản lý, Kế toán 240; Phục vụ 0; nhóm khác theo cơ chế phân quyền chung (quyền xem màn cũng vậy: Quản lý, Kế toán 240; Phục vụ, Thu ngân 0).
 
 ### 2.2 Dòng lưới [CODE `LoadData`]
 
@@ -49,7 +50,7 @@ Thực lãi        = Tổng lãi − Giảm giá + Thuế + Phí dịch vụ + T
 
 **Lỗi/chỗ lệch của gốc cần Chiến biết (chọn P1):**
 1. Truy vấn tổng **chỉ lọc cửa hàng khi có chọn**; khi **không chọn** nó **không lọc gì** (kể cả user thường) → user thường thấy tổng giảm giá/thuế/phí của **mọi** cửa hàng trong khi lưới chỉ thấy cửa hàng được phép. Ngoài ra khi **có chọn** mà user thường, nó chỉ kiểm user thuộc cửa hàng nào chứ **không** lọc đúng cửa hàng đã chọn (`DCUAHANGID = chọn` chỉ áp cho admin).
-2. "Giảm giá" ở khối tổng là giảm giá **cấp bill** (`TIENGIAMGIATONG` + `GIAMGIAMATHANG`) nhưng "Tổng tiền bán" tính **trước** chiết khấu dòng → khi dòng đã có chiết khấu, lãi dòng (`THANHTIEN − THANHTIENNHAP`) khác `Tổng lãi` gốc; **Thực lãi** theo công thức gốc không bằng Σ `LAI` của lưới. Giữ nguyên gốc, ghi cho Chiến.
+2. ~~Thực lãi không bằng Σ `LAI`~~ **Không phải lỗi** (xác minh 25/11): `GIAMGIAMATHANG` là tổng tiền giảm trên dòng, nên "Tổng tiền bán" (trước giảm dòng) trừ `GIAMGIAMATHANG` ra đúng tiền bán sau giảm dòng. Thực lãi = Σ `LAI` − giảm giá cấp bill + thuế + phí + tiền giờ, chỉ lệch do làm tròn khi lưu bill.
 3. `Thực lãi` **cộng** thuế và phí dịch vụ (và tiền giờ) vào lãi — đúng công thức gốc, dù thuế thường là khoản phải nộp, không phải lãi (Q3).
 
 ### 2.4 Dialog "Chi tiết bán hàng theo mặt hàng" [CODE `ChiTietBanHangTheoMatHang`]
@@ -78,13 +79,15 @@ Nhấp đúp dòng → dialog (tiêu đề nút "DANH MỤC HÓA ĐƠN", nút **
 | Q1 | Sửa lỗi lọc cửa hàng của truy vấn tổng (P1)? | Sửa |
 | Q2 | Công thức dùng `GIAVON` hay `GIANHAP` mặc định? | `GIAVON` (như gốc) |
 | Q3 | "Thực lãi" cộng thuế + phí dịch vụ: giữ nguyên? | Giữ nguyên gốc |
-| Q4 | Mã số `LoaiMatHang.NguyenLieu` / `LoaiDo.NguyenLieu` (hằng trong thư viện) | Nhận diện nguyên liệu bằng loại mặt hàng/loại đồ tương ứng trong DB; **không đọc `LOAIDINHLUONG`** |
+| Q4 | ~~Mã số `NguyenLieu`~~ **Đã tra: `LoaiMatHang.NguyenLieu = 2`, `LoaiDo.NguyenLieu = 4`** | — |
 | Q5 | Mẫu in: tạo FastReport mới hay "chưa hỗ trợ"? | "Chưa hỗ trợ" |
-| Q6 | Lưới gộp theo (mặt hàng, đơn giá, giá vốn, % giảm) hay chỉ mặt hàng? | Như dấu hiệu gốc (theo 4 trường) |
+| Q6 | ~~Lưới gộp theo trường nào~~ **Đã giải mã cấu hình lưới** (§0) | — |
 | Q7 | Mặt hàng loại dịch vụ theo giờ (karaoke) có hiện trong lưới? | Cắt (không có mặt hàng này trong F&B thuần) |
 | Q8 | Có thêm xuất Excel (gốc không có)? | Không |
 | Q9 | ~~Chụp app gốc để lấy đủ cột lưới~~ **Đã chụp 24/11/2026** (§1) | Đã giải quyết phần cột |
 | Q10 | Ô "Lọc" (gốc có, bản trước chưa ghi): lọc theo cột nào, có bắt buộc làm không | Lọc theo tên hàng, làm |
+| Q11 | Bỏ qua bill `STATUS ≠ 30`? (KQKD đã chốt có lọc) | Chờ Chiến: đề xuất lọc, áp chung các báo cáo |
+| Q12 | Chỉ tính bill đã thanh toán ở lưới? | Chờ Chiến: đề xuất chỉ bill đã thanh toán |
 
 ## 5. Quyết định đã chốt (áp, không hỏi lại)
 
