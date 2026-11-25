@@ -33,7 +33,7 @@ Trong repo:
 
 ## Quy trình spec-driven
 
-Idea → viết spec (lệnh `/spec`) → Chiến duyệt spec → plan → implement → verify theo acceptance criteria trong spec. Không code khi spec chưa được duyệt. Nghiệp vụ tiền/giá/kho/công nợ là lõi: chưa rõ thì hỏi, không đoán.
+Idea → viết spec (lệnh `/spec`) → Chiến duyệt spec → plan → implement → verify theo acceptance criteria trong spec. Không code khi spec chưa được duyệt. Nghiệp vụ tiền/giá/kho/công nợ là lõi: chưa rõ thì hỏi, không đoán. **Ngoại lệ:** khi chạy vòng lặp tự động, Claude được tự duyệt spec theo [`docs/workflow-agy.md`](docs/workflow-agy.md) §10.1 (loại nhẹ) và §10.1.1 (loại nặng, chỉ khi Chiến bật chế độ vắng mặt).
 
 ## UI
 
