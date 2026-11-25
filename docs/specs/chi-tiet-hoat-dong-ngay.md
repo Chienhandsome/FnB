@@ -1,6 +1,6 @@
 # Spec (delta): Chi tiết hoạt động ngày
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code). Rà lại 25/11 theo workflow-agy §10.2 (base `729683c`): loại **nặng**; Q3, Q6, Q14, Q16 đã xác minh/chốt; còn Q1, Q2, Q5, Q13, Q15 gửi Chiến (issue `cho-chien`). Bill dùng `BillReportScope` có sẵn trên `main`.
+- Trạng thái: **ĐÃ DUYỆT** (Chiến chốt 25/11, issue #11: "Theo đề xuất" cho Q1, Q2, Q5, Q13, Q15; Q3, Q6, Q14, Q16 đã xác minh/chốt trước). Loại nặng. Bill dùng `BillReportScope` có sẵn trên `main`.
 - Ngày: 2026-11-24; sửa theo review [issue #4](https://github.com/Chienhandsome/FnB/issues/4) ngày 25/11/2026 (đối chiếu lại tại `main` @ `954f133`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md); cùng họ báo cáo chỉ xem với [`tong-hop-ket-qua-kinh-doanh.md`](tong-hop-ket-qua-kinh-doanh.md) (cùng cơ chế `OPERATION = 5`, cùng bộ lọc ngày/cửa hàng, cùng lỗi ràng buộc cửa hàng). Spec này **chỉ ghi phần khác**; chỗ không nói = như hai spec trên.
 - Menu: **HOẠT ĐỘNG > Chi tiết hoạt động ngày** (`SMENU` `b2555738-5bc9-4f84-9e6a-80188bbfac99`, `SORTORDER = ZZZ023`, **`OPERATION = 5`**, `SFORMID = NULL`, `SREPORTID` `5b986bf4-406f-45ec-896d-81951fcde35b`, `SFUNCTIONID` `5d90c04e-ca76-4941-8f48-575a07e73e19` "Chi tiết hoạt động ngày", nhóm "Bán hàng", **`NOTE` rỗng** (khác các quyền `View`)).
@@ -106,7 +106,7 @@ Quyền xem = `SFUNCTION` `5d90c04e-…` "Chi tiết hoạt động ngày". `SGR
 - **P3** Truy vấn dùng **tham số**, không nối chuỗi; gom 5 truy vấn thành ít lượt tải.
 - **P4** Thu ngân thống nhất = người thu (bill) / người tạo (phiếu khác) — *giữ như gốc, ghi chú trên màn.*
 
-## 5. Câu hỏi chờ Chiến quyết
+## 5. Câu hỏi và quyết định (Chiến chốt 25/11, issue #11: mọi câu theo cột "Mặc định tạm")
 
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|

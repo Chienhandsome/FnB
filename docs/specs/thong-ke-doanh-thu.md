@@ -1,6 +1,6 @@
 # Spec (delta): Thống kê doanh thu
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code). Rà lại 25/11 theo workflow-agy §10.2: loại **nặng**; các câu tiền đã chốt, còn Q5, Q7, Q10, Q11 gửi Chiến (issue `cho-chien`).
+- Trạng thái: **ĐÃ DUYỆT** (Chiến chốt 25/11, issue #10: "Theo đề xuất" cho Q5, Q7, Q10, Q11). Loại nặng.
 - Ngày: 2026-11-24, rà lại 2026-11-25. Base: `main` @ `62a4fc0`
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn. Là màn **báo cáo chỉ xem**, không thêm/sửa/xóa dữ liệu.
 - Menu: **HOẠT ĐỘNG > Thống kê doanh thu** (`SMENU` `c5164013-298f-4565-8594-819bc7ce992a`, `SORTORDER = ZZZ020`, `OPERATION = 4`, không `MENUCODE`, `SFORMID` `d913c8d9-4395-476c-9612-8ca7f35b6268`, `SFUNCTIONID` `b2a025da-9c16-4578-a864-bf32c4eb2d09` "Thống kê doanh thu", nhóm "Bán hàng", `NOTE = View`). Form tùy biến `ThongKeDoanhThu`.
@@ -88,7 +88,7 @@ Quyền xem màn = `SFUNCTION` `b2a025da-…` "Thống kê doanh thu". Mặc đ�
 - **P4** Truy vấn cửa hàng dùng **tham số**, không nối chuỗi ID (gốc nối chuỗi `'` + ID + `'`).
 - **P5** Tính tổng bằng truy vấn tổng hợp (`SUM`) thay vì cộng lưới → đúng khi bill nhiều (v1 vẫn kết quả như gốc).
 
-## 4. Câu hỏi chờ Chiến quyết
+## 4. Câu hỏi và quyết định (Chiến chốt 25/11, issue #10: mọi câu theo cột "Mặc định tạm")
 
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|
