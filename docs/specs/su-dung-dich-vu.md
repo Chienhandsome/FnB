@@ -2,6 +2,7 @@
 
 - Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
 - Ngày: 2026-11-23. Base: `main` @ `13d90f8` (đã `git fetch origin main`, working tree sạch). Đã sửa theo review Muse (issue #1) ngày 23/11 + Chiến chốt Q1/P3.
+- Rà lại ngày 25/11 trên `main` @ `cb8b5b7`, đối chiếu [`quy-tien.md`](quy-tien.md) (đã duyệt). **Quỹ nào tăng giảm theo `quy-tien.md`**; spec này quy định màn bán hàng ghi gì vào bill. Còn câu về tiền chưa chốt: Q14–Q19 (§6.3).
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Sử dụng dịch vụ** (`SMENU` `8e360da4-b18e-43ba-a0fe-aac67914aabf`, `SORTORDER = ZZZ013`, `MENUCODE = SuDungDichVu`, `OPERATION = 4`, `SFORMID` `141ca9a1-6819-49e2-b8a6-c1ac806ef0a9`, `SFUNCTIONID` `db591d0e-d671-42d0-b3b1-f705345cc641`). Không phải màn danh mục (form `141ca9a1` có `STABLEDESCID` rỗng; form hóa đơn `f3f7bb77` có `STABLEDESCID = 721de885-…`, chưa rõ desc bảng nào): là **form tùy biến** `SuDungDichVu` nhúng form hóa đơn `TDONHANG0Ae` ("Hóa đơn nhà hàng") ở chế độ `HoaDonMode.SuDungDichVu`.
 - Cùng lớp `TDONHANG0Ae` còn phục vụ **Điều chỉnh hóa đơn** (ZZZ014) và **Quản lý bán hàng** (ZZZ015) — hai màn đó sẽ có spec riêng, chỉ ghi phần khác chế độ. Spec này **là spec gốc của bộ máy hóa đơn nhà hàng**.
@@ -104,14 +105,58 @@ Dòng: `GIAMTHEOTIEN=30` → `THANHTIEN = DONGIA×SL − TIENGIAMGIA`; ngược 
 ### 3.7 Thanh toán [CODE `btnThanhToan_Click`, `XacNhanThanhToan`]
 
 Thứ tự kiểm tra: bill đã thanh toán → chặn; không có dòng (và tiền giờ 0) → "Mời bạn thêm mặt hàng vào phiếu"; nhiều máy → tải lại bill; bắt buộc chọn nhân viên nếu ô nhân viên hiện ("Mời bạn chọn nhân viên trước"); **kiểm soát order** (`BatChucNangKiemSoatOrder=30`, hiện 0): "Mời bạn nhập số order" / "Mời bạn nhập đúng định dạng số order, ví dụ: 12, 16, 17,19"; tính lại mọi dòng; in chế biến nốt; cảnh báo nếu bill từ ngày cũ ("…Hệ thống sẽ chuyển hóa đơn này sang ngày hiện tại …").
-**Hộp Xác nhận thanh toán**: nhận `TIENPHAITRA`, tiền đặt trước (`GetDatTruoc`), nợ cũ (`GetNoCu`), khách. `TONGTIEN = TIENPHAITRA + NợCũ − ĐặtTrước`. Ô: Khách đưa (mặc định = còn lại), Thẻ ATM (`CoThanhToanThe`, hiện 30), Chuyển khoản + tài khoản (`CoThanhToanChuyenKhoan`, hiện 0), Voucher (`CoThanhToanVoucher`, 0), Thẻ trả trước (`SuDungTheTraTruoc`, 0), Trừ tích lũy (`SuDungDiemTichLuyDeThanhToan`, 0), Trả lại (= max(0, Σ đã trả − TONGTIEN)). `TienTra = KhachDua+Voucher+TheTraTruoc+TruTichLuy+The+ChuyenKhoan`. Nút: **OK** (đóng + in), **Đóng bill không in** (F9; tắt nếu `BatBuocInKhiThanhToan=30`), **In thử bill** (F8, `ChoPhepInTamTinh=30`, quyền `InTamTinh`, kết quả Ignore = in tạm tính, bill giữ nguyên).
-Chặn khi bấm OK: thiếu quyền `ThanhToan`; `TONGTIEN > TienTra` và `ChoPhepKhachNo≠30` → "Chức năng này hiện tại chưa được kích hoạt. Bạn có thể kích hoạt trong menu 'Quản trị'|'Cấu hình toàn hệ thống'"; chưa chọn khách → "Bạn chưa chọn khách hàng, mời bạn chọn khách hàng trước!"; hỏi "Bạn có muốn cho khách hàng 'X' nợ số tiền 'N' không?"; thẻ trả trước vượt số dư; chuyển khoản mà chưa chọn tài khoản → "Mời bạn chọn tài khoản"; `Shared.DuLieuHoaDonOk` (trong DLL, **[CHƯA XÁC MINH]**).
-Ghi DB khi OK/Retry: xem `nha-hang.md` §7 (nhánh bill đơn và bill nhóm `NHOMGUID`, `TIENTHANHTOAN`, `CONLAI`, `CONGNO`, `TIENMAT`, `CHUYENKHOAN`, `THE`, `DIEM`, `SOTT`…, `DATHANHTOAN=30`); xóa dòng `TDONHANGCHITIET` có `XUATVATTU=30` cũ (`XUATVATTU` là cột của `TDONHANGCHITIET`, không phải `TDONHANG`) rồi `XuatVatTu`; xóa `TINCHEBIEN` của bill; nếu khách đã cọc dư thì tạo phiếu chi trả lại; nâng nhóm khách theo điểm (`TuDongNangCapThanhVienKhiDatHanMuc=30`, hiện 30); tạo bill trống cho bàn (`Reload("")`), nhả giữ bàn, làm tươi trạng thái bàn.
+**Hộp Xác nhận thanh toán**: nhận `TIENPHAITRA`, tiền đặt trước (`GetDatTruoc`), nợ cũ (`GetNoCu`), khách. `TONGTIEN = TIENPHAITRA + NợCũ − ĐặtTrước` (đây là "số phải trả" của `quy-tien.md` §4.3). Ô: Khách đưa (mặc định = còn lại), Thẻ ATM (`CoThanhToanThe`, hiện 30), Chuyển khoản (`CoThanhToanChuyenKhoan`, hiện 0), **Tài khoản (hiện khi có ô thẻ hoặc ô chuyển khoản** — khác gốc, gốc chỉ hiện theo cờ chuyển khoản), Voucher (`CoThanhToanVoucher`, 0), Thẻ trả trước (`SuDungTheTraTruoc`, 0), Trừ tích lũy (`SuDungDiemTichLuyDeThanhToan`, 0), Trả lại. **Tính trả lại và chặn nhập theo `FundRules.SettlePayment`** (§3.7.1), không theo công thức gốc `max(0, Σ đã trả − TONGTIEN)`. `TienTra = KhachDua+Voucher+TheTraTruoc+TruTichLuy+The+ChuyenKhoan`. Nút: **OK** (đóng + in), **Đóng bill không in** (F9; tắt nếu `BatBuocInKhiThanhToan=30`), **In thử bill** (F8, `ChoPhepInTamTinh=30`, quyền `InTamTinh`, kết quả Ignore = in tạm tính, bill giữ nguyên).
+Chặn khi bấm OK: thiếu quyền `ThanhToan`; `TONGTIEN > TienTra` và `ChoPhepKhachNo≠30` → "Chức năng này hiện tại chưa được kích hoạt. Bạn có thể kích hoạt trong menu 'Quản trị'|'Cấu hình toàn hệ thống'"; chưa chọn khách → "Bạn chưa chọn khách hàng, mời bạn chọn khách hàng trước!"; hỏi "Bạn có muốn cho khách hàng 'X' nợ số tiền 'N' không?"; thẻ trả trước vượt số dư; **chuyển khoản hoặc quẹt thẻ** mà chưa chọn tài khoản → "Mời bạn chọn tài khoản" (gốc chỉ bắt với chuyển khoản); **quẹt thẻ quá số phải trả** → chặn (§3.7.1); `Shared.DuLieuHoaDonOk` (trong DLL, **[CHƯA XÁC MINH]**).
+Ghi DB khi OK/Retry: xem `nha-hang.md` §7 cho các cột không liên quan tiền; **các cột tiền theo §3.7.2 và §3.7.3**; toàn bộ phần đóng bill chạy trong **một transaction**; xóa dòng `TDONHANGCHITIET` có `XUATVATTU=30` cũ (`XUATVATTU` là cột của `TDONHANGCHITIET`, không phải `TDONHANG`) rồi `XuatVatTu`; xóa `TINCHEBIEN` của bill; nếu khách đã cọc dư thì tạo phiếu chi trả lại; nâng nhóm khách theo điểm (`TuDongNangCapThanhVienKhiDatHanMuc=30`, hiện 30); tạo bill trống cho bàn (`Reload("")`), nhả giữ bàn, làm tươi trạng thái bàn.
+
+#### 3.7.1 Trả lại và chặn nhập (theo `quy-tien.md` §4.3, Q2 của spec Quỹ)
+
+- **Không quẹt thẻ quá số phải trả:** `Thẻ ≤ max(0, TONGTIEN − voucher − thẻ trả trước − tích lũy − chuyển khoản)`.
+- Tiền trả lại **chỉ** phát sinh từ tiền mặt khách đưa và chuyển khoản. Phần dư của voucher / thẻ trả trước / tích lũy bỏ, không trả tiền mặt.
+- Chuyển khoản dư, trả lại tiền mặt: `CHUYENKHOAN` ghi đủ số khách chuyển, `TIENMAT = khách đưa − trả lại` (**âm được**), `TRALAI = trả lại`. Quỹ Tài khoản cộng đủ, **quỹ Tiền mặt bị trừ** phần trả lại.
+- `TONGTIEN ≤ 0` (đặt trước đủ hoặc dư): không nhận thêm tiền mặt, chuyển khoản, thẻ.
+- Khách đang dư tiền (nợ cũ âm) đã được trừ vào `TONGTIEN`; trả thừa thì trả lại như thường (gốc đặt trả lại = 0 khi nợ cũ âm).
+- Ví dụ: bill 480.000, chuyển khoản 500.000 → trả lại 20.000; Tài khoản +500.000, Tiền mặt −20.000. Bill 480.000, chuyển khoản 300.000, quẹt thẻ 200.000 → **chặn** (thẻ tối đa 180.000).
+
+#### 3.7.2 Cột tiền của bill đơn
+
+Nợ khách tính bằng `Σ(TONGCONG − TIENTHANHTOAN)` trừ phiếu thu/chi [CODE `GetNoCu`], nên `TIENTHANHTOAN` là cột quyết định công nợ.
+
+| Cột | Giá trị |
+|---|---|
+| `TIENMAT` | khách đưa − trả lại (âm được) |
+| `CHUYENKHOAN`, `THE` | số nhập ở hộp thanh toán |
+| `DTAIKHOANNGANHANGID` | bắt buộc khi `CHUYENKHOAN` hoặc `THE` ≠ 0 |
+| `TIENTHANHTOAN` | đặt trước + `max(0, min(TienTra, TONGTIEN))`; ca đặt trước dư: Q16 |
+| `CONGNO` | `TONGCONG − TIENTHANHTOAN`; **âm** khi thu kèm nợ cũ |
+| `DATTRUOC`, `NOCU`, `TRALAI`, `KHACHDUA` | như gốc; `TRALAI` theo §3.7.1 |
+
+- **Đặt trước** = Σ `THU` của phiếu thu gắn `TDONHANGID` = bill hoặc `TDATHANGID` = phiếu đặt của bill, **không tính phiếu `STATUS = -30`** (gốc không lọc). Bill không có phiếu đặt chỉ tính tạm ứng khi `SuDungChucNangTamUngTrongDonHang = 30`. Tiền này đã vào quỹ lúc lập phiếu thu, **không cộng lại** khi đóng bill.
+- **Đặt trước dư** (`TONGTIEN < 0`): sau khi đóng bill, mở phiếu chi "Trả lại tiền đặt trước hóa đơn số …" (`KHONGTHAYDOICONGNO` tích, số tiền = phần dư, chọn tiền mặt hoặc chuyển khoản + tài khoản). Đóng phiếu chi mà không lưu → **cảnh báo rõ và hỏi xác nhận**. Bản viết lại **chưa có phiếu chi ghi thật**, nên phải làm trong phạm vi spec này.
+- **Tạm ứng** (khi bật): phiếu thu chuyển khoản bắt buộc chọn tài khoản.
+
+#### 3.7.3 Thanh toán gộp nhiều bill (`NHOMGUID`)
+
+"Gộp bàn" ở §3.8 chuyển hết món sang **một** bill, nên sau đó thanh toán như bill đơn. Mục này chỉ áp cho **nhiều bill cùng `NHOMGUID`, trả một lần**. Cách tạo nhóm trong v1: **Q14**.
+
+**Hiện trạng app gốc:**
+- [CODE `Sử dụng dịch vụ` `lst_OnNgatGioRequest`] chỗ tạo `NHOMGUID` đọc được trong bản export là **"Ngắt giờ"** ở bản không phải karaoke: thực chất là **tách bill** (tạo bill mới cùng bàn, cùng nhóm). Menu này chỉ hiện khi `Shared.CoNgatGio` (trong DLL, **[CHƯA XÁC MINH]** có bật cho bản F&B không).
+- [DB] bản chép `POS TAP/Database/DATA.fdb` có 0 bill thuộc nhóm.
+- [DB] câu SQL của nhánh thanh toán nhóm đọc `TTHUCHI.SOTIEN`, **cột không tồn tại**; chạy thử trên bản chép báo `Column unknown SOTIEN`. Trên schema này nhánh đó không chạy được.
+- [CODE] nhánh nhóm còn không ghi `TIENMAT`/`CHUYENKHOAN`/`THE`/tài khoản/`CONGNO`; chỉ xuất vật tư và xóa `TINCHEBIEN` cho **bill đang mở**; không ghi `SOTT`, `DIEM`; bỏ lệnh trả lại đặt trước dư; chặn `TIENTHANHTOAN` ở `TONGCONG − đặt trước` nên theo `GetNoCu` phần đặt trước thành nợ và nợ cũ thu kèm không được ghi.
+
+**v1:**
+- Chia tiền, nợ, người đứng tên nợ, nợ cũ thu kèm: **y hệt `quy-tien.md` §4.8** (thứ tự giờ vào rồi số phiếu; thẻ → chuyển khoản → tiền mặt; chuyển khoản dư và trả lại ở bill cuối; thiếu nằm ở bill cuối rồi lùi; thiếu thì bắt chọn một khách, gán cho mọi bill mang nợ).
+- Mỗi bill ghi **đủ** `TIENMAT`, `CHUYENKHOAN`, `THE`, `DTAIKHOANNGANHANGID` của mình.
+- Mỗi bill ghi `TIENTHANHTOAN` = đặt trước dùng cho bill đó + phần phân bổ; `CONGNO = TONGCONG − TIENTHANHTOAN` (cùng nghĩa với bill đơn). Σ `CONGNO` = số thiếu khi trả thiếu; bill cuối `CONGNO` âm khi thu kèm nợ cũ. `TRALAI` ghi ở bill cuối, bill khác ghi 0 (gốc lặp cùng một số ở mọi bill, cộng lại bị nhân lên).
+- Điều kiện chặn như bill đơn, gồm `ChoPhepKhachNo` (hiện 0 → **nhóm trả thiếu cũng bị chặn**) và quy tắc thẻ, tài khoản ở §3.7.1.
+- Mọi bill trong nhóm đều được xuất vật tư, xóa `TINCHEBIEN`, cấp `SOTT`, tính `DIEM`; bàn của mọi bill được làm tươi. Một transaction cho cả nhóm.
 
 ### 3.8 Chuyển / gộp bàn, hủy bill
 
 Chi tiết `ban-khu-vuc.md` §2–3. Thông báo nguyên văn quan trọng: "Bàn này đã in tạm tính, không thể thay đổi" (chặn khi `ChoPhepThayDoiHoaDonSauKhiInTamTinh=0`); "Bàn này đã thanh toán, không thể thay đổi"; "Mời bạn chọn bàn khác"; "<Bàn> <tên> đang bị giữ bởi <tài khoản>"; chuyển cần quyền `ChuyenBan`, gộp `GopBan`; hỏi "Bạn có muốn chuyển hóa đơn từ bàn 'A' sang bàn 'B' không?" / "Bạn có chắc chắn muốn gộp bàn 'A' và bàn 'B' không? Sau khi gộp, chỉ còn hóa đơn trên bàn 'B', các mặt hàng sẽ được chuyển sang bàn này." Gộp bị từ chối nếu bill nguồn tạo từ đặt hàng, hoặc tỉ lệ giảm giá hai bill khác nhau. Hộp chọn bàn: đích có bill mà chế độ "Chuyển" → "Bàn này đang sử dụng, mời bạn chọn bàn khác(bàn trống) để chuyển!"; đích trống mà chế độ "Gộp" → "Bàn này không sử dụng, mời bạn chọn bàn khác (bàn đang có khách) để gộp!". Hủy bill: quyền `HuyHoaDon`, trong `ThoiGianChoPhepHuyBill` (hiện 50 phút) từ lúc `BATDAU`, bill không thuộc nhóm gộp; `NhapLyDoKhiHuyHoaDon=30` (hiện 30) bắt nhập lý do, ngược lại hỏi "Bạn có muỗn hủy hóa đơn trên bàn '<tên>' không?" (**nguyên văn lỗi chính tả "muỗn"** — Q12); hủy = `HuyBill` (ghi `TDONHANGHUY`, xóa bill, chi tiết, `TINCHEBIEN`).
-**Tách bàn không có trong app gốc** (nút stub). Không thêm.
+Hủy bill chưa thanh toán không đổi quỹ; phiếu thu cọc/tạm ứng liên quan **không** tự xóa (`quy-tien.md` §4.2). Bill nguồn có tạm ứng khi gộp bàn: Q19.
+**Nút "Tách bàn" của app gốc là stub**, không thêm. Tách bill qua "Ngắt giờ" là chuyện khác, xem §3.7.3.
 
 ### 3.9 Phím tắt (màn Sử dụng dịch vụ) [CODE `mapper_OnKeyDown`]
 
@@ -165,7 +210,7 @@ Quyền chức năng dùng trong màn (bảng `SFUNCTION`; nhóm "Hóa đơn bá
 
 - **P1** Mỗi thao tác ghi DB ngay (như gốc) nhưng gom trong một transaction ngắn và có kiểm tra `DATHANHTOAN` trong cùng câu lệnh để tránh ghi đè bill vừa thanh toán ở máy khác.
 - **P2** Tính tiền bằng `OrderCalculator` thuần `decimal`, **một bản duy nhất** dùng cho cả màn này, Điều chỉnh hóa đơn, Quản lý bán hàng (và tablet sau) — app gốc có bản sao lệch.
-- **P3** *(ĐÃ CHỐT 23/11: GIỮ trigger gốc, không ghi `DBAN.TDONHANGID` trực tiếp)*. Trước khi implement phần liên kết bàn–bill phải lấy thân trigger `TDONHANG_TRIGGER` từ DATA.fdb trên Windows (FlameRobin); thân trigger không có trong bản export nên tiền đề "trigger chỉ xử lý khi đổi `DATHANHTOAN`" **chưa xác minh được**.
+- **P3** *(ĐÃ CHỐT 23/11: GIỮ trigger gốc, không ghi `DBAN.TDONHANGID` trực tiếp)*. **Đã đọc thân trigger ngày 25/11** trên bản chép DB (chạy trước insert/update/delete): (a) bill chuyển sang đã thanh toán → `DBAN.TDONHANGID` của bàn trỏ sang một bill chưa thanh toán khác cùng bàn, không có thì `NULL`; (b) bill chưa thanh toán có `DBANID` đổi (gồm **tạo mới**, chuyển bàn, xóa) → bàn cũ `NULL`, bàn mới trỏ bill này. Lưu ý: xóa một trong nhiều bill chưa thanh toán cùng bàn sẽ làm bàn thành trống dù còn bill khác. Trigger không ghi cột tiền.
 - **P4** Giữ bàn: dùng cùng các cột `TAIKHOANGIU`/`GIULUC` nhưng gia hạn mỗi 30 giây và nhả khi đóng tab; hết hạn 120 giây như gốc.
 - **P5** Sửa lỗi chính tả "muỗn" → "muốn".
 - **P6** `GiaBanLeUsd`: một chế độ tiền duy nhất ở v1 (VNĐ, bội `LamTronTien`); bỏ nhánh 2 số lẻ. ĐÃ CHỐT (Q1).
@@ -195,7 +240,26 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 | Q12 | Sửa câu hỏi hủy bill có lỗi chính tả? | Sửa (P5) |
 | Q13 | Có cần chụp bổ sung (mở bàn, thanh toán, chuyển bàn) bằng app gốc khi máy cho phép? | Có, sau |
 
+### 6.3 Câu về tiền, chưa chốt (không dùng mặc định tạm để code)
+
+| # | Câu hỏi | Đề xuất |
+|---|---|---|
+| Q14 | v1 tạo nhóm trả chung (`NHOMGUID`) bằng cách nào? (a) thêm **"Thanh toán chung"**: chọn nhiều bàn đang có khách rồi trả một lần; (b) chỉ làm tách bill như "Ngắt giờ"; (c) v1 không có nhóm, chỉ gộp bàn, `quy-tien.md` §4.8 để sau | (a). App gốc không thấy chỗ ghép hai bàn khác nhau thành nhóm, nên đây là chức năng mới |
+| Q15 | Nhóm có bill đặt trước dư. Bill 1 = 300.000 (cọc 400.000), bill 2 = 200.000. Theo chữ `quy-tien.md` §4.8, từng bill `MAX(0, TONGCONG − cọc)` → thu 0 + 200.000; còn hộp thanh toán (tổng 500.000 − cọc 400.000) → thu **100.000**. Hai số mâu thuẫn | Thu 100.000: cọc dư của bill trước bù sang bill chưa đủ theo thứ tự nhóm; tổng cọc lớn hơn tổng nhóm mới lập phiếu chi. Chốt xong sửa §4.8 |
+| Q16 | Bill đơn đặt trước dư. Bill 300.000, cọc 400.000: gốc ghi `TIENTHANHTOAN = 0` [CODE], theo `GetNoCu` khách **bị nợ 300.000** (phiếu thu gắn phiếu đặt không được trừ) | Sửa: `TIENTHANHTOAN` = phần cọc dùng (300.000, cộng nợ cũ được cọc trả nếu có); trả lại 100.000 bằng phiếu chi |
+| Q17 | Nhóm thu kèm nợ cũ khi các bill gắn khách khác nhau: nợ cũ là của ai? Tiền ghi vào bill cuối, mà `GetNoCu` trừ theo khách của bill | Nợ cũ theo khách chọn ở hộp thanh toán; bill cuối được gán khách đó. Nếu đồng thời trả thiếu, người đứng tên nợ là chính khách đó |
+| Q18 | Nhóm có voucher / thẻ trả trước / tích lũy (hiện cả ba đang tắt): ghi vào bill nào? `quy-tien.md` §4.8 chỉ nói thẻ, chuyển khoản, tiền mặt | Lấp từ bill đầu theo thứ tự voucher → thẻ trả trước → tích lũy, **trước** thẻ ngân hàng; phần dư bỏ |
+| Q19 | Gộp bàn khi bill nguồn đã có tạm ứng: bill nguồn bị xóa, phiếu tạm ứng còn trỏ bill đã xóa nên bill đích không trừ | Chuyển `TTHUCHI.TDONHANGID` sang bill đích trong cùng transaction |
+
 ## 7. Tiêu chí nghiệm thu (kiểm trên bản sao DB)
+
+- [ ] Quẹt thẻ quá số phải trả bị chặn (gồm ca chuyển khoản 300.000 + thẻ 200.000 cho bill 480.000); voucher lớn hơn bill không sinh tiền trả lại.
+- [ ] Bill 480.000 chuyển khoản 500.000: `CHUYENKHOAN = 500.000`, `TIENMAT = −20.000`, `TRALAI = 20.000`; màn Tồn quỹ: Tài khoản +500.000, Tiền mặt −20.000.
+- [ ] Chỉ quẹt thẻ, `CoThanhToanChuyenKhoan = 0`: ô tài khoản vẫn hiện và bắt chọn.
+- [ ] Bill đơn: `TIENTHANHTOAN`, `CONGNO` đúng §3.7.2 ở các ca đủ, thiếu, thu kèm nợ cũ, có đặt trước; `GetNoCu` sau đó ra đúng nợ còn lại.
+- [ ] Đặt trước dư: lưu phiếu chi thì quỹ trừ một lần; đóng không lưu thì có cảnh báo, hỏi xác nhận.
+- [ ] Nhóm (nếu Q14 giữ): đạt mọi tiêu chí gộp bàn của `quy-tien.md` §7; từng bill có đủ cột tiền; vật tư xuất cho mọi bill; lỗi giữa chừng không bill nào đổi.
+- [ ] Nhóm trả thiếu: `ChoPhepKhachNo ≠ 30` thì chặn; bật thì chưa chọn khách đứng tên nợ không đóng được, chọn rồi mọi bill mang nợ gắn khách đó, bill không nợ giữ khách cũ.
 
 - [ ] (Seed trong selftest: ≥ 2 khu vực, vài bàn, vài mặt hàng, vài bill; không dựa vào DEMO trống.) Mở màn: tab khu vực đúng số `DKHUVUC.STATUS=30`; bàn `DBAN.STATUS=30` sắp theo tên; khu vực `TABHIENTHI=1` ở hàng dưới.
 - [ ] Trạng thái ô bàn đúng thứ tự ưu tiên 3.1 (dựng đủ 6 trạng thái bằng dữ liệu mẫu).
@@ -212,7 +276,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 
 ## 8. Gợi ý implement (không bắt buộc)
 
-Thứ tự: (1) `OrderCalculator` + selftest; (2) `TableService`/`InvoiceNumberService` + kiểm thử trên bản sao DB; (3) `TableMapView` chỉ đọc; (4) mở bàn + gọi món; (5) thanh toán; (6) chuyển/gộp/hủy; (7) giữ bàn nhiều máy. Tham chiếu repo hiện có: `BookingGroupPlanner` (mẫu logic thuần đặt ở Data), phân tầng UI → Services → Data → Domain một chiều.
+Thứ tự: (1) `OrderCalculator` + selftest; (2) `TableService`/`InvoiceNumberService` + kiểm thử trên bản sao DB; (3) `TableMapView` chỉ đọc; (4) mở bàn + gọi món; (5) thanh toán (là bước 3 của `quy-tien.md` §8 phần bán hàng: dùng lại `FundRules.SettlePayment`, thêm phiếu chi trả cọc dư; sửa luôn phiếu thu đang coi chuyển khoản là `CHUYENKHOAN = 30` còn quỹ coi là khác 0; chia nhóm là hàm thuần có selftest); (6) chuyển/gộp/hủy; (7) giữ bàn nhiều máy. Tham chiếu repo hiện có: `BookingGroupPlanner` (mẫu logic thuần đặt ở Data), phân tầng UI → Services → Data → Domain một chiều.
 
 ## Phụ lục A — Ảnh [APP]
 

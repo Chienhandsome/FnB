@@ -16,6 +16,7 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Ảnh chụp cũng có giới hạn:** DB không có dữ liệu thì báo cáo không in tiêu đề cột; lưới có thể bị cuộn khuất cột hoặc khác `layout.xml`. Đối chiếu cả hai, lệch thì ghi cả hai và đặt câu hỏi.
 - **Xem cả những gì nằm ngoài màn đang làm** trong ảnh (thanh trạng thái, menu). Đã trả lời sai "app gốc không đếm ngày dùng thử" trong khi thanh trạng thái trong ảnh ghi "hết hạn trong 14 ngày".
 - **Nghiệp vụ tiền: kiểm mọi nhánh ghi tiền**, không chỉ nhánh chính. Ví dụ nhánh thanh toán gộp bàn không ghi `TIENMAT`/`CHUYENKHOAN`/`THE`.
+- **Chạy thử câu SQL của nhánh ít dùng** trên bản chép DB: nhánh thanh toán nhóm gốc đọc cột không tồn tại (`TTHUCHI.SOTIEN`). Và tra **chỗ tạo ra** dữ liệu của nhánh đó (`NHOMGUID` do "Ngắt giờ" tạo, không phải "Gộp bàn") trước khi viết luật cho nó.
 
 ## 2. Viết và sửa spec
 
