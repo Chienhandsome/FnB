@@ -1,34 +1,31 @@
 # QUEUE — Spec + Implement FnB (mục Hoạt động)
 
-Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. Cập nhật trạng thái sau mỗi spec.
+Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. Từ 25/11 do vòng lặp tự động ([`../workflow-agy.md`](../workflow-agy.md) §10) đọc và cập nhật; mục "Loại" theo tiêu chí §10.1 (nhẹ: Claude tự duyệt; nặng: chờ Chiến trả lời trên issue nhãn `cho-chien`).
 
-## Đã xong (spec + implement)
-- [x] Danh mục mặt hàng — spec `6a57cd3`, patch 1 đã giao
-- [x] Danh mục bàn khu vực — spec `6a87224`, patch 2 đã giao
-- [x] Khách đặt hàng — spec `ce52532`, patch 3 đã giao
-- [x] Theo dõi đặt phòng — spec `13d90f8`, patch đã apply + commit ở `ab440dd`; Q6 + 5 mục §5 đã chốt "giữ y hệt hết" (23/11)
+## Đã có code trên `main`
+- [x] Danh mục mặt hàng — spec `6a57cd3`, patch 1
+- [x] Danh mục bàn khu vực — spec `6a87224`, patch 2
+- [x] Khách đặt hàng — spec `ce52532`, patch 3
+- [x] Theo dõi đặt phòng — spec `13d90f8`, code `ab440dd`
+- [x] Quỹ tiền bước 1–2 — `quy-tien.md` (đã duyệt); bước 3–5 chờ spec bán hàng
+- [x] Lưu vết hoạt động — `luu-vet-hoat-dong.md` (đã duyệt 25/11); code `3bec043`, `f9dd6bc` (Antigravity), issue #6
 
-## Spec xong, chờ implement (Muse) — cả 3 mục dưới vẫn là NHÁP, chưa thấy code trên `main`
-- [ ] Sử dụng dịch vụ — spec `0e37e01`, review xong (issue #1), chờ Muse implement
-- [ ] Quản lý bán hàng — spec `295df3f` (gộp chung file với Điều chỉnh hóa đơn, giữ nguyên file gộp; lúc implement tách thành 2 patch)
-- [ ] Điều chỉnh hóa đơn — spec `295df3f` (chung file như trên)
+## Chờ Chiến bấm thử (gộp theo đợt, trước khi dùng ở quán)
+- [ ] Lưu vết hoạt động — xem issue #6 (điểm cần chốt: lọc tài khoản theo tên đăng nhập; cột rộng phải cuộn ngang)
 
-## Tiếp theo (Claude làm spec)
-- [x] Báo giá bán hàng — spec `bao-gia-ban-hang.md` (24/11, commit xem git log `docs: spec Báo giá bán hàng`), chờ Chiến duyệt + Muse review
-- [x] Lưu vết hoạt động — spec `luu-vet-hoat-dong.md` (24/11), chờ Chiến duyệt + Muse review
-- [x] Thống kê doanh thu — spec `thong-ke-doanh-thu.md` (24/11), chờ Chiến duyệt + Muse review
-- [x] Thống kê mặt hàng bán — spec `thong-ke-mat-hang-ban.md` (24/11), chờ Chiến duyệt + Muse review
-- [x] Tổng hợp kết quả kinh doanh — spec `tong-hop-ket-qua-kinh-doanh.md` (24/11), đã sửa theo review (issue #3, đã đóng), chờ Chiến duyệt
-- [x] Chi tiết hoạt động ngày — spec `chi-tiet-hoat-dong-ngay.md` (24/11), đã sửa theo review 25/11 (issue #4, đã đóng); Q9, Q10, Q12 đã chốt, còn câu để phương án tạm; chờ Chiến duyệt
-- [x] Danh mục hóa đơn hủy — spec `danh-muc-hoa-don-huy.md` (24/11), đã sửa theo review 25/11 (issue #5, đã đóng); còn câu để phương án tạm; chờ Chiến duyệt
-
-## Phát sinh sau queue
-- [x] Quỹ tiền (tiền mặt + tài khoản) — spec `quy-tien.md` (25/11), **đã duyệt 25/11**; bước 1 (quy tắc tính) và bước 2 (màn Tồn quỹ chỉ xem) đã push; bước 3–5 chờ (bước 3, 4 làm cùng hoặc sau khi spec bán hàng được duyệt)
+## Hàng đợi spec (thứ tự làm)
+| # | Spec | Trạng thái | Loại | Ghi chú |
+|---|---|---|---|---|
+| 1 | `danh-muc-hoa-don-huy.md` | NHÁP | **nhẹ** | Màn chỉ xem; Q3 chỉ là hiển thị số đã lưu |
+| 2 | `thong-ke-mat-hang-ban.md` | NHÁP | nặng | Cộng số lượng và tiền |
+| 3 | `thong-ke-doanh-thu.md` | NHÁP | nặng | Công thức doanh thu |
+| 4 | `chi-tiet-hoat-dong-ngay.md` | NHÁP | nặng | Tiền theo quỹ |
+| 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kết quả kinh doanh |
+| 6 | `bao-gia-ban-hang.md` | NHÁP | nặng | Giá bán |
+| 7 | `danh-muc-khach-hang.md` | NHÁP | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
+| 8 | `su-dung-dich-vu.md` | NHÁP | nặng | Thanh toán; Q14–Q19 chưa chốt |
+| 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | NHÁP | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
 
 ## Ghi chú
-- Review #1 (Sử dụng dịch vụ) và #2 (Quản lý bán hàng + Điều chỉnh hóa đơn) đã sửa spec 24/11 (commit `6d40f73`, `9e48bc8`). Issue #1–#5 đều đã đóng (kiểm ngày 25/11).
-- Quyết định chốt áp cho mọi spec: xóa cứng cả app, LamTron 1000, tiền decimal, F&B thuần COFFEE + POS, bán lẻ tự phục vụ.
-- Sử dụng dịch vụ (Chiến chốt 23/11): Q1 = chỉ VNĐ + LamTron 1000, bỏ nhánh USD; P3 = giữ trigger gốc — lấy thân trigger TDONHANG_TRIGGER từ DATA.fdb trước khi implement phần liên kết bàn–bill.
-- Review của Muse nằm ở GitHub Issues, label `spec-review` — kiểm tra trước mỗi spec mới.
-- Dừng: hết queue / push conflict / app gốc lỗi / 6h30 sáng 24/11. Hết quota 5h thì chờ hồi, không dừng.
-- **24/11 00:10 — HẾT QUEUE** (7/7 spec của loop đêm đã viết, mỗi spec 1 commit).
+- Review cũ của Muse (issue #1–#5) đã đóng. Quyết định chốt áp cho mọi spec: xóa cứng cả app, LamTron 1000, tiền decimal, F&B thuần COFFEE + POS, bán lẻ tự phục vụ.
+- Sử dụng dịch vụ (Chiến chốt 23/11): Q1 = chỉ VNĐ + LamTron 1000; P3 = giữ trigger gốc (thân trigger đã đọc 25/11).
