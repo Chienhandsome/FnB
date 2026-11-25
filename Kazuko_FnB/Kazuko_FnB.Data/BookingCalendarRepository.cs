@@ -10,7 +10,7 @@ namespace Kazuko_FnB.Data
     /// SQL tham số hóa 100%. Mở kết nối theo mẫu của repo (<c>DbHelper.Read</c> /
     /// <c>DbHelper.InTransaction</c>).
     /// </summary>
-    internal sealed class BookingCalendarRepository
+    public sealed class BookingCalendarRepository
     {
         private readonly string _databasePath;
 

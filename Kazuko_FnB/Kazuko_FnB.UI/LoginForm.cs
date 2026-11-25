@@ -291,11 +291,11 @@ namespace Kazuko_FnB.UI
             LayoutAll();
         }
 
-        /// <summary>Tab đăng nhập: 500; tab CSDL cao hơn, thêm hàng IP/Cổng khi chọn máy chủ.</summary>
+        /// <summary>Tab đăng nhập: 528; tab CSDL cao hơn, thêm hàng IP/Cổng khi chọn máy chủ.</summary>
         private int CardHeight(float s)
         {
             if (_tabs.SelectedIndex == 0)
-                return (int)(500 * s);
+                return (int)(528 * s);
             int pad = 32, header = 52 + 62, footer = 22 + 8;
             int page = 26 + 34 + 54 + 26 + 54 + 46 + 46;   // nhãn + radio + đường dẫn + tài khoản + trạng thái + nút
             if (_rbServer.Checked)
@@ -341,7 +341,8 @@ namespace Kazuko_FnB.UI
             _lblPass.SetBounds(0, py, cw, (int)(22 * s)); py += (int)(26 * s);
             _pass.SetBounds(0, py, cw, (int)(44 * s)); py += (int)(54 * s);
             _remember.Location = new Point(0, py);
-            _auto.Location = new Point(Math.Max(0, cw - _auto.PreferredSize.Width), py);
+            py += (int)(28 * s);
+            _auto.Location = new Point(0, py);
             py += (int)(30 * s);
             _error.SetBounds(0, py, cw, (int)(38 * s)); py += (int)(42 * s);
             _btnLogin.SetBounds(0, py, cw, (int)(48 * s)); _btnLogin.Radius = (int)(10 * s);
@@ -395,7 +396,7 @@ namespace Kazuko_FnB.UI
         protected override void ApplyFormTheme()
         {
             ThemeTokens t = ThemeManager.Current;
-            Color card = t.Surface;
+            Color card = Color.White;   // nền thẻ trắng hẳn (không ám màu theme)
             Color strongBorder = StrongBorder(t);
 
             _bar.BarColor = t.Primary;
@@ -413,7 +414,7 @@ namespace Kazuko_FnB.UI
             _version.ForeColor = t.TextMuted;
 
             _tabs.SurfaceColor = card;
-            _tabs.TrackColor = Draw.Mix(t.Background, t.Border, 0.6f);
+            _tabs.TrackColor = Color.White;
             _tabs.PillColor = Color.White;
             _tabs.SelectedTextColor = t.Text;
             _tabs.TextColor = t.TextMuted;
@@ -525,7 +526,7 @@ namespace Kazuko_FnB.UI
             }
             using (GraphicsPath p = Draw.Rounded(_card, radius))
             {
-                using (var b = new SolidBrush(t.Surface))
+                using (var b = new SolidBrush(Color.White))
                     g.FillPath(b, p);
                 using (var pen = new Pen(StrongBorder(t), 2f * s))
                     g.DrawPath(pen, p);

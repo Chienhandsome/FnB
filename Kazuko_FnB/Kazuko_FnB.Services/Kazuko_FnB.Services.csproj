@@ -67,6 +67,7 @@
     <Compile Include="RoomRules.cs" />
     <Compile Include="RoleLogic.cs" />
     <Compile Include="SystemConfig.cs" />
+    <Compile Include="TrialRules.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -55,6 +55,9 @@ namespace Kazuko_FnB
             if (args.Length >= 3 && args[0] == "--render-screen")
                 return RenderScreen(args);
 
+            // Ghi ngày cài ngay lần mở app đầu tiên, kể cả khi chưa đăng nhập.
+            InstallDate.GetOrCreate();
+
             // Vòng lặp: đăng nhập → khung chính → (Đăng xuất) quay lại đăng nhập.
             // Tự động đăng nhập chỉ áp dụng lần mở app đầu tiên, không áp dụng sau khi bấm Đăng xuất.
             bool firstRun = true;

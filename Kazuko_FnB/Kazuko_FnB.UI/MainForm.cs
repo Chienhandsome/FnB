@@ -34,6 +34,7 @@ namespace Kazuko_FnB.UI
         private readonly AppStatusBar _status = new AppStatusBar();
         private readonly Timer _clock = new Timer();
         private readonly Dictionary<string, Control> _views = new Dictionary<string, Control>();
+        private readonly DateTime _installDate = InstallDate.GetOrCreate();
         private QuickAccessView _home;
         private bool _closingConfirmed;
 
@@ -305,11 +306,12 @@ namespace Kazuko_FnB.UI
 
         private void UpdateStatus()
         {
-            // Trái: màn đang xem + giờ; giữa: bản quyền (chưa có logic bản quyền nên tạm "Dùng thử"); phải: CSDL.
+            // Trái: màn đang xem + giờ; giữa: bản quyền (mới có hiển thị hạn dùng thử, chưa chặn); phải: CSDL.
             DocTab t = _tabs.SelectedTab;
             _status.LeftText = (t == null ? "" : "Đang xem: " + t.Title + "    ") +
                                DateTime.Now.ToString("HH:mm:ss - dd/MM/yyyy", CultureInfo.InvariantCulture);
-            _status.MiddleText = "Đăng ký bản quyền: Dùng thử";
+            _status.MiddleText = "Đăng ký bản quyền: Dùng thử, còn " +
+                                 TrialRules.DaysLeft(_installDate, DateTime.Today) + " ngày";
             _status.RightText = "CSDL: " + (_session.DatabasePath ?? "");
         }
 

@@ -9,7 +9,7 @@ namespace Kazuko_FnB.Domain
     /// </summary>
 
     /// <summary>Một loại phòng (<c>DLOAIPHONG</c>) dùng làm hàng nhóm trên lưới.</summary>
-    internal sealed class CalendarRoomType
+    public sealed class CalendarRoomType
     {
         public string Id;
         public string Name;
@@ -21,7 +21,7 @@ namespace Kazuko_FnB.Domain
     }
 
     /// <summary>Một phòng/bàn (<c>DBAN</c>) có loại phòng, hiển thị thành một hàng trên lưới.</summary>
-    internal sealed class CalendarRoom
+    public sealed class CalendarRoom
     {
         public string Id;
         public string Name;
@@ -33,7 +33,7 @@ namespace Kazuko_FnB.Domain
     /// Một phiếu đặt phòng (<c>TDATHANG</c>) vẽ thành một thanh trên lưới.
     /// TUNGAY/DENNGAY là ngày (phần giờ nếu có được chuẩn hóa về 00:00 khi vẽ).
     /// </summary>
-    internal sealed class CalendarBookingBar
+    public sealed class CalendarBookingBar
     {
         public string Id;
         public string Guid;
@@ -51,7 +51,7 @@ namespace Kazuko_FnB.Domain
     }
 
     /// <summary>Kết quả tải lưới lịch: các loại, các phòng, các thanh, và tổng số phòng (đếm tất cả, kể cả phòng không có loại).</summary>
-    internal sealed class CalendarData
+    public sealed class CalendarData
     {
         public List<CalendarRoomType> Types = new List<CalendarRoomType>();
         public List<CalendarRoom> Rooms = new List<CalendarRoom>();
@@ -64,7 +64,7 @@ namespace Kazuko_FnB.Domain
     /// Dữ liệu mồi cho dialog đặt phòng khi mở từ một vùng ô đã chọn trên lưới
     /// (spec §1.4): các phòng trong vùng + ngày vào/ra = ngày min/max của vùng (00:00).
     /// </summary>
-    internal sealed class BookingCalendarPreset
+    public sealed class BookingCalendarPreset
     {
         public List<string> RoomIds = new List<string>();
         public List<string> RoomNames = new List<string>();
@@ -73,7 +73,7 @@ namespace Kazuko_FnB.Domain
     }
 
     /// <summary>Kết quả áp dụng một lần kéo thả trên lưới (theo quy ước result của repo: Ok + ErrorMessage).</summary>
-    internal sealed class BookingCalendarMoveResult
+    public sealed class BookingCalendarMoveResult
     {
         public bool Ok { get; set; }
         public string ErrorMessage { get; set; }
@@ -93,7 +93,7 @@ namespace Kazuko_FnB.Domain
     /// Chuỗi hiển thị riêng của màn lịch. App gốc dùng chữ "đặt phòng" trong các hộp
     /// của màn này (không phải "đặt hàng" như màn Khách đặt hàng) — giữ y hệt (§5.6).
     /// </summary>
-    internal static class CalendarText
+    public static class CalendarText
     {
         public const string SelectAreaFirst = "Mời bạn chọn vùng có chứa phòng và ngày trước";
         public const string OutOfWindow =

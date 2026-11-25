@@ -10,7 +10,7 @@ namespace Kazuko_FnB.Services
     /// 4 hàng tổng, đổi số ngày xem, đổi tháng, danh sách thay đổi khi kéo thả.
     /// Không chạm DB, không chạm WinForms — kiểm được bằng selftest.
     /// </summary>
-    internal static class BookingCalendarRules
+    public static class BookingCalendarRules
     {
         public const int MinDays = 7;
         public const int MaxDays = 90;
