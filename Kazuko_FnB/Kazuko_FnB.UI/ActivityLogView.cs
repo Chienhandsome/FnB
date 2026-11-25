@@ -52,6 +52,7 @@ namespace Kazuko_FnB.UI
         private readonly Label _logEmpty = new Label { Dock = DockStyle.Bottom, TextAlign = ContentAlignment.MiddleCenter, Text = "Chọn một hóa đơn bên trái để xem chi tiết thao tác", Visible = false };
 
         private readonly List<FieldFrame> _frames = new List<FieldFrame>();
+        private readonly Dictionary<string, int> _baseLogColumnWidths = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Font _bodyFont;
         private readonly Font _headingFont;
         private readonly Font _boldGridFont;
@@ -235,18 +236,26 @@ namespace Kazuko_FnB.UI
             _rightFilters.Controls.Add(_btnDelete);
 
             // Đúng 9 cột lưới phải theo thứ tự spec §1; mọi cột không sắp xếp; không có Tên hàng/SL/Đơn giá/Thành tiền.
+            // Đo sẵn theo font đậm của lưới (Hủy bill, Gộp bàn) để mọi dòng đậm/thường hiện đủ chữ, không bị "...".
             ConfigureGrid(_logGrid, s);
-            AddTextColumn(_logGrid, s, "colNgay", "Ngày", 96);
-            AddTextColumn(_logGrid, s, "colGio", "Giờ", 82);
-            AddTextColumn(_logGrid, s, "colSoDonHang", "Số đơn hàng", 118);
+            AddMeasuredLogColumn(s, "colNgay", "Ngày", 108, "25/11/2026", "30/12/2026");
+            AddMeasuredLogColumn(s, "colGio", "Giờ", 92, "23:59:59", "00:00:00");
+            AddMeasuredLogColumn(s, "colSoDonHang", "Số đơn hàng", 128, "HD261125-0001", "LV-HUY-01");
             DataGridViewTextBoxColumn noteCol = AddTextColumn(_logGrid, s, "colNoiDung", "Nội dung", 240);
             noteCol.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             noteCol.MinimumWidth = (int)(200 * s);
-            AddTextColumn(_logGrid, s, "colTaiKhoan", "Tài khoản", 110);
-            AddTextColumn(_logGrid, s, "colThietBi", "Thiết bị", 115);
-            AddTextColumn(_logGrid, s, "colBan", "Bàn", 90);
-            AddTextColumn(_logGrid, s, "colChucNang", "Chức năng", 140);
-            AddTextColumn(_logGrid, s, "colPhanLoai", "Phân loại", 145);
+            AddMeasuredLogColumn(s, "colTaiKhoan", "Tài khoản", 122, "Administrator", "thungan_01");
+            AddMeasuredLogColumn(s, "colThietBi", "Thiết bị", 140, "DESKTOP-0000000", Environment.MachineName);
+            AddMeasuredLogColumn(s, "colBan", "Bàn", 118, "Bàn Chụp Hủy", "Bàn VIP 01");
+            AddMeasuredLogColumn(s, "colChucNang", "Chức năng", 164,
+                ActivityConstants.FuncSuDungDichVu,
+                ActivityConstants.FuncQuanLyBanHang,
+                ActivityConstants.FuncDieuChinhHoaDon,
+                ActivityConstants.FuncPosCamUng);
+            AddMeasuredLogColumn(s, "colPhanLoai", "Phân loại", 190,
+                ActivityKindInfo.DisplayName(ActivityKind.DatGiamGiaMatHang),
+                ActivityKindInfo.DisplayName(ActivityKind.ChuyenMatHang),
+                ActivityKindInfo.DisplayName(ActivityKind.DatSoLuong));
 
             _logGrid.CellFormatting += LogGrid_CellFormatting;
 
@@ -318,6 +327,75 @@ namespace Kazuko_FnB.UI
             };
             grid.Columns.Add(col);
             return col;
+        }
+
+        private static int MeasureLogColumnPadding(float s)
+        {
+            return (int)Math.Ceiling(20 * s);
+        }
+
+        private int MeasureLogColumnWidth(string header, int minWidthAt96, float s, params string[] boldSamples)
+        {
+            int pad = MeasureLogColumnPadding(s);
+            int width = (int)Math.Ceiling(minWidthAt96 * s);
+            int headerW = TextRenderer.MeasureText(header ?? "", _headingFont).Width + pad;
+            if (headerW > width)
+                width = headerW;
+            if (boldSamples != null)
+            {
+                for (int i = 0; i < boldSamples.Length; i++)
+                {
+                    if (string.IsNullOrEmpty(boldSamples[i]))
+                        continue;
+                    int sampleW = TextRenderer.MeasureText(boldSamples[i], _boldGridFont).Width + pad;
+                    if (sampleW > width)
+                        width = sampleW;
+                }
+            }
+            return width;
+        }
+
+        private DataGridViewTextBoxColumn AddMeasuredLogColumn(float s, string name, string header, int minWidthAt96, params string[] boldSamples)
+        {
+            int width = MeasureLogColumnWidth(header, minWidthAt96, s, boldSamples);
+            var col = new DataGridViewTextBoxColumn
+            {
+                Name = name,
+                HeaderText = header,
+                Width = width,
+                SortMode = DataGridViewColumnSortMode.NotSortable
+            };
+            _logGrid.Columns.Add(col);
+            _baseLogColumnWidths[name] = width;
+            return col;
+        }
+
+        private void AdjustLogFixedColumnWidths()
+        {
+            float s = DeviceDpi / 96f;
+            int pad = MeasureLogColumnPadding(s);
+            foreach (DataGridViewColumn col in _logGrid.Columns)
+            {
+                int baseWidth;
+                if (!_baseLogColumnWidths.TryGetValue(col.Name, out baseWidth))
+                    continue;
+                int target = baseWidth;
+                for (int r = 0; r < _logGrid.Rows.Count; r++)
+                {
+                    var entry = _logGrid.Rows[r].Tag as ActivityLogEntry;
+                    bool isBold = entry != null &&
+                        (entry.Tone == ActivityRowTone.DangerBold || entry.Tone == ActivityRowTone.SuccessBold);
+                    Font font = isBold ? _boldGridFont : _bodyFont;
+                    string text = Convert.ToString(_logGrid.Rows[r].Cells[col.Index].Value);
+                    if (string.IsNullOrEmpty(text))
+                        continue;
+                    int needed = TextRenderer.MeasureText(text, font).Width + pad;
+                    if (needed > target)
+                        target = needed;
+                }
+                if (col.Width != target)
+                    col.Width = target;
+            }
         }
 
         private void PlaceSplit()
@@ -507,6 +585,7 @@ namespace Kazuko_FnB.UI
                     entry.KindDisplayName);
                 _logGrid.Rows[idx].Tag = entry;
             }
+            AdjustLogFixedColumnWidths();
             _logGrid.ClearSelection();
             _logEmpty.Text = "Không có lưu vết thao tác";
             _logEmpty.Visible = _logGrid.Rows.Count == 0;
@@ -601,6 +680,100 @@ namespace Kazuko_FnB.UI
         internal bool DeleteButtonVisible { get { return _btnDelete.Visible; } }
         internal int BillRowCount { get { return _billGrid.Rows.Count; } }
         internal int LogRowCount { get { return _logGrid.Rows.Count; } }
+        internal DateTime FromDateValue { get { return _fromDate.Value; } }
+        internal DateTime ToDateValue { get { return _toDate.Value; } }
+        internal Font BoldGridFont { get { return _boldGridFont; } }
+
+        internal void SetDateRangeForTest(DateTime fromDate, DateTime toDate)
+        {
+            _loading = true;
+            try
+            {
+                _fromDate.Value = fromDate.Date;
+                _toDate.Value = toDate.Date;
+            }
+            finally
+            {
+                _loading = false;
+            }
+            ReloadBills();
+        }
+
+        internal int LogColumnWidth(string columnName)
+        {
+            DataGridViewColumn col = _logGrid.Columns[columnName];
+            return col == null ? -1 : col.Width;
+        }
+
+        internal bool IsLogColumnFill(string columnName)
+        {
+            DataGridViewColumn col = _logGrid.Columns[columnName];
+            return col != null && col.AutoSizeMode == DataGridViewAutoSizeColumnMode.Fill;
+        }
+
+        internal int FindBillRowIndex(string billId)
+        {
+            for (int i = 0; i < _billGrid.Rows.Count; i++)
+            {
+                var bill = _billGrid.Rows[i].Tag as ActivityBillItem;
+                if (bill != null && string.Equals(bill.Id, billId, StringComparison.Ordinal))
+                    return i;
+            }
+            return -1;
+        }
+
+        internal int FindLogRowIndex(ActivityKind kind)
+        {
+            for (int i = 0; i < _logGrid.Rows.Count; i++)
+            {
+                var entry = _logGrid.Rows[i].Tag as ActivityLogEntry;
+                if (entry != null && entry.KindValue == (int)kind)
+                    return i;
+            }
+            return -1;
+        }
+
+        internal string GetLogCellText(int rowIndex, string columnName)
+        {
+            if (rowIndex < 0 || rowIndex >= _logGrid.Rows.Count)
+                return "";
+            DataGridViewColumn col = _logGrid.Columns[columnName];
+            if (col == null)
+                return "";
+            return Convert.ToString(_logGrid.Rows[rowIndex].Cells[col.Index].Value) ?? "";
+        }
+
+        internal DataGridViewCellStyle GetBillCellStyle(int rowIndex, int columnIndex = 0)
+        {
+            return CaptureFormattedCellStyle(_billGrid, rowIndex, columnIndex);
+        }
+
+        internal DataGridViewCellStyle GetLogCellStyle(int rowIndex, int columnIndex = 0)
+        {
+            return CaptureFormattedCellStyle(_logGrid, rowIndex, columnIndex);
+        }
+
+        private static DataGridViewCellStyle CaptureFormattedCellStyle(DataGridView grid, int rowIndex, int columnIndex)
+        {
+            if (rowIndex < 0 || rowIndex >= grid.Rows.Count || columnIndex < 0 || columnIndex >= grid.Columns.Count)
+                return null;
+            DataGridViewCellStyle captured = null;
+            DataGridViewCellFormattingEventHandler spy = delegate(object sender, DataGridViewCellFormattingEventArgs e)
+            {
+                if (e.RowIndex == rowIndex && e.ColumnIndex == columnIndex && e.CellStyle != null)
+                    captured = e.CellStyle.Clone();
+            };
+            grid.CellFormatting += spy;
+            try
+            {
+                object unused = grid.Rows[rowIndex].Cells[columnIndex].FormattedValue;
+                return captured;
+            }
+            finally
+            {
+                grid.CellFormatting -= spy;
+            }
+        }
 
         internal List<string> LogColumnHeaders()
         {

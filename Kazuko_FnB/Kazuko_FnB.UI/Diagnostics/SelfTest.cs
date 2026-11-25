@@ -2503,6 +2503,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             var logger = new ActivityLogger(db, "Admin", "selftest");
             var cfgRepo = new ConfigRepository(db);
             int origFlag = SystemConfig.GetInt(ActivityConstants.ConfigKey);
+            UserSession savedAppSession = AppSession.Current;
             int preExistingLogs = 0;
             using (FbConnection conn = KazukoConnection.Open(db))
                 preExistingLogs = DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TLUUVET"));
@@ -2677,9 +2678,78 @@ namespace Kazuko_FnB.UI.Diagnostics
                         viewOff.WarningBannerVisible && viewOff.WarningBannerText == ActivityConstants.DisabledWarningText);
                 }
 
-                // Bật lại cờ = 30 và kiểm UI: đúng 9 cột theo thứ tự §1, nút Xóa ẩn/hiện đúng điều kiện.
+                // Bật lại cờ = 30 và kiểm UI: đúng 9 cột theo thứ tự §1, ngày mặc định DB, nút Xóa ẩn/hiện đúng điều kiện.
                 cfgRepo.Save(new[] { new ConfigChange { Name = ActivityConstants.ConfigKey, DataType = 3, IntValue = 30 } }, "selftest");
                 SystemConfig.Reload(db);
+
+                // Ca kiểm hàm tĩnh ActivityLogger.Track (lấy phiên AppSession, ghi TAIKHOAN = tên đăng nhập, GIO lệch giờ DB <= 1 phút).
+                DateTime dbServerNow;
+                using (FbConnection conn = KazukoConnection.Open(db))
+                    dbServerNow = Convert.ToDateTime(DbHelper.Scalar(conn, null, "SELECT CURRENT_TIMESTAMP FROM RDB$DATABASE"));
+                AppSession.Current = new UserSession
+                {
+                    UserId = "uid_st_track",
+                    UserName = "user_track_st",
+                    DisplayName = "Tên Hiển Thị Khác",
+                    IsAdmin = true,
+                    DatabasePath = db,
+                    Permissions = new FunctionPermissions(true)
+                };
+                bool staticTracked = ActivityLogger.Track(
+                    ActivityConstants.FuncSuDungDichVu,
+                    ActivityKind.InBill,
+                    billInUseId,
+                    "",
+                    "Ghi qua hàm tĩnh ActivityLogger.Track");
+                AppSession.Current = savedAppSession;
+                List<ActivityLogEntry> staticLogs = logger.LoadLogs(billInUseId, "");
+                foreach (ActivityLogEntry l in staticLogs)
+                    seededLogIds.Add(l.Id);
+                ActivityLogEntry staticRow = staticLogs.Find(l => l.KindValue == (int)ActivityKind.InBill);
+                double diffMinutes = staticRow == null ? double.MaxValue : Math.Abs((staticRow.Time - dbServerNow).TotalMinutes);
+                Check("Lưu vết (§7 ActivityLogger.Track tĩnh): lấy phiên AppSession, ghi đúng TAIKHOAN = tên đăng nhập và GIO lệch giờ DB <= 1 phút",
+                    staticTracked && staticRow != null
+                    && staticRow.Account == "user_track_st"
+                    && staticRow.CreatedById == "uid_st_track"
+                    && staticRow.Date == staticRow.Time.Date
+                    && staticRow.Device == Environment.MachineName
+                    && diffMinutes <= 1.0,
+                    staticRow == null ? "null" : ("tk=" + staticRow.Account + ", lech=" + diffMinutes.ToString("0.00") + "p"));
+
+                // Seed đủ các loại phân loại trên billInUseId để kiểm màu/font thật và độ rộng cột in đậm trên ActivityLogView.
+                logger.WriteBatch(new[]
+                {
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncSuDungDichVu, Kind = ActivityKind.MoBan, BillId = billInUseId,
+                        TableName = "Bàn ST-LV 01", Note = "Mở bàn kiểm màu", Time = new DateTime(2002, 5, 10, 11, 0, 1), Account = "Admin"
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncQuanLyBanHang, Kind = ActivityKind.XoaMon, BillId = billInUseId,
+                        TableName = "Bàn ST-LV 01", Note = "Xóa món kiểm màu", Time = new DateTime(2002, 5, 10, 11, 0, 2), Account = "Admin"
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncDieuChinhHoaDon, Kind = ActivityKind.ChuyenBan, BillId = billInUseId,
+                        TableName = "Bàn ST-LV 01", Note = "Chuyển bàn kiểm màu", Time = new DateTime(2002, 5, 10, 11, 0, 3), Account = "Admin"
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncDieuChinhHoaDon, Kind = ActivityKind.GopBan, BillId = billInUseId,
+                        TableName = "Bàn ST-LV 01", Note = "Gộp bàn kiểm màu đậm", Time = new DateTime(2002, 5, 10, 11, 0, 4), Account = "Admin"
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncSuDungDichVu, Kind = ActivityKind.HuyBill, BillId = billInUseId,
+                        TableName = "Bàn ST-LV 01", Note = "Hủy bill kiểm màu đậm và độ rộng cột", Time = new DateTime(2002, 5, 10, 11, 0, 5), Account = "Admin"
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncDieuChinhHoaDon, Kind = ActivityKind.DatGiamGiaMatHang, BillId = billInUseId,
+                        TableName = "Bàn ST-LV 01", Note = "Giảm giá kiểm độ rộng phân loại", Time = new DateTime(2002, 5, 10, 11, 0, 6), Account = "Admin"
+                    }
+                });
 
                 string[] expectedHeaders =
                 {
@@ -2687,6 +2757,10 @@ namespace Kazuko_FnB.UI.Diagnostics
                 };
                 using (var viewAdminNormal = new ActivityLogView(adminSession, false) { SuppressWarningPopup = true })
                 {
+                    Check("Lưu vết UI (§7 mở màn): Từ = Đến = ngày máy chủ DB",
+                        viewAdminNormal.FromDateValue.Date == dbServerNow.Date && viewAdminNormal.ToDateValue.Date == dbServerNow.Date,
+                        "tu=" + viewAdminNormal.FromDateValue.ToString("yyyy-MM-dd") + ", den=" + viewAdminNormal.ToDateValue.ToString("yyyy-MM-dd") + ", db=" + dbServerNow.Date.ToString("yyyy-MM-dd"));
+
                     List<string> cols = viewAdminNormal.LogColumnHeaders();
                     bool headersMatch = cols.Count == expectedHeaders.Length;
                     for (int i = 0; headersMatch && i < expectedHeaders.Length; i++)
@@ -2697,6 +2771,72 @@ namespace Kazuko_FnB.UI.Diagnostics
                     Check("Lưu vết UI: nút Xóa lưu vết ẩn mặc định khi không giữ Ctrl+Shift",
                         !viewAdminNormal.DeleteButtonVisible && !viewAdminNormal.WarningBannerVisible);
                     Check("Lưu vết UI: chưa chọn hóa đơn → lưới phải trống", viewAdminNormal.LogRowCount == 0);
+
+                    // Kiểm màu thật của ô lưới trái & phải (CellFormatting) và độ rộng cột dòng in đậm.
+                    viewAdminNormal.SetDateRangeForTest(new DateTime(2002, 5, 10), new DateTime(2002, 5, 10));
+                    Theme.ThemeTokens theme = Theme.ThemeManager.Current;
+
+                    int leftCancelIdx = viewAdminNormal.FindBillRowIndex(billCancelId);
+                    int leftInUseIdx = viewAdminNormal.FindBillRowIndex(billInUseId);
+                    int leftDoneIdx = viewAdminNormal.FindBillRowIndex(billDoneId);
+                    System.Windows.Forms.DataGridViewCellStyle leftCancelStyle = viewAdminNormal.GetBillCellStyle(leftCancelIdx, 0);
+                    System.Windows.Forms.DataGridViewCellStyle leftInUseStyle = viewAdminNormal.GetBillCellStyle(leftInUseIdx, 0);
+                    System.Windows.Forms.DataGridViewCellStyle leftDoneStyle = viewAdminNormal.GetBillCellStyle(leftDoneIdx, 0);
+                    Check("Lưu vết UI (§7 màu thật lưới trái): bill hủy = Danger, bill đang dùng = Info, bill kết thúc = Text",
+                        leftCancelStyle != null && leftCancelStyle.ForeColor == theme.Danger
+                        && leftInUseStyle != null && leftInUseStyle.ForeColor == theme.Info
+                        && leftDoneStyle != null && leftDoneStyle.ForeColor == theme.Text,
+                        "cancel=" + (leftCancelStyle == null ? "null" : leftCancelStyle.ForeColor.ToString())
+                        + ", inUse=" + (leftInUseStyle == null ? "null" : leftInUseStyle.ForeColor.ToString()));
+
+                    bool billSelected = viewAdminNormal.SelectBillById(billInUseId);
+                    int rowHuy = viewAdminNormal.FindLogRowIndex(ActivityKind.HuyBill);
+                    int rowGop = viewAdminNormal.FindLogRowIndex(ActivityKind.GopBan);
+                    int rowChuyen = viewAdminNormal.FindLogRowIndex(ActivityKind.ChuyenBan);
+                    int rowXoa = viewAdminNormal.FindLogRowIndex(ActivityKind.XoaMon);
+                    int rowMo = viewAdminNormal.FindLogRowIndex(ActivityKind.MoBan);
+                    System.Windows.Forms.DataGridViewCellStyle stHuy = viewAdminNormal.GetLogCellStyle(rowHuy, 0);
+                    System.Windows.Forms.DataGridViewCellStyle stGop = viewAdminNormal.GetLogCellStyle(rowGop, 0);
+                    System.Windows.Forms.DataGridViewCellStyle stChuyen = viewAdminNormal.GetLogCellStyle(rowChuyen, 0);
+                    System.Windows.Forms.DataGridViewCellStyle stXoa = viewAdminNormal.GetLogCellStyle(rowXoa, 0);
+                    System.Windows.Forms.DataGridViewCellStyle stMo = viewAdminNormal.GetLogCellStyle(rowMo, 0);
+                    Check("Lưu vết UI (§7 màu & font thật lưới phải): Hủy bill=Danger+đậm, Gộp bàn=Success+đậm, Chuyển bàn=Info, Xóa món=Danger, Mở bàn=Text thường",
+                        billSelected
+                        && stHuy != null && stHuy.ForeColor == theme.Danger && stHuy.Font != null && stHuy.Font.Bold
+                        && stGop != null && stGop.ForeColor == theme.Success && stGop.Font != null && stGop.Font.Bold
+                        && stChuyen != null && stChuyen.ForeColor == theme.Info && stChuyen.Font != null && !stChuyen.Font.Bold
+                        && stXoa != null && stXoa.ForeColor == theme.Danger && stXoa.Font != null && !stXoa.Font.Bold
+                        && stMo != null && stMo.ForeColor == theme.Text && stMo.Font != null && !stMo.Font.Bold,
+                        "selected=" + billSelected + ", huy=" + (stHuy == null ? "null" : stHuy.ForeColor + "/" + (stHuy.Font != null && stHuy.Font.Bold)));
+
+                    // Kiểm độ rộng 8 cột cố định lưới phải >= độ rộng chữ đo bằng TextRenderer.MeasureText với font đậm của lưới (dòng Hủy bill + chuỗi thường gặp).
+                    System.Drawing.Font boldFont = viewAdminNormal.BoldGridFont;
+                    var widthChecks = new[]
+                    {
+                        new KeyValuePair<string, string[]>("colNgay", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colNgay"), "25/11/2026" }),
+                        new KeyValuePair<string, string[]>("colGio", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colGio"), "23:59:59" }),
+                        new KeyValuePair<string, string[]>("colSoDonHang", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colSoDonHang"), "Số đơn hàng" }),
+                        new KeyValuePair<string, string[]>("colTaiKhoan", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colTaiKhoan"), "Tài khoản" }),
+                        new KeyValuePair<string, string[]>("colThietBi", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colThietBi"), "Thiết bị" }),
+                        new KeyValuePair<string, string[]>("colBan", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colBan"), "Bàn" }),
+                        new KeyValuePair<string, string[]>("colChucNang", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colChucNang"), "Sử dụng dịch vụ", "Điều chỉnh hóa đơn" }),
+                        new KeyValuePair<string, string[]>("colPhanLoai", new[] { viewAdminNormal.GetLogCellText(rowHuy, "colPhanLoai"), "Đặt giảm giá mặt hàng" })
+                    };
+                    var narrowCols = new List<string>();
+                    foreach (KeyValuePair<string, string[]> kv in widthChecks)
+                    {
+                        int colW = viewAdminNormal.LogColumnWidth(kv.Key);
+                        foreach (string sample in kv.Value)
+                        {
+                            int needW = System.Windows.Forms.TextRenderer.MeasureText(sample ?? "", boldFont).Width;
+                            if (colW < needW)
+                                narrowCols.Add(kv.Key + "(" + colW + "<" + needW + " '" + sample + "')");
+                        }
+                    }
+                    bool noteIsFill = viewAdminNormal.IsLogColumnFill("colNoiDung");
+                    Check("Lưu vết UI (§7 độ rộng cột lưới phải): mọi cột cố định >= độ rộng chữ đậm (Hủy bill & dữ liệu thường gặp), Nội dung co giãn",
+                        rowHuy >= 0 && narrowCols.Count == 0 && noteIsFill,
+                        narrowCols.Count == 0 ? ("noteFill=" + noteIsFill) : string.Join("; ", narrowCols.ToArray()));
                 }
                 using (var viewAdminKey = new ActivityLogView(adminSession, true) { SuppressWarningPopup = true })
                 {
@@ -2727,12 +2867,13 @@ namespace Kazuko_FnB.UI.Diagnostics
             }
             finally
             {
-                // Hoàn lại cấu hình và dọn toàn bộ dữ liệu seed.
+                // Hoàn lại phiên, cấu hình và dọn toàn bộ dữ liệu seed.
+                AppSession.Current = savedAppSession;
                 cfgRepo.Save(new[] { new ConfigChange { Name = ActivityConstants.ConfigKey, DataType = 3, IntValue = origFlag } }, "selftest");
                 SystemConfig.Reload(db);
                 foreach (string id in seededLogIds)
                     BookingExec(db, "DELETE FROM TLUUVET WHERE ID = @I", "@I", id);
-                BookingExec(db, "DELETE FROM TLUUVET WHERE SODONHANG IN (@A, @B)", "@A", billDoneId, "@B", billCancelId);
+                BookingExec(db, "DELETE FROM TLUUVET WHERE SODONHANG IN (@A, @B, @C)", "@A", billDoneId, "@B", billCancelId, "@C", billInUseId);
                 BookingExec(db, "DELETE FROM TDONHANGHUY WHERE ID IN (@A, @B)", "@A", billCancelRowId, "@B", billCancelOutRowId);
                 BookingExec(db, "DELETE FROM TDONHANG WHERE ID IN (@A, @B, @C, @D)", "@A", billDoneId, "@B", billInUseId, "@C", billOutId, "@D", billStockId);
                 BookingExec(db, "DELETE FROM DBAN WHERE ID = @I", "@I", tableId);
