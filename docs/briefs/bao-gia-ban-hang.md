@@ -1,8 +1,8 @@
 # Brief: Báo giá bán hàng
 
-- Spec: `docs/specs/bao-gia-ban-hang.md` (đã duyệt 25/11).
-- Đang code. Chiến chốt 25/11 "A, như app gốc" (spec §5.0.2); #16 còn 2 câu không chặn (Khách đặt hàng, menu ẩn).
-- Đã làm 25/11 (vòng lặp): tạo worktree trên base `2afe509`; mốc selftest 711 đạt, 7 lỗi cũ; đọc `TBAOGIA__b2d3ffd4/code.cs`. Chưa giao agy.
-- Lý do chặn: mã gốc ghi số lượng lẻ theo ô SL ngoài form (`code.cs:38`, `:79`), số lẻ sửa trong hộp "Nhập số lượng" chỉ dùng để kiểm bằng 0 (`:157`). Làm như vậy có trường hợp ra dòng số lượng 0, trái P3. Khách đặt hàng bản mới lấy số trong hộp.
-- Đã thử trên app gốc 25/11 (comment ở #16): đúng như mã, gồm ca mất số lẻ và ca dòng số lượng 0. App gốc đang ẩn menu này (`SMENU.STATUS = 0`). Ảnh: `_tmp/_origin-shots/bao-gia-ban-hang/`.
-- Còn: chờ trả lời, ghi vào spec, rồi làm §4. Ghi chú viết prompt ở `_tmp\bao-gia-ban-hang\notes.md`.
+- Spec: `docs/specs/bao-gia-ban-hang.md`. Chiến chốt 25/11 "A, như app gốc" cho SL lẻ (§5.0.2).
+- Code **xong, chưa push**, nằm ở worktree `fnb-agy-work\bao-gia-ban-hang` (base `b2df4cc`). Build 0 lỗi; selftest 772 đạt, 7 lỗi cũ. Báo cáo và bảng tiêu chí: issue #18.
+- **Bị chặn: 2 câu ở #16** (Excel giá âm / % giảm ngoài 0..100; hộp 2 ĐVT khi cả lẻ và thùng bằng 0). Cả hai là luật Claude đặt, spec đã duyệt không có.
+- Đã thử trên app gốc 25/11: SL lẻ lấy theo ô SL ngoài hộp; phiếu có sẵn dòng lẻ thì vẫn cộng ô SL dù lẻ trong hộp = 0. Ảnh `_tmp/_origin-shots/bao-gia-ban-hang/`.
+- Chưa kiểm: 125% DPI; hộp nhập Excel và hộp số lượng chưa chụp; ca cả lẻ và thùng = 0 trên app gốc.
+- Còn 2 câu không chặn ở #16: Khách đặt hàng có đổi theo A không; menu bị app gốc ẩn có ép hiện không.
