@@ -118,6 +118,15 @@ LamTron 1000 AwayFromZero (chỉ khi **tính** tiền, màn này chỉ cộng n�
 - [ ] Đổi ngày/cửa hàng tải lại ngay; F5 tải lại; thay đổi `TDONHANG`/`TTHUCHI` từ máy khác tự làm tươi.
 - [ ] Nút In báo "chưa hỗ trợ" (hoặc in đúng mẫu nếu có); không SQL trong View; màu/cỡ chữ từ token; 125% DPI; lưới đủ lớn cho cảm ứng (yêu cầu v1, không phải gốc).
 
+## 6.1 Đối chiếu số với app gốc (25/11/2026, bản chép ngoài repo)
+
+Dữ liệu tạo bằng chính app gốc: bill 1 tiền mặt 100.000; bill 2 tiền hàng 80.000, giảm 10.000, trả thẻ 70.000; bill 3 30.000 **chưa thanh toán**; phiếu thu 40.000; phiếu chi 15.000. Chạy bản mới (`7a2fc98`) trên đúng CSDL đó.
+
+- **Khớp:** danh sách bill (2 bill, bill chưa thanh toán không hiện ở app gốc), TIỀN HÀNG 180.000, giảm giá 10.000, TỔNG DOANH THU 170.000, tiền mặt 100.000, thẻ 70.000, THU KHÁC 40.000, CHI KHÁC 15.000, TỔNG THỰC THU 195.000.
+- **Khác có chủ đích:** số nguyên thay `n2` (Q6); ẩn 2 dòng tiền giờ (Q7).
+- **Khác do spec ghi sai thứ tự (chờ Chiến quyết):** (1) app gốc xếp CHUYỂN KHOẢN, TRỪ TÍCH LŨY, THẺ TRẢ TRƯỚC, **VOUCHER**, CÔNG NỢ; bản mới để VOUCHER ngay sau CHUYỂN KHOẢN. (2) Lưới chi tiết app gốc để **S.lượng ở cuối** (sau Ghi chú); bản mới để cột thứ ba.
+- **Chưa đối chiếu:** voucher, chuyển khoản, công nợ, tích lũy, thẻ trả trước, thuế, phí dịch vụ, nhiều cửa hàng.
+
 ## 7. Gợi ý implement (không bắt buộc)
 
 `RevenueReportRepository` (Data: danh sách bill theo khoảng ngày + cửa hàng + ràng buộc user; chi tiết bill; tổng thu/chi), `RevenueSummary.Calculate(IEnumerable<BillRow>, thu, chi)` (Services, thuần, selftest ≥ 8 ca), `RevenueReportView` (UI). Có thể dùng chung `BillListQuery` với màn Quản lý bán hàng/Danh mục hóa đơn hủy để không viết lại truy vấn danh sách bill.

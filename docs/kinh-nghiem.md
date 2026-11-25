@@ -19,6 +19,11 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Nghiệp vụ tiền: kiểm mọi nhánh ghi tiền**, không chỉ nhánh chính. Ví dụ nhánh thanh toán gộp bàn không ghi `TIENMAT`/`CHUYENKHOAN`/`THE`.
 - **Chạy thử câu SQL của nhánh ít dùng** trên bản chép DB: nhánh thanh toán nhóm gốc đọc cột không tồn tại (`TTHUCHI.SOTIEN`). Và tra **chỗ tạo ra** dữ liệu của nhánh đó (`NHOMGUID` do "Ngắt giờ" tạo, không phải "Gộp bàn") trước khi viết luật cho nó.
 
+- **Chỗ vướng thì mở app gốc thao tác** (Chiến dặn 25/11). Báo cáo: tạo bill, phiếu thu/chi bằng chính app gốc trên bản chép ngoài repo, rồi chạy bản mới (`--render-screen`) trên đúng CSDL đó và so từng số. Trước khi chạy, ghi mã băm các CSDL trong `POS TAP/Database` và so lại sau; `Data/conn.dat` phải chỉ ghi tên `DATA.fdb` (không đường dẫn đầy đủ).
+- **Không dùng `open_application` để đưa app gốc lên trước:** nó mở thêm phiên chạy quyền quản trị, hộp thoại của phiên đó không bấm được, phải nhờ Chiến bấm "No".
+- **Thao tác app gốc:** bấm chọn dòng mặt hàng rồi Enter mới thêm vào bill. Ô tiền không bôi chọn được (số mới nối vào số cũ): bấm vào ô, End, Backspace nhiều lần rồi mới gõ. Telex trong app đổi chữ gõ thử. Báo Chiến đừng dùng chuột phím trong lúc thao tác.
+- **Cấu hình lưới (`ViewConfig`) không cho biết thứ tự cột hiển thị:** muốn đúng thứ tự thì nhìn app gốc, cuộn hết sang phải (đã ghi sai chỗ cột S.lượng).
+
 ## 2. Viết và sửa spec
 
 - Quy tắc dùng chung nhiều spec (biên "Đến ngày", `STATUS = 30`, lọc cửa hàng, quỹ) **chốt một lần**, rồi đồng bộ mọi spec liên quan. Quỹ tiền: [`specs/quy-tien.md`](specs/quy-tien.md) là nguồn chuẩn.
@@ -32,6 +37,8 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - Chiến hỏi "ví dụ cho dễ hiểu" thì dùng tình huống đời thường (hai bàn trả chung), hạn chế tên cột.
 
 ## 4. Build, chạy, kiểm
+
+- **`Start-Process -ArgumentList` không tự bọc ngoặc kép:** tên giao diện "Mặc định" bị tách đôi, app hiểu "định" là đường dẫn CSDL và bật hộp lỗi. Truyền một chuỗi, tự bọc ngoặc kép từng tham số có dấu cách.
 
 - `git fetch origin main` ở **mỗi lượt**: Chiến có thể commit và push giữa phiên.
 - MSBuild: `D:\VisualStudioInstallation\MSBuild\Current\Bin\MSBuild.exe`. Các project hiện chỉ cấu hình AnyCPU (exe ưu tiên 32-bit): thêm `Platform=x86` báo MSB4126, nên build cấu hình mặc định. Cảnh báo MSB3270 (FastReport x86) đã có sẵn.

@@ -13,6 +13,12 @@
 - **[FRX]** Cả 2 mẫu lấy từ blob `SREPORTTEMPLATE.TEMPLATE` trên bản sao `DATA.fdb` (25/11). Hai mẫu không có script, khác nhau ở cột khối Bán hàng. Thư mục export `SREPORT/…` không chứa `.frx` nên bản spec trước ghi nhầm là không có mẫu in.
 - **[CHƯA XÁC MINH]**: hình dạng 4 khối khi có dữ liệu (chưa chạy app gốc với bill thật); cơ chế khung điền giá trị mặc định cho bộ lọc và chữ "Tất cả". **[APP]** ảnh 24/11 (DB không có bill) chỉ có đầu trang, ô ký và khối tổng hợp; **không có tiêu đề cột của 4 khối** nên không dùng để chọn mẫu in được.
 
+**[APP] 25/11/2026, có dữ liệu thật** (tạo bằng app gốc: 2 bill đã trả, 1 bill chưa trả, 1 phiếu thu 40.000, 1 phiếu chi 15.000):
+- Mở màn: Từ = 01 tháng, Đến = hôm nay, Thu ngân trống, Cửa hàng chọn sẵn "TRỤ SỞ CHÍNH"; tự hiện báo cáo.
+- App gốc in theo mẫu `765b861a` (`LASTTEMPLATEID`): khối Bán hàng 9 cột (STT, Số HĐ, Giờ tt, Khách hàng, Tổng cộng, Tiền mặt, Thẻ ATM, Đặt trước, Còn nợ). **v1 vẫn dùng "Mẫu đầy đủ" theo Q9.**
+- Khối Nhập hàng không có dữ liệu thì **ẩn cả khối**.
+- Bill chưa thanh toán không xuất hiện. Mặt hàng cùng tên khác đơn giá tách 2 dòng. 4 dòng tổng: 180.000 / 0 / 10.000 / 170.000. TIỀN MẶT 125.000 = 100.000 + 40.000 − 15.000; TIỀN THẺ 70.000: khớp công thức §2.7.
+
 ## 1. Giao diện (khác khuôn)
 
 Màn chạy báo cáo chuẩn của khung:
