@@ -104,6 +104,26 @@ Một quyền: "Báo giá" (`SFUNCTION` `7be6722c-…`, nhóm "Bán hàng", ki�
 - **Q4:** nút In báo "chưa hỗ trợ".
 - Còn phải xác minh trước khi duyệt: Q2, Q5, Q7 (phần hiện ô thuế), Q9.
 
+### 5.0.2 Số lượng lẻ khi mặt hàng 2 đơn vị tính (Chiến chốt 25/11/2026, issue #16). Thắng §2.1 nếu khác
+
+Chiến trả lời trong phiên Claude Code: **"A, như app gốc"**. "Ô SL" là ô số lượng cạnh nút Thêm; "số trong hộp" là SL lẻ ở hộp "Nhập số lượng". Đã bấm thử trên app gốc 25/11 (bản chép), lẻ 15.000, thùng 340.000:
+
+| Phiếu đang có dòng lẻ? | Ô SL | Lẻ trong hộp | Kết quả dòng lẻ |
+|---|---|---|---|
+| chưa | 2 | 5 | tạo dòng **2** |
+| rồi | 0 | 3 | **không đổi** |
+| rồi | 2 | **0** | **cộng thêm 2** (2 thành 4) |
+| chưa | 0 | 3 | gốc tạo dòng số lượng 0; bản mới **không tạo** (P3) |
+
+Luật cho bản mới:
+- Đã có dòng lẻ cùng mặt hàng: cộng **ô SL** vào dòng đó, không xét số lẻ trong hộp.
+- Chưa có dòng lẻ: lẻ trong hộp = 0 thì không tạo dòng; khác 0 thì tạo dòng với số lượng = **ô SL** (ca này theo mã gốc `code.cs:21`, `:38`).
+- P3: ô SL <= 0 thì không tạo và không cộng dòng lẻ. Khi lẻ trong hộp > 0 mà ô SL <= 0, báo "Mời bạn nhập số lượng" (câu của gốc; gốc không báo ở ca này).
+- Dòng chẵn lấy số **chẵn trong hộp** như §2.1, kể cả khi dòng lẻ không được tạo. Lẻ và chẵn trong hộp đều 0 thì không thêm gì, báo "Mời bạn nhập số lượng". Hộp bấm Thoát thì không thêm gì.
+- Khách đặt hàng bản mới giữ nguyên (đang lấy số trong hộp); chưa có quyết định đổi.
+
+Menu: app gốc đang ẩn "Báo giá bán hàng" (`SMENU.STATUS = 0`), bản mới chỉ hiện dòng `STATUS = 30`. Vẫn làm màn và route theo spec; **không** sửa CSDL và không ép hiện menu khi chưa có quyết định.
+
 ### 5.0.1 Xác minh 25/11/2026
 
 - **Q9, đã xác minh:** `ViewConfig` của lưới chi tiết `detail` (`layout.xml`, giải base64) lưu công thức `SOLUONG*DONGIA*(1-TILEGIAMGIA/100)`. Thay ghi chú [CHƯA XÁC MINH] ở §2.2.
