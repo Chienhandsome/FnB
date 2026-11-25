@@ -28,6 +28,8 @@
 | # | Câu hỏi | Loại | Đề xuất |
 |---|---|---|---|
 | Q1 | Xóa cửa hàng đang được kho, hóa đơn, phiếu thu chi hoặc người dùng tham chiếu thì sao? Xóa cửa hàng cuối cùng được không? | xóa dữ liệu | Chặn khi còn tham chiếu; chặn xóa cửa hàng cuối cùng (chưa có bằng chứng app gốc) |
-| Q2 | So trùng Mã, Tên: hoa/thường, dấu, khoảng trắng đầu/cuối? | dữ liệu | Cùng câu trả lời với câu 3 của issue #17 |
+| Q2 | So trùng Mã, Tên. Đã đọc CSDL 25/11: `NAME` collation `UNICODE_CI_AI`, `CODE` collation `UTF8`; chưa thử trên màn cửa hàng của app gốc | dữ liệu | So theo collation của cột (issue #19 câu 3) |
 | Q3 | Cột và thứ tự cột trên lưới của app gốc? | hiển thị | Như mục Giao diện |
 | Q4 | Chỉ có quyền Xem: hộp thoại mở chỉ đọc không? | quyền | Cùng câu trả lời với câu 1 của issue #17 |
+
+**Phân loại 25/11:** nặng (Q1 về xóa dữ liệu, Q4 về quyền; không đủ bằng chứng để tự chốt theo §10.1.1). Hỏi Chiến ở issue #19. Q3 là phần hiển thị, dùng mặc định ở [`giao-dien.md`](giao-dien.md).

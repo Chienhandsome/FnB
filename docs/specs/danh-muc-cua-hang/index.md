@@ -1,6 +1,6 @@
 # Spec: Danh mục cửa hàng (DCUAHANG)
 
-- Trạng thái: **NHÁP** (Claude viết 25/11/2026 trong vòng lặp tự động; chưa phân loại, chưa duyệt)
+- Trạng thái: **NHÁP** (Claude viết 25/11/2026). Phân loại **nặng** (workflow-agy §10.1); chưa duyệt, chờ Chiến ở issue #19.
 - Base: `main` @ `9d7f8d2`
 - Menu: HOẠT ĐỘNG > Danh mục cửa hàng (`SMENU.SORTORDER = ZZZ003`, `STABLEDESC` `71442d6c-3236-44af-b312-21042b8ea94f`).
 - Menu có `VISIBLECONFIGID` = cấu hình `NhieuCuaHang`; bản chép CSDL đang **0**, nên menu đang ẩn.
