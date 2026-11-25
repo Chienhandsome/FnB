@@ -42,8 +42,12 @@ Bắt đầu khi Chiến bảo "làm <chức năng>". **Dừng ở bước nào 
 3. **Viết prompt** vào `_tmp\<feature>\prompt-r<N>.md` (mẫu ở §5).
 4. **Giao việc.** Chạy trong worktree:
    ```powershell
-   & "$env:LOCALAPPDATA\agy\bin\agy.exe" -p (Get-Content prompt-r1.md -Raw) --mode accept-edits --sandbox --log-file <_tmp>\agy-r1.log --print-timeout 60m
+   & "$env:LOCALAPPDATA\agy\bin\agy.exe" -p "Doc file <_tmp>\prompt-r1.md (UTF-8) bang cong cu doc file va lam dung theo noi dung file do." --add-dir <_tmp> --settings D:\Working\fnb-agy-work\_tmp\agy-settings.json --mode accept-edits --sandbox --log-file <_tmp>\agy-r1.log --print-timeout 60m --output-format json
    ```
+   - Không truyền nguyên nội dung prompt vào `-p`: PowerShell 5.1 cắt sai đối số khi chuỗi có dấu `"`. Chạy nền vì có thể lâu (vòng thử đầu: khoảng 10 phút).
+   - **Quyền lệnh:** chế độ `-p` không hỏi được người dùng nên **từ chối mọi lệnh shell chưa cho phép, và dừng cả lượt** ở lệnh đầu tiên bị từ chối. `agy-settings.json` (chỉ dùng cho phiên, không ghi vào cấu hình chung) cho phép hẹp: `read_file(*)`; `Get-Content`, `Get-ChildItem`, `Select-String`, `Test-Path`, `git status|diff|log|show|ls-files` và MSBuild, **không** có `| ; & < >` và dấu backtick; chặn `git` ghi (commit, push, checkout, reset…), mọi lệnh nhắc `DATA.fdb` hay `POS TAP`, xóa file, tải mạng, `Start-Process`. Prompt phải dặn agy dùng công cụ đọc/tìm của nó và mỗi lần một lệnh đơn.
+   - Lượt dừng vì lệnh bị từ chối: hỏi agy lệnh đó là gì (`--conversation <mã> --mode plan`), rồi cho nó làm tiếp trong cùng hội thoại với hướng dẫn tránh lệnh đó. Không chuyển sang `--dangerously-skip-permissions`.
+   - Kết quả JSON có `denied_actions` và `conversation_id`; ghi cả hai vào báo cáo.
    Model: mặc định của `agy` trừ khi Chiến chỉ định (`--model`); ghi model vào báo cáo. Không dùng `--dangerously-skip-permissions`. Vòng sửa dùng `--continue` hoặc `--conversation <mã>` để `agy` giữ ngữ cảnh.
 5. **Kiểm phạm vi.** `git -C D:\Working\FnB status` không được đổi so với trước bước 4; `git -C <worktree> status` chỉ có file trong phạm vi. `agy` đã commit hoặc sửa ngoài worktree → dừng, báo Chiến.
 6. **Đọc diff** (`git -C <worktree> diff` + file mới). **Dừng chờ Chiến** nếu diff:
@@ -114,7 +118,8 @@ Xóa cứng (không thùng rác) · tiền `decimal`, `LamTron` bội 1000 AwayF
 
 ## 9. Bài test đầu tiên
 
-- Đã kiểm 25/11: `agy` 1.5.16 chạy được chế độ không người bấm (`-p`), đã đăng nhập. Chưa thử `--sandbox` và `--mode accept-edits` trên việc thật.
+- **Đã chạy 25/11:** Lưu vết hoạt động, vòng 1 đạt, commit `3bec043`, báo cáo ở issue #6. Agy chỉ sửa trong worktree, không commit; build 0 lỗi; selftest không ca lỗi mới, 28 ca mới đạt. Mốc selftest với bản chép `POS TAP/Database/DATA.fdb`: 7 ca lỗi cũ.
+- Chưa thử: vòng sửa (gửi lỗi lại cho agy), `git revert`.
 - Chức năng: **một**, spec đã duyệt. Gợi ý: Lưu vết hoạt động (spec còn NHÁP, cần Chiến duyệt).
 - Trước khi chạy: tạo nhãn `agy-patch`; chạy selftest của `main` một lần để có mốc (đang ghi nhận 2 ca lỗi cũ ở phần xóa nhóm người dùng).
 - **Thành công** = commit lên `main` fast-forward, báo cáo đủ §7, thư mục chính của Chiến không bị đụng, Chiến bấm thử. Thử thêm một lần `git revert` để chắc đường gỡ lỗi chạy được.
