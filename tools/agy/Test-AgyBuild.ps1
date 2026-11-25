@@ -2,7 +2,8 @@
 .SYNOPSIS
   §4 bước 7 của docs/workflow-agy.md: build worktree, so cảnh báo với mốc, chạy selftest trên bản chép DB, so ca lỗi với mốc.
 .DESCRIPTION
-  Đạt khi: build 0 lỗi, không cảnh báo mới, không ca selftest lỗi mới, có ít nhất một ca selftest mới,
+  Đạt khi: build 0 lỗi, không cảnh báo mới, không ca selftest lỗi mới, mọi ca đạt ở mốc (so theo tên) vẫn đạt,
+  có ít nhất một ca selftest mới,
   và không có file .cs mới (hoặc file đang <= 500 dòng) vượt 500 dòng. File cũ đã quá 500 mà dài thêm: chỉ báo.
   Ghi build-r<N>.json kèm dấu vân tay của code đã kiểm; Publish-AgyFeature.ps1 từ chối push nếu code đổi sau đó.
 #>
@@ -14,6 +15,8 @@ param(
 $P = Get-FeaturePaths $Feature
 $baseline = Read-Json (Join-Path $P.Tmp 'baseline.json')
 $fingerprint = Get-TreeFingerprint $P.Worktree
+$wtHead = (Invoke-Git $P.Worktree 'rev-parse' 'HEAD')[0]
+if (-not $baseline.PSObject.Properties['passNames']) { throw 'Mốc thiếu tên ca selftest (tạo bằng script cũ). Xóa worktree và chạy lại New-AgyFeature.ps1.' }
 
 $b = Invoke-Build -Worktree $P.Worktree -OutDir (Join-Path $P.Tmp "build-r$Round")
 $newWarnings = @($b.Warnings | Where-Object { @($baseline.warnings) -notcontains $_ })
@@ -44,11 +47,13 @@ if ($b.ExitCode -eq 0) {
     $newPass = $t.Pass - [int]$baseline.pass
     if ($newFails.Count -gt 0) { $problems += "Ca selftest lỗi mới: $($newFails -join ' | ')" }
     if ($newPass -le 0) { $problems += 'Không có ca selftest mới nào đạt (chức năng phải có selftest).' }
+    $lost = @(Get-MissingCases -BaseNames @($baseline.passNames) -Names @($t.PassNames))
+    if ($lost.Count -gt 0) { $problems += "Mất $($lost.Count) ca selftest đạt ở mốc (xóa hoặc đổi tên): $(($lost | Select-Object -First 10) -join ' | ')" }
     $gone = @($baseline.fails | Where-Object { @($t.Fails) -notcontains $_ })
 }
 
 $result = [pscustomobject]@{
-    feature = $Feature; round = $Round; ok = ($problems.Count -eq 0); problems = $problems; fingerprint = $fingerprint
+    feature = $Feature; round = $Round; ok = ($problems.Count -eq 0); problems = $problems; fingerprint = $fingerprint; head = $wtHead
     base = $baseline.base; baseTotal = $baseline.total; total = $(if ($t) { $t.Total } else { '' })
     newPass = $newPass; newFails = $newFails; baseFailsStillFailing = $(if ($t) { @($baseline.fails).Count - @($gone).Count } else { 0 })
     warnings = $b.Warnings; newWarnings = $newWarnings; sizeNotes = $sizeNotes; selftestFile = $(if ($t) { $t.File } else { '' })

@@ -30,12 +30,12 @@ Vì code lên `main` mà không ai khác xem, **Claude là người review** và
 
 | Script (`tools/agy/`) | Bước | Làm |
 |---|---|---|
-| `New-AgyFeature.ps1 -Feature -Spec` | 1–2 | Kiểm spec ĐÃ DUYỆT trên `origin/main`; tạo worktree; chép `lib/` và `TEMPLATE.FDB`; build + selftest mốc (lưu theo SHA ở `_cache`); sinh file quyền và prompt mẫu |
+| `New-AgyFeature.ps1 -Feature -Spec` | 1–2 | Kiểm spec trên `origin/main` có dòng trạng thái **bắt đầu** bằng `**ĐÃ DUYỆT`; tạo worktree; chép `lib/` và `TEMPLATE.FDB`; build + selftest mốc (lưu theo SHA ở `_cache`); sinh file quyền và prompt mẫu |
 | `Invoke-Agy.ps1 -Feature -Round [-Conversation -Message -Mode plan]` | 4–5 | Chạy agy, lưu kết quả JSON, rồi gọi `Test-AgyScope.ps1` |
-| `Test-AgyScope.ps1` | 5–6 | Lỗi chặn: thư mục chính đổi, worktree có commit, file cấm, `.csproj` ngoài `<Compile Include>`, cấu hình chung của agy bị sửa, file ngoài worktree bị sửa. Cảnh báo: file dùng chung, mẫu code đáng ngờ, file `.log`/`.tmp` bên ngoài đổi |
+| `Test-AgyScope.ps1` | 5–6 | Lỗi chặn: thư mục chính đổi (gồm hook, cấu hình git), worktree có commit, file cấm (gồm file cấu hình MSBuild, kể cả trong `obj/`), `Kazuko_FnB/lib/` khác thư mục chính, `.csproj` mới hoặc thêm gì ngoài `<Compile Include>` trong project, cấu hình chung của agy bị sửa, file ngoài worktree bị thêm, sửa, xóa (không soi `bin`, `obj`, `.git`, `.vs`). Cảnh báo: file dùng chung, mẫu code đáng ngờ, file `.log`/`.tmp` bên ngoài đổi |
 | `Get-AgyDelta.ps1 -Feature [-Full] [-MarkRead <tree>]` | 6, 9, 11 | Ghi ra file phần diff chưa đọc; lưu tree đã đọc |
-| `Test-AgyBuild.ps1 -Feature -Round` | 7 | Build; so cảnh báo với mốc; selftest trên bản chép DB; so ca lỗi với mốc; bắt buộc có ca mới; chặn file `.cs` vượt 500 dòng (§4.2); lưu dấu vân tay code đã kiểm |
-| `Publish-AgyFeature.ps1 -Feature -Round -Title -CoAuthor -ReviewedFullDiff` | 11 | Từ chối nếu code đổi sau lần kiểm, `main` đổi code, thiếu cờ đã đọc diff. Commit có dòng ghi công, push fast-forward, ghi `state.txt` |
+| `Test-AgyBuild.ps1 -Feature -Round` | 7 | Build; so cảnh báo với mốc; selftest trên bản chép DB; so ca lỗi với mốc; mọi ca đạt ở mốc (so theo tên) phải còn đạt; bắt buộc có ca mới; chặn file `.cs` vượt 500 dòng (§4.2); lưu dấu vân tay code đã kiểm |
+| `Publish-AgyFeature.ps1 -Feature -Round -Title -CoAuthor -ReviewedFullDiff` | 11 | Từ chối nếu code đổi sau lần kiểm, build không chạy trên commit nền hiện tại, `main` đổi code, thiếu cờ đã đọc diff. Commit có dòng ghi công, push fast-forward, ghi `state.txt` |
 | `Remove-AgyFeature.ps1 -Feature [-Discard]` | 13 | Xóa worktree, giữ `_tmp` |
 
 | Đường dẫn | Dùng cho |
@@ -169,7 +169,7 @@ Chỉ áp khi có file `D:\Working\fnb-agy-work\auto.on`. **Chỉ Chiến tạo 
 
 **Ghi lại:** mỗi câu tự chốt ghi `TẠM (Claude chốt <ngày>)` kèm bằng chứng trong spec, và liệt kê trên một issue `ra-soat: <spec>`. Chiến xác nhận thì bỏ chữ `TẠM`. Chiến đổi ý thì sửa spec; nếu đã có code thì sửa tiếp hoặc revert theo §6.
 
-**Duyệt spec:** mọi câu đã chốt thì ghi `ĐÃ DUYỆT (Claude tự duyệt <ngày> theo workflow-agy §10.1.1)`. Còn câu phải chờ thì spec chưa được duyệt, chuyển sang spec khác. Chỉ tách phần không phụ thuộc thành spec riêng khi phần đó dùng được độc lập.
+**Duyệt spec:** mọi câu đã chốt thì ghi `**ĐÃ DUYỆT** (Claude tự duyệt <ngày> theo workflow-agy §10.1.1)`. Còn câu phải chờ thì spec chưa được duyệt, chuyển sang spec khác. Chỉ tách phần không phụ thuộc thành spec riêng khi phần đó dùng được độc lập.
 
 ### 10.2 Một nhịp
 

@@ -33,7 +33,12 @@ if ($Message -match '"') { throw 'Message không được chứa dấu " (PowerS
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $runDir = Join-Path $P.Tmp "run-r$Round-$stamp"
 New-Item -ItemType Directory -Force $runDir | Out-Null
+$snapFile = Join-Path $runDir 'outside-before.tsv'
+$snap = Get-OutsideSnapshot $P.Worktree
+[IO.File]::WriteAllLines($snapFile, [string[]]@($snap.Keys | Sort-Object | ForEach-Object { "$_`t$($snap[$_])" }), $script:Utf8NoBom)
 $before = [pscustomobject]@{
+    gitGuard   = @(Get-GitGuard $script:AgyRepo)
+    outsideSnapshot = $snapFile
     time       = (Get-Date).ToString('o')
     repoHead   = (Invoke-Git $script:AgyRepo 'rev-parse' 'HEAD')[0]
     repoStatus = (Invoke-Git $script:AgyRepo 'status' '--porcelain')

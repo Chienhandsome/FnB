@@ -2,8 +2,10 @@
 .SYNOPSIS
   §4 bước 5–6 của docs/workflow-agy.md (phần máy làm được): agy có ra khỏi phạm vi không, diff có đụng chỗ cấm không.
 .DESCRIPTION
-  Lỗi chặn (dừng, báo Chiến): thư mục chính của Chiến đổi; worktree có commit mới; file cấm bị sửa;
-  .csproj thêm thứ ngoài <Compile Include>; file cấu hình chung của agy bị sửa; file ngoài worktree bị sửa.
+  Lỗi chặn (dừng, báo Chiến): thư mục chính của Chiến đổi; hook hoặc cấu hình git của thư mục chính đổi;
+  worktree có commit mới; file cấm bị sửa (kể cả file cấu hình MSBuild bị git bỏ qua); Kazuko_FnB/lib khác thư mục chính;
+  .csproj mới, hoặc thêm thứ ngoài <Compile Include> trỏ vào trong project; file cấu hình chung của agy bị sửa;
+  file ngoài worktree bị thêm, sửa, xóa (trừ bin, obj, .git, .vs: không soi).
   Cảnh báo (Claude đọc và quyết): file dùng chung bị sửa; mẫu code đáng ngờ trong dòng thêm mới.
   Không thay việc Claude đọc hết diff.
 #>
@@ -29,6 +31,10 @@ if ($BeforeFile -and (Test-Path $BeforeFile)) {
     }
     $nowHash = $(if (Test-Path $script:AgyGlobalSettings) { (Get-FileHash -Algorithm SHA256 $script:AgyGlobalSettings).Hash } else { '' })
     if ($nowHash -ne $before.agySettingsHash) { $blocking.Add("File cấu hình chung của agy đã bị sửa: $($script:AgyGlobalSettings)") }
+    if (-not $before.PSObject.Properties['gitGuard']) { $blocking.Add('Thiếu mốc hook/cấu hình git trong before.json.') }
+    elseif (((@(Get-GitGuard $script:AgyRepo)) -join "`n") -cne ((@($before.gitGuard)) -join "`n")) {
+        $blocking.Add('Hook hoặc cấu hình git của thư mục chính đã đổi trong lúc agy chạy.')
+    }
 }
 $wtHead = (Invoke-Git $P.Worktree 'rev-parse' 'HEAD')[0]
 $expectedHead = $base
@@ -37,7 +43,7 @@ if ($wtHead -ne $expectedHead) { $blocking.Add("Worktree có commit mới (HEAD 
 
 # 2. File thay đổi.
 $changed = New-Object System.Collections.Generic.List[string]
-foreach ($l in (Invoke-Git $P.Worktree 'diff' '--name-only' 'HEAD')) { if ($l) { $changed.Add((Get-RelPath $l)) } }
+foreach ($l in (Invoke-Git $P.Worktree 'diff' '--name-only' '--no-renames' 'HEAD')) { if ($l) { $changed.Add((Get-RelPath $l)) } }
 foreach ($l in (Invoke-Git $P.Worktree 'ls-files' '--others' '--exclude-standard')) { if ($l) { $changed.Add((Get-RelPath $l)) } }
 $shared = @()
 foreach ($f in $changed) {
@@ -51,14 +57,28 @@ foreach ($f in $changed) {
     if (Test-PathPrefix $f $script:SharedPrefixes) { $shared += $f }
 }
 
-# 3. .csproj: dòng thêm/bớt chỉ được là <Compile Include ...>, </Compile>, <SubType>, <DependentUpon>.
+# 2b. Phần git không báo: file bị bỏ qua mà MSBuild tự nạp, và thư viện trong lib/.
+foreach ($l in (Invoke-Git $P.Worktree 'ls-files' '--others' '--ignored' '--exclude-standard')) {
+    if (-not $l) { continue }
+    $f = Get-RelPath $l
+    if (Test-PathPrefix $f @('Kazuko_FnB/lib/', 'POS TAP/')) { continue }
+    if ($script:BuildHookExtensions -contains [IO.Path]::GetExtension($f).ToLowerInvariant()) { $blocking.Add("File cấu hình build bị git bỏ qua: $f") }
+}
+$libNow = @(Get-DirHashes (Join-Path $P.Worktree 'Kazuko_FnB\lib'))
+$libMain = @(Get-DirHashes (Join-Path $script:AgyRepo 'Kazuko_FnB\lib'))
+if (($libNow -join "`n") -ne ($libMain -join "`n")) { $blocking.Add('Kazuko_FnB/lib trong worktree khác thư mục chính (thư viện bị thêm, sửa hoặc xóa).') }
+
+# 3. .csproj: không được thêm file mới; dòng thêm/bớt chỉ được là <Compile Include ...>, </Compile>, <SubType>, <DependentUpon>.
 $csprojIssues = @()
 foreach ($f in ($changed | Where-Object { $_ -like '*.csproj' })) {
+    $inHead = Invoke-Git $P.Worktree 'ls-tree' '--name-only' 'HEAD' '--' $f
+    if (@($inHead | Where-Object { $_ }).Count -eq 0) { $blocking.Add("Thêm .csproj mới: $f"); continue }
     foreach ($l in (Invoke-Git $P.Worktree 'diff' '-U0' 'HEAD' '--' $f)) {
         if ($l -match '^(\+\+\+|---)') { continue }
         if ($l -match '^[+-]') {
             $body = $l.Substring(1).Trim()
-            if ($body -eq '' -or $body -match '^<Compile Include="[^"]+\.cs"\s*/?>$' -or $body -match '^</Compile>$' -or
+            # Include chỉ được là đường dẫn tương đối nằm trong project: không "..", ổ đĩa, ký tự đại diện, $( ) hay %.
+            if ($body -eq '' -or $body -match '^<Compile Include="(?![\\/])(?![^"]*\.\.)[^"$%*?;:@&]+\.cs"\s*/?>$' -or $body -match '^</Compile>$' -or
                 $body -match '^<SubType>(Component|Form|UserControl)</SubType>$' -or $body -match '^<DependentUpon>[^<]+</DependentUpon>$') { continue }
             $csprojIssues += "$f : $body"
         }
@@ -78,30 +98,33 @@ foreach ($pat in $script:SuspiciousPatterns) {
     if ($hits.Count -gt 0) { $suspicious += ("{0} ({1} dòng), ví dụ: {2}" -f $pat, $hits.Count, $hits[0].Trim()) }
 }
 
-# 5. File bị sửa ngoài worktree kể từ lúc agy bắt đầu.
+# 5. File ngoài worktree bị thêm, sửa, xóa: so với ảnh chụp trước lượt agy (Invoke-Agy.ps1 ghi).
 $outside = @()
 if ($Since) {
-    $wtPrefix = $P.Worktree.TrimEnd('\') + '\'
-    foreach ($root in $script:OutsideScanRoots) {
-        if (-not (Test-Path $root)) { continue }
-        $rootItem = Get-Item $root -Force
-        $items = $(if ($rootItem.PSIsContainer) { @(Get-ChildItem $root -Recurse -File -Force -ErrorAction SilentlyContinue) } else { @($rootItem) })
-        foreach ($it in $items) {
-            if ($it.PSIsContainer) { continue }
-            if ($it.LastWriteTime -le $Since) { continue }
-            $full = $it.FullName
-            if ($full.StartsWith($wtPrefix, [StringComparison]::OrdinalIgnoreCase)) { continue }
-            if ($script:OutsideScanExcludeFiles -contains $full) { continue }
-            $skip = $false
-            foreach ($ex in $script:OutsideScanExclude) { if ($full.IndexOf($ex, [StringComparison]::OrdinalIgnoreCase) -ge 0) { $skip = $true; break } }
-            if (-not $skip) { $outside += $full }
-        }
+    $snapFile = $null
+    if ($BeforeFile -and (Test-Path $BeforeFile)) {
+        $bj = Read-Json $BeforeFile
+        if ($bj.PSObject.Properties['outsideSnapshot']) { $snapFile = $bj.outsideSnapshot }
     }
-    # File log/tạm do phần mềm khác đang chạy tự ghi (đã gặp: agent.log của một app trong D:\Working\FnB): chỉ cảnh báo.
-    foreach ($o in $outside) {
-        $ext = [IO.Path]::GetExtension($o).ToLowerInvariant()
-        if (@('.log', '.tmp', '.etl') -contains $ext) { $warnings.Add("File log/tạm ngoài worktree đổi trong lúc agy chạy: $o") }
-        else { $blocking.Add("File ngoài worktree bị sửa trong lúc agy chạy: $o (kiểm xem có phải do việc khác của Chiến không)") }
+    if (-not $snapFile -or -not (Test-Path $snapFile)) {
+        $blocking.Add('Thiếu ảnh chụp file ngoài worktree, không kiểm được.')
+    } else {
+        $old = @{}
+        foreach ($l in (Get-Content $snapFile -Encoding UTF8)) { $c = $l.Split("`t"); if ($c.Count -eq 2) { $old[$c[0]] = $c[1] } }
+        $now = Get-OutsideSnapshot $P.Worktree
+        $diffs = @()
+        foreach ($k in $now.Keys) {
+            if (-not $old.ContainsKey($k)) { $diffs += ,@($k, 'thêm') } elseif ($old[$k] -ne $now[$k]) { $diffs += ,@($k, 'sửa') }
+        }
+        foreach ($k in $old.Keys) { if (-not $now.ContainsKey($k)) { $diffs += ,@($k, 'xóa') } }
+        foreach ($d in $diffs) {
+            $o = $d[0]; $kind = $d[1]
+            $outside += $o
+            # File log/tạm do phần mềm khác đang chạy tự ghi (đã gặp: agent.log của một app trong D:\Working\FnB): chỉ cảnh báo.
+            $ext = [IO.Path]::GetExtension($o).ToLowerInvariant()
+            if (@('.log', '.tmp', '.etl') -contains $ext) { $warnings.Add("File log/tạm ngoài worktree bị $kind trong lúc agy chạy: $o") }
+            else { $blocking.Add("File ngoài worktree bị $kind trong lúc agy chạy: $o (kiểm xem có phải do việc khác của Chiến không)") }
+        }
     }
 }
 

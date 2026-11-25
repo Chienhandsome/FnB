@@ -38,6 +38,10 @@ if ((Get-TreeFingerprint $P.Worktree) -ne $build.fingerprint) { throw 'Code tron
 Invoke-Git $P.Worktree 'fetch' '-q' 'origin' 'main' | Out-Null
 $remote = (Invoke-Git $P.Worktree 'rev-parse' 'origin/main')[0]
 $head = (Invoke-Git $P.Worktree 'rev-parse' 'HEAD')[0]
+# Build phải chạy trên đúng commit nền hiện tại (kể cả sau khi worktree chuyển lên main mới chỉ đổi docs/).
+if (-not $build.PSObject.Properties['head'] -or $build.head -ne $head) {
+    throw "Lần build vòng $Round không chạy trên commit nền hiện tại $($head.Substring(0, 7)). Chạy lại Test-AgyBuild.ps1."
+}
 if ($remote -ne $head) {
     # Không bọc @( ) quanh Invoke-Git: hàm đã trả mảng, bọc thêm thành mảng lồng mảng và bộ lọc dưới bỏ sót file code.
     $moved = Invoke-Git $P.Worktree 'diff' '--name-only' $head $remote

@@ -18,7 +18,8 @@ $base = (Invoke-Git $repo 'rev-parse' 'origin/main')[0].Trim()
 # 1. Spec trên origin/main phải ở trạng thái ĐÃ DUYỆT (dòng "- Trạng thái:" đầu file).
 $specText = Invoke-Git $repo 'show' "origin/main:$((Get-RelPath $Spec))"
 $statusLine = $specText | Where-Object { $_ -match '^- Trạng thái:' } | Select-Object -First 1
-if (-not $statusLine -or $statusLine -notmatch 'ĐÃ DUYỆT') {
+# Trạng thái phải BẮT ĐẦU bằng **ĐÃ DUYỆT (phân biệt hoa thường): "chưa đã duyệt" không được tính.
+if (-not $statusLine -or $statusLine -cnotmatch '^- Trạng thái:\s*\*\*ĐÃ DUYỆT\b') {
     throw "Spec '$Spec' chưa ĐÃ DUYỆT trên origin/main. Dòng trạng thái: $statusLine"
 }
 
@@ -38,11 +39,11 @@ Write-Json $P.BaseFile ([pscustomobject]@{ feature = $Feature; spec = (Get-RelPa
 # 3. Mốc build + selftest của base (lưu theo SHA để dùng lại).
 $cacheDir = Join-Path $P.Cache $base
 $baseJson = Join-Path $cacheDir 'baseline.json'
-if (-not (Test-Path $baseJson)) {
+if (-not (Test-Path $baseJson) -or -not (Read-Json $baseJson).PSObject.Properties['passNames']) {
     $b = Invoke-Build -Worktree $P.Worktree -OutDir (Join-Path $cacheDir 'build')
     if ($b.ExitCode -ne 0) { throw "Build của base $base lỗi; xem $($b.Log)" }
     $t = Invoke-SelfTest -ExePath $b.Exe -OutDir (Join-Path $cacheDir 'selftest')
-    Write-Json $baseJson ([pscustomobject]@{ base = $base; warnings = $b.Warnings; total = $t.Total; pass = $t.Pass; fails = $t.Fails
+    Write-Json $baseJson ([pscustomobject]@{ base = $base; warnings = $b.Warnings; total = $t.Total; pass = $t.Pass; fails = $t.Fails; passNames = $t.PassNames
         db = $script:SourceDb })
 }
 Copy-Item $baseJson (Join-Path $P.Tmp 'baseline.json') -Force

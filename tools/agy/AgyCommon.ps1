@@ -26,7 +26,10 @@ $script:OutsideScanExcludeFiles = @((Join-Path $script:AgyRepo '.claude\schedule
 # File và thư mục agy không được sửa (§4 bước 6 của workflow). So khớp theo tiền tố đường dẫn trong repo.
 $script:ForbiddenPrefixes = @('docs/', 'CLAUDE.md', '.gitignore', '.github/', '.claude/', 'Kazuko_FnB/lib/',
     'Kazuko_FnB/Kazuko_FnB.slnx', 'tools/', 'POS TAP/')
-$script:ForbiddenExtensions = @('.ps1', '.bat', '.cmd', '.dll', '.exe', '.fdb', '.zip')
+$script:ForbiddenExtensions = @('.ps1', '.bat', '.cmd', '.dll', '.exe', '.fdb', '.zip',
+    '.props', '.targets', '.tasks', '.overridetasks', '.rsp', '.user', '.proj', '.sln', '.slnx')
+# MSBuild tự nạp các loại file này, kể cả khi nằm trong obj/ mà git bỏ qua: soi cả file bị bỏ qua.
+$script:BuildHookExtensions = @('.props', '.targets', '.tasks', '.overridetasks', '.rsp', '.user', '.proj', '.csproj')
 # File dùng chung: được sửa nhưng phải ghi riêng trong báo cáo.
 $script:SharedPrefixes = @('Kazuko_FnB/Kazuko_FnB.UI/Theme/', 'Kazuko_FnB/Kazuko_FnB.UI/Diagnostics/SelfTest.cs',
     'Kazuko_FnB/Kazuko_FnB.UI/Dialogs/ScreenFactory.cs', 'Kazuko_FnB/Kazuko_FnB.UI/MainForm.cs',
@@ -60,8 +63,63 @@ function Invoke-Native {
 
 function Invoke-Git {
     param([string]$Dir, [Parameter(ValueFromRemainingArguments)][string[]]$GitArgs)
-    $r = Invoke-Native -Exe 'git' -Arguments (@('-C', $Dir) + $GitArgs)
+    # core.quotepath=false: tên file có dấu không bị git mã hóa thành "\341\273..." (làm GetExtension sập).
+    $r = Invoke-Native -Exe 'git' -Arguments (@('-C', $Dir, '-c', 'core.quotepath=false') + $GitArgs)
     return ,@($r)
+}
+
+function Get-GitGuard {
+    # Hook và cấu hình git của thư mục chính: sửa ở đây có thể chạy lệnh hoặc giấu file. Trả về "tên|mã băm".
+    param([string]$Repo)
+    $dir = (Invoke-Git $Repo 'rev-parse' '--path-format=absolute' '--git-common-dir')[0]
+    $paths = @('config', 'config.worktree', 'info/exclude', 'info/attributes') | ForEach-Object { Join-Path $dir $_ }
+    $hooks = Join-Path $dir 'hooks'
+    if (Test-Path $hooks) { $paths += @(Get-ChildItem $hooks -Recurse -File -Force | ForEach-Object { $_.FullName }) }
+    return @($paths | Where-Object { Test-Path $_ } | Sort-Object |
+        ForEach-Object { '{0}|{1}' -f $_.Replace('\', '/'), (Get-FileHash -Algorithm SHA256 -LiteralPath $_).Hash })
+}
+
+function Get-OutsideSnapshot {
+    # Danh sách file ngoài worktree (đường dẫn -> "cỡ|giờ sửa") để so trước và sau lượt agy:
+    # bắt được cả file bị xóa và file mới mang giờ sửa cũ.
+    param([string]$Worktree)
+    $map = @{}
+    $wtPrefix = $Worktree.TrimEnd('\') + '\'
+    foreach ($root in $script:OutsideScanRoots) {
+        if (-not (Test-Path $root)) { continue }
+        $rootItem = Get-Item $root -Force
+        $items = $(if ($rootItem.PSIsContainer) { @(Get-ChildItem $root -Recurse -File -Force -ErrorAction SilentlyContinue) } else { @($rootItem) })
+        foreach ($it in $items) {
+            if ($it.PSIsContainer) { continue }
+            $full = $it.FullName
+            if ($full.StartsWith($wtPrefix, [StringComparison]::OrdinalIgnoreCase)) { continue }
+            if ($script:OutsideScanExcludeFiles -contains $full) { continue }
+            $skip = $false
+            foreach ($ex in $script:OutsideScanExclude) { if ($full.IndexOf($ex, [StringComparison]::OrdinalIgnoreCase) -ge 0) { $skip = $true; break } }
+            if (-not $skip) { $map[$full] = '{0}|{1}' -f $it.Length, $it.LastWriteTimeUtc.Ticks }
+        }
+    }
+    return $map
+}
+
+function Get-DirHashes {
+    param([string]$Dir)
+    if (-not (Test-Path $Dir)) { return @() }
+    $prefix = (Get-Item $Dir).FullName.TrimEnd('\') + '\'
+    return @(Get-ChildItem $Dir -Recurse -File -Force | Sort-Object FullName |
+        ForEach-Object { '{0}|{1}' -f $_.FullName.Substring($prefix.Length), (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash })
+}
+
+function Get-MissingCases {
+    # Tên ca đạt có trong mốc mà lần chạy này không còn đạt (tính cả số lần trùng tên).
+    param([string[]]$BaseNames, [string[]]$Names)
+    $left = New-Object System.Collections.Hashtable ([StringComparer]::Ordinal)
+    foreach ($n in $Names) { $left[$n] = 1 + [int]$left[$n] }
+    $missing = @()
+    foreach ($n in $BaseNames) {
+        if ([int]$left[$n] -gt 0) { $left[$n] = [int]$left[$n] - 1 } else { $missing += $n }
+    }
+    return $missing
 }
 
 function Get-FeaturePaths {
@@ -133,6 +191,8 @@ function Invoke-SelfTest {
     return [pscustomobject]@{
         Total = ($lines | Where-Object { $_ -like 'TỔNG*' } | Select-Object -Last 1)
         Pass  = @($lines | Where-Object { $_ -like 'PASS*' }).Count
+        # Tên ca bỏ phần chi tiết "  [...]" vì phần đó đổi giữa các lần chạy.
+        PassNames = @($lines | Where-Object { $_ -like 'PASS *' } | ForEach-Object { ($_.Substring(5) -replace '  \[.*\]\s*$', '').TrimEnd() })
         Fails = @($lines | Where-Object { $_ -like 'FAIL*' })
         File  = $result
     }
