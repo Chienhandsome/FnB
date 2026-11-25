@@ -275,6 +275,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 - [ ] Nhóm có cọc dư (Q15): bill 1 = 300.000 cọc 400.000, bill 2 = 200.000 → chỉ thu 100.000, không phiếu chi; quỹ tăng đúng 100.000.
 - [ ] Bill đơn cọc dư (Q16): bill 300.000 cọc 400.000 → `TIENTHANHTOAN = 300.000`, `GetNoCu` của khách không tăng, phiếu chi 100.000.
 - [ ] Gộp bàn khi bàn nguồn có tạm ứng (Q19): bị từ chối, không bill nào đổi; phiếu tạm ứng đã xóa mềm thì cho gộp.
+- [ ] Hủy một bill (cả bill đơn và bill nhóm, `THANHTOANBOI` rỗng) rồi mở màn Danh mục hóa đơn hủy: bản hủy hiện đúng số phiếu, lý do hủy, người thanh toán; `TDONHANGHUY.BAN` ghi đúng tên bàn lúc hủy; chi tiết không dính dòng xuất vật tư, combo con (chuyển từ `danh-muc-hoa-don-huy.md` §6).
 - [ ] Hủy bill có tạm ứng (Q20): bị từ chối, bill và phiếu tạm ứng giữ nguyên; phiếu tạm ứng đã xóa mềm thì hủy được.
 - [ ] Nhóm trả thiếu: `ChoPhepKhachNo ≠ 30` thì chặn; bật thì chưa chọn khách đứng tên nợ không đóng được, chọn rồi mọi bill mang nợ gắn khách đó, bill không nợ giữ khách cũ.
 

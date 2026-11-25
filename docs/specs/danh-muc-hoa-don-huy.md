@@ -1,6 +1,6 @@
 # Spec (delta): Danh mục hóa đơn hủy (TDONHANGHUY)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Claude tự duyệt 25/11/2026 theo [`../workflow-agy.md`](../workflow-agy.md) §10.1, loại nhẹ; Chiến yêu cầu chạy workflow từng spec). Mọi mặc định ở §4 được áp. Đã đối chiếu lại `code.cs`, cấu trúc 2 bảng và quyền trên bản sao `DATA.fdb` ngày 25/11.
 - Ngày: 2026-11-24; sửa theo review [issue #5](https://github.com/Chienhandsome/FnB/issues/5) ngày 25/11/2026 (đối chiếu lại tại `main` @ `954f133`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md) (lọc + lưới + chi tiết, thanh nút trên). Spec này **chỉ ghi phần khác**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Danh mục hóa đơn hủy** (`SMENU` `7d169f76-9897-4111-ba6d-f3cbd4c4e3f7`, `SORTORDER = ZZZ024`, `OPERATION = 4`, `MENUCODE = DanhMucHoaDonHuy`, `SFORMID` `a52478cf-2d23-4ff0-8b63-e098e5ce6829`, `SFUNCTIONID` `f1a22c9e-774f-4dce-ad95-d1c392a9ba51` "Danh mục hóa đơn hủy", nhóm "Bán hàng", `NOTE = View`). Là **form tùy biến** `DanhSachBillHuy` (hai lưới master–detail **chỉ đọc**, không thêm/sửa/xóa).
@@ -75,9 +75,11 @@ Quyền xem màn = `SFUNCTION` `f1a22c9e-…` "Danh mục hóa đơn hủy" (`NO
 - **P3** Hiển thị thêm cột "Tổng cộng" tính được (Q4/Q14). *Mặc định tạm: không thêm*: bảng không lưu tổng, công thức ở §2.2 chỉ là phỏng đoán (chưa tính tới `DOITRA`) và `TIENGIAMGIA` đang lưu sai.
 - **P4** Truy vấn dùng tham số, không nối chuỗi `TDONHANGHUYID`.
 
-## 4. Câu hỏi chờ Chiến quyết
+## 4. Câu hỏi và mặc định đã áp
 
-| # | Câu hỏi | Mặc định tạm |
+Cột "Mặc định" là quyết định cho v1. Đề xuất P1, P4 được áp; P2, P3 không làm. Q7, Q15: màn **chỉ xem**, không có đường nào thêm, sửa, xóa dữ liệu.
+
+| # | Câu hỏi | Mặc định |
 |---|---|---|
 | Q1 | ~~Bộ lọc mặc định của lưới master~~ **Đã xác định từ `layout.xml`: chỉ ngày hủy `NGAYHUY`** | — |
 | Q2 | Cách khớp ô Lọc (cột nào, hoa/thường) | `TENHANG`/`MAHANG`, không phân biệt hoa thường |
@@ -100,18 +102,18 @@ Quyền xem màn = `SFUNCTION` `f1a22c9e-…` "Danh mục hóa đơn hủy" (`NO
 
 Xóa cứng cả app (không thùng rác); tiền `NUMERIC(18,2)`/`decimal`; chỉ VNĐ; F&B thuần COFFEE + POS; bán lẻ tự phục vụ; bỏ karaoke + tính giờ (cột `TIENGIO` chỉ hiển thị nguyên trạng); không đọc `LOAIDINHLUONG`; không đổi cấu trúc DB; màn chỉ xem.
 
-## 6. Tiêu chí nghiệm thu (kiểm trên bản sao DB; selftest tự tạo ≥ 3 bản hủy kèm chi tiết, qua đúng luồng hủy của spec Sử dụng dịch vụ / Quản lý bán hàng)
+## 6. Tiêu chí nghiệm thu (kiểm trên bản sao DB; selftest chèn thẳng ≥ 3 bản hủy kèm chi tiết vào `TDONHANGHUY` / `TDONHANGHUYCHITIET`, dọn sau khi chạy)
+
+Hai tiêu chí cần luồng hủy bill thật (chưa có code) đã chuyển sang [`su-dung-dich-vu.md`](su-dung-dich-vu.md) §7.
 
 - [ ] Mở màn: hai ô ngày trống, lưới master liệt kê đủ `TDONHANGHUY`; đủ **22 cột** đúng nhãn, thứ tự theo §1 (Q8); giờ hủy `HH:mm`, giờ thanh toán `dd/MM HH:mm`.
 - [ ] Lọc Từ/Đến theo `NGAYHUY`: bản hủy lúc giữa ngày "Đến" được tính (Q10); để trống một đầu thì không giới hạn đầu đó.
 - [ ] Bản có `TILEGIAMGIA ≠ 0` ghi theo cách của app gốc: cột #16, #17 hiển thị đúng giá trị trong DB, có ghi chú (Q3).
 - [ ] Chọn một dòng master: lưới chi tiết hiện đúng 7 cột (§1) và các dòng `TDONHANGHUYCHITIET` của bill đó (SL, đơn giá, thành tiền khớp lúc hủy); đổi dòng cập nhật ngay; không chọn dòng → trống.
 - [ ] Ô Lọc chỉ lọc lưới chi tiết; xóa chuỗi trả đủ dòng; Refresh tải lại lưới master, **không xóa** ô Lọc (Q11).
-- [ ] Hủy một bill bằng màn Sử dụng dịch vụ rồi mở màn này: bản hủy xuất hiện với đúng số phiếu, lý do hủy, người thanh toán; chi tiết không dính dòng xuất vật tư/combo con (theo cách spec hủy quy định). Dùng cả bill đơn và bill nhóm (`THANHTOANBOI` rỗng).
-- [ ] Kiểm trong DB (không phải trên màn này): `TDONHANGHUY.BAN` ghi đúng tên bàn lúc hủy.
 - [ ] Quyền theo mapping §2.4; truy vấn dùng tham số (P4).
 - [ ] Không có nút Thêm/Sửa/Xóa/In, menu chuột phải không cho thêm/xóa (Q15); lưới chỉ đọc; không SQL trong View; màu/cỡ chữ từ token; 125% DPI; lưới đủ lớn cho cảm ứng (yêu cầu v1, không phải gốc).
 
 ## 7. Gợi ý implement (không bắt buộc)
 
-`CancelledBillRepository` (Data: danh sách master lọc theo ngày hủy, chi tiết theo `TDONHANGHUYID`), `CancelledBillView` (UI: bộ lọc + 2 lưới master–detail). `main` @ `954f133` **chưa có component lưới master–detail dùng chung**; `BookingListView` (Khách đặt hàng) tự dựng `SplitContainer` + lưới, có thể tham khảo cách làm và dùng lại `DetailGridMenu` cho phần sao chép/dãn cột. Thêm nhánh route theo `node.Id = 7d169f76-9897-4111-ba6d-f3cbd4c4e3f7` trong `ScreenFactory.CreateView`, đặt trước nhánh kiểm `Operation`. Làm **sau** khi luồng hủy bill đã implement; trước đó selftest seed dữ liệu trực tiếp trên bản sao DB.
+`CancelledBillRepository` (Data: danh sách master lọc theo ngày hủy, chi tiết theo `TDONHANGHUYID`), `CancelledBillView` (UI: bộ lọc + 2 lưới master–detail). `main` @ `954f133` **chưa có component lưới master–detail dùng chung**; `BookingListView` (Khách đặt hàng) tự dựng `SplitContainer` + lưới, có thể tham khảo cách làm và dùng lại `DetailGridMenu` cho phần sao chép/dãn cột. Thêm nhánh route theo `node.Id = 7d169f76-9897-4111-ba6d-f3cbd4c4e3f7` trong `ScreenFactory.CreateView`, đặt trước nhánh kiểm `Operation`. Làm trước luồng hủy bill: selftest chèn dữ liệu trực tiếp trên bản sao DB.

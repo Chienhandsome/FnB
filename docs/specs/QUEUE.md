@@ -16,7 +16,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 ## Hàng đợi spec (thứ tự làm)
 | # | Spec | Trạng thái | Loại | Ghi chú |
 |---|---|---|---|---|
-| 1 | `danh-muc-hoa-don-huy.md` | NHÁP | **nhẹ** | Màn chỉ xem; Q3 chỉ là hiển thị số đã lưu |
+| 1 | `danh-muc-hoa-don-huy.md` | ĐÃ DUYỆT 25/11 (Claude tự duyệt), đang code | **nhẹ** | Màn chỉ xem; Q3 chỉ là hiển thị số đã lưu |
 | 2 | `thong-ke-mat-hang-ban.md` | NHÁP | nặng | Cộng số lượng và tiền |
 | 3 | `thong-ke-doanh-thu.md` | NHÁP | nặng | Công thức doanh thu |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | NHÁP | nặng | Tiền theo quỹ |
