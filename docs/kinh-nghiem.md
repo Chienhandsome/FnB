@@ -11,6 +11,7 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
   | Cột lưới của form | `SFORM.AELAYOUT` (bản export: `layout.xml`); lưới `GridMapper` nằm trong `ViewConfig` (base64), đổi `COLID` sang tên qua `SCOLUMN` |
   | Nhãn, định dạng cột | `SCOLUMN` |
   | Quyền mặc định theo nhóm | `SGROUPROLE` + `SGROUPUSER`. Không tự đặt mặc định "không cấp" |
+| Enum, lớp, hàm dùng chung (`LoaiLuuVet`, `HoaDonMode`, `Track`…) không có trong export | **Mã dùng chung lưu trong `DATA.fdb`**, không phải trong DLL: đọc file DB bằng UTF-8 rồi tìm chuỗi (ví dụ `enum LoaiLuuVet`). Đã ghi sai "không đọc được, tự định nghĩa số mới" |
 - **Cách đọc blob:** chép `DATA.fdb` ra thư mục tạm, dùng `Firebird_2_5/bin/isql.exe` (tài khoản mặc định, xem `AppSettings`). `SET BLOBDISPLAY OFF;` rồi `SELECT` để lấy mã blob, sau đó `BLOBDUMP <mã> ten.frx;`. Chạy `isql` từ chính thư mục tạm và dùng **đường dẫn tương đối** (đường dẫn Windows đầy đủ bị mất dấu `\`).
 - **Được phép chụp app gốc thì chụp ngay**, đừng để trống rồi ghi "chưa xác minh". App gốc đòi quyền admin nên công cụ điều khiển máy không bấm được: chạy một **bản chép** ở thư mục tạm với `$env:__COMPAT_LAYER="RunAsInvoker"`. App chỉ chạy một phiên: nhờ Chiến đóng bản đang chạy quyền admin.
 - **Ảnh chụp cũng có giới hạn:** DB không có dữ liệu thì báo cáo không in tiêu đề cột; lưới có thể bị cuộn khuất cột hoặc khác `layout.xml`. Đối chiếu cả hai, lệch thì ghi cả hai và đặt câu hỏi.

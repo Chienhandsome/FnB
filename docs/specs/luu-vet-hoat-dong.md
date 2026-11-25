@@ -1,7 +1,8 @@
 # Spec (delta): Lưu vết hoạt động (TLUUVET)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026, Q1 giữ `9876`, Q9 hiện tên phân loại; các câu khác theo mặc định trong bảng §5). Chưa code. Rà lại 25/11 trên `main` @ `09d9ab6`: đã tìm ra giá trị enum `LoaiLuuVet`, 9 cột lưới phải và cách ghi từng cột.
 - Ngày: 2026-11-24. Base: `main` @ `d0058a6` (đã `git fetch origin main`)
+- Dự kiến là **chức năng thử đầu tiên** của [`workflow-agy.md`](../workflow-agy.md): phạm vi = `ActivityLogger` + màn xem + selftest; chưa có màn nào gọi `Track` (các màn bán hàng chưa code).
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Lưu vết hoạt động** (`SMENU` `b022d2c4-d61c-479a-9ebc-9c3eedfc18df`, `SORTORDER = ZZZ017`, `OPERATION = 4`, không `MENUCODE`, `SFORMID` `ac206bb6-0236-48a6-b558-b674e015c21c`, `SFUNCTIONID` `863ecff5-3010-400c-930e-549e4f8d1f96` "Lưu vết hoạt động", nhóm "Bán hàng", `NOTE = View`). Là **form tùy biến** `LuuVetHoatDong` (không có `STABLEDESC` riêng ở menu), màn **chỉ xem** + 1 nút xóa toàn bộ ẩn.
 - Bảng `TLUUVET`; hiện **0 bản ghi** trong DB chép. Lưu vết do **các màn khác ghi** (`Track()`); spec này gồm màn xem **và** hợp đồng ghi lưu vết cho các spec khác.
@@ -11,7 +12,8 @@
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`): cấu trúc `TLUUVET`, `SCONFIG.KichHoatLuuVetHoatDong = 30`, `SFUNCTION`.
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Lưu vết hoạt động__ac206bb6/` (`code.cs`, `layout.xml`), `Xác nhận xóa lưu vết__c73a5edd/`; tài liệu sẵn có [`pos-tap-nghiep-vu-quan-tri-tien-ich.md`](../pos-tap-nghiep-vu-quan-tri-tien-ich.md) §5 và `docs/deep/quan-tri.md` (b.6) — đã đọc, không chép lại.
 - **[APP]** đã chụp 24/11/2026 (bố cục + cột nhìn thấy của lưới phải); DB không có lưu vết nên chưa có dòng mẫu. Q8 giải quyết phần lớn.
-- **[CHƯA XÁC MINH]**: giá trị số của enum `LoaiLuuVet` (nằm trong thư viện No1Lib, không có trong export); 9 cột hiển thị của lưới phải (cấu hình `ViewConfig` trong `SFORM.AELAYOUT`, nhị phân chưa giải mã).
+- **[DB] đã kiểm 25/11:** enum `LoaiLuuVet` và các hàm `Track` nằm trong **mã dùng chung lưu trong `DATA.fdb`** (không có trong bản export `SFORM`); 9 cột lưới phải giải mã từ `ViewConfig` của `grMain` trong `layout.xml`, đổi `COLID` sang tên qua `SCOLUMN`. `TLUUVET` có 0 dòng.
+- **[CHƯA XÁC MINH]**: cột Phân loại gốc hiện số hay tên (Q9).
 
 ## 1. Bố cục UI (khác khuôn)
 
@@ -19,7 +21,7 @@ Một tab "Lưu vết hoạt động" gồm **bộ lọc trên cùng** và **hai
 
 - **Bộ lọc:** *Từ ngày – Đến ngày* (`dtNgay`, mặc định **hôm nay → hôm nay** theo ngày DB), *Tài khoản* (`lueNhanVien`, lookup `SUSER`), *Số HĐ* (`txtSoHoaDon`, Enter = tải), nút **Tải dữ liệu** (`btnRefresh`), ô **Lọc dữ liệu** (`txtLoc`, lọc lưới phải theo chuỗi gõ), nút **Xóa lưu vết** (`btnXoaLuuVet`, **ẩn** — xem §3.4). Đổi ngày hoặc tài khoản **tải lại ngay**.
 - **Lưới trái "HÓA ĐƠN"** (`grHoaDon`): cột **Hóa đơn** (`NAME`), **Bàn** (`BAN`), **Trạng thái** (`TRANGTHAI`). Dòng đỏ = bill đã **hủy** (`LOAI = 1`), xanh dương = bill **đang sử dụng** (`LOAI = 2`), mặc định = đã kết thúc (`LOAI = 0`).
-- **Lưới phải "CHI TIẾT THAO TÁC"** (`grMain`, chỉ đọc, **9 cột** `ViewConfig`; cột đầu có caption **"Nội dung"**; `GIO` hiển thị `HH:mm:ss`; mọi cột **không sắp xếp**): các cột tương ứng trường `TLUUVET`. **[APP] đã chụp 24/11/2026**, thứ tự nhìn thấy (cột đầu là cột chọn dòng): **Ngày, Giờ, Số đơn hàng, Nội dung** (cột rộng nhất), **Tài khoản, Thiết bị, Bàn, Chức năng**, rồi còn cột nữa bên phải (có thanh cuộn ngang; từ trường `TLUUVET` đoán là Tên hàng/Số lượng/Đơn giá/Thành tiền, chưa kiểm). Tức "Nội dung" **không** đứng đầu như ghi chú trước; thứ tự thật bắt đầu bằng Ngày/Giờ/Số đơn hàng.
+- **Lưới phải "CHI TIẾT THAO TÁC"** (`grMain`, chỉ đọc, `GIO` hiển thị `HH:mm:ss`, mọi cột **không sắp xếp**). **Đúng 9 cột** [DB `ViewConfig` + `SCOLUMN`], theo thứ tự nhìn thấy trên ảnh 24/11: **Ngày** (`NGAY`), **Giờ** (`GIO`), **Số đơn hàng** (`SODONHANG`, hiện số phiếu, §2.2), **Nội dung** (`NOTE`, caption đổi từ "Ghi chú"; cột rộng nhất), **Tài khoản** (`TAIKHOAN`), **Thiết bị** (`THIETBI`), **Bàn** (`BAN`), **Chức năng** (`CHUCNANG`), **Phân loại** (`PHANLOAI`, cột bị khuất bên phải trên ảnh; cách hiện: Q9). **Không** hiện Tên hàng, Số lượng, Đơn giá, Thành tiền dù bảng có các cột đó.
 - **[APP] vị trí điều khiển thật:** *Từ/Đến*, *Số HĐ* và nút **Tải dữ liệu** nằm ở khung **"HÓA ĐƠN"** bên trái (kèm mũi tên ▼ cạnh ô *Đến*); ô **Tài khoản** và **Lọc dữ liệu** nằm ở đầu khung **"CHI TIẾT THAO TÁC"** bên phải. Nút Xóa lưu vết không hiện (đúng ghi chú ẩn).
 - Chưa chọn hóa đơn nào ở lưới trái → lưới phải **trống** (`0 = 1`).
 
@@ -28,6 +30,7 @@ Một tab "Lưu vết hoạt động" gồm **bộ lọc trên cùng** và **hai
 ### 2.1 Nạp danh sách hóa đơn [CODE `LoadData`]
 
 `UNION ALL` hai nguồn, sắp theo `NAME`:
+Khoảng ngày: `NGAY BETWEEN Từ AND Đến`, **Đến tính trọn ngày** (quy ước chung, như `quy-tien.md` §4.7).
 1. `TDONHANG` có `LOAI = 0` (bill nhà hàng) và `NGAY` trong khoảng; `LOAI` hiển thị = **0** nếu `DATHANHTOAN = 30` (trạng thái "Kết thúc") ngược lại **2** ("Đang sử dụng"); `BAN` = tên bàn theo `DBANID`.
 2. `TDONHANGHUY` (`TDONHANGID` làm khóa) với `NGAY` trong khoảng; `LOAI = 1`; **trạng thái hiển thị = `LYDOHUY`** (lý do hủy), `BAN` = cột `BAN` đã lưu.
 - Nhập **Số HĐ**: thêm điều kiện `OR NAME = '<số>'` vào **cả hai** nhánh → hóa đơn đó hiện **dù ngoài khoảng ngày** (nhánh gốc dùng ghép chuỗi có escape `'` → `''`; bản mới dùng tham số, **không nối chuỗi** — P1).
@@ -59,10 +62,40 @@ Màu/đậm lấy từ **token** (đỏ cảnh báo, xanh thông tin, xanh lá t
 
 ### 2.5 Hợp đồng ghi lưu vết cho các màn khác [CODE, tổng hợp `deep/quan-tri.md` (b.6)]
 
-Mỗi dòng `TLUUVET`: `ID`, `NGAY` (ngày giao dịch), `GIO` (giờ), `SODONHANG` (ID hóa đơn), `TAIKHOAN` (**tên** tài khoản), `THIETBI` (tên máy/thiết bị), `PHANLOAI` (int, mặc định 0), `BAN` (tên bàn), `CHUCNANG` (**chuỗi**: "Sử dụng dịch vụ", "Máy tính bảng", "Quản lý bán hàng", "Điều chỉnh hóa đơn", "POS cảm ứng"), `SOLUONG`, `DONGIA`, `THANHTIEN`, `TENHANG`, `NOTE` (nội dung thao tác, chuỗi tự do) + cột chuẩn.
-- Chỉ ghi khi `KichHoatLuuVetHoatDong = 30` (các spec khác đã tham chiếu cờ này).
-- Gốc có **~101 điểm gọi** `Track()`. **v1 chỉ cần dịch vụ ghi dùng chung `ActivityLogger.Track(chucNang, phanLoai, soDonHangId, ban, noi dung, [tenHang, sl, dongia, thanhtien])`** và mỗi spec nghiệp vụ gọi vào đó (đã nêu ở các spec Sử dụng dịch vụ / Quản lý bán hàng). Danh sách đủ các điểm gọi nằm ở tài liệu `deep/quan-tri.md` (b.6), không chép lại.
-- Giá trị số `PHANLOAI` **không có trong export**: v1 tự định nghĩa enum `ActivityKind` mới (mở bàn, thêm món, tăng món, giảm món, xóa món, đặt SL, đổi giá bán, đặt giảm giá mặt hàng, đóng bàn, in bill, in chế biến, chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill, trả đồ, khác) và **nhận mọi giá trị ngoài danh sách như "khác"** để vẫn đọc được dữ liệu gốc (Q2).
+Cách ghi từng cột, theo hàm `Track` của form Hóa đơn nhà hàng [DB, mã dùng chung]:
+
+| Cột | Giá trị |
+|---|---|
+| `GIO` | thời điểm hiện tại của **máy chủ DB** |
+| `NGAY` | phần ngày của `GIO` (không phải ngày của bill) |
+| `SODONHANG` | ID hóa đơn (`TDONHANG.ID`) |
+| `TAIKHOAN` | **tên đăng nhập** của người đang dùng (không phải ID) |
+| `THIETBI` | tên máy (`Environment.MachineName`) |
+| `PHANLOAI` | số theo bảng dưới |
+| `BAN` | tên bàn đang hiện; trống thì đọc tên bàn của bill |
+| `CHUCNANG` | "Sử dụng dịch vụ", "Quản lý bán hàng", "Điều chỉnh hóa đơn", "POS cảm ứng" (gốc còn "Máy tính bảng", v1 chưa làm) |
+| `NOTE` | nội dung thao tác, chuỗi tự do |
+| `TENHANG`, `SOLUONG`, `DONGIA`, `THANHTIEN` | khi thao tác gắn một mặt hàng; không thì `''` và 0 |
+
+- Chỉ ghi khi `KichHoatLuuVetHoatDong = 30`.
+- Chế độ Quản lý bán hàng / Điều chỉnh hóa đơn: gốc gom vào danh sách tạm rồi ghi khi cập nhật bill (spec đó quy định); `ActivityLogger` phải ghi được nhiều dòng trong một transaction.
+- Gốc có **~101 điểm gọi** `Track()`. v1 chỉ cần dịch vụ ghi dùng chung `ActivityLogger.Track(chucNang, phanLoai, soDonHangId, ban, noiDung, [tenHang, sl, dongia, thanhtien])`; các spec nghiệp vụ gọi vào đó. Danh sách điểm gọi ở `deep/quan-tri.md` (b.6).
+
+**Giá trị `PHANLOAI`** — dùng **đúng số của app gốc** (enum `LoaiLuuVet`), để dữ liệu cũ và mới đọc như nhau (thay cho Q2 cũ):
+
+| Số | Tên trong code | Ý nghĩa | Số | Tên trong code | Ý nghĩa |
+|---|---|---|---|---|---|
+| 0 | `MoBan` | Mở bàn | 9 | `TangMon` | Tăng món |
+| 1 | `DongBan` | Đóng bàn | 10 | `DatSoLuong` | Đặt số lượng |
+| 2 | `InBill` | In bill | 11 | `DoiGiaBan` | Đổi giá bán |
+| 3 | `InCheBien` | In chế biến | 12 | `DatGiamGiaMatHang` | Đặt giảm giá mặt hàng |
+| 4 | `ThemMon` | Thêm món | 13 | `HuyBill` | Hủy bill |
+| 5 | `XoaMon` | Xóa món | 14 | `Khac` | Khác |
+| 6 | `GiamMon` | Giảm món | 15 | `ChuyenMatHang` | Chuyển mặt hàng |
+| 7 | `ChuyenBan` | Chuyển bàn | 16 | `TraDo` | Trả đồ |
+| 8 | `GopBan` | Gộp bàn | | | |
+
+Số ngoài 0–16 khi đọc: coi như "Khác" (không màu), không báo lỗi. Lưu ý `PHANLOAI` mặc định 0 = **Mở bàn**: dòng ghi thiếu phân loại (form bán lẻ gốc không ghi cột này) sẽ hiện như Mở bàn.
 
 ## 3. Phần khác app gốc / chỗ dễ sai
 
@@ -101,14 +134,15 @@ Lưu vết **không bị xóa** khi bill bị hủy/xóa (khóa mềm bằng `SO
 
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|
-| Q1 | Mật khẩu xóa lưu vết (P2) | Giữ `9876` |
-| Q2 | Enum `PHANLOAI`: tự định nghĩa số mới (gốc không đọc được)? Dữ liệu cũ nếu có thì hiển thị "khác" | Tự định nghĩa, loại lạ → "khác" |
+| Q1 | Mật khẩu xóa lưu vết (P2) | **Đã chốt 25/11:** giữ `9876` |
+| Q2 | ~~Enum `PHANLOAI` tự định nghĩa?~~ **Đã giải quyết 25/11:** dùng đúng số gốc (§2.5) | — |
 | Q3 | Có đưa `DoAutoTest` (tự xóa lưu vết khi test) không? | Không |
 | Q4 | Có giữ cảnh báo khi cờ tắt (vẫn mở màn)? | Giữ nguyên |
 | Q5 | `TAIKHOAN`/`CHUCNANG` dài ≤ 36: cắt ngắn khi ghi hay báo lỗi? | Cắt ngắn, ghi cảnh báo trong log |
 | Q6 | Lưu vết có cần xuất Excel / in (gốc không có nút)? | Không |
 | Q7 | Dòng mồ côi (§3.5): có cần màn dọn? | Không |
-| Q8 | ~~Chụp app gốc để lấy cột lưới phải~~ **Đã chụp 24/11/2026** (§1): 8 cột đầu đã biết; còn cột thứ 9 (và các cột sau) bên phải chưa xem hết | Đã giải quyết một phần |
+| Q8 | ~~Cột lưới phải~~ **Đã giải quyết 25/11:** đúng 9 cột, cột thứ 9 là Phân loại (§1) | — |
+| Q9 | Cột Phân loại: gốc nhiều khả năng hiện **số** (0–16) vì không thấy chỗ đổi sang tên. Hiện tên ("Hủy bill", "Gộp bàn"…) cho dễ đọc? | **Đã chốt 25/11:** hiện tên theo cột "Ý nghĩa" bảng §2.5 (khác gốc, chỉ phần hiển thị; DB vẫn lưu số) |
 
 ## 6. Quyết định đã chốt (áp, không hỏi lại)
 
@@ -122,9 +156,10 @@ Xóa cứng cả app (không thùng rác; riêng "Xóa lưu vết" là xóa toà
 - [ ] Tô màu đúng bảng §2.3 (6 loại đã kiểm); lỗi dữ liệu một dòng không làm sập lưới.
 - [ ] `KichHoatLuuVetHoatDong = 0`: hiện đúng cảnh báo 2 dòng; vẫn mở được màn.
 - [ ] Nút Xóa lưu vết ẩn mặc định; hiện chỉ khi admin + Ctrl+Shift lúc mở; sai mật khẩu → nút Chấp nhận tắt; đúng → xóa toàn bảng và tải lại; không admin không thể làm được dù giữ phím.
-- [ ] `ActivityLogger.Track` ghi đúng các trường §2.5, **không ghi** khi cờ ≠ 30; tên dài > 36 xử lý theo Q5.
+- [ ] `ActivityLogger.Track` ghi đúng các trường §2.5 (`NGAY` = ngày của giờ DB, `TAIKHOAN` = tên đăng nhập, `THIETBI` = tên máy), `PHANLOAI` đúng số gốc 0–16, **không ghi** khi cờ ≠ 30; tên dài > 36 xử lý theo Q5; ghi nhiều dòng trong một transaction được.
+- [ ] Lưới phải đúng 9 cột theo thứ tự §1; không có cột Tên hàng/Số lượng/Đơn giá/Thành tiền; `PHANLOAI` ngoài 0–16 không làm lỗi.
 - [ ] Không SQL trong View; màu từ token; 125% DPI; lưới đủ lớn cho cảm ứng (yêu cầu v1, không phải gốc).
 
 ## 8. Gợi ý implement (không bắt buộc)
 
-`ActivityLogRepository` (Data: truy vấn hai nhánh + lưu vết theo bill, `Insert`, `DeleteAll`), `ActivityLogger` (Services: kiểm cờ, cắt chuỗi, enum `ActivityKind`), `ActivityLogView` (UI: bộ lọc + 2 lưới, màu theo token). **Làm `ActivityLogger` trước** để các spec Sử dụng dịch vụ / Quản lý bán hàng / Điều chỉnh hóa đơn gọi vào; màn xem làm sau.
+`ActivityLogRepository` (Data: truy vấn hai nhánh + lưu vết theo bill, `Insert`, `DeleteAll`), `ActivityLogger` (Services: kiểm cờ, cắt chuỗi, enum `ActivityKind` mang đúng số gốc §2.5), `ActivityLogView` (UI: bộ lọc + 2 lưới, màu theo token). **Làm `ActivityLogger` trước** để các spec Sử dụng dịch vụ / Quản lý bán hàng / Điều chỉnh hóa đơn gọi vào; màn xem làm sau.
