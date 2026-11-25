@@ -27,6 +27,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
                 { "preview.booking", session => new BookingPreviewForm(session) },
                 { "preview.fund", session => new FundPreviewForm(session) },
+                { "preview.activitylog", session => new ActivityLogPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -51,6 +52,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Tồn quỹ": form tự viết (OPERATION = 3, không có STABLEDESCID).
             if (string.Equals(node.Id, FundBalanceView.MenuId, StringComparison.Ordinal))
                 return new FundBalanceView(session);
+            // Màn "Lưu vết hoạt động": form tự viết (OPERATION = 4, không có STABLEDESCID).
+            if (string.Equals(node.Id, ActivityLogView.MenuId, StringComparison.Ordinal))
+                return new ActivityLogView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

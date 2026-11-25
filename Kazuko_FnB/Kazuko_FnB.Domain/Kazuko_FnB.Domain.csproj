@@ -40,6 +40,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActivityModels.cs" />
     <Compile Include="AdminModels.cs" />
     <Compile Include="BookingModels.cs" />
     <Compile Include="BookingCalendarModels.cs" />

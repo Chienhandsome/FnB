@@ -62,6 +62,8 @@ namespace Kazuko_FnB.Theme
             Add(list, "Màu cảnh báo / Nền", t.Danger, t.Background, TextMinimum);
             Add(list, "Màu thành công / Bề mặt", t.Success, t.Surface, TextMinimum);
             Add(list, "Màu thành công / Nền", t.Success, t.Background, TextMinimum);
+            Add(list, "Màu thông tin / Bề mặt", t.Info, t.Surface, TextMinimum);
+            Add(list, "Màu thông tin / Nền", t.Info, t.Background, TextMinimum);
             Add(list, "Màu chính / Nền (icon, viền)", t.Primary, t.Background, UiMinimum);
             return list;
         }

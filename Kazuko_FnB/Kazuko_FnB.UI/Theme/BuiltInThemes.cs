@@ -29,7 +29,8 @@ namespace Kazuko_FnB.Theme
             Accent = Color.FromArgb(180, 150, 45),
             Border = Color.FromArgb(251, 211, 182),
             Danger = Color.FromArgb(176, 32, 22),
-            Success = Color.FromArgb(22, 116, 44)
+            Success = Color.FromArgb(22, 116, 44),
+            Info = Color.FromArgb(16, 95, 190)
         };
 
         public static readonly ThemeTokens Coffee = new ThemeTokens
@@ -47,7 +48,8 @@ namespace Kazuko_FnB.Theme
             Accent = Color.FromArgb(180, 139, 45),
             Border = Color.FromArgb(234, 213, 200),
             Danger = Color.FromArgb(176, 32, 22),
-            Success = Color.FromArgb(22, 116, 44)
+            Success = Color.FromArgb(22, 116, 44),
+            Info = Color.FromArgb(16, 95, 190)
         };
 
         public static readonly ThemeTokens Matcha = new ThemeTokens
@@ -65,7 +67,8 @@ namespace Kazuko_FnB.Theme
             Accent = Color.FromArgb(45, 180, 81),
             Border = Color.FromArgb(213, 234, 200),
             Danger = Color.FromArgb(176, 32, 22),
-            Success = Color.FromArgb(22, 116, 44)
+            Success = Color.FromArgb(22, 116, 44),
+            Info = Color.FromArgb(16, 95, 190)
         };
 
         public static readonly ThemeTokens Ocean = new ThemeTokens
@@ -83,7 +86,8 @@ namespace Kazuko_FnB.Theme
             Accent = Color.FromArgb(49, 45, 180),
             Border = Color.FromArgb(194, 215, 240),
             Danger = Color.FromArgb(176, 32, 22),
-            Success = Color.FromArgb(22, 116, 44)
+            Success = Color.FromArgb(22, 116, 44),
+            Info = Color.FromArgb(16, 95, 190)
         };
 
         /// <summary>Bảng màu mặc định (Cam Nắng).</summary>

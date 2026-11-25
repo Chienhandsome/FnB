@@ -29,5 +29,6 @@ namespace Kazuko_FnB.Theme
         public Color Border { get; set; }
         public Color Danger { get; set; }
         public Color Success { get; set; }
+        public Color Info { get; set; }
     }
 }

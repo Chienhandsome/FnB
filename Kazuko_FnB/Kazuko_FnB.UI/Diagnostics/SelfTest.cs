@@ -550,6 +550,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             RoomTests(db);
             DetailTabTests(db);
             CalendarTests(db);
+            ActivityLogTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
@@ -2419,6 +2420,323 @@ namespace Kazuko_FnB.UI.Diagnostics
                 if (x[i] != y[i])
                     return false;
             return true;
+        }
+
+        // ------------------------------------------------------------------ Lưu vết hoạt động (docs/specs/luu-vet-hoat-dong.md §7)
+
+        private static void ActivityLogTests(string db)
+        {
+            // 1. Enum ActivityKind mang đúng số gốc 0–16 và tên hiển thị theo bảng §2.5 (Q9).
+            var expectedKinds = new[]
+            {
+                new KeyValuePair<int, string>((int)ActivityKind.MoBan, "Mở bàn"),
+                new KeyValuePair<int, string>((int)ActivityKind.DongBan, "Đóng bàn"),
+                new KeyValuePair<int, string>((int)ActivityKind.InBill, "In bill"),
+                new KeyValuePair<int, string>((int)ActivityKind.InCheBien, "In chế biến"),
+                new KeyValuePair<int, string>((int)ActivityKind.ThemMon, "Thêm món"),
+                new KeyValuePair<int, string>((int)ActivityKind.XoaMon, "Xóa món"),
+                new KeyValuePair<int, string>((int)ActivityKind.GiamMon, "Giảm món"),
+                new KeyValuePair<int, string>((int)ActivityKind.ChuyenBan, "Chuyển bàn"),
+                new KeyValuePair<int, string>((int)ActivityKind.GopBan, "Gộp bàn"),
+                new KeyValuePair<int, string>((int)ActivityKind.TangMon, "Tăng món"),
+                new KeyValuePair<int, string>((int)ActivityKind.DatSoLuong, "Đặt số lượng"),
+                new KeyValuePair<int, string>((int)ActivityKind.DoiGiaBan, "Đổi giá bán"),
+                new KeyValuePair<int, string>((int)ActivityKind.DatGiamGiaMatHang, "Đặt giảm giá mặt hàng"),
+                new KeyValuePair<int, string>((int)ActivityKind.HuyBill, "Hủy bill"),
+                new KeyValuePair<int, string>((int)ActivityKind.Khac, "Khác"),
+                new KeyValuePair<int, string>((int)ActivityKind.ChuyenMatHang, "Chuyển mặt hàng"),
+                new KeyValuePair<int, string>((int)ActivityKind.TraDo, "Trả đồ")
+            };
+            bool kindsOk = true;
+            for (int i = 0; i < expectedKinds.Length; i++)
+                if (expectedKinds[i].Key != i || ActivityKindInfo.DisplayName(i) != expectedKinds[i].Value)
+                    kindsOk = false;
+            Check("Lưu vết: enum ActivityKind đúng số gốc 0–16 và đúng tên hiển thị", kindsOk);
+            Check("Lưu vết: PHANLOAI ngoài 0–16 coi như Khác, không màu, không lỗi",
+                ActivityKindInfo.DisplayName(-1) == "Khác" && ActivityKindInfo.DisplayName(99) == "Khác"
+                && ActivityKindInfo.ToneOf(-1) == ActivityRowTone.Default && ActivityKindInfo.ToneOf(99) == ActivityRowTone.Default);
+
+            // 2. Tô màu theo bảng §2.3 (6 loại có màu + mặc định).
+            Check("Lưu vết: tông màu đúng bảng §2.3",
+                ActivityKindInfo.ToneOf((int)ActivityKind.HuyBill) == ActivityRowTone.DangerBold
+                && ActivityKindInfo.ToneOf((int)ActivityKind.ChuyenBan) == ActivityRowTone.Info
+                && ActivityKindInfo.ToneOf((int)ActivityKind.GopBan) == ActivityRowTone.SuccessBold
+                && ActivityKindInfo.ToneOf((int)ActivityKind.XoaMon) == ActivityRowTone.Danger
+                && ActivityKindInfo.ToneOf((int)ActivityKind.GiamMon) == ActivityRowTone.Danger
+                && ActivityKindInfo.ToneOf((int)ActivityKind.DoiGiaBan) == ActivityRowTone.Danger
+                && ActivityKindInfo.ToneOf((int)ActivityKind.DatGiamGiaMatHang) == ActivityRowTone.Danger
+                && ActivityKindInfo.ToneOf((int)ActivityKind.MoBan) == ActivityRowTone.Default
+                && ActivityKindInfo.ToneOf((int)ActivityKind.ThemMon) == ActivityRowTone.Default);
+
+            // 3. Cắt chuỗi quá 36 ký tự (Q5).
+            bool cutShort, cutLong;
+            string kept = ActivityLogger.TruncateField("Admin", 36, "TAIKHOAN", out cutShort);
+            string longName = new string('A', 45);
+            string trimmed = ActivityLogger.TruncateField(longName, 36, "TAIKHOAN", out cutLong);
+            Check("Lưu vết: cắt ngắn TAIKHOAN/CHUCNANG > 36 ký tự (Q5)",
+                kept == "Admin" && !cutShort && trimmed.Length == 36 && cutLong);
+
+            // 4. Quy tắc hiện nút Xóa lưu vết & hộp mật khẩu 9876 (§3.4, Q1).
+            var adminSession = new UserSession { UserId = "selftest", UserName = "Admin", DisplayName = "Administrator", IsAdmin = true, DatabasePath = db };
+            var staffSession = new UserSession { UserId = "staff1", UserName = "thungan", DisplayName = "Thu ngân", IsAdmin = false, DatabasePath = db };
+            Check("Lưu vết: nút xóa chỉ hiện khi admin + Ctrl+Shift",
+                ActivityLogger.CanShowDeleteButton(adminSession, true)
+                && !ActivityLogger.CanShowDeleteButton(adminSession, false)
+                && !ActivityLogger.CanShowDeleteButton(staffSession, true));
+            Check("Lưu vết: kiểm mật khẩu 9876 so chuỗi thô",
+                ActivityLogger.IsDeletePasswordValid("9876")
+                && !ActivityLogger.IsDeletePasswordValid("987")
+                && !ActivityLogger.IsDeletePasswordValid(" 9876")
+                && !ActivityLogger.IsDeletePasswordValid(""));
+            using (var dlg = new Dialogs.ConfirmDeleteActivityLogDialog())
+            {
+                bool initialOff = !dlg.IsAcceptEnabled;
+                dlg.SetPasswordForTest("1234");
+                bool wrongOff = !dlg.IsAcceptEnabled;
+                dlg.SetPasswordForTest("9876");
+                bool rightOn = dlg.IsAcceptEnabled;
+                Check("Lưu vết: hộp xác nhận xóa bật nút Chấp nhận đúng khi nhập 9876", initialOff && wrongOff && rightOn);
+            }
+
+            // 5. Seed bill, bill hủy, lưu vết trên bản sao DB và kiểm các tiêu chí §7.
+            var repo = new ActivityLogRepository(db);
+            var logger = new ActivityLogger(db, "Admin", "selftest");
+            var cfgRepo = new ConfigRepository(db);
+            int origFlag = SystemConfig.GetInt(ActivityConstants.ConfigKey);
+            int preExistingLogs = 0;
+            using (FbConnection conn = KazukoConnection.Open(db))
+                preExistingLogs = DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TLUUVET"));
+
+            string tableId = DbHelper.NewId();
+            string billDoneId = DbHelper.NewId();
+            string billInUseId = DbHelper.NewId();
+            string billOutId = DbHelper.NewId();
+            string billStockId = DbHelper.NewId();
+            string billCancelId = DbHelper.NewId();
+            string billCancelRowId = DbHelper.NewId();
+            string billCancelOutId = DbHelper.NewId();
+            string billCancelOutRowId = DbHelper.NewId();
+            var seededLogIds = new List<string>();
+
+            try
+            {
+                // Bật cờ KichHoatLuuVetHoatDong = 30.
+                cfgRepo.Save(new[] { new ConfigChange { Name = ActivityConstants.ConfigKey, DataType = 3, IntValue = 30 } }, "selftest");
+                SystemConfig.Reload(db);
+
+                BookingExec(db,
+                    "INSERT INTO DBAN (ID, NAME, STATUS, USERCREATEDID) VALUES (@I, @N, 30, 'selftest')",
+                    "@I", tableId, "@N", "Bàn ST-LV 01");
+
+                // 3 bill bán (LOAI=0) + 1 phiếu nhập (LOAI=1) + 2 bill hủy (TDONHANGHUY).
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, STATUS, DATHANHTOAN, NGAY, DBANID, USERCREATEDID) " +
+                    "VALUES (@I, @N, 0, 30, 30, @D, @B, 'selftest')",
+                    "@I", billDoneId, "@N", "LV-HD-01", "@D", new DateTime(2002, 5, 10, 10, 0, 0), "@B", tableId);
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, STATUS, DATHANHTOAN, NGAY, DBANID, USERCREATEDID) " +
+                    "VALUES (@I, @N, 0, 30, 0, @D, @B, 'selftest')",
+                    "@I", billInUseId, "@N", "LV-HD-02", "@D", new DateTime(2002, 5, 10, 23, 30, 0), "@B", tableId);
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, STATUS, DATHANHTOAN, NGAY, DBANID, USERCREATEDID) " +
+                    "VALUES (@I, @N, 0, 30, 30, @D, @B, 'selftest')",
+                    "@I", billOutId, "@N", "LV-OUT'03", "@D", new DateTime(2002, 4, 1, 9, 0, 0), "@B", tableId);
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, STATUS, DATHANHTOAN, NGAY, DBANID, USERCREATEDID) " +
+                    "VALUES (@I, @N, 1, 30, 30, @D, @B, 'selftest')",
+                    "@I", billStockId, "@N", "LV-PN-04", "@D", new DateTime(2002, 5, 10, 11, 0, 0), "@B", tableId);
+
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUY (ID, NAME, STATUS, USERCREATEDID, NGAY, TDONHANGID, BAN, LYDOHUY) " +
+                    "VALUES (@I, @N, 30, 'selftest', @D, @H, @B, @L)",
+                    "@I", billCancelRowId, "@N", "LV-HUY-01", "@D", new DateTime(2002, 5, 10, 15, 0, 0),
+                    "@H", billCancelId, "@B", "Bàn Chụp Hủy", "@L", "Khách đổi ý");
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUY (ID, NAME, STATUS, USERCREATEDID, NGAY, TDONHANGID, BAN, LYDOHUY) " +
+                    "VALUES (@I, @N, 30, 'selftest', @D, @H, @B, @L)",
+                    "@I", billCancelOutRowId, "@N", "LV-HUY'OUT", "@D", new DateTime(2002, 4, 2, 12, 0, 0),
+                    "@H", billCancelOutId, "@B", "Bàn Hủy Ngoài", "@L", "Hủy ngoài khoảng");
+
+                // Kiểm nạp danh sách hóa đơn theo ngày (trọn ngày Đến, 2 nhánh, sắp theo NAME, loại LOAI != 0).
+                List<ActivityBillItem> dayBills = logger.LoadBills(new DateTime(2002, 5, 10), new DateTime(2002, 5, 10), "");
+                List<ActivityBillItem> seeded = dayBills.FindAll(b => b.Number != null && b.Number.StartsWith("LV-", StringComparison.Ordinal));
+                Check("Lưu vết: lưới trái đủ 2 nhánh (kết thúc/đang dùng/hủy), trọn ngày Đến, sắp theo tên, loại LOAI!=0",
+                    seeded.Count == 3
+                    && seeded[0].Number == "LV-HD-01" && seeded[0].Kind == ActivityBillKind.Completed && seeded[0].StatusText == "Kết thúc" && seeded[0].TableName == "Bàn ST-LV 01"
+                    && seeded[1].Number == "LV-HD-02" && seeded[1].Kind == ActivityBillKind.InUse && seeded[1].StatusText == "Đang sử dụng"
+                    && seeded[2].Number == "LV-HUY-01" && seeded[2].Kind == ActivityBillKind.Cancelled && seeded[2].StatusText == "Khách đổi ý" && seeded[2].TableName == "Bàn Chụp Hủy",
+                    "n=" + seeded.Count);
+
+                // Nhập Số HĐ có dấu nháy đơn ngoài khoảng ngày (cả bill thường lẫn bill hủy, P1).
+                List<ActivityBillItem> outNormal = logger.LoadBills(new DateTime(2002, 5, 10), new DateTime(2002, 5, 10), "LV-OUT'03");
+                List<ActivityBillItem> outCancel = logger.LoadBills(new DateTime(2002, 5, 10), new DateTime(2002, 5, 10), "LV-HUY'OUT");
+                Check("Lưu vết: nhập Số HĐ có dấu ' hiện bill ngoài khoảng ngày (thường & hủy, không lỗi SQL)",
+                    outNormal.Exists(b => b.Id == billOutId && b.Number == "LV-OUT'03")
+                    && outCancel.Exists(b => b.Id == billCancelOutId && b.Number == "LV-HUY'OUT" && b.Kind == ActivityBillKind.Cancelled));
+
+                // Ghi đơn qua ActivityLogger.Track (ban rỗng tự đọc tên bàn của bill; NGAY = ngày giờ DB; THIETBI = MachineName).
+                bool trackedSingle = logger.Write(ActivityConstants.FuncSuDungDichVu, ActivityKind.MoBan, billDoneId, "", "Mở bàn từ selftest");
+                Check("Lưu vết: Track ghi đơn khi cờ = 30", trackedSingle);
+
+                // Ghi nhiều dòng trong một transaction (kèm cắt TAIKHOAN/CHUCNANG > 36 ký tự, số tiền decimal).
+                string longAccount = "tai_khoan_rat_dai_hon_ba_muoi_sau_ky_tu_12345";
+                string longFunc = "Chức năng có tên rất dài vượt quá 36 ký tự để kiểm cắt";
+                DateTime t1 = new DateTime(2002, 5, 10, 10, 5, 1);
+                DateTime t2 = new DateTime(2002, 5, 10, 10, 5, 2);
+                DateTime t3 = new DateTime(2002, 5, 10, 10, 5, 3);
+                int batchCount = logger.WriteBatch(new[]
+                {
+                    new ActivityLogRequest
+                    {
+                        FunctionName = longFunc, Kind = ActivityKind.ThemMon, BillId = billDoneId,
+                        TableName = "Bàn ST-LV 01", Note = "Thêm Cà phê sữa", ItemName = "Cà phê sữa",
+                        Quantity = 2m, UnitPrice = 25000m, Amount = 50000m, Time = t1, Account = longAccount
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncQuanLyBanHang, Kind = ActivityKind.GopBan, BillId = billDoneId,
+                        TableName = "Bàn ST-LV 01", Note = "Gộp bàn thử", Time = t2, Account = "thungan_st"
+                    },
+                    new ActivityLogRequest
+                    {
+                        FunctionName = ActivityConstants.FuncDieuChinhHoaDon, Kind = ActivityKind.XoaMon, BillId = billDoneId,
+                        TableName = "Bàn ST-LV 01", Note = "Xóa món thử", Time = t3, Account = "thungan_st"
+                    }
+                });
+                Check("Lưu vết: WriteBatch ghi nhiều dòng trong một transaction", batchCount == 3, "n=" + batchCount);
+
+                // Ghi lưu vết cho bill đã hủy (kiểm tra COALESCE tên số phiếu & tên bàn chụp).
+                logger.Write(ActivityConstants.FuncSuDungDichVu, ActivityKind.HuyBill, billCancelId, "", "Hủy bill thử");
+
+                // Chèn 1 dòng có PHANLOAI ngoài 0–16 (99) để kiểm tra đọc không lỗi.
+                string weirdId = DbHelper.NewId();
+                seededLogIds.Add(weirdId);
+                BookingExec(db,
+                    "INSERT INTO TLUUVET (ID, STATUS, USERCREATEDID, TIMECREATED, NGAY, GIO, SODONHANG, TAIKHOAN, THIETBI, PHANLOAI, BAN, CHUCNANG, NOTE, TENHANG, SOLUONG, DONGIA, THANHTIEN) " +
+                    "VALUES (@I, 30, 'selftest', @T, @D, @T, @S, 'Admin', @M, 99, 'Bàn ST-LV 01', 'Sử dụng dịch vụ', 'Phân loại lạ 99', '', 0, 0, 0)",
+                    "@I", weirdId, "@T", new DateTime(2002, 5, 10, 10, 5, 4), "@D", new DateTime(2002, 5, 10),
+                    "@S", billDoneId, "@M", Environment.MachineName);
+
+                // Kiểm đọc lưu vết: chưa chọn bill → trống.
+                Check("Lưu vết: chưa chọn hóa đơn → lưới phải trống", logger.LoadLogs("", "").Count == 0);
+
+                // Đọc lưu vết của billDoneId: đúng số dòng, sắp tăng dần theo ngày/giờ, đúng tên số phiếu, tên bàn, thiết bị, cắt 36 ký tự.
+                List<ActivityLogEntry> logs = logger.LoadLogs(billDoneId, "");
+                foreach (ActivityLogEntry l in logs)
+                    seededLogIds.Add(l.Id);
+                bool sortedAsc = true;
+                for (int i = 1; i < logs.Count; i++)
+                {
+                    if (logs[i].Date < logs[i - 1].Date || (logs[i].Date == logs[i - 1].Date && logs[i].Time < logs[i - 1].Time))
+                        sortedAsc = false;
+                }
+                ActivityLogEntry moBanRow = logs.Find(l => l.KindValue == (int)ActivityKind.MoBan);
+                ActivityLogEntry themMonRow = logs.Find(l => l.KindValue == (int)ActivityKind.ThemMon);
+                ActivityLogEntry weirdRow = logs.Find(l => l.KindValue == 99);
+                Check("Lưu vết: đọc đủ dòng của bill, sắp tăng dần theo ngày/giờ, hiện đúng số phiếu",
+                    logs.Count == 5 && sortedAsc && logs.TrueForAll(l => l.BillId == billDoneId && l.BillNumber == "LV-HD-01"),
+                    "n=" + logs.Count);
+                Check("Lưu vết: Track ghi đúng NGAY=ngày giờ DB, BAN tự đọc từ bill, TAIKHOAN, THIETBI",
+                    moBanRow != null && moBanRow.Date == moBanRow.Time.Date && moBanRow.TableName == "Bàn ST-LV 01"
+                    && moBanRow.Account == "Admin" && moBanRow.Device == Environment.MachineName);
+                Check("Lưu vết: cắt ngắn TAIKHOAN/CHUCNANG <= 36 ký tự và giữ đúng decimal tiền/SL",
+                    themMonRow != null && themMonRow.Account.Length == 36 && themMonRow.FunctionName.Length == 36
+                    && themMonRow.Quantity == 2m && themMonRow.UnitPrice == 25000m && themMonRow.Amount == 50000m);
+                Check("Lưu vết: dòng PHANLOAI = 99 đọc ra tên Khác, không lỗi",
+                    weirdRow != null && weirdRow.KindDisplayName == "Khác" && weirdRow.Tone == ActivityRowTone.Default);
+
+                // Lọc theo tài khoản.
+                List<ActivityLogEntry> byStaff = logger.LoadLogs(billDoneId, "thungan_st");
+                Check("Lưu vết: lọc theo tài khoản chỉ lấy thao tác của tài khoản đó",
+                    byStaff.Count == 2 && byStaff.TrueForAll(l => l.Account == "thungan_st"), "n=" + byStaff.Count);
+
+                // Lọc chuỗi phía lưới (không dấu / hoa thường / tên phân loại).
+                Check("Lưu vết: ô lọc dữ liệu khớp nội dung và tên phân loại",
+                    ActivityLogger.MatchesFilter(themMonRow, "ca phe")
+                    && ActivityLogger.MatchesFilter(themMonRow, "them mon")
+                    && !ActivityLogger.MatchesFilter(themMonRow, "khong-ton-tai"));
+
+                // Lưu vết bill đã hủy vẫn hiện đúng số phiếu và tên bàn chụp.
+                List<ActivityLogEntry> cancelLogs = logger.LoadLogs(billCancelId, "");
+                foreach (ActivityLogEntry l in cancelLogs)
+                    seededLogIds.Add(l.Id);
+                Check("Lưu vết: bill đã hủy hiện đúng số phiếu (COALESCE TDONHANGHUY.NAME) và tên bàn chụp",
+                    cancelLogs.Count == 1 && cancelLogs[0].BillNumber == "LV-HUY-01"
+                    && cancelLogs[0].TableName == "Bàn Chụp Hủy" && cancelLogs[0].KindValue == (int)ActivityKind.HuyBill);
+
+                // Tắt cờ KichHoatLuuVetHoatDong = 0 → không ghi lưu vết và UI hiện cảnh báo 2 dòng.
+                cfgRepo.Save(new[] { new ConfigChange { Name = ActivityConstants.ConfigKey, DataType = 3, IntValue = 0 } }, "selftest");
+                SystemConfig.Reload(db);
+                bool writtenWhenOff = logger.Write(ActivityConstants.FuncSuDungDichVu, ActivityKind.InBill, billDoneId, "Bàn ST-LV 01", "Không được ghi");
+                Check("Lưu vết: cờ KichHoatLuuVetHoatDong = 0 → không ghi vào DB",
+                    !writtenWhenOff && logger.LoadLogs(billDoneId, "").Count == 5);
+
+                using (var viewOff = new ActivityLogView(adminSession, false) { SuppressWarningPopup = true })
+                {
+                    Check("Lưu vết UI: cờ = 0 vẫn mở được và hiện đúng cảnh báo 2 dòng nguyên văn",
+                        viewOff.WarningBannerVisible && viewOff.WarningBannerText == ActivityConstants.DisabledWarningText);
+                }
+
+                // Bật lại cờ = 30 và kiểm UI: đúng 9 cột theo thứ tự §1, nút Xóa ẩn/hiện đúng điều kiện.
+                cfgRepo.Save(new[] { new ConfigChange { Name = ActivityConstants.ConfigKey, DataType = 3, IntValue = 30 } }, "selftest");
+                SystemConfig.Reload(db);
+
+                string[] expectedHeaders =
+                {
+                    "Ngày", "Giờ", "Số đơn hàng", "Nội dung", "Tài khoản", "Thiết bị", "Bàn", "Chức năng", "Phân loại"
+                };
+                using (var viewAdminNormal = new ActivityLogView(adminSession, false) { SuppressWarningPopup = true })
+                {
+                    List<string> cols = viewAdminNormal.LogColumnHeaders();
+                    bool headersMatch = cols.Count == expectedHeaders.Length;
+                    for (int i = 0; headersMatch && i < expectedHeaders.Length; i++)
+                        if (cols[i] != expectedHeaders[i])
+                            headersMatch = false;
+                    Check("Lưu vết UI: lưới phải đúng 9 cột theo thứ tự §1 (không có Tên hàng/SL/Đơn giá/Thành tiền)",
+                        headersMatch, string.Join(" | ", cols.ToArray()));
+                    Check("Lưu vết UI: nút Xóa lưu vết ẩn mặc định khi không giữ Ctrl+Shift",
+                        !viewAdminNormal.DeleteButtonVisible && !viewAdminNormal.WarningBannerVisible);
+                    Check("Lưu vết UI: chưa chọn hóa đơn → lưới phải trống", viewAdminNormal.LogRowCount == 0);
+                }
+                using (var viewAdminKey = new ActivityLogView(adminSession, true) { SuppressWarningPopup = true })
+                {
+                    Check("Lưu vết UI: nút Xóa lưu vết hiện khi admin + Ctrl+Shift lúc mở", viewAdminKey.DeleteButtonVisible);
+                }
+                using (var viewStaffKey = new ActivityLogView(staffSession, true) { SuppressWarningPopup = true })
+                {
+                    Check("Lưu vết UI: tài khoản không phải admin không thấy nút Xóa dù giữ Ctrl+Shift", !viewStaffKey.DeleteButtonVisible);
+                }
+
+                // Kiểm chặn xóa ở lớp Services khi không phải admin hoặc sai mật khẩu.
+                bool nonAdminBlocked = false;
+                try { logger.DeleteAll(staffSession, "9876"); } catch (UnauthorizedAccessException) { nonAdminBlocked = true; }
+                bool badPassBlocked = false;
+                try { logger.DeleteAll(adminSession, "0000"); } catch (InvalidOperationException) { badPassBlocked = true; }
+                Check("Lưu vết: Services chặn DeleteAll nếu không phải admin hoặc sai mật khẩu", nonAdminBlocked && badPassBlocked);
+
+                // Nếu bảng TLUUVET ban đầu trống (như bản sao DB chuẩn), kiểm luôn DeleteAll xóa toàn bảng.
+                if (preExistingLogs == 0)
+                {
+                    int deleted = logger.DeleteAll(adminSession, "9876");
+                    int remaining;
+                    using (FbConnection conn = KazukoConnection.Open(db))
+                        remaining = DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TLUUVET"));
+                    Check("Lưu vết: DeleteAll xóa toàn bảng TLUUVET khi admin + đúng 9876", deleted >= 6 && remaining == 0,
+                        "deleted=" + deleted + ", remain=" + remaining);
+                }
+            }
+            finally
+            {
+                // Hoàn lại cấu hình và dọn toàn bộ dữ liệu seed.
+                cfgRepo.Save(new[] { new ConfigChange { Name = ActivityConstants.ConfigKey, DataType = 3, IntValue = origFlag } }, "selftest");
+                SystemConfig.Reload(db);
+                foreach (string id in seededLogIds)
+                    BookingExec(db, "DELETE FROM TLUUVET WHERE ID = @I", "@I", id);
+                BookingExec(db, "DELETE FROM TLUUVET WHERE SODONHANG IN (@A, @B)", "@A", billDoneId, "@B", billCancelId);
+                BookingExec(db, "DELETE FROM TDONHANGHUY WHERE ID IN (@A, @B)", "@A", billCancelRowId, "@B", billCancelOutRowId);
+                BookingExec(db, "DELETE FROM TDONHANG WHERE ID IN (@A, @B, @C, @D)", "@A", billDoneId, "@B", billInUseId, "@C", billOutId, "@D", billStockId);
+                BookingExec(db, "DELETE FROM DBAN WHERE ID = @I", "@I", tableId);
+            }
         }
     }
 }

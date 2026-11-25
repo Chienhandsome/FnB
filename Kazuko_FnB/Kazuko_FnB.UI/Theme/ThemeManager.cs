@@ -12,6 +12,11 @@ namespace Kazuko_FnB.Theme
     /// </summary>
     public static class ThemeManager
     {
+        public const string BodyFontName = "Segoe UI";
+        public const string HeadingFontName = "Segoe UI Semibold";
+        public const float BodyFontSize = 10f;
+        public const float SmallFontSize = 9f;
+
         private static ThemeTokens _current = BuiltInThemes.Default;
 
         public static event EventHandler ThemeChanged;

@@ -54,6 +54,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActivityLogger.cs" />
     <Compile Include="AppSession.cs" />
     <Compile Include="ConfigViewModel.cs" />
     <Compile Include="DatabaseService.cs" />
