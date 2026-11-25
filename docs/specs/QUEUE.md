@@ -19,7 +19,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | # | Spec | Trạng thái | Loại | Ghi chú |
 |---|---|---|---|---|
 | 1 | `danh-muc-hoa-don-huy.md` | **Đã code** (`de80345`) | nhẹ | Chờ bấm thử |
-| 2 | `thong-ke-mat-hang-ban.md` | NHÁP, **chờ Chiến** [issue #8](https://github.com/Chienhandsome/FnB/issues/8) | nặng | Còn 4 câu (Q1, Q3, Q11, Q12) |
+| 2 | `thong-ke-mat-hang-ban.md` | ĐÃ DUYỆT 25/11 (issue #8), đang code | nặng | `STATUS = 30` cho bill áp chung mọi báo cáo |
 | 3 | `thong-ke-doanh-thu.md` | NHÁP | nặng | Công thức doanh thu |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | NHÁP | nặng | Tiền theo quỹ |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kết quả kinh doanh |

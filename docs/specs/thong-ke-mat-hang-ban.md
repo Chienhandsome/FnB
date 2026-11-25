@@ -1,6 +1,6 @@
 # Spec (delta): Thống kê mặt hàng bán
 
-- Trạng thái: **NHÁP — chờ Chiến trả lời** [issue #8](https://github.com/Chienhandsome/FnB/issues/8) (chưa code). Rà lại 25/11: xem "Đã xác minh thêm" ở §0.
+- Trạng thái: **ĐÃ DUYỆT** (Chiến chốt 25/11/2026 [issue #8](https://github.com/Chienhandsome/FnB/issues/8): "Theo đề xuất cả 4" cho Q1, Q3, Q11, Q12; các câu khác theo mặc định ở §4). Mục **§2.0 là định nghĩa chuẩn của truy vấn**, chỗ nào khác §1–§3 thì theo §2.0.
 - Ngày: 2026-11-24. Base: `main` @ `e9de6de` (đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md) và [`thong-ke-doanh-thu.md`](thong-ke-doanh-thu.md) (cùng họ "báo cáo chỉ xem", cùng lọc ngày + cửa hàng + ràng buộc cửa hàng theo user). Spec này **chỉ ghi phần khác**; chỗ không nói = như hai spec trên.
 - Menu: **HOẠT ĐỘNG > Thống kê mặt hàng bán** (`SMENU` `a5810c3b-e57a-4cca-99c7-ed89d5dff667`, `SORTORDER = ZZZ021`, `OPERATION = 4`, không `MENUCODE`, `SFORMID` `67500401-1f1e-4c18-a0fc-f487c43f4b0c`, `SFUNCTIONID` `ff5edbec-dee4-4fe8-9315-30c96dec1c4e` "Thống kê mặt hàng bán", nhóm "Bán hàng", `NOTE = View`). Form tùy biến `ThongKeMatHangBan`; nút mở dialog con `ChiTietBanHangTheoMatHang` (`5645abce-…`).
@@ -22,6 +22,28 @@
 - **Karaoke** (tab "Trả tiền dịch vụ" — dịch vụ theo giờ, nút "Điều chỉnh giờ tính lương"): **cắt** (đã bỏ karaoke + tính giờ). Chỉ giữ một khung "Mặt hàng bán" (không tab).
 
 ## 2. Luật và luồng (khác khuôn)
+
+### 2.0 Truy vấn chuẩn (đã chốt)
+
+**Phạm vi bill**, dùng **giống hệt nhau** cho lưới mặt hàng, khối tổng và dialog chi tiết:
+- `TDONHANG.LOAI = 0 AND TDONHANG.DATHANHTOAN = 30 AND TDONHANG.STATUS = 30` (Q11, Q12 chốt 25/11).
+- Ngày: `TDONHANG.NGAY >= Từ AND TDONHANG.NGAY < Đến + 1 ngày` (tính trọn ngày cuối, theo quy tắc chung đã chốt ở spec Tổng hợp KQKD Q10).
+- Cửa hàng (Q1 chốt 25/11): có chọn → `TDONHANG.DCUAHANGID = <chọn>`; không chọn và không phải admin → chỉ cửa hàng gắn với user trong `TNGUOIDUNGTHEOCUAHANG` (`SUSERID`); không chọn và là admin → tất cả. Lookup cửa hàng của user thường chỉ liệt kê cửa hàng của họ.
+- Dialog chi tiết cũng áp phạm vi cửa hàng này. App gốc **không** lọc cửa hàng ở dialog; áp theo cùng tinh thần Q1.
+
+**Dòng được tính ở lưới:** `TDONHANGCHITIET` nối `DMATHANG` theo `DMATHANGID`; loại `COALESCE(DMATHANG.DLOAIMATHANGID, '') = '2'` (nguyên liệu), `COALESCE(XUATVATTU, 0) <> 0`, `COALESCE(COMBOPARENTID, '') <> ''`. Không lọc `TDONHANGCHITIET.STATUS` (như gốc).
+
+**Gộp theo:** `DMATHANGID`, `DMATHANG.DNHOMMATHANGID`, `DMATHANG.CODE`, `DMATHANG.MASANCO`, `TDONHANGCHITIET.TENHANG`, `TDONHANGCHITIET.DDONVITINHID` (ĐVT = `DDONVITINH.NAME`), `DONGIA`, `TILEGIAMGIA`, `TIENGIAMGIA`, giá vốn (`TDONHANGCHITIET.GIAVON`, hoặc `DMATHANG.GIANHAP` khi chọn "Theo giá nhập").
+
+**11 cột** (đúng thứ tự §1): Mặt hàng = `TENHANG`; Số lượng = `Σ (COALESCE(SLXUATCHUAQUYDOI,0) − COALESCE(SLNHAPCHUAQUYDOI,0))`; ĐVT; Đơn giá; Tiền giảm = `TIENGIAMGIA` (trường nhóm, không cộng); Thành tiền bán = `Σ THANHTIEN`; Giá vốn = trường giá nhóm; Giảm giá % = `TILEGIAMGIA`; Thành tiền nhập = `Σ giá × (COALESCE(SLXUAT,0) − COALESCE(SLNHAP,0))`; Lãi; Tỉ lệ lãi (§2.2). Mã hàng, Mã sẵn có không hiện thành cột.
+
+**Sắp xếp:** nếu `SCONFIG.SapXepThuTuTheo = 0` và `SCONFIG.SuDungMaHang = 30` thì theo `DMATHANG.CODE`, ngược lại theo `TENHANG` (hiện: theo tên).
+
+**Khối tổng** tính trên **toàn bộ** phạm vi ngày và cửa hàng, **không** đổi khi chọn nhóm trên cây hay gõ ô Lọc. Truy vấn tổng bill dùng đúng phạm vi bill ở trên: Giảm giá = `Σ (COALESCE(TIENGIAMGIATONG,0) + COALESCE(GIAMGIAMATHANG,0))`; Tiền giờ, Phí dịch vụ, Thuế = `Σ COALESCE(...,0)`. Công thức §2.3 giữ nguyên, **Tổng tiền lãi cộng cả thuế, phí dịch vụ, tiền giờ** (Q3 chốt 25/11).
+
+**Cây nhóm:** `DNHOMMATHANG` đang dùng, theo cây `PARENTID`, bỏ nhóm có `DLOAIDOID = '4'` (nguyên liệu), có nút "Tất cả". Chọn một nhóm chỉ lọc mặt hàng có `DNHOMMATHANGID` **bằng đúng** nhóm đó (như gốc, không gồm nhóm con). **Ô Lọc:** chứa chuỗi trên tên hàng, không phân biệt hoa thường. Hai bộ lọc này chỉ lọc lưới.
+
+**Dialog chi tiết** (nhấp đúp một dòng): lưới trên là bill trong phạm vi bill, có ít nhất một dòng cùng `DMATHANGID`, `DONGIA`, `TILEGIAMGIA` (so `COALESCE` về 0), sắp `GIOTHANHTOAN` tăng dần. Cột theo `ViewConfig` gốc, đúng thứ tự: Ghi chú, Số phiếu, Ngày, Khách hàng, Mã khách, Địa chỉ, Điện thoại, Tổng cộng, Phí vận chuyển, Giảm giá, % giảm giá, Thuế, % thuế, Tiền hàng, Diễn giải, Giờ thanh toán, Khách đưa, Trả lại, Thanh toán bởi (`SUSER.NAME` theo `USERTHANHTOANID`), Số phiếu đặt hàng (`TDATHANG.NAME` theo `TDATHANGID`), Giao hàng, Đổi trả. Lưới dưới là dòng của bill đang chọn, loại `XUATVATTU` và combo con (**không** loại nguyên liệu, như gốc), cột: Ghi chú, Tên mặt hàng (`DMATHANG.NAME`), ĐVT (đơn vị của mặt hàng), Mã hàng, Bảo hành (`DMATHANG`), Mã sẵn có, Bảo hành (dòng), CK%, Thành tiền, Đơn giá, S.lượng (`SLXUAT`, hiện nguyên giá trị). Dòng của mặt hàng đang xem: chữ đậm, màu nhấn cảnh báo lấy từ token (gốc: đỏ), kể cả khi dòng đang được chọn.
 
 ### 2.1 Quyền xem giá nhập [CODE `xemGiaNhap`]
 
@@ -76,9 +98,9 @@ Nhấp đúp dòng → dialog (tiêu đề nút "DANH MỤC HÓA ĐƠN", nút **
 
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|
-| Q1 | Sửa lỗi lọc cửa hàng của truy vấn tổng (P1)? | Sửa |
+| Q1 | ~~Sửa lỗi lọc cửa hàng của truy vấn tổng?~~ **Chốt 25/11: sửa**, phần tổng lọc giống lưới | — |
 | Q2 | Công thức dùng `GIAVON` hay `GIANHAP` mặc định? | `GIAVON` (như gốc) |
-| Q3 | "Thực lãi" cộng thuế + phí dịch vụ: giữ nguyên? | Giữ nguyên gốc |
+| Q3 | ~~"Thực lãi" cộng thuế + phí dịch vụ?~~ **Chốt 25/11: giữ như gốc (cộng)** | — |
 | Q4 | ~~Mã số `NguyenLieu`~~ **Đã tra: `LoaiMatHang.NguyenLieu = 2`, `LoaiDo.NguyenLieu = 4`** | — |
 | Q5 | Mẫu in: tạo FastReport mới hay "chưa hỗ trợ"? | "Chưa hỗ trợ" |
 | Q6 | ~~Lưới gộp theo trường nào~~ **Đã giải mã cấu hình lưới** (§0) | — |
@@ -86,8 +108,8 @@ Nhấp đúp dòng → dialog (tiêu đề nút "DANH MỤC HÓA ĐƠN", nút **
 | Q8 | Có thêm xuất Excel (gốc không có)? | Không |
 | Q9 | ~~Chụp app gốc để lấy đủ cột lưới~~ **Đã chụp 24/11/2026** (§1) | Đã giải quyết phần cột |
 | Q10 | Ô "Lọc" (gốc có, bản trước chưa ghi): lọc theo cột nào, có bắt buộc làm không | Lọc theo tên hàng, làm |
-| Q11 | Bỏ qua bill `STATUS ≠ 30`? (KQKD đã chốt có lọc) | Chờ Chiến: đề xuất lọc, áp chung các báo cáo |
-| Q12 | Chỉ tính bill đã thanh toán ở lưới? | Chờ Chiến: đề xuất chỉ bill đã thanh toán |
+| Q11 | ~~Bỏ qua bill `STATUS ≠ 30`?~~ **Chốt 25/11: lọc, áp chung mọi báo cáo** | — |
+| Q12 | ~~Chỉ tính bill đã thanh toán?~~ **Chốt 25/11: chỉ bill đã thanh toán** | — |
 
 ## 5. Quyết định đã chốt (áp, không hỏi lại)
 

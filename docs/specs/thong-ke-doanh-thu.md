@@ -11,7 +11,7 @@
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Thống kê doanh thu__d913c8d9/` (`code.cs`, `layout.xml`); tài liệu sẵn có [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §1 và `docs/deep/bao-cao.md` (C3) — đã đọc, không chép lại.
 - **[CHƯA XÁC MINH]**: (1) điều kiện **lọc bill nền** của lưới chính (nằm trong cấu hình `ViewConfig`/`AELAYOUT` nhị phân, chưa giải mã; `code.cs` chỉ thêm điều kiện ngày + cửa hàng); (2) mẫu in FastReport. **[APP]** đã chụp bố cục và cột lưới (24/11/2026, bản chạy thử, DB không có bill nên chưa đối chiếu số liệu thật); điều kiện lọc bill (1) vẫn **chưa xác minh** vì không có bill để thử.
-- Mặc định tạm cho (1): bill đã thanh toán, `LOAI = 0 AND DATHANHTOAN = 30` (khớp điều kiện chuẩn của các báo cáo khác trong `deep/bao-cao.md` C1).
+- Cho (1): bill đã thanh toán, `LOAI = 0 AND DATHANHTOAN = 30` (khớp điều kiện chuẩn của các báo cáo khác trong `deep/bao-cao.md` C1). **Chiến chốt 25/11 (issue #8, áp chung mọi báo cáo): thêm `TDONHANG.STATUS = 30`.**
 
 ## 1. Bố cục UI (khác khuôn)
 

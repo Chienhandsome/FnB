@@ -120,7 +120,7 @@ Quyền xem = `SFUNCTION` `5d90c04e-…` "Chi tiết hoạt động ngày". `SGR
 | Q8 | Chụp app gốc để xác minh bố cục. Đã chụp bộ lọc, đầu trang, ô ký, khối tổng hợp (24/11). **Còn thiếu:** ảnh khi có dữ liệu (gồm tiêu đề cột các khối) | Có, sau |
 | Q9 | ~~Mẫu in mặc định~~ **Đã chốt 25/11: "Mẫu đầy đủ"** `75d5af0a` (khối Bán hàng 12 cột), dù `LASTTEMPLATEID` của dữ liệu gốc đang trỏ mẫu `765b861a`. v1 không đọc `LASTTEMPLATEID` để chọn mẫu | — |
 | Q10 | ~~Ràng buộc cửa hàng khi để trống, chốt chung các báo cáo~~ **Đã chốt: áp** (P2) | — |
-| Q11 | Bill có thêm `STATUS = 30` như quyết định đã chốt cho KQKD không? Áp cho khối Bán hàng, Mặt hàng bán, `GiamGiaTongBill`; phiếu nhập giữ như gốc | Thêm cho bill |
+| Q11 | ~~Bill có thêm `STATUS = 30`?~~ **Chốt 25/11 (issue #8, áp chung mọi báo cáo): thêm cho bill** (khối Bán hàng, Mặt hàng bán, `GiamGiaTongBill`); phiếu nhập giữ như gốc | — |
 | Q12 | ~~TIỀN MẶT trừ cả tiền nhập trả bằng chuyển khoản~~ **Đã chốt 25/11: sửa**, tiền nhập trừ đúng quỹ theo hình thức trả ([`quy-tien.md`](quy-tien.md)) | — |
 | Q13 | Lưới khối Bán hàng: chỉ cột in của mẫu chốt ở Q9, hay đủ 16 cột truy vấn? | Chỉ cột in của "Mẫu đầy đủ" |
 | Q14 | Phiếu thu gắn `TDONHANGID` (khách trả nợ bill) có làm tiền bị cộng 2 lần vào TIỀN MẶT/CHUYỂN KHOẢN không? Cần dữ liệu thật hoặc chạy app gốc | Giữ như gốc |
