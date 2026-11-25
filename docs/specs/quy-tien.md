@@ -1,6 +1,6 @@
 # Spec: Quỹ tiền (quỹ tiền mặt và quỹ tài khoản)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026). Implement: **bước 1** (§8) đã code và commit; bước 2–5 chưa làm
 - Ngày: 2026-11-25. Base: `main` @ `954f133`
 - Vai trò: **nguồn chuẩn** về việc giao dịch nào làm quỹ nào thay đổi. Các spec bán hàng, nhập hàng, thu chi, báo cáo theo spec này.
 

@@ -23,7 +23,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. C�
 - [x] Danh mục hóa đơn hủy — spec `danh-muc-hoa-don-huy.md` (24/11), chờ Chiến duyệt + Muse review
 
 ## Phát sinh sau queue
-- [x] Quỹ tiền (tiền mặt + tài khoản) — spec `quy-tien.md` (25/11), chờ Chiến duyệt; Q1–Q13 đã chốt 25/11
+- [x] Quỹ tiền (tiền mặt + tài khoản) — spec `quy-tien.md` (25/11), **đã duyệt 25/11**, chờ implement; Q1–Q13 đã chốt 25/11
 
 ## Ghi chú
 - Review #1 (Sử dụng dịch vụ) và #2 (Quản lý bán hàng + Điều chỉnh hóa đơn) đã sửa spec 24/11 (commit `6d40f73`, `9e48bc8`); **chưa đóng issue** vì máy chạy loop không có `gh`/token — Chiến hoặc Muse đóng tay.
