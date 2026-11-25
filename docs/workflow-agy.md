@@ -188,7 +188,9 @@ Chỉ áp khi có file `D:\Working\fnb-agy-work\auto.on`. **Chỉ Chiến tạo 
    - **Nhẹ:** chốt mọi câu theo mặc định, ghi trạng thái `**ĐÃ DUYỆT** (Claude tự duyệt <ngày> theo workflow-agy §10.1, loại nhẹ; các mặc định đã áp: …)`, cập nhật `QUEUE.md`, commit và push. Nhịp sau làm §4.
    - **Nặng, có `auto.on`:** chốt các câu đủ điều kiện theo §10.1.1. Còn câu phải chờ thì làm như dòng dưới.
    - **Nặng:** mở (hoặc cập nhật) issue `cho-chien: <spec>` liệt kê từng câu chưa chốt, mỗi câu kèm ví dụ số và đề xuất, như `kinh-nghiem.md` §3. Đánh dấu "chờ Chiến" trong `QUEUE.md`, chuyển sang spec kế tiếp.
-5. Không còn gì → ghi "rảnh" và giãn nhịp.
+5. **Hàng đợi không còn việc làm được** (đã xong hoặc đều bị chặn):
+   - Có `auto.on` → chọn mục kế tiếp theo thứ tự menu POS TAP chưa có spec (bỏ karaoke, tính giờ, máy tính bảng), viết spec NHÁP theo `/spec` và `kinh-nghiem.md`, thêm vào `QUEUE.md`, commit và push `docs/`. Mỗi nhịp một spec. Nhịp sau phân loại và tự duyệt theo §10.1, §10.1.1; câu không đủ căn cứ thì để chờ Chiến, làm mục khác.
+   - Không có `auto.on`, hoặc hết mục → ghi "rảnh" và giãn nhịp.
 
 #### 10.2.1 Bị chặn, thử lại, dừng `agy`
 
@@ -224,6 +226,13 @@ Không bao giờ chờ trong nhịp. Không push code của chức năng đang b
 - Cuối mỗi nhịp ghi `notes.md` (§4.2); quyết định đã chốt nằm trong spec hoặc issue; base và hàng đợi nằm trong `notes.md`, `QUEUE.md`.
 - Sau khi context bị nén (tự động hoặc thủ công), đọc lại `CLAUDE.md`, file này, `QUEUE.md`, `state.txt` và `notes.md` của chức năng đang dở rồi mới làm tiếp.
 - Không bắt buộc: Chiến muốn nén tay thì gõ `/compact` khi context dùng khoảng 70–80%, kèm yêu cầu giữ quyết định đã chốt, base commit, QUEUE, chức năng đang dở (vòng, mã hội thoại agy). Gõ vào phiên sẽ dừng vòng lặp, nên sau đó gõ lại lệnh `/loop`.
+
+### 10.5 Chạy vắng mặt đến giờ hẹn
+
+- Giờ dừng ghi trong lời nhắn `/loop`. **Đầu mỗi nhịp và trước khi push, xem giờ máy.**
+- **Tự chạy lại khi quota hồi:** nhịp đầu tạo một `CronCreate` lặp mỗi 20 phút (`7,27,47 * * * *`) với cùng nội dung nhịp, trừ khi `CronList` đã có. Nhịp lỗi vì hết quota thì lần cron sau thử lại.
+- **Tới giờ dừng:** không bắt đầu việc mới, không giao `agy`, không push code. Việc dở ghi vào `notes.md`. Xóa cron, dừng `/loop`, báo tóm tắt (đã push gì, đang chặn gì, cần bấm thử gì) và gửi `PushNotification`.
+- **Không làm việc cần người bấm:** không dùng `AskUserQuestion`, không xin quyền điều khiển máy (thay cho bước chụp app gốc ở §10.2 bước 4). Câu cần app gốc thì ghi issue `cho-chien`.
 
 ## 9. Lịch sử chạy
 

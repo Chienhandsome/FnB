@@ -20,3 +20,7 @@
 - Chưa biết chế độ Auto có chặn `agy` hoặc script `tools/agy` không.
 - Quyền điều khiển máy giữ được bao lâu; scheduled task (chưa đưa vào workflow).
 - Không giới hạn số chức năng chờ bấm thử (Chiến chốt 25/11); đang chờ 6.
+
+## Bổ sung 25/11 (Chiến "go")
+- §10.2 bước 5: hết hàng đợi và có `auto.on` thì tự viết spec mới. §10.5: giờ dừng, cron 20 phút để chạy lại khi quota hồi, không làm việc cần người bấm.
+- Spec 6–9 đã duyệt (`d7735b6`). Chưa kiểm: cron có chạy lại sau khi hết quota không.
