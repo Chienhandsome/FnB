@@ -1,7 +1,7 @@
 # Spec (delta): Tổng hợp kết quả kinh doanh
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
-- Ngày: 2026-11-24. Base: `main` @ `9add46e` (đã `git fetch origin main`)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code). Không còn câu mở: Chiến chốt C1–C11 ngày 25/11/2026 ([issue #14](https://github.com/Chienhandsome/FnB/issues/14)), đã ghi vào spec này.
+- Ngày: 2026-11-24, cập nhật 2026-11-25. Base: `main` @ `32dbf41` (đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md); cùng họ "báo cáo chỉ xem" với [`thong-ke-doanh-thu.md`](thong-ke-doanh-thu.md). Spec này **chỉ ghi phần khác**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Tổng hợp kết quả kinh doanh** (`SMENU` `eb49f730-19d4-435e-b852-05b553600e88`, `SORTORDER = ZZZ022`, **`OPERATION = 5`** = chạy báo cáo, không có form riêng, `SFORMID = NULL`, `SREPORTID` `9c30f012-bec1-4d53-b8f9-7abf9d476d7d`, `SFUNCTIONID` `1866efc8-397a-45ad-9ef4-fc8640e3d7c0` "Tổng hợp kết quả kinh doanh", nhóm "Bán hàng", `NOTE = View`).
 - Là **báo cáo** `BÁO CÁO KẾT QUẢ KINH DOANH` (`SREPORT` `9c30f012-…`, lớp `BaoCaoKetQuaKinhDoanh`, lọc trên đầu `FILTERONTOP = 30`), một bảng kết quả dựng bằng code rồi in/hiển thị qua FastReport (một mẫu `SREPORTTEMPLATE` tên "BÁO CÁO KẾT QUẢ KINH DOANH", `id e1645e70-…`).
@@ -11,7 +11,8 @@
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`): `TDONHANG` 0 bản ghi, `TTHUCHI` 0 bản ghi; `DLYDOTHUCHI` **23 lý do** (8 `LOAILYDO = 1` "định phí", 7 `LOAILYDO = 2` "chi khác", 5 `-1`, 1 `0`, 2 NULL).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SREPORT/BÁO CÁO KẾT QUẢ KINH DOANH__9c30f012/` (`query.sql` rỗng-có-cột, `code.cs` lớp `BaoCaoKetQuaKinhDoanh` tính toàn bộ); tài liệu [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §4 và `docs/deep/bao-cao.md` (C20, C21) — đã đọc, không chép lại.
 - **[MẪU IN]** Mẫu FastReport **có** trong DB: `SREPORTTEMPLATE.TEMPLATE` (blob `.frx` ~41 KB, gắn `SREPORTID` `9c30f012-…`); bản export thư mục `SREPORT` không kèm nó nhưng đọc được bằng `SELECT TEMPLATE FROM SREPORTTEMPLATE`. Script `_StartReport` trong mẫu **tính tỉ lệ thật** (§2.1) — bản nháp trước viết sai là "mẫu in không có / tỉ lệ hard-code 100%" (sửa theo review issue #3, B1).
-- **[CHƯA XÁC MINH]**: ý nghĩa `LOAI = 5, 6` của bill (không có chỗ nào sinh ra, xem Q1); font biểu tượng ▲/▼ (Wingdings `B`/`D`). **[APP]** đã chụp bố cục (24/11/2026); chưa cuộn tới dòng LÃI LỖ và chưa có số liệu thật.
+- **[CHƯA XÁC MINH]**: báo cáo do app gốc vẽ ra khi có số liệu và phần LÃI LỖ trên màn (25/11 đã mở bản chép app gốc nhưng quyền điều khiển máy bị từ chối); DB thật của quán có bill `LOAI` 5/6 hay không (§5 Q1). **[APP]** mới chụp bố cục (24/11/2026).
+- **[MẪU IN] phần cuối báo cáo** (band `LOAI = 9`): một hàng chú thích `%/DT` (trên cột %) và `%/CP` (trên cột thứ ba), rồi dòng **`III. LÃI/LỖ`** (chữ viết sẵn trong mẫu; code đặt `NOIDUNG` là "LÃI LỖ"). v1 hiện **"LÃI/LỖ"**. Số trong mẫu định dạng `n0`.
 
 ## 1. Giao diện (khác khuôn)
 
@@ -24,12 +25,18 @@ Màn chạy báo cáo chuẩn của khung (không phải form tùy biến):
   - **Dòng cố định** thấy được: **I. DOANH THU** (1 Tiền giờ, 2 Giảm giá, 3 Phí dịch vụ, 4 Thuế); **II. CHI PHÍ**: **A. Định phí** (1 Tiền nhà, 2 Tiền điện thoại, 3 Tiền nước, 4 Tiền điện, 5 Lương nhân viên, 6 Lương vệ sỹ, 7 Thưởng nhân viên, 8 Chi lương nhân viên), **B. Biến phí** (chưa có dòng con khi rỗng), **C. Chi khác** (1 Văn phòng phẩm, in ấn; 2 Xây dựng, sửa chữa, thiết kế; 3 Đồ dùng, dụng cụ; 4 Vận chuyển; 5 Ngoại giao; 6 Chi khác; 7 Đặt trước). Các dòng này hiện ngay cả khi không có số liệu (số 0, `-`). Phần dưới (LÃI LỖ) chưa cuộn tới để chụp.
   - Dòng "Tiền giờ" nằm trong mẫu gốc nhưng v1 đã cắt tiền giờ → **v1 ẩn dòng này** (Q7; các mục số của nhóm DOANH THU đánh lại 1–3).
   - **Dòng lý do định phí (8) và chi khác (7) luôn hiện đủ kể cả khi 2 kỳ đều 0** (Q15, quyết định: hiện như gốc). Chỉ dòng **nhóm hàng** (doanh thu `LOAI 1`, biến phí `LOAI 6`) mới ẩn khi cả 2 kỳ = 0 (có `HAVING`, §2).
-- v1: hiển thị bảng trên màn (lưới chỉ đọc, dòng cấp 0/2/9 đậm) **và** nút In (mẫu in → "chưa hỗ trợ" nếu chưa có FastReport, Q5).
+- **Cửa hàng chọn sẵn khi mở màn (C9):** user được gắn **đúng 1** cửa hàng thì chọn sẵn; còn lại (admin hoặc nhiều cửa hàng) để trống. Giống Chi tiết hoạt động ngày.
+- v1: hiển thị bảng trên màn (lưới chỉ đọc, dòng cấp 0/2/9 đậm) **và** nút In; bấm báo **"chưa hỗ trợ"** (C10). **Không** thêm xuất Excel (C11).
 
 ## 2. Luật tính [CODE `AfterGetData`] — mọi giá trị là **tổng theo khoảng ngày** của `NGAY`
 
-"Tháng này" = `[Từ ngày, Đến ngày]`; "Tháng trước" = **cùng khoảng lùi đúng 1 tháng lịch** (`DATEADD(MONTH, -1, …)` cả hai đầu).
-**Biên "Đến ngày" (Q10, quyết định: TRỌN ngày cuối):** gốc dùng `NGAY BETWEEN @TUNGAY AND @DENNGAY` với `@DENNGAY` lúc 00:00 nên **loại bill ngày cuối có giờ lẻ**; v1 tính **trọn ngày cuối** (`NGAY >= Từ AND NGAY < Đến + 1 ngày`) cho cả "Tháng này" và "Tháng trước" (đầu mút cũng lùi 1 tháng rồi cộng 1 ngày), giống Thống kê doanh thu. **Khác app gốc** — số có thể lớn hơn gốc cho cùng khoảng ngày.
+"Tháng này" = `[Từ ngày, Đến ngày]`. "Tháng trước" = `[Từ trước, Đến trước]`:
+- `Từ trước` = `Từ ngày` lùi đúng 1 tháng lịch (như gốc, `DATEADD(MONTH, -1, …)`).
+- `Đến trước`: **nếu `Đến ngày` là ngày cuối tháng thì là ngày cuối của tháng trước** (30/04 → 31/03; 28/02/2027 → 31/01); ngược lại lùi đúng 1 tháng lịch như gốc. **Khác app gốc (C2, chốt 25/11).** Quy tắc chỉ xét `Đến ngày`, nên xem **một ngày** 30/04 → 30/04 thì kỳ trước là **30/03 → 31/03** (2 ngày).
+
+**Biên "Đến ngày" (Q10, quyết định: TRỌN ngày cuối):** gốc dùng `NGAY BETWEEN @TUNGAY AND @DENNGAY` với `@DENNGAY` lúc 00:00 nên **loại bill ngày cuối có giờ lẻ**; v1 tính **trọn ngày cuối** (`NGAY >= Từ AND NGAY < Đến + 1 ngày`) cho cả `[Từ ngày, Đến ngày]` và `[Từ trước, Đến trước]`, giống Thống kê doanh thu. **Khác app gốc**: số có thể lớn hơn gốc cho cùng khoảng ngày.
+
+**Hai kỳ trùng ngày (C3, chốt 25/11, khác app gốc):** khoảng xem dài hơn 1 tháng thì hai kỳ giao nhau (xem 01/10–25/11, kỳ trước 01/09–25/10). **Mọi dòng, kể cả dòng nhóm hàng của doanh thu và biến phí, tính mỗi kỳ độc lập:** bản ghi nằm trong cả hai kỳ được cộng vào **cả hai** cột. Gốc dùng `CASE WHEN <kỳ này> … ELSE <kỳ trước>` ở hai truy vấn nhóm nên bỏ ngày trùng khỏi kỳ trước, trong khi DOANH THU, Giảm giá, Phí, Thuế, Định phí, Chi khác vẫn tính. **Không chép `CASE … ELSE` của gốc.**
 **Tập bill tính doanh thu (Q11, quyết định: thêm `STATUS = 30`):** `(LOAI = 0 AND DATHANHTOAN = 30) OR LOAI = 5 OR LOAI = 6`, **và `TDONHANG.STATUS = 30`** ở **mọi** truy vấn bill (tổng, nhóm doanh thu, biến phí) — gốc không lọc `STATUS`; thêm để "bill đã thanh toán" cùng nghĩa với Thống kê doanh thu. Lọc cửa hàng nếu chọn (`DCUAHANGID = chọn`); để trống = theo ràng buộc user (§4 P2).
 
 | Dòng (`LOAI` dòng báo cáo) | Giá trị |
@@ -49,8 +56,12 @@ Màn chạy báo cáo chuẩn của khung (không phải form tùy biến):
 | **CHI PHÍ** (2) | Định phí + Biến phí + Chi khác |
 | **LÃI LỖ** (9) | `DOANH THU − CHI PHÍ` |
 
-- Cột **Tăng/giảm** = `Tháng này − Tháng trước` (riêng LÃI LỖ xem lỗi gốc §3-2). Biểu tượng: dấu theo `Tăng/giảm` (> 0 mũi lên, < 0 mũi xuống, 0 trống).
+- Cột **Tăng/giảm** = `Tháng này − Tháng trước` cho **mọi** dòng, **kể cả LÃI LỖ**: `(DT_Nay − CP_Nay) − (DT_Truoc − CP_Truoc)` (C1, sửa lỗi gốc §3-2). Biểu tượng theo dấu của Tăng/giảm: > 0 **▲**, < 0 **▼**, = 0 trống; Unicode cho mọi dòng (C7).
 - **Không có `STT` cố định giữa code và mẫu** ngoài `LOAI`; số mục (I., 1, A. …) là chữ viết sẵn trong mẫu in.
+
+### 2.0 Quyền
+
+Quyền xem màn = `SFUNCTION` `1866efc8-…` "Tổng hợp kết quả kinh doanh". `SGROUPROLE` trên bản chép `DATA.fdb` [DB 25/11]: **Quản lý 240, Kế toán 240, Phục vụ 0**; Thu ngân, Thủ kho không có dòng. v1 theo mapping này qua cơ chế phân quyền chung, như Chi tiết hoạt động ngày. Không có quyền riêng cho nút In. Ràng buộc cửa hàng (§1) là **ngoài** quyền xem màn.
 
 ### 2.1 Ba cột tỉ lệ [MẪU IN — script `_StartReport` trong `.frx`, đọc từ `SREPORTTEMPLATE`]
 
@@ -58,6 +69,8 @@ Code gốc (`AddRow`) chỉ điền sẵn `"100%"` vào vài ô; **mẫu in tín
 
 - nếu `mẫu_số = 0` **hoặc** giá trị dòng (`THANGNAY`) `= 0` → hiển thị **`-`**;
 - ngược lại `Math.Round(THANGNAY × 100 / mẫu_số)` (**.NET `decimal`, làm tròn về chẵn** — 0.5 → số chẵn gần nhất, 2.5 → 2) + `"%"`. Chỉ tính trên cột "Tháng này".
+
+**C4 (chốt 25/11): giữ như gốc**, `N_tong` **cộng cả** dòng Giảm giá (số dương). Ví dụ Cà phê 900.000, Trà 100.000, giảm giá 100.000: mẫu số 1.100.000 → 82%, 9%, 9%.
 
 Đặt `DT_tong` = Σ `THANGNAY` của `LOAI 0`; `CP_tong` = Σ `LOAI 2`; `DP_tong` = Σ `LOAI 3`; `BP_tong` = Σ `LOAI 5`; `CK_tong` = Σ `LOAI 7`; `N_tong` = Σ `THANGNAY` của **các dòng `LOAI 1`** (nhóm hàng + Giảm giá + Phí DV + Thuế).
 
@@ -81,33 +94,37 @@ Code gốc (`AddRow`) chỉ điền sẵn `"100%"` vào vài ô; **mẫu in tín
 ## 3. Lỗi / chỗ lệch của app gốc (cần Chiến biết)
 
 1. **Lọc cửa hàng:** truy vấn tổng bill dùng `(@DCUAHANGID = '' OR DCUAHANGID = @DCUAHANGID)` → user thường để trống thấy **tổng mọi cửa hàng** dù lookup chỉ cho chọn cửa hàng của họ (lệch với Thống kê doanh thu). **v1 sửa** (P2/Q13a, đã chốt).
-2. **Công thức Tăng/giảm LÃI LỖ sai:** `TangGiam = (DS_Nay − CP_Nay) − DS_Truoc − CP_Truoc` (thiếu ngoặc quanh `DS_Truoc − CP_Truoc`; đúng phải là `(DS_Nay − CP_Nay) − (DS_Truoc − CP_Truoc)`). In ra thấp hơn số đúng **`2 × CP_Truoc`**.
-3. **Doanh thu theo nhóm không khớp DOANH THU:** dòng nhóm dùng `Σ THANHTIEN` (trước thuế, phí, giảm giá bill) và **chỉ** bill `LOAI = 0`; DOANH THU dùng `Σ TONGCONG` gồm cả `LOAI 5/6` → tổng các dòng con **không** bằng DOANH THU.
+2. **Công thức Tăng/giảm LÃI LỖ sai:** `TangGiam = (DS_Nay − CP_Nay) − DS_Truoc − CP_Truoc` (thiếu ngoặc quanh `DS_Truoc − CP_Truoc`; đúng phải là `(DS_Nay − CP_Nay) − (DS_Truoc − CP_Truoc)`). In ra thấp hơn số đúng **`2 × CP_Truoc`**. Mũi tên lấy theo số sai nên cũng sai. **v1 sửa** (C1).
+3. **Cộng thẳng các dòng con không ra DOANH THU:** dòng Giảm giá hiện **số dương** nên phải trừ: `Σ nhóm − Giảm giá + Phí dịch vụ + Thuế`. Sau khi trừ vẫn có thể lệch do làm tròn 1.000 lúc tính bill (màn bán làm tròn tiền hàng và tổng cộng) và do bill `LOAI` 5/6 chỉ vào DOANH THU, không vào dòng nhóm. **Giữ như gốc** (C5).
 4. **LÃI LỖ** = `TONGCONG` (đã gồm thuế + phí dịch vụ, chưa trừ giá vốn bán chia theo nhóm ở dòng riêng) − chi phí; vì "Biến phí" đã là giá vốn nên thực chất đã trừ giá vốn, nhưng doanh thu **gồm thuế và phí dịch vụ** — phản ánh số thu, không phải lợi nhuận kế toán.
-5. **Biểu tượng không nhất quán:** dòng doanh thu "B"/"D", dòng chi phí "æ"/"ç" (rất có thể ký tự Wingdings ▲/▼); v1 dùng ký tự Unicode ▲/▼ (P3).
+5. **Biểu tượng không nhất quán** (theo `Font` trong `.frx`, vẽ thử bằng font trên máy 25/11, chưa thấy trong app): khối DOANH THU (`LOAI` 0, 1) Wingdings `B`/`D` = **bàn tay OK / ngón cái chỉ xuống**; khối chi phí và LÃI LỖ (`LOAI` 2–9) Wingdings 3 `æ`/`ç` = **mũi tên đậm chéo lên / chéo xuống**. **v1 dùng ▲/▼** cho mọi dòng (C7).
 6. **`TTHUCHI` không lọc `STATUS`** và nhận mọi `LOAI`/`CHUYENKHOAN`/phiếu tạm ứng thuộc lý do định phí/chi khác (giống Thống kê doanh thu).
-7. **Tháng trước theo `DATEADD(MONTH,-1,…)`**: ngày 31/3 lùi về 28/2 (hoặc 29/2) nên khoảng "tháng trước" ngắn hơn khoảng "tháng này" khi lọc theo ngày cuối tháng; giữ y hệt.
+7. **Tháng trước theo `DATEADD(MONTH,-1,…)`** ở cả hai đầu: 30/04 lùi về 30/03 nên **bỏ ngày 31/03**; 28/02 lùi về 28/01 nên bỏ 29–31/01. **v1 sửa đầu "Đến"** (C2, §2).
+8. **Hai kỳ trùng ngày:** dòng nhóm hàng bỏ ngày trùng khỏi kỳ trước, nên biến phí kỳ trước thiếu và lãi kỳ trước cao hơn thực. **v1 sửa** (C3, §2).
+9. **Mẫu số % khối doanh thu cộng cả Giảm giá** (§2.1). **Giữ như gốc** (C4).
 
-## 4. Chỗ đề xuất khác app gốc (CHỈ đề xuất — Chiến quyết)
+## 4. Chỗ khác app gốc
 
-- **P1** Sửa lỗi Tăng/giảm LÃI LỖ (§3-2). *Mặc định tạm: sửa — lỗi rõ ràng, nhưng cần Chiến duyệt vì số in khác app gốc.*
+- **P1** Sửa Tăng/giảm LÃI LỖ (§3-2). **Đã chốt 25/11 (C1): sửa.**
 - **P2** Lọc cửa hàng theo ràng buộc user ngay cả khi để trống (§3-1) **và áp cho cả khoản thu/chi** (`TTHUCHI.DCUAHANGID`) — user thường chỉ thấy cửa hàng của họ. **Đã chốt: áp (Q6 + Q13a, chung cho 3 báo cáo — xem §6).**
-- **P3** Biểu tượng ▲/▼ bằng Unicode thay Wingdings. Cột Tỉ lệ **không** còn là đề xuất: mẫu in gốc đã tính thật, v1 theo mẫu in (§2.1, Q12b). *Mặc định tạm: ▲/▼ Unicode.*
+- **P3** Biểu tượng ▲/▼ bằng Unicode thay Wingdings. **Đã chốt 25/11 (C7).** Cột Tỉ lệ **không** còn là đề xuất: mẫu in gốc đã tính thật, v1 theo mẫu in (§2.1, Q12b).
 - **P4** Truy vấn dùng tham số, không nối chuỗi.
 - **P5** Gộp 12+ truy vấn thành ít truy vấn hơn (cùng kết quả).
+- **P6** "Đến ngày" là cuối tháng thì kỳ trước tới cuối tháng trước. **Đã chốt 25/11 (C2).**
+- **P7** Dòng nhóm hàng kỳ trước tính cả ngày trùng. **Đã chốt 25/11 (C3).**
 
-## 5. Câu hỏi chờ Chiến quyết
+## 5. Câu hỏi và quyết định (không còn câu mở)
 
-| # | Câu hỏi | Mặc định tạm |
+| # | Câu hỏi | Quyết định |
 |---|---|---|
-| Q1 | `LOAI = 5/6` của bill là gì (không có nơi nào sinh trong code)? Cần `SELECT DISTINCT LOAI FROM TDONHANG` trên DB thật | Giữ điều kiện như gốc; trong DB chép không có bill nên v1 vô hại |
-| Q2 | Sửa lỗi Tăng/giảm LÃI LỖ (P1)? | Sửa |
+| Q1 | Giữ bill `LOAI = 5/6` trong điều kiện? | **Chốt 25/11 (C6): giữ như gốc**, kèm `STATUS = 30`. Đã tìm trong enum `LoaiPhieu` (0, 1, 2, 3, 4, 97), mã form, mã dùng chung, trigger: không thấy chỗ tạo bill 5/6; bản chép DB không có |
+| Q2 | Sửa lỗi Tăng/giảm LÃI LỖ (P1)? | **Chốt 25/11 (C1): sửa** |
 | Q3 | ~~Cột Tỉ lệ: giữ "100%" hay tính thật?~~ **Đã chốt (Q12b): 3 cột đúng công thức mẫu in (§2.1)** | — |
-| Q4 | Doanh thu theo nhóm không khớp DOANH THU (§3-3): giữ? | Giữ |
-| Q5 | Mẫu in: tạo mới FastReport hay "chưa hỗ trợ"? Mẫu `.frx` gốc **đọc được** từ `SREPORTTEMPLATE` (§0) nên có thể nạp lại | "Chưa hỗ trợ" ở v1, chỉ hiển thị bảng; mẫu `.frx` để dành cho bước in |
+| Q4 | Các dòng con không cộng ra DOANH THU (§3-3)? | **Chốt 25/11 (C5): giữ như gốc** |
+| Q5 | Mẫu in? | **Chốt 25/11 (C10): v1 báo "chưa hỗ trợ"**; mẫu `.frx` đọc được từ `SREPORTTEMPLATE`, để dành cho bước in |
 | Q6 | ~~Lọc cửa hàng theo user khi để trống (P2)?~~ **Đã chốt: áp (Q13a)** | — |
-| Q7 | Dòng "Tiền giờ": ẩn hay hiện 0? | Ẩn (đã cắt tiền giờ) |
-| Q8 | Thêm xuất Excel? | Không |
+| Q7 | Dòng "Tiền giờ": ẩn hay hiện 0? | **Chốt 25/11 (C8): ẩn** |
+| Q8 | Thêm xuất Excel? | **Chốt 25/11 (C11): không** |
 | Q9 | ~~Chụp app gốc để xác minh bố cục~~ **Đã chụp 24/11/2026** (§1); còn thiếu ảnh phần LÃI LỖ và ảnh có số liệu thật | Đã giải quyết phần bố cục |
 | Q10 | ~~Biên giờ "Đến ngày"~~ **Đã chốt (b): tính TRỌN ngày cuối** (§2) | — |
 | Q11 | ~~Thêm `TDONHANG.STATUS = 30`?~~ **Đã chốt (b): thêm** (§2) | — |
@@ -115,6 +132,11 @@ Code gốc (`AddRow`) chỉ điền sẵn `"100%"` vào vài ô; **mẫu in tín
 | Q13 | ~~Nguyên tắc lọc cửa hàng cho thu/chi~~ **Đã chốt (a): lọc theo cửa hàng, áp cho cả 3 báo cáo** (§6) | — |
 | Q14 | ~~Thứ tự dòng trên lưới~~ **Đã chốt (a): theo `LOAI` tăng dần** (§1) | — |
 | Q15 | ~~Dòng lý do bằng 0 hiện hay ẩn~~ **Đã chốt (a): hiện đủ 8 + 7 dòng như gốc** (§1) | — |
+| Q16 | "Tháng trước" khi "Đến ngày" là cuối tháng? | **Chốt 25/11 (C2): kéo tới cuối tháng trước** (§2) |
+| Q17 | Hai kỳ trùng ngày: dòng nhóm hàng kỳ trước? | **Chốt 25/11 (C3): tính đủ** (§2) |
+| Q18 | Mẫu số % khối doanh thu cộng cả Giảm giá? | **Chốt 25/11 (C4): giữ như gốc** (§2.1) |
+| Q19 | Biểu tượng tăng/giảm? | **Chốt 25/11 (C7): ▲/▼ mọi dòng** |
+| Q20 | Cửa hàng chọn sẵn? | **Chốt 25/11 (C9): chỉ khi user có đúng 1 cửa hàng** (§1) |
 
 ## 6. Quyết định đã chốt (áp, không hỏi lại)
 
@@ -122,19 +144,24 @@ Tiền `NUMERIC(18,2)`/`decimal`; chỉ VNĐ; F&B thuần COFFEE + POS; bán l�
 
 Chốt ngày 24/11/2026 theo review issue #3 (Q10–Q15): **trọn ngày cuối**; thêm `STATUS = 30` cho bill; cột Tỉ lệ **3 cột như mẫu in**; **lọc cửa hàng cho thu/chi** ở cả 3 báo cáo (Thống kê doanh thu, Tổng hợp KQKD, Chi tiết hoạt động ngày — các spec kia phải theo); lưới theo `LOAI` tăng dần; hiện đủ dòng lý do định phí/chi khác kể cả 0.
 
+Chốt ngày 25/11/2026 (issue #14, C1–C11, đều theo đề xuất): xem Q1, Q2, Q4, Q5, Q7, Q8, Q16–Q20 ở §5. **Mới thêm ba chỗ làm số khác app gốc: C1, C2, C3** (ngoài trọn ngày cuối Q10, `STATUS = 30` Q11, lọc cửa hàng Q13 đã chốt trước). Khi đối chiếu số với app gốc, lệch đúng theo các quy tắc này không phải lỗi.
+
 ## 7. Tiêu chí nghiệm thu (kiểm trên bản sao DB; selftest tự tạo bill nhiều nhóm hàng, vài phiếu chi theo lý do định phí/chi khác, dữ liệu 2 kỳ liên tiếp)
 
 - [ ] Bộ lọc: Từ/Đến ngày bắt buộc (thiếu → cảnh báo, không chạy); cửa hàng lookup đúng ràng buộc user; để trống cửa hàng theo P2/Q6.
 - [ ] Mỗi dòng bảng khớp §2 trên bộ dữ liệu mẫu (kiểm số tay): DOANH THU, dòng nhóm (kể cả "(Chưa phân nhóm)"), Giảm giá, Phí dịch vụ, Thuế, Định phí (từng lý do + tổng), Biến phí (từng nhóm + tổng, dùng `(SLXUAT − SLNHAP) × GIAVON`), Chi khác, CHI PHÍ, LÃI LỖ.
-- [ ] Tháng trước đúng `DATEADD(MONTH,-1,…)` cả hai đầu (kiểm biên 31/3, 29/2).
-- [ ] Tăng/giảm = tháng này − tháng trước; LÃI LỖ theo P1 (hoặc theo gốc nếu Chiến đảo) — selftest ghi rõ cả hai kết quả.
+- [ ] Tháng trước (C2): `Từ trước` lùi 1 tháng; `Đến trước` = cuối tháng trước khi `Đến ngày` là cuối tháng, ngược lại lùi 1 tháng. Ca bắt buộc: 01/04–30/04 → 01/03–31/03 (bill 31/03 giá 2.000.000 **được tính**); 01/02–28/02/2027 → 01/01–31/01; 01/02–29/02/2028 → 01/01–31/01; 01/02–28/02/2028 (28 không phải cuối tháng) → 01/01–28/01; 01/03–31/03/2027 → 01/02–28/02; 30/04–30/04 → 30/03–31/03; 01/11–25/11 → 01/10–25/10.
+- [ ] Hai kỳ trùng ngày (C3): xem 01/10–25/11, chỉ có bill 10/10 bán 300.000, giá vốn 100.000 → DOANH THU, dòng nhóm và biến phí có số ở **cả hai** cột; LÃI LỖ kỳ trước = 200.000.
+- [ ] Tăng/giảm = tháng này − tháng trước cho mọi dòng. LÃI LỖ (C1): DT 10.000.000 / CP 6.000.000, kỳ trước DT 8.000.000 / CP 5.000.000 → **+1.000.000**, ▲ (công thức gốc ra −9.000.000; selftest không được ra số này).
+- [ ] Biểu tượng ▲/▼/trống theo dấu Tăng/giảm ở mọi khối (C7). Không có dòng "Tiền giờ", khối DOANH THU đánh số liền (C8). Dòng cuối ghi "LÃI/LỖ".
+- [ ] Cửa hàng chỉ chọn sẵn khi user có đúng 1 cửa hàng (C9). Quyền theo mapping §2.0. Không có nút xuất Excel (C11).
 - [ ] Bill `LOAI 5/6` có mặt thì vào DOANH THU và biến phí nhưng **không** vào dòng nhóm doanh thu (như gốc).
 - [ ] Dòng **nhóm hàng** (doanh thu, biến phí) chỉ hiện khi có số ≠ 0 ở ít nhất một kỳ; dòng **lý do định phí (8 dòng) và chi khác (7 dòng) luôn hiện đủ** kể cả 0/0.
-- [ ] Cột tỉ lệ khớp §2.1: ô có giá trị hoặc mẫu số bằng 0 hiện `-`; làm tròn về chẵn (selftest ca 0.5/1.5/2.5); DOANH THU `100%` ở cột %, CHI PHÍ/Định phí/Biến phí/Chi khác `100%` ở cột thứ ba; LÃI LỖ chỉ có cột `%` (/DT) và cột 3 (/CP), không có %/DT.
+- [ ] Cột tỉ lệ khớp §2.1: ô có giá trị hoặc mẫu số bằng 0 hiện `-`; làm tròn về chẵn (selftest ca 0.5/1.5/2.5); DOANH THU `100%` ở cột %, CHI PHÍ/Định phí/Biến phí/Chi khác `100%` ở cột thứ ba; LÃI LỖ chỉ có cột `%` (/DT) và cột 3 (/CP), không có %/DT. Ca C4: 900.000 / 100.000 / giảm giá 100.000 → 82%, 9%, 9%.
 - [ ] Bill ngày cuối có giờ lẻ (ví dụ 15:30 ngày "Đến") **được tính** (Q10b); bill `STATUS ≠ 30` không được tính (Q11b); lưới sắp `LOAI` tăng dần (Q14).
 - [ ] Phiếu chi của cửa hàng khác **không** vào Định phí/Chi khác khi lọc cửa hàng (Q13a).
 - [ ] Không SQL trong View; màu/cỡ chữ từ token; 125% DPI; lưới đủ lớn cho cảm ứng (yêu cầu v1, không phải gốc). Nút In báo "chưa hỗ trợ".
 
 ## 8. Gợi ý implement (không bắt buộc)
 
-`BusinessResultRepository` (Data: tổng bill 2 kỳ, doanh thu theo nhóm 2 kỳ, biến phí theo nhóm 2 kỳ, chi theo lý do 2 kỳ), `BusinessResultCalculator` (Services, thuần: dựng cây dòng + tăng/giảm — selftest ≥ 10 ca), `BusinessResultView` (UI: bộ lọc + lưới có dòng đậm theo cấp). **Lưu ý:** trên `main` hiện **chưa có** code lọc ngày/cửa hàng/ràng buộc user dùng chung (không có `Revenue*`; chỉ nằm trong patch Thống kê doanh thu chưa apply). Patch này phải **tự chứa** helper lọc (hoặc đặt helper ở chỗ cả hai patch cùng lấy) và tự thêm route `ScreenFactory` theo `MenuId` (`eb49f730-…`) vì không có runner `OPERATION = 5` chung. Công thức tỉ lệ (§2.1) đặt trong `BusinessResultCalculator` (thuần, selftest ca làm tròn về chẵn và `-`).
+`BusinessResultRepository` (Data: tổng bill 2 kỳ, doanh thu theo nhóm 2 kỳ, biến phí theo nhóm 2 kỳ, chi theo lý do 2 kỳ), `BusinessResultCalculator` (Services, thuần: tính khoảng kỳ trước theo C2, dựng cây dòng + tăng/giảm; selftest ≥ 10 ca), `BusinessResultView` (UI: bộ lọc + lưới có dòng đậm theo cấp). **Trên `main` @ `32dbf41` đã có** `BillReportScope` + `BillReportScopeSql`: `AppendDateAndStoreWhere` (khoảng ngày trọn ngày cuối + cửa hàng theo user) dùng được cho cả `TDONHANG` và `TTHUCHI`, gọi riêng cho từng kỳ. `AppendWhere` **không dùng được nguyên** vì chỉ lấy `LOAI = 0`; tổng bill và biến phí còn cần `LOAI` 5/6 (§2). Lấy danh sách cửa hàng được phép như Chi tiết hoạt động ngày. Thêm route trong `ScreenFactory` theo `MenuId` (`eb49f730-…`). Công thức tỉ lệ (§2.1) đặt trong `BusinessResultCalculator` (thuần, selftest ca làm tròn về chẵn và `-`).

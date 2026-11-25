@@ -30,7 +30,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 2 | `thong-ke-mat-hang-ban.md` | **Đã code** (`67319b2`) | nặng | Chờ bấm thử |
 | 3 | `thong-ke-doanh-thu.md` | **Đã code** (`7a2fc98`) | nặng | Chờ bấm thử |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
-| 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kế tiếp: Kết quả kinh doanh |
+| 5 | `tong-hop-ket-qua-kinh-doanh.md` | **ĐÃ DUYỆT** 25/11, chưa code ([issue #14](https://github.com/Chienhandsome/FnB/issues/14)) | nặng | C1–C11 theo đề xuất; kế tiếp: code |
 | 6 | `bao-gia-ban-hang.md` | NHÁP | nặng | Giá bán |
 | 7 | `danh-muc-khach-hang.md` | NHÁP | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
 | 8 | `su-dung-dich-vu.md` | NHÁP | nặng | Thanh toán; Q14–Q20 chốt 25/11; còn Q2–Q13 (đang dùng mặc định tạm) |
