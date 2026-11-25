@@ -50,6 +50,8 @@ Copy-Item $baseJson (Join-Path $P.Tmp 'baseline.json') -Force
 # 4. File quyền cho agy (chỉ dùng cho phiên, qua --settings). Đường dẫn PHẢI có ký tự ổ đĩa (D:/...) hoặc tương đối
 #    theo thư mục làm việc; dạng bỏ ổ đĩa không có tác dụng (đã thử 25/11).
 $repoFwd = ($repo -replace '\\', '/').TrimEnd('/') + '/'
+# agy chạy --sandbox: quy tắc chặn phải là đường dẫn tuyệt đối, dạng tương đối làm MỌI lệnh shell bị dừng (25/11).
+$wtFwd = ($P.Worktree -replace '\\', '/').TrimEnd('/') + '/'
 $settings = [ordered]@{
     permissions = [ordered]@{
         allow = @(
@@ -61,9 +63,9 @@ $settings = [ordered]@{
         )
         deny = @(
             "read_file($repoFwd)", "write_file($repoFwd)",
-            'read_file(POS TAP/)', 'write_file(POS TAP/)',
-            'write_file(docs/)', 'write_file(CLAUDE.md)', 'write_file(.gitignore)', 'write_file(.git)',
-            'write_file(Kazuko_FnB/lib/)', 'write_file(Kazuko_FnB/Kazuko_FnB.slnx)', 'write_file(tools/)',
+            "read_file(${wtFwd}POS TAP/)", "write_file(${wtFwd}POS TAP/)",
+            "write_file(${wtFwd}docs/)", "write_file(${wtFwd}CLAUDE.md)", "write_file(${wtFwd}.gitignore)", "write_file(${wtFwd}.git)",
+            "write_file(${wtFwd}Kazuko_FnB/lib/)", "write_file(${wtFwd}Kazuko_FnB/Kazuko_FnB.slnx)", "write_file(${wtFwd}tools/)",
             'command(regex:^git (commit|push|checkout|switch|reset|branch|worktree|stash|merge|rebase|clean|restore|tag|remote|apply|am|cherry-pick|revert).*)',
             'command(regex:.*(\.fdb|\.FDB|POS TAP|Remove-Item|rm |del |rmdir|Invoke-WebRequest|curl|wget|iwr|irm|Start-Process|Set-Content|Out-File|Copy-Item|Move-Item).*)'
         )
