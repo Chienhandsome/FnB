@@ -1,6 +1,6 @@
 # Spec (delta): Tổng hợp kết quả kinh doanh
 
-- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code). Không còn câu mở: Chiến chốt C1–C11 ngày 25/11/2026 ([issue #14](https://github.com/Chienhandsome/FnB/issues/14)), đã ghi vào spec này.
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; **đã code** `c6c6c42`, chờ bấm thử). Không còn câu mở: Chiến chốt C1–C11 ngày 25/11/2026 ([issue #14](https://github.com/Chienhandsome/FnB/issues/14)), đã ghi vào spec này.
 - Ngày: 2026-11-24, cập nhật 2026-11-25. Base: `main` @ `32dbf41` (đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md); cùng họ "báo cáo chỉ xem" với [`thong-ke-doanh-thu.md`](thong-ke-doanh-thu.md). Spec này **chỉ ghi phần khác**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Tổng hợp kết quả kinh doanh** (`SMENU` `eb49f730-19d4-435e-b852-05b553600e88`, `SORTORDER = ZZZ022`, **`OPERATION = 5`** = chạy báo cáo, không có form riêng, `SFORMID = NULL`, `SREPORTID` `9c30f012-bec1-4d53-b8f9-7abf9d476d7d`, `SFUNCTIONID` `1866efc8-397a-45ad-9ef4-fc8640e3d7c0` "Tổng hợp kết quả kinh doanh", nhóm "Bán hàng", `NOTE = View`).
@@ -25,7 +25,7 @@ Màn chạy báo cáo chuẩn của khung (không phải form tùy biến):
   - **Dòng cố định** thấy được: **I. DOANH THU** (1 Tiền giờ, 2 Giảm giá, 3 Phí dịch vụ, 4 Thuế); **II. CHI PHÍ**: **A. Định phí** (1 Tiền nhà, 2 Tiền điện thoại, 3 Tiền nước, 4 Tiền điện, 5 Lương nhân viên, 6 Lương vệ sỹ, 7 Thưởng nhân viên, 8 Chi lương nhân viên), **B. Biến phí** (chưa có dòng con khi rỗng), **C. Chi khác** (1 Văn phòng phẩm, in ấn; 2 Xây dựng, sửa chữa, thiết kế; 3 Đồ dùng, dụng cụ; 4 Vận chuyển; 5 Ngoại giao; 6 Chi khác; 7 Đặt trước). Các dòng này hiện ngay cả khi không có số liệu (số 0, `-`). Phần dưới (LÃI LỖ) chưa cuộn tới để chụp.
   - Dòng "Tiền giờ" nằm trong mẫu gốc nhưng v1 đã cắt tiền giờ → **v1 ẩn dòng này** (Q7; các mục số của nhóm DOANH THU đánh lại 1–3).
   - **Dòng lý do định phí (8) và chi khác (7) luôn hiện đủ kể cả khi 2 kỳ đều 0** (Q15, quyết định: hiện như gốc). Chỉ dòng **nhóm hàng** (doanh thu `LOAI 1`, biến phí `LOAI 6`) mới ẩn khi cả 2 kỳ = 0 (có `HAVING`, §2).
-- **Cửa hàng chọn sẵn khi mở màn (C9):** user được gắn **đúng 1** cửa hàng thì chọn sẵn; còn lại (admin hoặc nhiều cửa hàng) để trống. Giống Chi tiết hoạt động ngày.
+- **Cửa hàng chọn sẵn khi mở màn (C9):** user được gắn **đúng 1** cửa hàng thì chọn sẵn; còn lại (admin hoặc nhiều cửa hàng) để trống. Giống Chi tiết hoạt động ngày. **Làm rõ (Chiến chốt 25/11/2026, trong phiên Claude Code: "Giữ chọn sẵn"):** admin được phép mọi cửa hàng, nên khi cả hệ thống chỉ có **1** cửa hàng thì admin **cũng được chọn sẵn**; admin chỉ để trống khi có từ 2 cửa hàng. Hệ quả đã nêu khi hỏi: lúc đang chọn sẵn, phiếu thu chi không gắn cửa hàng không được tính; chọn mục trống để tính.
 - v1: hiển thị bảng trên màn (lưới chỉ đọc, dòng cấp 0/2/9 đậm) **và** nút In; bấm báo **"chưa hỗ trợ"** (C10). **Không** thêm xuất Excel (C11).
 
 ## 2. Luật tính [CODE `AfterGetData`] — mọi giá trị là **tổng theo khoảng ngày** của `NGAY`
