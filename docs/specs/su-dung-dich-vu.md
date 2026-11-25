@@ -1,6 +1,8 @@
 # Spec (delta): Sử dụng dịch vụ (màn bán hàng tại bàn)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code)
+- **Đọc trước:** §6.4 và §6.5 (§6.5 thắng §6.4) **thắng mọi chỗ khác** trong spec. Câu cũ trong thân spec (nhất là "nằm trong DLL") đã lỗi thời: mã dùng chung ở `SCONFIG` bản ghi `SharedCode`.
+- **Điểm còn chưa xác minh:** khi làm tới thì tự xác minh từ mã nguồn hoặc CSDL. Không chứng minh được: phần chỉ hiển thị thì theo mặc định tạm của spec; phần **tiền, giá, kho, công nợ, quyền, xóa dữ liệu** thì không đoán, mở issue `cho-chien` và xử lý theo `workflow-agy.md` §10.2.1.
 - Ngày: 2026-11-23. Base: `main` @ `13d90f8` (đã `git fetch origin main`, working tree sạch). Đã sửa theo review Muse (issue #1) ngày 23/11 + Chiến chốt Q1/P3.
 - Rà lại ngày 25/11 trên `main` @ `cb8b5b7`, đối chiếu [`quy-tien.md`](quy-tien.md) (đã duyệt). **Quỹ nào tăng giảm theo `quy-tien.md`**; spec này quy định màn bán hàng ghi gì vào bill. **Q14–Q20 Chiến chốt 25/11** (§6.3). Q2–Q13 còn dùng mặc định tạm, chưa chốt.
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn.

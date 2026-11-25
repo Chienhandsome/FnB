@@ -33,10 +33,10 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 3 | `thong-ke-doanh-thu.md` | **Đã code** (`7a2fc98`) | nặng | Chờ bấm thử |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | **Đã code** (`c6c6c42`) | nặng | Chờ bấm thử |
-| 6 | `bao-gia-ban-hang.md` | NHÁP | nặng | Giá bán |
-| 7 | `danh-muc-khach-hang.md` | NHÁP | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
-| 8 | `su-dung-dich-vu.md` | NHÁP | nặng | Thanh toán; Q14–Q20 chốt 25/11; còn Q2–Q13 (đang dùng mặc định tạm) |
-| 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | NHÁP | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
+| 6 | `bao-gia-ban-hang.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Giá bán |
+| 7 | `danh-muc-khach-hang.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
+| 8 | `su-dung-dich-vu.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Thanh toán; Q2–Q20 đã chốt 25/11 (spec §6.3–§6.5) |
+| 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
 
 ## Ghi chú
 - Review cũ của Muse (issue #1–#5) đã đóng. Quyết định chốt áp cho mọi spec: xóa cứng cả app, LamTron 1000, tiền decimal, F&B thuần COFFEE + POS, bán lẻ tự phục vụ.

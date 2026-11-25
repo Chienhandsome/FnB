@@ -1,6 +1,8 @@
 # Spec (delta): Quản lý bán hàng + Điều chỉnh hóa đơn (sửa bill đã thanh toán)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code)
+- **Đọc trước:** §6.3 và §6.4 (§6.4 thắng §6.3) **thắng mọi chỗ khác** trong spec. Câu cũ trong thân spec (nhất là "nằm trong DLL") đã lỗi thời: mã dùng chung ở `SCONFIG` bản ghi `SharedCode`.
+- **Điểm còn chưa xác minh:** khi làm tới thì tự xác minh từ mã nguồn hoặc CSDL. Không chứng minh được: phần chỉ hiển thị thì theo mặc định tạm của spec; phần **tiền, giá, kho, công nợ, quyền, xóa dữ liệu** thì không đoán, mở issue `cho-chien` và xử lý theo `workflow-agy.md` §10.2.1. Làm sau `su-dung-dich-vu.md`.
 - Ngày: 2026-11-23. Đã sửa theo review Muse (issue #2) ngày 23/11. Base: `main` @ `0e37e01` (local; `origin/main` @ `13d90f8`, đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec gốc của bộ máy hóa đơn: [`su-dung-dich-vu.md`](su-dung-dich-vu.md) — spec này **chỉ ghi phần khác**; chỗ không nói = như `su-dung-dich-vu.md`.
 - **Hai menu, một form.** Cả hai trỏ cùng `SFORM` `417e6d1d-ed16-4847-b752-65c3cefbe341` ("Quản lý bán hàng nhà hàng", lớp `QuanLyBanHangNhaHang`); chế độ chọn theo menu gọi (`CallerMenuID`):

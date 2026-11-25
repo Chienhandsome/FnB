@@ -1,6 +1,8 @@
 # Spec (delta): Báo giá bán hàng (TBAOGIA)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code)
+- **Đọc trước:** §5.0 và §5.0.1 **thắng mọi chỗ khác** trong spec. Câu cũ trong thân spec (nhất là "nằm trong DLL") đã lỗi thời: mã dùng chung ở `SCONFIG` bản ghi `SharedCode`.
+- **Điểm còn chưa xác minh:** khi làm tới thì tự xác minh từ mã nguồn hoặc CSDL. Không chứng minh được: phần chỉ hiển thị thì theo mặc định tạm của spec; phần **tiền, giá, kho, công nợ, quyền, xóa dữ liệu** thì không đoán, mở issue `cho-chien` và xử lý theo `workflow-agy.md` §10.2.1. Q2 (số phiếu): áp mặc định tạm, quay vòng theo năm, nếu không tìm được bằng chứng khác.
 - Ngày: 2026-11-24. Base: `main` @ `9e48bc8` (đã `git fetch origin main`, working tree chỉ lệch file prompt không thuộc spec)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md) và, vì cùng kiểu màn chứng từ (`TABLETYPE = 3`) + chi tiết (`TABLETYPE = 4`), [`khach-dat-hang.md`](khach-dat-hang.md). Spec này **chỉ ghi phần khác**; chỗ không nói = như khuôn / như Khách đặt hàng.
 - Menu: **HOẠT ĐỘNG > Báo giá bán hàng** (`SMENU` `bd2b1cfd-0503-40d1-8f2f-39bb1c7817af`, `SORTORDER = ZZZ012`, `OPERATION = 0`, không `MENUCODE`, `SMENU.SFORMID = NULL`, `SMENU.SFUNCTIONID = NULL`, `STABLEDESCID` = bảng mô tả bên dưới). Không phải form tùy biến: là màn danh sách chứng từ chuẩn của khung `STABLEDESC`.

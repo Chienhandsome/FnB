@@ -1,6 +1,8 @@
 # Spec: Danh mục khách hàng (G1)
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code)
+- **Đọc trước:** §9.0 và §9.0.1 **thắng mọi chỗ khác** trong spec. Câu cũ trong thân spec (nhất là "nằm trong DLL") đã lỗi thời: mã dùng chung ở `SCONFIG` bản ghi `SharedCode`.
+- **Điểm còn chưa xác minh:** khi làm tới thì tự xác minh từ mã nguồn hoặc CSDL. Không chứng minh được: phần chỉ hiển thị thì theo mặc định tạm của spec; phần **tiền, giá, kho, công nợ, quyền, xóa dữ liệu** thì không đoán, mở issue `cho-chien` và xử lý theo `workflow-agy.md` §10.2.1.
 - Ngày: 2026-11-19
 - Base: `origin/main` @ `b0d15db` (đã `git fetch origin main`; nhánh `main` local đang ở `7ced0a8`, đi trước origin 1 commit)
 - Spec tổng: `docs/specs/kazuko-tea-clone.md` (mục 4.2 Khách hàng, mục 6 tiêu chí G1)
