@@ -33,7 +33,8 @@ Vì code lên `main` mà không ai khác xem, **Claude là người review** và
 | `New-AgyFeature.ps1 -Feature -Spec` | 1–2 | Kiểm spec ĐÃ DUYỆT trên `origin/main`; tạo worktree; chép `lib/` và `TEMPLATE.FDB`; build + selftest mốc (lưu theo SHA ở `_cache`); sinh file quyền và prompt mẫu |
 | `Invoke-Agy.ps1 -Feature -Round [-Conversation -Message -Mode plan]` | 4–5 | Chạy agy, lưu kết quả JSON, rồi gọi `Test-AgyScope.ps1` |
 | `Test-AgyScope.ps1` | 5–6 | Lỗi chặn: thư mục chính đổi, worktree có commit, file cấm, `.csproj` ngoài `<Compile Include>`, cấu hình chung của agy bị sửa, file ngoài worktree bị sửa. Cảnh báo: file dùng chung, mẫu code đáng ngờ, file `.log`/`.tmp` bên ngoài đổi |
-| `Test-AgyBuild.ps1 -Feature -Round` | 7 | Build; so cảnh báo với mốc; selftest trên bản chép DB; so ca lỗi với mốc; bắt buộc có ca mới; lưu dấu vân tay code đã kiểm |
+| `Get-AgyDelta.ps1 -Feature [-Full] [-MarkRead <tree>]` | 6, 9, 11 | Ghi ra file phần diff chưa đọc; lưu tree đã đọc |
+| `Test-AgyBuild.ps1 -Feature -Round` | 7 | Build; so cảnh báo với mốc; selftest trên bản chép DB; so ca lỗi với mốc; bắt buộc có ca mới; chặn file `.cs` vượt 500 dòng (§4.2); lưu dấu vân tay code đã kiểm |
 | `Publish-AgyFeature.ps1 -Feature -Round -Title -ReviewedFullDiff` | 11 | Từ chối nếu code đổi sau lần kiểm, `main` đổi code, thiếu cờ đã đọc diff. Commit có dòng ghi công, push fast-forward, ghi `state.txt` |
 | `Remove-AgyFeature.ps1 -Feature [-Discard]` | 13 | Xóa worktree, giữ `_tmp` |
 
@@ -69,7 +70,7 @@ Bắt đầu khi Chiến bảo "làm <chức năng>". **Dừng ở bước nào 
    - **Cách ghi:** không commit trong worktree (`Test-AgyScope.ps1` coi commit mới là lỗi chặn). Sửa xong thì chụp tree, đọc delta (§4.2), chạy lại `Test-AgyBuild.ps1` với **cùng số vòng**. Phần sửa nằm chung commit `feat`; ghi `fix(claude): <file> - <lý do>` vào `-Body` của `Publish` và vào báo cáo §7.
 10. **Đối chiếu tiêu chí nghiệm thu** (§7).
 11. **Push:** `Publish-AgyFeature.ps1 ... -ReviewedFullDiff`. Cờ này nghĩa là **toàn bộ diff đã được đọc đủ, cộng dồn qua các vòng**, không bắt đọc lại hết trong một lần. Trước khi chạy, chụp tree lần nữa; khác tree đã đọc thì đọc phần khác trước. `main` chỉ đổi trong `docs/` thì script chuyển worktree lên `main` mới và bắt chạy lại `Test-AgyBuild.ps1`; đổi code thì dừng, giao lại từ bước 1.
-12. **Báo cáo** lên issue `agy/<feature>` (nhãn `agy-patch`), nội dung §7.
+12. **Báo cáo** lên issue `agy/<feature>` (nhãn `agy-patch`), nội dung §7. Ghi `docs/briefs/<feature>.md` (tối đa khoảng 30 dòng: đã làm gì, commit, còn gì, điều chưa kiểm, số issue) ở thư mục chính khi `agy` không còn chạy; commit và push cùng đợt cập nhật `docs/`. Dừng giữa chừng cũng ghi.
 13. **Dọn dẹp:** `Remove-AgyFeature.ps1`.
 
 ### 4.1 Quyền của agy (file `agy-settings.json` do `New-AgyFeature.ps1` sinh, chỉ dùng cho phiên)
@@ -83,22 +84,25 @@ Bắt đầu khi Chiến bảo "làm <chức năng>". **Dừng ở bước nào 
 
 ### 4.2 Mốc đã đọc, ghi chú và tiết kiệm token
 
-**Chụp tree** (không commit, không đụng index thật). Chụp **trước** khi đọc, để mã tree đúng với thứ được đọc. Lấy đường dẫn index thật **trước** khi đặt `GIT_INDEX_FILE`:
+**Xem phần cần đọc** bằng `Get-AgyDelta.ps1` (không commit, không đụng index thật):
 
 ```powershell
-$wt = 'D:\Working\fnb-agy-work\<feature>'
-$real = git -C $wt rev-parse --path-format=absolute --git-path index
-$env:GIT_INDEX_FILE = 'D:\Working\fnb-agy-work\_tmp\<feature>\review.index'
-Copy-Item $real $env:GIT_INDEX_FILE -Force
-git -C $wt -c core.safecrlf=false add -A -- Kazuko_FnB
-git -C $wt write-tree
-Remove-Item $env:GIT_INDEX_FILE
-Remove-Item Env:GIT_INDEX_FILE   # bắt buộc, nếu còn thì lệnh git sau dùng nhầm index
+.\tools\agy\Get-AgyDelta.ps1 -Feature <feature>
 ```
 
-Đọc vòng 1: `git -C $wt diff <base> <tree> -- Kazuko_FnB`. Từ vòng 2: `git -C $wt diff <tree đã đọc> <tree mới> -- Kazuko_FnB`. Đầu ra bị cắt thì đọc tiếp theo từng file; chỉ coi là **đã đọc** khi đã xem hết.
+Script chụp worktree thành một tree, ghi diff từ tree đã đọc lần trước (chưa có thì từ base) ra `_tmp\<feature>\delta.diff`, in mã tree và số dòng. Đọc **hết** file đó (dài thì đọc từng đoạn), rồi mới đánh dấu đã đọc:
+
+```powershell
+.\tools\agy\Get-AgyDelta.ps1 -Feature <feature> -MarkRead <tree>
+```
+
+Cần đọc lại toàn bộ từ base thì thêm `-Full`.
 
 **Ghi chú `_tmp\<feature>\notes.md`:** cập nhật cuối mỗi nhịp và mỗi vòng, gồm base, vòng, mã hội thoại agy, bước đang dở, tree đã đọc, bảng tiêu chí, lỗi còn lại, số lần Claude đã tự sửa. `state.txt` chỉ được ghi khi push thành công nên không thay được file này. Quyết định nghiệp vụ ghi vào spec hoặc issue, không chỉ ghi ở đây.
+
+**Ghi ở đâu:** `notes.md` là trạng thái đang làm dở (không commit); `docs/briefs/<feature>.md` là tóm tắt sau mỗi task; `QUEUE.md` chỉ là mục lục và thứ tự, không chép nội dung hai file kia.
+
+**Độ dài file:** file `.cs` mới, hoặc file đang từ 500 dòng trở xuống, mà vượt 500 dòng thì `Test-AgyBuild.ps1` báo không đạt. File cũ đã quá 500 mà dài thêm chỉ bị cảnh báo.
 
 **Tiết kiệm token:**
 - Dựa vào đầu ra tóm tắt của script. Chỉ mở log build, `selftest.txt` khi có lỗi, và chỉ đọc dòng lỗi (`FAIL`, `error`). Việc này không thay cho đọc code ca selftest ở bước 6.
@@ -183,6 +187,8 @@ Còn lại là **nặng**. Phân vân → nặng.
 2. Gõ: `/loop Chạy một nhịp theo docs/workflow-agy.md §10.2` (không ghi khoảng thời gian thì Claude tự chọn nhịp). **Không hỏi agy liên tục:** `Invoke-Agy.ps1` chạy nền, xong thì Claude được báo; trong lúc chờ chỉ hẹn nhịp dự phòng 20–30 phút. Rảnh thì giãn tới 60 phút.
 3. Lần đầu sẽ có hộp xin quyền cho các lệnh: `tools/agy/*.ps1`, `git push`, `gh issue`, `agy.exe`, `MSBuild.exe`, `isql.exe`. Chọn **luôn cho phép** cho từng loại. Claude không được tự bấm thay, cũng không tự sửa file quyền.
 4. Dừng: gõ bất kỳ lời nhắn nào vào phiên đó, hoặc đóng phiên.
+
+**Model (Chiến chọn trong app khi mở phiên):** việc thường ngày và vòng lặp dùng Sonnet 5.5, mức medium. Lên kế hoạch hoặc rà spec nặng dùng Opus 5.5 medium ở phiên riêng. `/loop` không vào plan mode nên không tự chuyển sang Opus. Hạn chế đổi model giữa một phiên dài. Sau vài chức năng, xem Sonnet có bỏ sót lỗi ở bước 6 không rồi quyết lại.
 
 **Context của phiên vòng lặp:** `/context` và `/compact` là lệnh người dùng gõ, Claude không tự chạy được, và auto-compact có thể xảy ra bất cứ lúc nào. Vì vậy mọi thứ cần để làm tiếp phải nằm trong file, không dựa vào lịch sử hội thoại:
 - Cuối mỗi nhịp ghi `notes.md` (§4.2); quyết định đã chốt nằm trong spec hoặc issue; base và hàng đợi nằm trong `notes.md`, `QUEUE.md`.

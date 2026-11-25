@@ -8,7 +8,7 @@ Cách dùng công cụ:
 Đọc trước, theo thứ tự:
 1. CLAUDE.md
 2. docs/kinh-nghiem.md
-3. {SPEC} (spec ĐÃ DUYỆT, là yêu cầu chính) và các tài liệu spec đó trỏ tới nếu cần
+3. {SPEC} (spec ĐÃ DUYỆT, là yêu cầu chính; là index.md thì đọc tiếp các file phần nó liệt kê) và các tài liệu spec đó trỏ tới nếu cần
 4. docs/workflow-agy.md §8 (quy ước nghiệp vụ)
 5. Code hiện có để theo đúng cách làm (màn, repository, service tương tự đã có; Dialogs/ScreenFactory.cs; Diagnostics/SelfTest.cs; ThemeManager và ThemeTokens).
 
@@ -22,6 +22,7 @@ Bắt buộc:
 - Không git commit, không git push, không tạo nhánh.
 - Không đổi cấu trúc DB, không chạy app.
 - Không thêm thư viện, gói NuGet, script. File .csproj chỉ được thêm dòng <Compile Include> cho file mới.
+- File .cs mới tối đa 500 dòng; không làm file đang từ 500 dòng trở xuống vượt quá 500. Tách module nhỏ, rõ trách nhiệm. Không tự tách file cũ ngoài phạm vi việc.
 - Không SQL trong View; tiền dùng decimal; SQL tham số hóa; không hard-code màu, cỡ chữ (dùng ThemeTokens, ThemeManager).
 - Sửa file dùng chung (Theme/, SelfTest.cs, ScreenFactory.cs, Controls/, DbHelper.cs) chỉ khi thật cần, và liệt kê trong AGY-NOTES.md kèm lý do.
 - Chỗ spec không rõ: KHÔNG đoán. Ghi vào file AGY-NOTES.md ở gốc thư mục này.

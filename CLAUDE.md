@@ -1,6 +1,6 @@
 # CLAUDE.md — KAZUKO TEA (bản viết lại, repo FnB)
 
-Đọc trước khi làm bất cứ việc gì: spec trong `docs/specs/` liên quan tới task. Các quyết định trong `docs/` là chuẩn của dự án.
+Đọc trước khi làm bất cứ việc gì: spec trong `docs/specs/` liên quan tới task (spec dạng thư mục: đọc `index.md` trước, chỉ mở phần cần). Task đang dở hoặc đã xong có `docs/briefs/<ten>.md`: đọc file đó trước khi mở lại spec. Các quyết định trong `docs/` là chuẩn của dự án.
 
 Trước khi viết/sửa spec, đối chiếu app gốc, hỏi nghiệp vụ, build hoặc test: đọc [`docs/kinh-nghiem.md`](docs/kinh-nghiem.md) và làm theo. Rút thêm được kinh nghiệm thì bổ sung vào file đó.
 
@@ -20,6 +20,9 @@ Trong repo:
 - Chạy app bằng F5 trong Visual Studio. Trước khi build/run phải tắt hẳn app đang chạy (đóng cửa sổ + Shift+F5 nếu đang debug), nếu không DLL bị lock (MSB3021/MSB3027). Nếu luồng bị chặn vì app đang chạy thì tự tắt đúng tiến trình của workspace này, không chờ Chiến tắt tay.
 - Kiểm tra biên dịch bằng **MSBuild hoặc Visual Studio** ở cấu hình **x86** (`Kazuko_FnB` là .NET Framework classic, không phải SDK-style).
 - Sửa code thì làm theo skill `kazuko-patch`: 1 patch/task, build trên đúng base, verify `git apply --check` trên main sạch, strip BOM, ghi rõ base commit.
+- Trước khi sửa `CLAUDE.md`, `.claude/`, `docs/workflow-agy.md` hoặc `tools/agy/`: trình bày diff, chờ Chiến bảo "go" mới sửa.
+- Xong mỗi task có sửa file trong repo: ghi `docs/briefs/<ten>.md`, tối đa khoảng 30 dòng (đã làm gì, commit nào, còn gì, điều chưa kiểm). Có sẵn thì cập nhật, không chép lại spec.
+- Code mới: mỗi file `.cs` tối đa 500 dòng, tách module nhỏ, rõ trách nhiệm. File cũ đã quá 500 dòng chỉ tách khi có việc đụng tới, không tách đồng loạt.
 - Không commit, không push khi chưa được Chiến bảo. **Ngoại lệ (Chiến duyệt 25/11/2026), chỉ khi làm chức năng theo [`docs/workflow-agy.md`](docs/workflow-agy.md) (Antigravity CLI viết code, Claude kiểm):**
   - Được chạy `agy` trong worktree của chức năng; được tạo/xóa worktree trong `D:\Working\fnb-agy-work\`.
   - Được commit và push lên `main` (chỉ fast-forward) code của `agy` đã qua đủ các bước kiểm ở §4 của file đó, cùng các commit `fix(claude)` của vòng đó, không cần hỏi.
@@ -38,5 +41,6 @@ Dialog gọn, hạn chế vertical scroll, high-DPI, hỗ trợ cảm ứng cho 
 
 ## Quy trình làm việc
 
-1. Trước khi implement: gọi subagent `researcher` (Haiku) tìm tài liệu/code liên quan.
-2. Chỉ code sau khi đã có kết quả tìm hiểu.
+1. Trước khi implement phải tìm hiểu tài liệu/code liên quan. Tìm vài chuỗi, đọc vài file: tự dùng `Grep`/`Read`. Chỉ gọi subagent `researcher` (Haiku) khi phải đọc nhiều file mà chỉ cần kết luận ngắn.
+2. Logic tiền/giá/kho/công nợ: không dựa vào tóm tắt của subagent, tự đọc đoạn nguồn được trích.
+3. Chỉ code sau khi đã tìm hiểu xong.
