@@ -16,7 +16,7 @@ namespace Kazuko_FnB.UI.Diagnostics
     /// Chạy các ca trong docs/specs/he-thong.md mục 6; so sánh schema trước/sau để chứng minh không có DDL.
     /// Không bao giờ chạy trên file gốc: người chạy phải truyền bản sao.
     /// </summary>
-    public static class SelfTest
+    public static partial class SelfTest
     {
         private static readonly List<string> Lines = new List<string>();
         private static int _pass, _fail;
@@ -554,6 +554,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             CancelledBillTests(db);
             ItemSalesTests(db);
             RevenueReportTests(db);
+            DailyActivityTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

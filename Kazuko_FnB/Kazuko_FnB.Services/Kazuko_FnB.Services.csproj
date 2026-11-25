@@ -64,6 +64,7 @@
     <Compile Include="BookingCalendarRules.cs" />
     <Compile Include="ItemSalesCalculator.cs" />
     <Compile Include="RevenueSummaryCalculator.cs" />
+    <Compile Include="DailyActivitySummary.cs" />
     <Compile Include="LoginService.cs" />
     <Compile Include="MoneyRounding.cs" />
     <Compile Include="PasswordPolicy.cs" />

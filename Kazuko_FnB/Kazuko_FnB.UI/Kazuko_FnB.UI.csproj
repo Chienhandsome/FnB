@@ -167,6 +167,11 @@
     <Compile Include="RevenueReportView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="DailyActivitySections.cs" />
+    <Compile Include="DailyActivitySections.Layout.cs" />
+    <Compile Include="DailyActivityView.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Dialogs\ActivityLogPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -178,6 +183,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\RevenueReportPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\DailyActivityPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\ConfirmDeleteActivityLogDialog.cs" />
@@ -238,6 +246,10 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Diagnostics\SelfTest.cs" />
+    <Compile Include="Diagnostics\SelfTest.DailyActivity.cs" />
+    <Compile Include="Diagnostics\SelfTest.DailyActivity.Repo.cs" />
+    <Compile Include="Diagnostics\SelfTest.DailyActivity.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.DailyActivity.Layout.cs" />
     <Compile Include="Dialogs\BookingEditDialog.cs" />
     <Compile Include="Dialogs\CatalogPreviewForm.cs">
       <SubType>Form</SubType>

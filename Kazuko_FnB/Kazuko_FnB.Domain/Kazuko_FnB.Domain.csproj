@@ -48,6 +48,7 @@
     <Compile Include="CancelledBillModels.cs" />
     <Compile Include="CatalogModels.cs" />
     <Compile Include="ConfigModels.cs" />
+    <Compile Include="DailyActivityModels.cs" />
     <Compile Include="DocumentNumber.cs" />
     <Compile Include="FundModels.cs" />
     <Compile Include="ItemSalesModels.cs" />
