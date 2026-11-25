@@ -62,6 +62,7 @@
     <Compile Include="FundLedgerRules.cs" />
     <Compile Include="BookingRules.cs" />
     <Compile Include="BookingCalendarRules.cs" />
+    <Compile Include="ItemSalesCalculator.cs" />
     <Compile Include="LoginService.cs" />
     <Compile Include="MoneyRounding.cs" />
     <Compile Include="PasswordPolicy.cs" />

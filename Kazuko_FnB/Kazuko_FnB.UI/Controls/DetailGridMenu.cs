@@ -41,9 +41,13 @@ namespace Kazuko_FnB.UI.Controls
 
             menu.Opening += delegate
             {
-                bool hasCell = grid.CurrentCell != null;
-                foreach (ToolStripItem i in copy.DropDownItems)
-                    i.Enabled = hasCell;
+                bool hasVisibleCell = BuildCellCopyText(grid) != null;
+                bool hasVisibleSelection = BuildSelectionCopyText(grid) != null;
+                if (copy.DropDownItems.Count >= 2)
+                {
+                    copy.DropDownItems[0].Enabled = hasVisibleCell;
+                    copy.DropDownItems[1].Enabled = hasVisibleSelection;
+                }
                 FillColumnsMenu(columns, grid, menu.Font);
             };
 
@@ -87,21 +91,35 @@ namespace Kazuko_FnB.UI.Controls
             columns.Enabled = columns.DropDownItems.Count > 0;
         }
 
-        internal static void CopyCell(DataGridView grid)
+        /// <summary>Dựng chuỗi sao chép cho ô hiện tại; trả null nếu không có ô hoặc cột đang ẩn.</summary>
+        internal static string BuildCellCopyText(DataGridView grid)
         {
-            if (grid.CurrentCell == null)
-                return;
+            if (grid == null || grid.CurrentCell == null)
+                return null;
+            DataGridViewColumn col = grid.CurrentCell.OwningColumn;
+            if (col == null || !col.Visible)
+                return null;
             object v = grid.CurrentCell.Value;
-            Clipboard.SetText(v == null ? "" : Convert.ToString(v, CultureInfo.InvariantCulture));
+            return v == null ? "" : Convert.ToString(v, CultureInfo.InvariantCulture);
         }
 
-        internal static void CopySelection(DataGridView grid)
+        /// <summary>
+        /// Dựng chuỗi sao chép vùng chọn (phân tách tab giữa các cột, CRLF giữa các dòng),
+        /// chỉ gồm các ô thuộc cột đang hiện (Visible = true). Dòng chỉ còn ô ẩn không sinh dòng trống.
+        /// Trả null nếu không có ô nào thuộc cột đang hiện.
+        /// </summary>
+        internal static string BuildSelectionCopyText(DataGridView grid)
         {
-            if (grid.SelectedCells.Count == 0)
-                return;
+            if (grid == null || grid.SelectedCells.Count == 0)
+                return null;
             var cells = new List<DataGridViewCell>();
             foreach (DataGridViewCell c in grid.SelectedCells)
-                cells.Add(c);
+            {
+                if (c != null && c.OwningColumn != null && c.OwningColumn.Visible)
+                    cells.Add(c);
+            }
+            if (cells.Count == 0)
+                return null;
             cells.Sort(delegate(DataGridViewCell a, DataGridViewCell b)
             {
                 int r = a.RowIndex.CompareTo(b.RowIndex);
@@ -117,7 +135,21 @@ namespace Kazuko_FnB.UI.Controls
                 sb.Append(v == null ? "" : Convert.ToString(v, CultureInfo.InvariantCulture));
                 lastRow = c.RowIndex;
             }
-            Clipboard.SetText(sb.ToString());
+            return sb.ToString();
+        }
+
+        internal static void CopyCell(DataGridView grid)
+        {
+            string text = BuildCellCopyText(grid);
+            if (!string.IsNullOrEmpty(text))
+                Clipboard.SetText(text);
+        }
+
+        internal static void CopySelection(DataGridView grid)
+        {
+            string text = BuildSelectionCopyText(grid);
+            if (!string.IsNullOrEmpty(text))
+                Clipboard.SetText(text);
         }
 
         internal static void AutoFit(DataGridView grid)

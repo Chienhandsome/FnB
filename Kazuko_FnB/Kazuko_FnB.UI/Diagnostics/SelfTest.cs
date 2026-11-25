@@ -552,6 +552,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             CalendarTests(db);
             ActivityLogTests(db);
             CancelledBillTests(db);
+            ItemSalesTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
@@ -3539,6 +3540,887 @@ namespace Kazuko_FnB.UI.Diagnostics
                 BookingExec(db,
                     "DELETE FROM TDONHANGHUY WHERE ID IN (@A, @B, @C, @D, @E)",
                     "@A", bill1Id, "@B", bill2Id, "@C", bill3Id, "@D", bill4Id, "@E", bill5Id);
+            }
+        }
+
+        // ------------------------------------------------------------------ Thống kê mặt hàng bán (docs/specs/thong-ke-mat-hang-ban.md §6)
+
+        private static bool TreeContainsText(System.Windows.Forms.TreeNodeCollection nodes, string text)
+        {
+            if (nodes == null)
+                return false;
+            foreach (System.Windows.Forms.TreeNode n in nodes)
+            {
+                if (string.Equals(n.Text, text, StringComparison.Ordinal))
+                    return true;
+                if (TreeContainsText(n.Nodes, text))
+                    return true;
+            }
+            return false;
+        }
+
+        private static void ItemSalesTests(string db)
+        {
+            var vi = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+
+            // 1. ItemSalesCalculator thuần decimal (§2.2, §2.3, §7 — ≥ 8 ca tính tay).
+            Check("Thống kê MH bán (Calculator LAI dương)", ItemSalesCalculator.ComputeProfit(120000m, 40000m) == 80000m);
+            Check("Thống kê MH bán (Calculator LAI âm / lỗ)", ItemSalesCalculator.ComputeProfit(50000m, 65000m) == -15000m);
+            Check("Thống kê MH bán (Calculator LAI bằng 0)", ItemSalesCalculator.ComputeProfit(0m, 0m) == 0m);
+            Check("Thống kê MH bán (Calculator TILELAI chuẩn)", ItemSalesCalculator.ComputeProfitRate(100000m, 30000m) == 30m);
+            Check("Thống kê MH bán (Calculator TILELAI âm)", ItemSalesCalculator.ComputeProfitRate(50000m, -10000m) == -20m);
+            Check("Thống kê MH bán (§6 TILELAI = 0 khi THANHTIEN = 0)", ItemSalesCalculator.ComputeProfitRate(0m, -5000m) == 0m);
+
+            var calcRows = new List<ItemSalesRow>
+            {
+                new ItemSalesRow { Quantity = 3m, UnitPrice = 30000m, SalesAmount = 80000m, CostAmount = 36000m },
+                new ItemSalesRow { Quantity = 2m, UnitPrice = 50000m, SalesAmount = 100000m, CostAmount = 60000m }
+            };
+            ItemSalesCalculator.ApplyRowMetrics(calcRows);
+            // Tổng tiền bán = 3*30000 + 2*50000 = 190000; Tổng tiền nhập = 96000; Lãi bán hàng = 94000
+            // Giảm giá = 25000; Thuế = 12000; Phí DV = 8000; Tiền giờ = 5000 -> Thực lãi = 94000 - 25000 + 12000 + 8000 + 5000 = 94000
+            ItemSalesSummary calcSum = ItemSalesCalculator.ComputeSummary(calcRows, new ItemSalesBillTotals
+            {
+                TotalDiscount = 25000m,
+                Tax = 12000m,
+                ServiceFee = 8000m,
+                TimeCharge = 5000m
+            });
+            Check("Thống kê MH bán (Calculator ApplyRowMetrics & ComputeSummary khớp số tay)",
+                calcRows[0].Profit == 44000m && calcRows[0].ProfitRate == 55m
+                && calcRows[1].Profit == 40000m && calcRows[1].ProfitRate == 40m
+                && calcSum.TotalSalesBeforeDiscount == 190000m
+                && calcSum.TotalCost == 96000m
+                && calcSum.GrossSalesProfit == 94000m
+                && calcSum.NetProfit == 94000m);
+
+            ItemSalesSummary emptySum = ItemSalesCalculator.ComputeSummary(null, null);
+            Check("Thống kê MH bán (Calculator rỗng/null → mọi tổng = 0)",
+                emptySum.TotalSalesBeforeDiscount == 0m && emptySum.TotalCost == 0m && emptySum.NetProfit == 0m);
+
+            // 2. Route ScreenFactory (không vào Map hộp thoại, đi qua CreateView theo MenuId trước kiểm Operation) & quyền menu.
+            var adminSession = new UserSession
+            {
+                UserId = "selftest_admin",
+                UserName = "Admin",
+                DisplayName = "Administrator",
+                IsAdmin = true,
+                DatabasePath = db,
+                Permissions = new FunctionPermissions(true)
+            };
+            Check("Thống kê MH bán (§6 route): MenuId không nằm trong Map hộp thoại",
+                !Dialogs.ScreenFactory.Has(ItemSalesView.MenuId));
+            var menuNode = new MenuNode
+            {
+                Id = ItemSalesView.MenuId,
+                Title = ItemSalesConstants.FunctionName,
+                Operation = 4,
+                StableDescId = null
+            };
+            using (System.Windows.Forms.Control created = Dialogs.ScreenFactory.CreateView(menuNode, adminSession))
+            {
+                Check("Thống kê MH bán (§6 route): ScreenFactory.CreateView dựng ItemSalesView dù Operation=4 và không có StableDescId",
+                    created is ItemSalesView);
+            }
+
+            var permsViewOnly = new FunctionPermissions(false);
+            permsViewOnly.Add(ItemSalesConstants.FunctionId, ItemSalesConstants.FunctionName, RoleModes.View);
+            var permsNone = new FunctionPermissions(false);
+            MenuModel menuHas = MainMenuBuilder.Build(new UserSession
+            {
+                UserId = "u_is_allow", UserName = "u_is_allow", DisplayName = "Cho xem", IsAdmin = false,
+                DatabasePath = db, Permissions = permsViewOnly
+            });
+            MenuModel menuNo = MainMenuBuilder.Build(new UserSession
+            {
+                UserId = "u_is_deny", UserName = "u_is_deny", DisplayName = "Chặn", IsAdmin = false,
+                DatabasePath = db, Permissions = permsNone
+            });
+            Check("Thống kê MH bán (§2.1/§6 phân quyền menu): MainMenuBuilder hiện khi có quyền SFUNCTION và ẩn khi không có quyền",
+                MenuTreeContainsId(menuHas.Roots, ItemSalesView.MenuId)
+                && !MenuTreeContainsId(menuNo.Roots, ItemSalesView.MenuId));
+
+            // 3. Seed dữ liệu mẫu (tiền tố TKMH-, tháng 7/2002) trên bản sao DB; dọn con trước cha trong finally.
+            string storeAId = DbHelper.NewId();
+            string storeBId = DbHelper.NewId();
+            string userAId = DbHelper.NewId();
+            string userNoStoreId = DbHelper.NewId();
+            string userStoreLinkId = DbHelper.NewId();
+            string unitId = DbHelper.NewId();
+            string custId = DbHelper.NewId();
+            string bookingId = DbHelper.NewId();
+
+            string grpDrinkId = DbHelper.NewId();
+            string grpDrinkSubId = DbHelper.NewId();
+            string grpCakeId = DbHelper.NewId();
+            string grpMatId = DbHelper.NewId();
+
+            string prodAId = DbHelper.NewId();
+            string prodBId = DbHelper.NewId();
+            string prodCId = DbHelper.NewId();
+            string prodDId = DbHelper.NewId();
+            string prodMatId = DbHelper.NewId();
+
+            string billA1Id = DbHelper.NewId();
+            string billA2Id = DbHelper.NewId();
+            string billB1Id = DbHelper.NewId();
+            string billUnpaidId = DbHelper.NewId();
+            string billDeletedId = DbHelper.NewId();
+            string billImportId = DbHelper.NewId();
+            string billNextDayId = DbHelper.NewId();
+
+            var lineIds = new List<string>();
+            var cfgRepo = new ConfigRepository(db);
+            int origSortOrder = SystemConfig.GetInt(ItemSalesConstants.ConfigSortOrderKey);
+            int origUseCode = SystemConfig.GetInt(ItemSalesConstants.ConfigUseCodeKey);
+            UserSession savedAppSession = AppSession.Current;
+
+            try
+            {
+                // Cửa hàng, user, liên kết user–cửa hàng, ĐVT, khách hàng, phiếu đặt hàng.
+                BookingExec(db, "INSERT INTO DCUAHANG (ID, NAME, STATUS, USERCREATEDID) VALUES (@I, @N, 30, 'selftest')", "@I", storeAId, "@N", "TKMH-CH-A");
+                BookingExec(db, "INSERT INTO DCUAHANG (ID, NAME, STATUS, USERCREATEDID) VALUES (@I, @N, 30, 'selftest')", "@I", storeBId, "@N", "TKMH-CH-B");
+                BookingExec(db, "INSERT INTO SUSER (ID, NAME, USERNAME, ISADMIN, STATUS, USERCREATEDID) VALUES (@I, @N, @U, 0, 30, 'selftest')", "@I", userAId, "@N", "TKMH Thu ngân A", "@U", "tkmh_user_a");
+                BookingExec(db, "INSERT INTO SUSER (ID, NAME, USERNAME, ISADMIN, STATUS, USERCREATEDID) VALUES (@I, @N, @U, 0, 30, 'selftest')", "@I", userNoStoreId, "@N", "TKMH Không CH", "@U", "tkmh_user_none");
+                BookingExec(db, "INSERT INTO TNGUOIDUNGTHEOCUAHANG (ID, SUSERID, DCUAHANGID, STATUS, USERCREATEDID) VALUES (@I, @U, @C, 30, 'selftest')", "@I", userStoreLinkId, "@U", userAId, "@C", storeAId);
+
+                BookingExec(db, "INSERT INTO DDONVITINH (ID, NAME, STATUS, USERCREATEDID) VALUES (@I, @N, 30, 'selftest')", "@I", unitId, "@N", "TKMH-Ly");
+                BookingExec(db, "INSERT INTO DKHACHHANG (ID, NAME, MAKHACH, DIACHI, DIENTHOAI, STATUS, USERCREATEDID) VALUES (@I, @N, @M, @DC, @DT, 30, 'selftest')",
+                    "@I", custId, "@N", "TKMH Khách A", "@M", "TKMH-KH01", "@DC", "12 Nguyễn Huệ", "@DT", "0909000111");
+                BookingExec(db, "INSERT INTO TDATHANG (ID, NAME, NGAY, STATUS, USERCREATEDID) VALUES (@I, @N, @D, 30, 'selftest')",
+                    "@I", bookingId, "@N", "TKMH-DH01", "@D", new DateTime(2002, 7, 10));
+
+                // 4 nhóm: grpDrink (cha), grpDrinkSub (con của grpDrink), grpCake, grpMat (DLOAIDOID='4' nguyên liệu → phải bị loại khỏi cây).
+                BookingExec(db, "INSERT INTO DNHOMMATHANG (ID, NAME, CODE, DLOAIDOID, PARENTID, SORTORDER, STATUS, USERCREATEDID) VALUES (@I, @N, '', '1', '', '0001', 30, 'selftest')",
+                    "@I", grpDrinkId, "@N", "TKMH-Đồ uống");
+                BookingExec(db, "INSERT INTO DNHOMMATHANG (ID, NAME, CODE, DLOAIDOID, PARENTID, SORTORDER, STATUS, USERCREATEDID) VALUES (@I, @N, '', '1', @P, '0001', 30, 'selftest')",
+                    "@I", grpDrinkSubId, "@N", "TKMH-Trà", "@P", grpDrinkId);
+                BookingExec(db, "INSERT INTO DNHOMMATHANG (ID, NAME, CODE, DLOAIDOID, PARENTID, SORTORDER, STATUS, USERCREATEDID) VALUES (@I, @N, '', '0', '', '0002', 30, 'selftest')",
+                    "@I", grpCakeId, "@N", "TKMH-Bánh");
+                BookingExec(db, "INSERT INTO DNHOMMATHANG (ID, NAME, CODE, DLOAIDOID, PARENTID, SORTORDER, STATUS, USERCREATEDID) VALUES (@I, @N, '', '4', '', '0003', 30, 'selftest')",
+                    "@I", grpMatId, "@N", "TKMH-Nguyên liệu");
+
+                // 5 mặt hàng (4 mặt hàng bán + 1 nguyên liệu DLOAIMATHANGID='2').
+                BookingExec(db, "INSERT INTO DMATHANG (ID, CODE, NAME, DNHOMMATHANGID, DDONVITINHID, DLOAIMATHANGID, GIANHAP, GIAVON, GIABAN, BAOHANH, MASANCO, STATUS, USERCREATEDID) VALUES (@I, @C, @N, @G, @U, '0', 12000, 10000, 30000, 'BH-SP-A', 'MSC-A', 30, 'selftest')",
+                    "@I", prodAId, "@C", "TKMH-03", "@N", "TKMH-Cà phê sữa", "@G", grpDrinkId, "@U", unitId);
+                BookingExec(db, "INSERT INTO DMATHANG (ID, CODE, NAME, DNHOMMATHANGID, DDONVITINHID, DLOAIMATHANGID, GIANHAP, GIAVON, GIABAN, STATUS, USERCREATEDID) VALUES (@I, @C, @N, @G, @U, '0', 18000, 20000, 50000, 30, 'selftest')",
+                    "@I", prodBId, "@C", "TKMH-01", "@N", "TKMH-Trà đào cam sả", "@G", grpDrinkSubId, "@U", unitId);
+                BookingExec(db, "INSERT INTO DMATHANG (ID, CODE, NAME, DNHOMMATHANGID, DDONVITINHID, DLOAIMATHANGID, GIANHAP, GIAVON, GIABAN, STATUS, USERCREATEDID) VALUES (@I, @C, @N, @G, @U, '0', 22000, 25000, 40000, 30, 'selftest')",
+                    "@I", prodCId, "@C", "TKMH-02", "@N", "TKMH-Bánh tiramisu", "@G", grpCakeId, "@U", unitId);
+                BookingExec(db, "INSERT INTO DMATHANG (ID, CODE, NAME, DNHOMMATHANGID, DDONVITINHID, DLOAIMATHANGID, GIANHAP, GIAVON, GIABAN, STATUS, USERCREATEDID) VALUES (@I, @C, @N, @G, @U, '0', NULL, NULL, 0, 30, 'selftest')",
+                    "@I", prodDId, "@C", "TKMH-04", "@N", "TKMH-Nước lọc NULL", "@G", grpCakeId, "@U", unitId);
+                BookingExec(db, "INSERT INTO DMATHANG (ID, CODE, NAME, DNHOMMATHANGID, DDONVITINHID, DLOAIMATHANGID, GIANHAP, GIAVON, GIABAN, STATUS, USERCREATEDID) VALUES (@I, @C, @N, @G, @U, '2', 5000, 4000, 0, 30, 'selftest')",
+                    "@I", prodMatId, "@C", "TKMH-05", "@N", "TKMH-Sữa đặc NL", "@G", grpMatId, "@U", unitId);
+
+                // Hóa đơn hợp lệ:
+                // billA1 (storeA, 10/07/2002 09:00, GIOTHANHTOAN 09:30): giảm tổng 10000 + giảm MH 10000, giờ 5000, phí DV 8000, thuế 12000.
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, NOTE, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, DKHACHHANGID, USERTHANHTOANID, TDATHANGID, " +
+                    "TIENHANG, TONGCONG, PHIVANCHUYEN, TIENGIAMGIA, TILEGIAMGIA, TIENGIAMGIATONG, GIAMGIAMATHANG, TIENTHUE, TILETHUE, TIENGIO, PHIDICHVU, DIENGIAI, KHACHDUA, TRALAI, GIAOHANG, DOITRA, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-HD-A1', 'Ghi chú A1', 0, 30, 30, @NGAY, @GIOTT, @CH, @KH, @UTT, @DH, " +
+                    "185000, 200000, 5000, 10000, 5, 10000, 10000, 12000, 10, 5000, 8000, 'Diễn giải A1', 250000, 50000, 'Tại quầy', 0, 'selftest')",
+                    "@ID", billA1Id, "@NGAY", new DateTime(2002, 7, 10, 9, 0, 0), "@GIOTT", new DateTime(2002, 7, 10, 9, 30, 0),
+                    "@CH", storeAId, "@KH", custId, "@UTT", userAId, "@DH", bookingId);
+
+                // billA2 (storeA, 11/07/2002 15:30 — kiểm 15:30 ngày Đến được tính; TIENGIO & PHIDICHVU NULL).
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, NOTE, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, " +
+                    "TIENHANG, TONGCONG, TIENGIAMGIATONG, GIAMGIAMATHANG, TIENTHUE, TIENGIO, PHIDICHVU, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-HD-A2', 'Ghi chú A2', 0, 30, 30, @NGAY, @GIOTT, @CH, " +
+                    "140000, 138000, 5000, NULL, 3000, NULL, NULL, 'selftest')",
+                    "@ID", billA2Id, "@NGAY", new DateTime(2002, 7, 11, 15, 30, 0), "@GIOTT", new DateTime(2002, 7, 11, 15, 45, 0),
+                    "@CH", storeAId);
+
+                // billB1 (storeB, 10/07/2002 11:00, GIOTHANHTOAN 11:15 — nằm giữa billA1 và billA2 theo giờ thanh toán).
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, " +
+                    "TIENHANG, TONGCONG, TIENGIAMGIATONG, GIAMGIAMATHANG, TIENTHUE, TIENGIO, PHIDICHVU, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-HD-B1', 0, 30, 30, @NGAY, @GIOTT, @CH, " +
+                    "30000, 35000, 2000, 0, 4000, 1000, 2000, 'selftest')",
+                    "@ID", billB1Id, "@NGAY", new DateTime(2002, 7, 10, 11, 0, 0), "@GIOTT", new DateTime(2002, 7, 10, 11, 15, 0),
+                    "@CH", storeBId);
+
+                // 4 hóa đơn BỊ LOẠI (cùng storeA, đều có dòng prodA @ 30000 và số tiền giảm/thuế lớn để lộ ngay nếu bị lọt):
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, TIENGIAMGIATONG, TIENTHUE, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-UNPAID', 0, 0, 30, @NGAY, @NGAY, @CH, 999000, 888000, 'selftest')",
+                    "@ID", billUnpaidId, "@NGAY", new DateTime(2002, 7, 10, 12, 0, 0), "@CH", storeAId);
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, TIENGIAMGIATONG, TIENTHUE, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-DEL', 0, 30, 0, @NGAY, @NGAY, @CH, 999000, 888000, 'selftest')",
+                    "@ID", billDeletedId, "@NGAY", new DateTime(2002, 7, 10, 12, 30, 0), "@CH", storeAId);
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, TIENGIAMGIATONG, TIENTHUE, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-IMP', 1, 30, 30, @NGAY, @NGAY, @CH, 999000, 888000, 'selftest')",
+                    "@ID", billImportId, "@NGAY", new DateTime(2002, 7, 10, 13, 0, 0), "@CH", storeAId);
+                BookingExec(db,
+                    "INSERT INTO TDONHANG (ID, NAME, LOAI, DATHANHTOAN, STATUS, NGAY, GIOTHANHTOAN, DCUAHANGID, TIENGIAMGIATONG, TIENTHUE, USERCREATEDID) " +
+                    "VALUES (@ID, 'TKMH-NEXT00', 0, 30, 30, @NGAY, @NGAY, @CH, 999000, 888000, 'selftest')",
+                    "@ID", billNextDayId, "@NGAY", new DateTime(2002, 7, 12, 0, 0, 0), "@CH", storeAId);
+
+                Action<string, string, string, decimal?, decimal?, decimal?, decimal?, decimal?, decimal?, decimal?, decimal?, decimal?, int, string, string, DateTime> addLine =
+                    delegate(string billId, string prodId, string tenHang, decimal? slXuatCqd, decimal? slNhapCqd, decimal? slXuat, decimal? slNhap,
+                        decimal? donGia, decimal? tlGiam, decimal? tienGiam, decimal? thanhTien, decimal? giaVon, int xuatVatTu, string comboParent, string baoHanh, DateTime tc)
+                    {
+                        string lid = DbHelper.NewId();
+                        lineIds.Add(lid);
+                        BookingExec(db,
+                            "INSERT INTO TDONHANGCHITIET (ID, TDONHANGID, DMATHANGID, TENHANG, DDONVITINHID, " +
+                            "SLXUATCHUAQUYDOI, SLNHAPCHUAQUYDOI, SLXUAT, SLNHAP, DONGIA, TILEGIAMGIA, TIENGIAMGIA, THANHTIEN, GIAVON, " +
+                            "XUATVATTU, COMBOPARENTID, BAOHANH, NOTE, STATUS, USERCREATEDID, TIMECREATED) " +
+                            "VALUES (@ID, @BID, @PID, @TEN, @U, @SXC, @SNC, @SX, @SN, @DG, @TLG, @TG, @TT, @GV, @XVT, @CP, @BH, @NOTE, 30, 'selftest', @TC)",
+                            "@ID", lid, "@BID", billId, "@PID", prodId, "@TEN", tenHang, "@U", unitId,
+                            "@SXC", slXuatCqd, "@SNC", slNhapCqd, "@SX", slXuat, "@SN", slNhap,
+                            "@DG", donGia, "@TLG", tlGiam, "@TG", tienGiam, "@TT", thanhTien, "@GV", giaVon,
+                            "@XVT", xuatVatTu, "@CP", comboParent, "@BH", baoHanh, "@NOTE", "Ghi chú " + tenHang, "@TC", tc);
+                    };
+
+                // Dòng trên billA1:
+                addLine(billA1Id, prodAId, "TKMH-Cà phê sữa", 2m, 0m, 2m, 0m, 30000m, 0m, 0m, 60000m, 10000m, 0, "", "BH-DONG-1", new DateTime(2002, 7, 10, 9, 1, 0));
+                addLine(billA1Id, prodBId, "TKMH-Trà đào cam sả", 2m, 0m, 2m, 0m, 50000m, 10m, 10000m, 90000m, 20000m, 0, "", "", new DateTime(2002, 7, 10, 9, 2, 0));
+                // Cùng mặt hàng prodA nhưng khác đơn giá (35000) → không được gộp với 30000!
+                addLine(billA1Id, prodAId, "TKMH-Cà phê sữa", 1m, 0m, 1m, 0m, 35000m, 0m, 0m, 35000m, 10000m, 0, "", "", new DateTime(2002, 7, 10, 9, 3, 0));
+                // Nguyên liệu (DLOAIMATHANGID='2'): loại khỏi lưới chính, nhưng HIỆN ở dialog chi tiết.
+                addLine(billA1Id, prodMatId, "TKMH-Sữa đặc NL", 2m, 0m, 2m, 0m, 5000m, 0m, 0m, 10000m, 4000m, 0, "", "", new DateTime(2002, 7, 10, 9, 4, 0));
+                // Xuất vật tư (XUATVATTU=30) và combo con (COMBOPARENTID<>''): loại khỏi cả lưới chính lẫn dialog chi tiết.
+                addLine(billA1Id, prodCId, "TKMH-Bánh tiramisu", 1m, 0m, 1m, 0m, 40000m, 0m, 0m, 40000m, 15000m, 30, "", "", new DateTime(2002, 7, 10, 9, 5, 0));
+                addLine(billA1Id, prodCId, "TKMH-Bánh tiramisu", 1m, 0m, 1m, 0m, 40000m, 0m, 0m, 40000m, 15000m, 0, "combo-parent-1", "", new DateTime(2002, 7, 10, 9, 6, 0));
+
+                // Dòng trên billA2: trả hàng bằng SLNHAP != 0 (prodA: 3 - 1 = 2), trả hàng bằng số lượng âm (prodC: 3 + (-1) = 2), và dòng NULL tiền (prodD).
+                addLine(billA2Id, prodAId, "TKMH-Cà phê sữa", 3m, 1m, 3m, 1m, 30000m, 0m, 0m, 60000m, 10000m, 0, "", "", new DateTime(2002, 7, 11, 15, 31, 0));
+                addLine(billA2Id, prodCId, "TKMH-Bánh tiramisu", 3m, 0m, 3m, 0m, 40000m, 0m, 0m, 120000m, 25000m, 0, "", "", new DateTime(2002, 7, 11, 15, 32, 0));
+                addLine(billA2Id, prodCId, "TKMH-Bánh tiramisu", -1m, 0m, -1m, 0m, 40000m, 0m, 0m, -40000m, 25000m, 0, "", "", new DateTime(2002, 7, 11, 15, 33, 0));
+                addLine(billA2Id, prodDId, "TKMH-Nước lọc NULL", 1m, 0m, 1m, 0m, null, null, null, null, null, 0, "", "", new DateTime(2002, 7, 11, 15, 34, 0));
+
+                // Dòng trên billB1 (storeB):
+                addLine(billB1Id, prodAId, "TKMH-Cà phê sữa", 1m, 0m, 1m, 0m, 30000m, 0m, 0m, 30000m, 10000m, 0, "", "", new DateTime(2002, 7, 10, 11, 1, 0));
+
+                // Dòng trên 4 bill bị loại:
+                addLine(billUnpaidId, prodAId, "TKMH-Cà phê sữa", 10m, 0m, 10m, 0m, 30000m, 0m, 0m, 300000m, 10000m, 0, "", "", new DateTime(2002, 7, 10, 12, 1, 0));
+                addLine(billDeletedId, prodAId, "TKMH-Cà phê sữa", 10m, 0m, 10m, 0m, 30000m, 0m, 0m, 300000m, 10000m, 0, "", "", new DateTime(2002, 7, 10, 12, 31, 0));
+                addLine(billImportId, prodAId, "TKMH-Cà phê sữa", 10m, 0m, 10m, 0m, 30000m, 0m, 0m, 300000m, 10000m, 0, "", "", new DateTime(2002, 7, 10, 13, 1, 0));
+                addLine(billNextDayId, prodAId, "TKMH-Cà phê sữa", 10m, 0m, 10m, 0m, 30000m, 0m, 0m, 300000m, 10000m, 0, "", "", new DateTime(2002, 7, 12, 0, 1, 0));
+
+                var repo = new ItemSalesRepository(db);
+                DateTime from = new DateTime(2002, 7, 10);
+                DateTime to = new DateTime(2002, 7, 11);
+
+                // 4. Kiểm phạm vi bill, loại trừ, gộp, trả hàng, 15:30 ngày Đến vs 00:00 hôm sau, hai cửa hàng, user không cửa hàng, admin.
+                // 4a. Admin không chọn cửa hàng (Store A + Store B), Theo giá vốn:
+                var adminScope = new BillReportScope { FromDate = from, ToDate = to, StoreId = "", UserId = "selftest_admin", IsAdmin = true };
+                List<ItemSalesRow> adminCostRows = repo.LoadItemSales(adminScope, ItemSalesCostMode.LineCost, false);
+                ItemSalesCalculator.ApplyRowMetrics(adminCostRows);
+                ItemSalesBillTotals adminBillTotals = repo.LoadBillSummaryTotals(adminScope);
+                ItemSalesSummary adminCostSum = ItemSalesCalculator.ComputeSummary(adminCostRows, adminBillTotals);
+
+                ItemSalesRow rowA30 = adminCostRows.Find(r => r.ProductId == prodAId && r.UnitPrice == 30000m);
+                ItemSalesRow rowA35 = adminCostRows.Find(r => r.ProductId == prodAId && r.UnitPrice == 35000m);
+                ItemSalesRow rowB = adminCostRows.Find(r => r.ProductId == prodBId);
+                ItemSalesRow rowC = adminCostRows.Find(r => r.ProductId == prodCId);
+                ItemSalesRow rowD = adminCostRows.Find(r => r.ProductId == prodDId);
+                bool noMaterialInGrid = !adminCostRows.Exists(r => r.ProductId == prodMatId);
+
+                Check("Thống kê MH bán (§6 lưới & loại trừ & không gộp khác giá): đúng 5 dòng, loại NL/vật tư/combo con, loại 4 bill sai điều kiện/ngày",
+                    adminCostRows.Count == 5 && noMaterialInGrid
+                    && rowA30 != null && rowA30.Quantity == 5m && rowA30.SalesAmount == 150000m && rowA30.UnitCost == 10000m && rowA30.CostAmount == 50000m && rowA30.Profit == 100000m
+                    && rowA35 != null && rowA35.Quantity == 1m && rowA35.SalesAmount == 35000m && rowA35.CostAmount == 10000m && rowA35.Profit == 25000m
+                    && rowB != null && rowB.Quantity == 2m && rowB.DiscountRate == 10m && rowB.LineDiscountAmount == 10000m && rowB.SalesAmount == 90000m && rowB.CostAmount == 40000m && rowB.Profit == 50000m
+                    && rowC != null && rowC.Quantity == 2m && rowC.SalesAmount == 80000m && rowC.CostAmount == 50000m && rowC.Profit == 30000m && rowC.ProfitRate == 37.5m
+                    && rowD != null && rowD.Quantity == 1m && rowD.UnitPrice == 0m && rowD.SalesAmount == 0m && rowD.CostAmount == 0m && rowD.Profit == 0m && rowD.ProfitRate == 0m,
+                    "rows=" + adminCostRows.Count + ", A30=" + (rowA30 == null ? "null" : rowA30.Quantity + "/" + rowA30.SalesAmount) + ", C=" + (rowC == null ? "null" : rowC.Quantity + "/" + rowC.SalesAmount));
+
+                // Số tính tay admin (Store A + B, giá vốn):
+                // Tổng bán = 5*30k + 1*35k + 2*50k + 2*40k + 0 = 365,000; Tổng nhập = 150,000; Lãi BH = 215,000
+                // Giảm giá = (10k+10k) + (5k+0) + (2k+0) = 27,000; Giờ = 6,000; Phí DV = 10,000; Thuế = 19,000
+                // Tổng tiền lãi = 215,000 - 27,000 + 19,000 + 10,000 + 6,000 = 223,000.
+                Check("Thống kê MH bán (§6 khối tổng admin, cộng thuế/phí/giờ, trừ TIENGIAMGIATONG+GIAMGIAMATHANG): khớp số tay",
+                    adminCostSum.TotalSalesBeforeDiscount == 365000m
+                    && adminCostSum.TotalCost == 150000m
+                    && adminCostSum.GrossSalesProfit == 215000m
+                    && adminCostSum.TotalDiscount == 27000m
+                    && adminCostSum.TimeCharge == 6000m
+                    && adminCostSum.ServiceFee == 10000m
+                    && adminCostSum.Tax == 19000m
+                    && adminCostSum.NetProfit == 223000m,
+                    "sales=" + adminCostSum.TotalSalesBeforeDiscount + ", cost=" + adminCostSum.TotalCost + ", net=" + adminCostSum.NetProfit);
+
+                // 4b. User thường (chỉ gắn storeA, không chọn cửa hàng) → chỉ thấy storeA ở CẢ lưới, khối tổng và dialog!
+                // Số tính tay storeA: Tổng bán = 335,000; Tổng nhập = 140,000; Lãi BH = 195,000; Giảm = 25,000; Giờ = 5,000; Phí = 8,000; Thuế = 15,000; Thực lãi = 198,000.
+                var userAScope = new BillReportScope { FromDate = from, ToDate = to, StoreId = "", UserId = userAId, IsAdmin = false };
+                List<ItemSalesRow> userARows = repo.LoadItemSales(userAScope, ItemSalesCostMode.LineCost, false);
+                ItemSalesCalculator.ApplyRowMetrics(userARows);
+                ItemSalesSummary userASum = ItemSalesCalculator.ComputeSummary(userARows, repo.LoadBillSummaryTotals(userAScope));
+                List<ItemSalesBillRow> userADetailBills = repo.LoadDetailBills(userAScope, new ItemSalesDetailKey { ProductId = prodAId, UnitPrice = 30000m, DiscountRate = 0m });
+                ItemSalesRow userARowA30 = userARows.Find(r => r.ProductId == prodAId && r.UnitPrice == 30000m);
+
+                Check("Thống kê MH bán (§6/Q1 ràng buộc cửa hàng user thường): chỉ thấy storeA ở CẢ lưới, khối tổng và dialog",
+                    userARowA30 != null && userARowA30.Quantity == 4m && userARowA30.SalesAmount == 120000m
+                    && userASum.TotalSalesBeforeDiscount == 335000m
+                    && userASum.TotalCost == 140000m
+                    && userASum.TotalDiscount == 25000m
+                    && userASum.Tax == 15000m && userASum.ServiceFee == 8000m && userASum.TimeCharge == 5000m
+                    && userASum.NetProfit == 198000m
+                    && userADetailBills.Count == 2
+                    && userADetailBills[0].Id == billA1Id && userADetailBills[1].Id == billA2Id,
+                    "qty=" + (userARowA30 == null ? -1 : userARowA30.Quantity) + ", net=" + userASum.NetProfit + ", detailBills=" + userADetailBills.Count);
+
+                // 4c. User không có dòng nào trong TNGUOIDUNGTHEOCUAHANG → thấy RỖNG ở cả lưới, khối tổng, dialog và lookup (kể cả khi storeA đã gắn cho userA).
+                var noStoreScope = new BillReportScope { FromDate = from, ToDate = to, StoreId = "", UserId = userNoStoreId, IsAdmin = false };
+                List<ItemSalesRow> noStoreRows = repo.LoadItemSales(noStoreScope, ItemSalesCostMode.LineCost, false);
+                ItemSalesSummary noStoreSum = ItemSalesCalculator.ComputeSummary(noStoreRows, repo.LoadBillSummaryTotals(noStoreScope));
+                List<ItemSalesBillRow> noStoreBills = repo.LoadDetailBills(noStoreScope, new ItemSalesDetailKey { ProductId = prodAId, UnitPrice = 30000m, DiscountRate = 0m });
+                List<StoreRecord> noStoreLookup = repo.LoadAllowedStores(userNoStoreId, false);
+
+                Check("Thống kê MH bán (§6/Q1 user không có cửa hàng): thấy rỗng ở cả lưới, khối tổng, dialog và lookup",
+                    noStoreRows.Count == 0 && noStoreSum.TotalSalesBeforeDiscount == 0m && noStoreSum.TotalDiscount == 0m
+                    && noStoreSum.NetProfit == 0m && noStoreBills.Count == 0 && noStoreLookup.Count == 0);
+
+                // 4d. Sắp xếp theo mã (SapXepThuTuTheo=0 && SuDungMaHang=30) vs theo tên.
+                cfgRepo.Save(new[]
+                {
+                    new ConfigChange { Name = ItemSalesConstants.ConfigSortOrderKey, DataType = 3, IntValue = 0 },
+                    new ConfigChange { Name = ItemSalesConstants.ConfigUseCodeKey, DataType = 3, IntValue = 30 }
+                }, "selftest");
+                bool sortByCodeEnabled = repo.ShouldSortByCode();
+                List<ItemSalesRow> byCode = repo.LoadItemSales(adminScope, ItemSalesCostMode.LineCost, sortByCodeEnabled);
+                cfgRepo.Save(new[]
+                {
+                    new ConfigChange { Name = ItemSalesConstants.ConfigSortOrderKey, DataType = 3, IntValue = origSortOrder },
+                    new ConfigChange { Name = ItemSalesConstants.ConfigUseCodeKey, DataType = 3, IntValue = origUseCode }
+                }, "selftest");
+                List<ItemSalesRow> byName = repo.LoadItemSales(adminScope, ItemSalesCostMode.LineCost, false);
+
+                Check("Thống kê MH bán (§6/§2.0 sắp xếp): cấu hình SapXepThuTuTheo=0 & SuDungMaHang=30 sắp theo DMATHANG.CODE, ngược lại theo TENHANG",
+                    sortByCodeEnabled
+                    && byCode.Count == 5 && byCode[0].ProductCode == "TKMH-01" && byCode[1].ProductCode == "TKMH-02" && byCode[2].ProductCode == "TKMH-03" && byCode[4].ProductCode == "TKMH-04"
+                    && byName.Count == 5 && byName[0].ItemName == "TKMH-Bánh tiramisu",
+                    "byCode0=" + (byCode.Count > 0 ? byCode[0].ProductCode : "") + ", byName0=" + (byName.Count > 0 ? byName[0].ItemName : ""));
+
+                // 5. Test giao diện THẬT trên Form đã Show ngoài màn hình: sự kiện thật, màu thật, quyền thật.
+                DateTime dbToday = repo.GetServerDate();
+                string[] expectedMainHeaders =
+                {
+                    "Mặt hàng", "Số lượng", "ĐVT", "Đơn giá", "Tiền giảm", "Thành tiền bán",
+                    "Giá vốn", "Giảm giá %", "Thành tiền nhập", "Lãi", "Tỉ lệ lãi"
+                };
+
+                using (var hostForm = new System.Windows.Forms.Form
+                {
+                    StartPosition = System.Windows.Forms.FormStartPosition.Manual,
+                    ShowInTaskbar = false,
+                    Location = new System.Drawing.Point(-20000, -20000),
+                    ClientSize = new System.Drawing.Size(1400, 780)
+                })
+                {
+                    var view = new ItemSalesView(adminSession)
+                    {
+                        Dock = System.Windows.Forms.DockStyle.Fill,
+                        SuppressErrorPopup = true
+                    };
+                    hostForm.Controls.Add(view);
+                    hostForm.Show();
+                    System.Windows.Forms.Application.DoEvents();
+                    try
+                    {
+                        // Mở màn: Từ = Đến = hôm nay theo giờ CSDL; đúng 11 cột; không cắt tiêu đề; cây nhóm có "Tất cả", không có nguyên liệu & không có "Chưa thiết lập".
+                        List<string> headers = view.GridColumnHeaders();
+                        bool headersOk = headers.Count == expectedMainHeaders.Length;
+                        for (int i = 0; headersOk && i < expectedMainHeaders.Length; i++)
+                            if (headers[i] != expectedMainHeaders[i])
+                                headersOk = false;
+                        bool noHeaderClip = true;
+                        foreach (System.Windows.Forms.DataGridViewColumn col in view.GridForTest.Columns)
+                        {
+                            int needW = System.Windows.Forms.TextRenderer.MeasureText(col.HeaderText, view.HeadingFontForTest).Width;
+                            if (col.Width < needW)
+                                noHeaderClip = false;
+                        }
+                        bool treeOk = view.GroupTreeForTest.Nodes.Count == 1
+                            && view.GroupTreeForTest.Nodes[0].Text == "Tất cả"
+                            && view.FindGroupNodeById(grpDrinkId) != null
+                            && view.FindGroupNodeById(grpDrinkSubId) != null
+                            && view.FindGroupNodeById(grpDrinkSubId).Parent == view.FindGroupNodeById(grpDrinkId)
+                            && view.FindGroupNodeById(grpCakeId) != null
+                            && view.FindGroupNodeById(grpMatId) == null
+                            && !TreeContainsText(view.GroupTreeForTest.Nodes, "Chưa thiết lập");
+                        bool storeBlankFirst = view.StoreComboForTest.Items.Count >= 3
+                            && ((StoreRecord)view.StoreComboForTest.Items[0]).Id == ""
+                            && ((StoreRecord)view.StoreComboForTest.Items[0]).Name == "";
+                        bool radioDefaultCost = view.RadioCostPriceForTest.Checked && !view.RadioBuyPriceForTest.Checked
+                            && view.RadioCostPriceForTest.Text == "Theo giá vốn" && view.RadioBuyPriceForTest.Text == "Theo giá nhập";
+
+                        Check("Thống kê MH bán UI (§6 mở màn): ngày mặc định theo giờ DB, 11 cột đúng thứ tự không cắt chữ, cây nhóm đúng phân cấp & bỏ nguyên liệu/Chưa thiết lập, combo có mục trống, radio mặc định Theo giá vốn",
+                            view.FromDateValue.Date == dbToday && view.ToDateValue.Date == dbToday
+                            && headersOk && noHeaderClip && treeOk && storeBlankFirst && radioDefaultCost
+                            && view.GridForTest.ReadOnly && view.GridForTest.RowTemplate.Height >= 32
+                            && view.NetProfitValueLabelForTest.ForeColor == Theme.ThemeManager.Current.Danger
+                            && view.NetProfitTooltipForTest.IndexOf("Thuế", StringComparison.OrdinalIgnoreCase) >= 0,
+                            "db=" + dbToday.ToString("yyyy-MM-dd") + ", headers=" + headersOk + ", tree=" + treeOk + ", store0=" + storeBlankFirst);
+
+                        // Đổi Từ/Đến qua sự kiện thật Inner.Text + Commit() → tự tải lại 5 dòng và đúng khối tổng 223,000.
+                        view.FromDateBoxForTest.Inner.Text = "10/07/2002";
+                        view.FromDateBoxForTest.Commit();
+                        view.ToDateBoxForTest.Inner.Text = "11/07/2002";
+                        view.ToDateBoxForTest.Commit();
+                        Check("Thống kê MH bán UI (§6 sự kiện đổi Từ/Đến): tải lại ngay, đúng 5 dòng và khối tổng khớp số tay",
+                            view.GridRowCount == 5
+                            && view.GetSummaryText("sales") == 365000m.ToString("n0", vi)
+                            && view.GetSummaryText("cost") == 150000m.ToString("n0", vi)
+                            && view.GetSummaryText("gross") == 215000m.ToString("n0", vi)
+                            && view.GetSummaryText("discount") == 27000m.ToString("n0", vi)
+                            && view.GetSummaryText("tax") == 19000m.ToString("n0", vi)
+                            && view.GetSummaryText("service") == 10000m.ToString("n0", vi)
+                            && view.GetSummaryText("time") == 6000m.ToString("n0", vi)
+                            && view.GetSummaryText("net") == 223000m.ToString("n0", vi),
+                            "rows=" + view.GridRowCount + ", net=" + view.GetSummaryText("net"));
+
+                        // Chọn nhóm cha grpDrink trên cây (sự kiện thật AfterSelect): CHỈ lấy đúng nhóm đó (2 dòng prodA), KHÔNG gồm nhóm con grpDrinkSub (prodB), và KHÔNG đổi khối tổng!
+                        System.Windows.Forms.TreeNode nodeDrink = view.FindGroupNodeById(grpDrinkId);
+                        view.GroupTreeForTest.SelectedNode = nodeDrink;
+                        bool exactGroupOnly = view.GridRowCount == 2
+                            && view.CurrentSummaryForTest.NetProfit == 223000m
+                            && view.GetSummaryText("net") == 223000m.ToString("n0", vi);
+
+                        // Gõ ô Lọc chữ Việt không phân biệt hoa thường (sự kiện thật TextChanged): lọc theo TENHANG, không đổi khối tổng.
+                        view.GroupTreeForTest.SelectedNode = view.GroupTreeForTest.Nodes[0]; // Tất cả
+                        view.FilterBoxForTest.Text = "TRÀ ĐÀO";
+                        bool filterViOk = view.GridRowCount == 1
+                            && Convert.ToString(view.GridForTest.Rows[0].Cells["colTenHang"].FormattedValue) == "TKMH-Trà đào cam sả"
+                            && view.GetSummaryText("net") == 223000m.ToString("n0", vi);
+
+                        // Chọn lại grpDrink, xóa ô lọc, bấm Refresh (F5) bằng PerformClick() → giữ nguyên bộ lọc và giữ nhóm đang chọn (P4).
+                        view.FilterBoxForTest.Text = "";
+                        view.GroupTreeForTest.SelectedNode = view.FindGroupNodeById(grpDrinkId);
+                        view.RefreshButtonForTest.PerformClick();
+                        bool refreshKeepsGroup = view.GroupTreeForTest.SelectedNode != null
+                            && string.Equals(view.GroupTreeForTest.SelectedNode.Tag as string, grpDrinkId, StringComparison.Ordinal)
+                            && view.GridRowCount == 2
+                            && view.FromDateValue == from && view.ToDateValue == to;
+
+                        Check("Thống kê MH bán UI (§6/P4 cây nhóm, ô Lọc, nút Refresh): chọn nhóm khớp chính xác (không nhóm con), ô Lọc tiếng Việt không đổi khối tổng, Refresh giữ nhóm đang chọn",
+                            exactGroupOnly && filterViOk && refreshKeepsGroup,
+                            "grp=" + exactGroupOnly + ", filter=" + filterViOk + ", refKeep=" + refreshKeepsGroup);
+
+                        // Đổi radio sang "Theo giá nhập" qua sự kiện thật CheckedChanged → đổi cột Giá vốn/Thành tiền nhập và khối tổng (152,000 / 221,000).
+                        view.GroupTreeForTest.SelectedNode = view.GroupTreeForTest.Nodes[0];
+                        view.RadioBuyPriceForTest.Checked = true;
+                        bool buyPriceModeOk = view.GridRowCount == 5
+                            && view.CurrentSummaryForTest.TotalCost == 152000m
+                            && view.CurrentSummaryForTest.NetProfit == 221000m
+                            && view.GetSummaryText("cost") == 152000m.ToString("n0", vi)
+                            && view.GetSummaryText("net") == 221000m.ToString("n0", vi);
+
+                        // Đổi lại "Theo giá vốn" và chọn cửa hàng storeA qua SelectedIndex (sự kiện thật SelectedIndexChanged) → khối tổng đổi sang storeA (198,000).
+                        view.RadioCostPriceForTest.Checked = true;
+                        int storeAIdx = -1;
+                        for (int i = 0; i < view.StoreComboForTest.Items.Count; i++)
+                        {
+                            var sr = view.StoreComboForTest.Items[i] as StoreRecord;
+                            if (sr != null && sr.Id == storeAId) { storeAIdx = i; break; }
+                        }
+                        if (storeAIdx >= 0)
+                            view.StoreComboForTest.SelectedIndex = storeAIdx;
+                        bool storeSwitchOk = storeAIdx > 0
+                            && view.CurrentSummaryForTest.TotalSalesBeforeDiscount == 335000m
+                            && view.CurrentSummaryForTest.TotalCost == 140000m
+                            && view.CurrentSummaryForTest.NetProfit == 198000m;
+
+                        // Bấm nút In báo cáo bằng PerformClick() → báo chưa hỗ trợ.
+                        view.PrintButtonForTest.PerformClick();
+                        bool printMsgOk = view.LastInfoMessageForTest == ItemSalesConstants.PrintUnsupportedMessage;
+
+                        Check("Thống kê MH bán UI (§6 sự kiện radio, combo cửa hàng, nút In): đổi radio đổi giá & tổng, đổi cửa hàng tải lại ngay, nút In báo chưa hỗ trợ",
+                            buyPriceModeOk && storeSwitchOk && printMsgOk,
+                            "buy=" + buyPriceModeOk + ", store=" + storeSwitchOk + ", print=" + printMsgOk);
+
+                        // 6. Dialog chi tiết (mở từ dòng prodA @ 30,000 của admin không chọn cửa hàng): Show ngoài màn hình, kiểm 22+11 cột, chọn bill đầu, đổi bill bằng CurrentCell, màu + chữ đậm thật sau CellFormatting (kể cả khi đang chọn dòng).
+                        view.StoreComboForTest.SelectedIndex = 0;
+                        int idxProdA30 = -1;
+                        int idxProdC = -1;
+                        for (int i = 0; i < view.GridForTest.Rows.Count; i++)
+                        {
+                            var r = view.GridForTest.Rows[i].Tag as ItemSalesRow;
+                            if (r != null && r.ProductId == prodAId && r.UnitPrice == 30000m) idxProdA30 = i;
+                            if (r != null && r.ProductId == prodCId) idxProdC = i;
+                        }
+
+                        // Phiên admin: chọn dòng prodC (Đơn giá 40000; 5 số được bảo vệ là 80000, 25000, 50000, 30000, 37.5 — không trùng số hiển thị) → chuỗi sao chép vẫn có đủ giá vốn.
+                        bool adminSelC = view.SelectRow(idxProdC);
+                        string adminCopyC = Controls.DetailGridMenu.BuildSelectionCopyText(view.GridForTest) ?? "";
+                        Check("Thống kê MH bán UI (§2.1/DetailGridMenu phiên admin): chuỗi sao chép vùng chọn có giá vốn và số liệu lãi",
+                            adminSelC
+                            && adminCopyC.IndexOf("25000", StringComparison.Ordinal) >= 0
+                            && adminCopyC.IndexOf("80000", StringComparison.Ordinal) >= 0
+                            && adminCopyC.IndexOf("50000", StringComparison.Ordinal) >= 0
+                            && adminCopyC.IndexOf("30000", StringComparison.Ordinal) >= 0
+                            && adminCopyC.IndexOf("37.5", StringComparison.Ordinal) >= 0,
+                            "copy=" + adminCopyC);
+
+                        string[] expectedBillHeaders =
+                        {
+                            "Ghi chú", "Số phiếu", "Ngày", "Khách hàng", "Mã khách", "Địa chỉ", "Điện thoại",
+                            "Tổng cộng", "Phí vận chuyển", "Giảm giá", "% giảm giá", "Thuế", "% thuế",
+                            "Tiền hàng", "Diễn giải", "Giờ thanh toán", "Khách đưa", "Trả lại",
+                            "Thanh toán bởi", "Số phiếu đặt hàng", "Giao hàng", "Đổi trả"
+                        };
+                        string[] expectedLineHeaders =
+                        {
+                            "Ghi chú", "Tên mặt hàng", "ĐVT", "Mã hàng", "Bảo hành", "Mã sẵn có",
+                            "Bảo hành (dòng)", "CK%", "Thành tiền", "Đơn giá", "S.lượng"
+                        };
+
+                        using (Dialogs.ItemSalesDetailDialog dlg = view.CreateDetailDialogForRow(idxProdA30))
+                        {
+                            dlg.SuppressErrorPopup = true;
+                            dlg.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+                            dlg.ShowInTaskbar = false;
+                            dlg.Location = new System.Drawing.Point(-20000, -20000);
+                            dlg.Show();
+                            System.Windows.Forms.Application.DoEvents();
+                            try
+                            {
+                                List<string> bh = dlg.BillColumnHeaders();
+                                bool bhOk = bh.Count == expectedBillHeaders.Length;
+                                for (int i = 0; bhOk && i < expectedBillHeaders.Length; i++)
+                                    if (bh[i] != expectedBillHeaders[i]) bhOk = false;
+
+                                List<string> lh = dlg.LineColumnHeaders();
+                                bool lhOk = lh.Count == expectedLineHeaders.Length;
+                                for (int i = 0; lhOk && i < expectedLineHeaders.Length; i++)
+                                    if (lh[i] != expectedLineHeaders[i]) lhOk = false;
+
+                                // 3 bill hợp lệ sắp tăng theo GIOTHANHTOAN: billA1 (09:30), billB1 (11:15), billA2 (15:45); bill đầu chọn sẵn.
+                                bool billsOrderAndFirst = dlg.BillRowCount == 3
+                                    && dlg.FindBillRowIndexById(billA1Id) == 0
+                                    && dlg.FindBillRowIndexById(billB1Id) == 1
+                                    && dlg.FindBillRowIndexById(billA2Id) == 2
+                                    && dlg.BillsGridForTest.SelectedRows.Count == 1
+                                    && dlg.BillsGridForTest.SelectedRows[0].Index == 0;
+
+                                // Lưới dưới của billA1: 4 dòng (gồm prodMat nguyên liệu, loại xuất vật tư & combo con).
+                                int lineProdAIdx = dlg.FindLineRowIndexByProductId(prodAId);
+                                int lineProdBIdx = dlg.FindLineRowIndexByProductId(prodBId);
+                                int lineMatIdx = dlg.FindLineRowIndexByProductId(prodMatId);
+                                bool linesBillA1Ok = dlg.LineRowCount == 4 && lineProdAIdx >= 0 && lineProdBIdx >= 0 && lineMatIdx >= 0;
+
+                                // Kiểm màu & chữ đậm thật sau CellFormatting (kể cả khi dòng đang chọn!).
+                                Theme.ThemeTokens curTheme = Theme.ThemeManager.Current;
+                                System.Windows.Forms.DataGridViewCellStyle stHit = dlg.CaptureLineCellStyle(lineProdAIdx, 1);
+                                dlg.LinesGridForTest.CurrentCell = dlg.LinesGridForTest.Rows[lineProdAIdx].Cells[1];
+                                dlg.LinesGridForTest.Rows[lineProdAIdx].Selected = true;
+                                System.Windows.Forms.DataGridViewCellStyle stHitSelected = dlg.CaptureLineCellStyle(lineProdAIdx, 1);
+                                System.Windows.Forms.DataGridViewCellStyle stOther = dlg.CaptureLineCellStyle(lineProdBIdx, 1);
+
+                                bool highlightStyleOk = stHit != null && stHit.ForeColor == curTheme.Danger && stHit.Font != null && stHit.Font.Bold
+                                    && stHitSelected != null && stHitSelected.SelectionForeColor == curTheme.Danger && stHitSelected.ForeColor == curTheme.Danger && stHitSelected.Font != null && stHitSelected.Font.Bold
+                                    && stOther != null && stOther.ForeColor == curTheme.Text && stOther.Font != null && !stOther.Font.Bold;
+
+                                // Đổi bill trên lưới trên qua CurrentCell → SelectionChanged tự nạp chi tiết billB1 (1 dòng) và billA2 (kiểm SLXUAT nguyên giá trị = 3, không trừ SLNHAP).
+                                dlg.SelectBillRow(1);
+                                int linesBillB1 = dlg.LineRowCount;
+                                dlg.SelectBillRow(2);
+                                int lineA2ProdA = dlg.FindLineRowIndexByProductId(prodAId);
+                                string slXuatRaw = lineA2ProdA >= 0 ? Convert.ToString(dlg.LinesGridForTest.Rows[lineA2ProdA].Cells["colLineSoLuong"].FormattedValue) : "";
+
+                                Check("Thống kê MH bán Dialog (§6/§2.0 chi tiết): đúng 22+11 cột, chọn bill đầu sắp GIOTHANHTOAN, giữ nguyên liệu/loại vật tư+combo, tô đỏ đậm thật kể cả khi chọn, đổi bill qua sự kiện, SLXUAT nguyên giá trị",
+                                    bhOk && lhOk && billsOrderAndFirst && linesBillA1Ok && highlightStyleOk
+                                    && linesBillB1 == 1 && slXuatRaw == 3m.ToString("#,##0.##", vi)
+                                    && dlg.BillsGridForTest.ReadOnly && dlg.LinesGridForTest.ReadOnly
+                                    && dlg.ExitButtonForTest.Text == "Thoát",
+                                    "bh=" + bhOk + ", lh=" + lhOk + ", ord=" + billsOrderAndFirst + ", linesA1=" + dlg.LineRowCount
+                                    + ", hl=" + highlightStyleOk + ", linesB1=" + linesBillB1 + ", slRaw=" + slXuatRaw);
+                            }
+                            finally
+                            {
+                                dlg.Close();
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        hostForm.Close();
+                    }
+                }
+
+                // 7. Quyền Xem giá nhập: dựng view bằng session KHÔNG có quyền Xem giá nhập (trong khi AppSession.Current vẫn là admin!)
+                // → kiểm 5 cột thật sự ẩn, 6 cột còn lại hiện, khối tổng ẩn, nút In ẩn.
+                AppSession.Current = adminSession;
+                var noCostPerms = new FunctionPermissions(false);
+                noCostPerms.Add(ItemSalesConstants.FunctionId, ItemSalesConstants.FunctionName, RoleModes.View);
+                var noCostSession = new UserSession
+                {
+                    UserId = userAId,
+                    UserName = "tkmh_user_a",
+                    DisplayName = "TKMH Thu ngân A",
+                    IsAdmin = false,
+                    DatabasePath = db,
+                    Permissions = noCostPerms
+                };
+                using (var hostNoCost = new System.Windows.Forms.Form
+                {
+                    StartPosition = System.Windows.Forms.FormStartPosition.Manual,
+                    ShowInTaskbar = false,
+                    Location = new System.Drawing.Point(-20000, -20000),
+                    ClientSize = new System.Drawing.Size(1400, 780)
+                })
+                {
+                    var viewNoCost = new ItemSalesView(noCostSession)
+                    {
+                        Dock = System.Windows.Forms.DockStyle.Fill,
+                        SuppressErrorPopup = true
+                    };
+                    hostNoCost.Controls.Add(viewNoCost);
+                    hostNoCost.Show();
+                    System.Windows.Forms.Application.DoEvents();
+                    try
+                    {
+                        bool hidden5 = !viewNoCost.GridForTest.Columns["colThanhTien"].Visible
+                            && !viewNoCost.GridForTest.Columns["colGiaVon"].Visible
+                            && !viewNoCost.GridForTest.Columns["colThanhTienNhap"].Visible
+                            && !viewNoCost.GridForTest.Columns["colLai"].Visible
+                            && !viewNoCost.GridForTest.Columns["colTiLeLai"].Visible;
+                        bool visible6 = viewNoCost.GridForTest.Columns["colTenHang"].Visible
+                            && viewNoCost.GridForTest.Columns["colSoLuong"].Visible
+                            && viewNoCost.GridForTest.Columns["colDvt"].Visible
+                            && viewNoCost.GridForTest.Columns["colDonGia"].Visible
+                            && viewNoCost.GridForTest.Columns["colTienGiam"].Visible
+                            && viewNoCost.GridForTest.Columns["colTiLeGiamGia"].Visible;
+                        // Combo cửa hàng của userA chỉ có mục trống + storeA (không có storeB).
+                        bool userAStoreLookupOk = viewNoCost.StoreComboForTest.Items.Count == 2
+                            && ((StoreRecord)viewNoCost.StoreComboForTest.Items[0]).Id == ""
+                            && ((StoreRecord)viewNoCost.StoreComboForTest.Items[1]).Id == storeAId;
+
+                        Check("Thống kê MH bán UI (§6/§2.1 quyền Xem giá nhập): không có quyền ẩn đúng 5 cột, khối tổng và nút In (dùng đúng phiên của view); lookup chỉ liệt kê cửa hàng của user",
+                            hidden5 && visible6 && !viewNoCost.BottomPanelForTest.Visible && !viewNoCost.PrintButtonForTest.Visible && userAStoreLookupOk,
+                            "h5=" + hidden5 + ", v6=" + visible6 + ", bot=" + viewNoCost.BottomPanelForTest.Visible
+                            + ", prn=" + viewNoCost.PrintButtonForTest.Visible + ", stores=" + viewNoCost.StoreComboForTest.Items.Count);
+
+                        // Chống lộ dữ liệu qua sao chép/ô lưới khi không có quyền Xem giá nhập (§2.1):
+                        // Nạp dữ liệu 10/07/2002 → 11/07/2002 qua sự kiện thật; chọn dòng prodC (Đơn giá 40000; 5 số bị cấm là 80000, 25000, 50000, 30000, 37.5 — không trùng 2 hay 40000).
+                        viewNoCost.FromDateBoxForTest.Inner.Text = "10/07/2002";
+                        viewNoCost.FromDateBoxForTest.Commit();
+                        viewNoCost.ToDateBoxForTest.Inner.Text = "11/07/2002";
+                        viewNoCost.ToDateBoxForTest.Commit();
+
+                        int idxNoCostC = -1;
+                        int idxNoCostA30 = -1;
+                        for (int i = 0; i < viewNoCost.GridForTest.Rows.Count; i++)
+                        {
+                            var k = viewNoCost.GridForTest.Rows[i].Tag as ItemSalesDetailKey;
+                            if (k != null && k.ProductId == prodCId) idxNoCostC = i;
+                            if (k != null && k.ProductId == prodAId && k.UnitPrice == 30000m) idxNoCostA30 = i;
+                        }
+                        bool noCostSelC = viewNoCost.SelectRow(idxNoCostC);
+                        string noCostCopyHidden = Controls.DetailGridMenu.BuildSelectionCopyText(viewNoCost.GridForTest) ?? "";
+                        bool copyHasAllowedOnly = noCostCopyHidden.IndexOf("TKMH-Bánh tiramisu", StringComparison.Ordinal) >= 0
+                            && noCostCopyHidden.IndexOf("40000", StringComparison.Ordinal) >= 0
+                            && noCostCopyHidden.IndexOf("80000", StringComparison.Ordinal) < 0
+                            && noCostCopyHidden.IndexOf("25000", StringComparison.Ordinal) < 0
+                            && noCostCopyHidden.IndexOf("50000", StringComparison.Ordinal) < 0
+                            && noCostCopyHidden.IndexOf("30000", StringComparison.Ordinal) < 0
+                            && noCostCopyHidden.IndexOf("37.5", StringComparison.Ordinal) < 0
+                            && noCostCopyHidden.IndexOf("37,5", StringComparison.Ordinal) < 0;
+
+                        // Bật 5 cột bị cấm lên bằng code: giá trị 5 ô vẫn rỗng (null / "") và sao chép vẫn không lộ số bị cấm.
+                        string[] protectedCols = { "colThanhTien", "colGiaVon", "colThanhTienNhap", "colLai", "colTiLeLai" };
+                        bool cellsEmptyEvenWhenUnhidden = true;
+                        foreach (string colName in protectedCols)
+                            viewNoCost.GridForTest.Columns[colName].Visible = true;
+                        foreach (string colName in protectedCols)
+                        {
+                            System.Windows.Forms.DataGridViewCell cell = viewNoCost.GridForTest.Rows[idxNoCostC].Cells[colName];
+                            if (cell.Value != null || !string.IsNullOrEmpty(Convert.ToString(cell.FormattedValue)))
+                                cellsEmptyEvenWhenUnhidden = false;
+                        }
+                        string noCostCopyForcedVisible = Controls.DetailGridMenu.BuildSelectionCopyText(viewNoCost.GridForTest) ?? "";
+                        bool stillNoLeakWhenUnhidden = noCostCopyForcedVisible.IndexOf("80000", StringComparison.Ordinal) < 0
+                            && noCostCopyForcedVisible.IndexOf("25000", StringComparison.Ordinal) < 0
+                            && noCostCopyForcedVisible.IndexOf("50000", StringComparison.Ordinal) < 0
+                            && noCostCopyForcedVisible.IndexOf("30000", StringComparison.Ordinal) < 0
+                            && noCostCopyForcedVisible.IndexOf("37.5", StringComparison.Ordinal) < 0;
+                        foreach (string colName in protectedCols)
+                            viewNoCost.GridForTest.Columns[colName].Visible = false;
+
+                        // Nhấp đúp (mở dialog cho dòng prodA @ 30000) khi không có quyền Xem giá nhập vẫn ra đúng 2 hóa đơn của storeA.
+                        bool noCostDetailOk = false;
+                        using (Dialogs.ItemSalesDetailDialog dlgNoCost = viewNoCost.CreateDetailDialogForRow(idxNoCostA30))
+                        {
+                            if (dlgNoCost != null)
+                            {
+                                dlgNoCost.SuppressErrorPopup = true;
+                                dlgNoCost.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+                                dlgNoCost.ShowInTaskbar = false;
+                                dlgNoCost.Location = new System.Drawing.Point(-20000, -20000);
+                                dlgNoCost.Show();
+                                System.Windows.Forms.Application.DoEvents();
+                                try
+                                {
+                                    noCostDetailOk = dlgNoCost.BillRowCount == 2
+                                        && dlgNoCost.FindBillRowIndexById(billA1Id) == 0
+                                        && dlgNoCost.FindBillRowIndexById(billA2Id) == 1;
+                                }
+                                finally { dlgNoCost.Close(); }
+                            }
+                        }
+
+                        Check("Thống kê MH bán UI (§2.1 chống lộ dữ liệu khi không có quyền Xem giá nhập): sao chép không chứa 5 số bị cấm, 5 ô rỗng kể cả khi bật cột bằng code, mở dialog vẫn đúng 2 bill",
+                            noCostSelC && copyHasAllowedOnly && cellsEmptyEvenWhenUnhidden && stillNoLeakWhenUnhidden && noCostDetailOk,
+                            "copy=" + noCostCopyHidden + ", empty5=" + cellsEmptyEvenWhenUnhidden + ", noLeak=" + stillNoLeakWhenUnhidden + ", dlg=" + noCostDetailOk);
+                    }
+                    finally
+                    {
+                        hostNoCost.Close();
+                    }
+                }
+
+                // 7b. DetailGridMenu (dùng chung) trên lưới thường có cột ẩn: bỏ qua cột Visible = false cho cả sao chép vùng chọn và sao chép ô, không sinh dòng trống.
+                using (var hostGridTest = new System.Windows.Forms.Form
+                {
+                    StartPosition = System.Windows.Forms.FormStartPosition.Manual,
+                    ShowInTaskbar = false,
+                    Location = new System.Drawing.Point(-20000, -20000),
+                    ClientSize = new System.Drawing.Size(600, 300)
+                })
+                {
+                    var plainGrid = new System.Windows.Forms.DataGridView
+                    {
+                        Dock = System.Windows.Forms.DockStyle.Fill,
+                        ReadOnly = true,
+                        AllowUserToAddRows = false,
+                        RowHeadersVisible = false,
+                        SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect,
+                        MultiSelect = true
+                    };
+                    plainGrid.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "cVis1", HeaderText = "Hiện 1", Visible = true });
+                    plainGrid.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "cSecret", HeaderText = "Ẩn", Visible = false });
+                    plainGrid.Columns.Add(new System.Windows.Forms.DataGridViewTextBoxColumn { Name = "cVis2", HeaderText = "Hiện 2", Visible = true });
+                    plainGrid.Rows.Add("VIS_A1", "SECRET_73915", "VIS_B1");
+                    plainGrid.Rows.Add("VIS_A2", "SECRET_84269", "VIS_B2");
+                    hostGridTest.Controls.Add(plainGrid);
+                    hostGridTest.Show();
+                    System.Windows.Forms.Application.DoEvents();
+                    try
+                    {
+                        plainGrid.ClearSelection();
+                        plainGrid.CurrentCell = plainGrid.Rows[0].Cells["cVis1"];
+                        plainGrid.Rows[0].Selected = true;
+                        plainGrid.Rows[1].Selected = true;
+                        string fullRowCopy = Controls.DetailGridMenu.BuildSelectionCopyText(plainGrid);
+                        bool fullRowOk = fullRowCopy == "VIS_A1\tVIS_B1\r\nVIS_A2\tVIS_B2"
+                            && fullRowCopy.IndexOf("SECRET_73915", StringComparison.Ordinal) < 0
+                            && fullRowCopy.IndexOf("SECRET_84269", StringComparison.Ordinal) < 0;
+
+                        // Chọn dòng 0 chỉ ô ẩn + dòng 1 ô hiện → không sinh dòng trống cho dòng 0.
+                        plainGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
+                        plainGrid.ClearSelection();
+                        plainGrid.Rows[0].Cells["cSecret"].Selected = true;
+                        plainGrid.Rows[1].Cells["cVis1"].Selected = true;
+                        string mixedCopy = Controls.DetailGridMenu.BuildSelectionCopyText(plainGrid);
+                        bool noBlankLineForHiddenRow = mixedCopy == "VIS_A2";
+
+                        // Chọn chỉ ô ẩn → trả null và CopySelection không ném ngoại lệ clipboard.
+                        plainGrid.ClearSelection();
+                        plainGrid.Rows[0].Cells["cSecret"].Selected = true;
+                        string onlyHiddenCopy = Controls.DetailGridMenu.BuildSelectionCopyText(plainGrid);
+                        bool copyHiddenNoThrow = true;
+                        try { Controls.DetailGridMenu.CopySelection(plainGrid); }
+                        catch (Exception) { copyHiddenNoThrow = false; }
+
+                        // Kiểm CopyCell: ô hiện trả đúng giá trị; khi ẩn các cột hiện thì không còn ô hợp lệ để chép và CopyCell không ném lỗi.
+                        plainGrid.CurrentCell = plainGrid.Rows[0].Cells["cVis1"];
+                        string visCellText = Controls.DetailGridMenu.BuildCellCopyText(plainGrid);
+                        plainGrid.Columns["cVis1"].Visible = false;
+                        plainGrid.Columns["cVis2"].Visible = false;
+                        string hiddenCurrentCellText = Controls.DetailGridMenu.BuildCellCopyText(plainGrid);
+                        bool copyCellNoThrow = true;
+                        try { Controls.DetailGridMenu.CopyCell(plainGrid); }
+                        catch (Exception) { copyCellNoThrow = false; }
+
+                        Check("DetailGridMenu (lưới có cột ẩn trên Form đã Show): sao chép vùng chọn và sao chép ô bỏ qua cột Visible=false, không sinh dòng trống, không lỗi clipboard khi rỗng",
+                            fullRowOk && noBlankLineForHiddenRow && onlyHiddenCopy == null && copyHiddenNoThrow
+                            && visCellText == "VIS_A1" && hiddenCurrentCellText == null && copyCellNoThrow,
+                            "full=" + (fullRowCopy ?? "null") + ", mixed=" + (mixedCopy ?? "null") + ", hiddenCell=" + (hiddenCurrentCellText ?? "null"));
+                    }
+                    finally
+                    {
+                        hostGridTest.Close();
+                    }
+                }
+
+                // 8. Preview forms --render-screen preview.itemsales và preview.itemsalesdetail.
+                using (System.Windows.Forms.Form pvMainForm = Dialogs.ScreenFactory.Create("preview.itemsales", adminSession))
+                {
+                    var pvMain = pvMainForm as Dialogs.ItemSalesPreviewForm;
+                    bool pvMainOk = false;
+                    if (pvMain != null)
+                    {
+                        pvMain.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+                        pvMain.ShowInTaskbar = false;
+                        pvMain.Location = new System.Drawing.Point(-20000, -20000);
+                        pvMain.Show();
+                        System.Windows.Forms.Application.DoEvents();
+                        try
+                        {
+                            pvMain.Preview("from=10/07/2002");
+                            pvMain.Preview("to=11/07/2002");
+                            pvMain.Preview("select=1");
+                            pvMainOk = pvMain.ViewForTest.GridRowCount == 5
+                                && pvMain.ViewForTest.GridForTest.SelectedRows.Count == 1
+                                && pvMain.ViewForTest.GridForTest.SelectedRows[0].Index == 1;
+                        }
+                        finally { pvMain.Close(); }
+                    }
+                    Check("Thống kê MH bán (preview.itemsales): Show form chụp màn hình và from/to/select=1 hoạt động qua sự kiện thật", pvMainOk);
+                }
+
+                using (System.Windows.Forms.Form pvDetailForm = Dialogs.ScreenFactory.Create("preview.itemsalesdetail", adminSession))
+                {
+                    var pvDetail = pvDetailForm as Dialogs.ItemSalesDetailDialog;
+                    bool pvDetailOk = false;
+                    if (pvDetail != null)
+                    {
+                        pvDetail.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+                        pvDetail.ShowInTaskbar = false;
+                        pvDetail.Location = new System.Drawing.Point(-20000, -20000);
+                        pvDetail.Show();
+                        System.Windows.Forms.Application.DoEvents();
+                        try
+                        {
+                            pvDetail.Preview("from=10/07/2002");
+                            pvDetail.Preview("to=11/07/2002");
+                            pvDetailOk = pvDetail.BillRowCount >= 1 && pvDetail.LineRowCount >= 1;
+                        }
+                        finally { pvDetail.Close(); }
+                    }
+                    Check("Thống kê MH bán (preview.itemsalesdetail): Show dialog chụp màn hình nạp được hóa đơn & chi tiết", pvDetailOk);
+                }
+            }
+            finally
+            {
+                // Hoàn lại phiên, cấu hình và dọn con trước cha: dòng bill → bill → đặt hàng → khách → mặt hàng → nhóm → ĐVT → liên kết CH → user → cửa hàng.
+                AppSession.Current = savedAppSession;
+                cfgRepo.Save(new[]
+                {
+                    new ConfigChange { Name = ItemSalesConstants.ConfigSortOrderKey, DataType = 3, IntValue = origSortOrder },
+                    new ConfigChange { Name = ItemSalesConstants.ConfigUseCodeKey, DataType = 3, IntValue = origUseCode }
+                }, "selftest");
+                SystemConfig.Reload(db);
+
+                foreach (string lid in lineIds)
+                    BookingExec(db, "DELETE FROM TDONHANGCHITIET WHERE ID = @I", "@I", lid);
+                BookingExec(db, "DELETE FROM TDONHANG WHERE ID IN (@A, @B, @C, @D, @E, @F, @G)",
+                    "@A", billA1Id, "@B", billA2Id, "@C", billB1Id,
+                    "@D", billUnpaidId, "@E", billDeletedId, "@F", billImportId, "@G", billNextDayId);
+                BookingExec(db, "DELETE FROM TDATHANG WHERE ID = @I", "@I", bookingId);
+                BookingExec(db, "DELETE FROM DKHACHHANG WHERE ID = @I", "@I", custId);
+                BookingExec(db, "DELETE FROM DMATHANG WHERE ID IN (@A, @B, @C, @D, @E)",
+                    "@A", prodAId, "@B", prodBId, "@C", prodCId, "@D", prodDId, "@E", prodMatId);
+                BookingExec(db, "DELETE FROM DNHOMMATHANG WHERE ID = @I", "@I", grpDrinkSubId);
+                BookingExec(db, "DELETE FROM DNHOMMATHANG WHERE ID IN (@A, @B, @C)", "@A", grpDrinkId, "@B", grpCakeId, "@C", grpMatId);
+                BookingExec(db, "DELETE FROM DDONVITINH WHERE ID = @I", "@I", unitId);
+                BookingExec(db, "DELETE FROM TNGUOIDUNGTHEOCUAHANG WHERE ID = @I", "@I", userStoreLinkId);
+                BookingExec(db, "DELETE FROM SUSER WHERE ID IN (@A, @B)", "@A", userAId, "@B", userNoStoreId);
+                BookingExec(db, "DELETE FROM DCUAHANG WHERE ID IN (@A, @B)", "@A", storeAId, "@B", storeBId);
             }
         }
     }

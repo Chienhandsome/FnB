@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="ActivityModels.cs" />
     <Compile Include="AdminModels.cs" />
+    <Compile Include="BillReportScope.cs" />
     <Compile Include="BookingModels.cs" />
     <Compile Include="BookingCalendarModels.cs" />
     <Compile Include="CancelledBillModels.cs" />
@@ -49,6 +50,7 @@
     <Compile Include="ConfigModels.cs" />
     <Compile Include="DocumentNumber.cs" />
     <Compile Include="FundModels.cs" />
+    <Compile Include="ItemSalesModels.cs" />
     <Compile Include="MenuModels.cs" />
     <Compile Include="PhieuThuModels.cs" />
     <Compile Include="ProductModels.cs" />

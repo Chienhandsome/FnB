@@ -23,11 +23,17 @@ namespace Kazuko_FnB.Services
         /// <summary>Có cờ quyền <paramref name="bit"/> trên chức năng <paramref name="functionName"/>? Chưa đăng nhập = không.</summary>
         public static bool Can(string functionName, int bit)
         {
-            if (Current == null)
+            return Can(Current, functionName, bit);
+        }
+
+        /// <summary>Có cờ quyền <paramref name="bit"/> trên chức năng <paramref name="functionName"/> của đúng phiên <paramref name="session"/>?</summary>
+        public static bool Can(UserSession session, string functionName, int bit)
+        {
+            if (session == null)
                 return false;
-            if (Current.IsAdmin)
+            if (session.IsAdmin)
                 return true;
-            return Current.Permissions != null && Current.Permissions.Can(functionName, bit);
+            return session.Permissions != null && session.Permissions.Can(functionName, bit);
         }
     }
 }
