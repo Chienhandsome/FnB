@@ -91,6 +91,7 @@ if ($Since) {
             if ($it.LastWriteTime -le $Since) { continue }
             $full = $it.FullName
             if ($full.StartsWith($wtPrefix, [StringComparison]::OrdinalIgnoreCase)) { continue }
+            if ($script:OutsideScanExcludeFiles -contains $full) { continue }
             $skip = $false
             foreach ($ex in $script:OutsideScanExclude) { if ($full.IndexOf($ex, [StringComparison]::OrdinalIgnoreCase) -ge 0) { $skip = $true; break } }
             if (-not $skip) { $outside += $full }

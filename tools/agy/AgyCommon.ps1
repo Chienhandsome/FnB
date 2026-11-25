@@ -20,6 +20,8 @@ $script:AgyGlobalSettings = Join-Path $env:USERPROFILE '.gemini\antigravity-cli\
 $script:OutsideScanRoots = @('D:\Working', (Join-Path $env:USERPROFILE 'Desktop'), (Join-Path $env:USERPROFILE 'Documents'),
     (Join-Path $env:USERPROFILE 'Downloads'), (Join-Path $env:USERPROFILE '.ssh'), (Join-Path $env:USERPROFILE '.gitconfig'))
 $script:OutsideScanExclude = @('\.git\', '\.vs\', '\bin\', '\obj\', '\fnb-agy-work\_tmp\', '\fnb-agy-work\_cache\')
+# File khóa do chính Claude Code ghi khi phiên vòng lặp hẹn nhịp (issue #15). So đúng đường dẫn đầy đủ, không bỏ qua cả .claude.
+$script:OutsideScanExcludeFiles = @((Join-Path $script:AgyRepo '.claude\scheduled_tasks.lock'))
 
 # File và thư mục agy không được sửa (§4 bước 6 của workflow). So khớp theo tiền tố đường dẫn trong repo.
 $script:ForbiddenPrefixes = @('docs/', 'CLAUDE.md', '.gitignore', '.github/', '.claude/', 'Kazuko_FnB/lib/',

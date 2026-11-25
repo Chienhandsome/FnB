@@ -12,7 +12,7 @@ Spec: [`../specs/tong-hop-ket-qua-kinh-doanh.md`](../specs/tong-hop-ket-qua-kinh
 
 ## Còn
 - Chiến bấm thử trên bản sao DB. Mẫu in chưa làm (C10).
-- Phần sửa `tools/agy/AgyCommon.ps1`, `Test-AgyScope.ps1` chưa commit.
+- Phần sửa `tools/agy/AgyCommon.ps1`, `Test-AgyScope.ps1` commit riêng ngày 25/11.
 
 ## Chưa kiểm
 - 125% DPI. Chưa đối chiếu số với app gốc; chưa thấy app gốc vẽ báo cáo khi có số liệu.
