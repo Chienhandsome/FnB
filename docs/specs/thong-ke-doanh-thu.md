@@ -124,7 +124,7 @@ Dữ liệu tạo bằng chính app gốc: bill 1 tiền mặt 100.000; bill 2 t
 
 - **Khớp:** danh sách bill (2 bill, bill chưa thanh toán không hiện ở app gốc), TIỀN HÀNG 180.000, giảm giá 10.000, TỔNG DOANH THU 170.000, tiền mặt 100.000, thẻ 70.000, THU KHÁC 40.000, CHI KHÁC 15.000, TỔNG THỰC THU 195.000.
 - **Khác có chủ đích:** số nguyên thay `n2` (Q6); ẩn 2 dòng tiền giờ (Q7).
-- **Khác do spec ghi sai thứ tự (chờ Chiến quyết):** (1) app gốc xếp CHUYỂN KHOẢN, TRỪ TÍCH LŨY, THẺ TRẢ TRƯỚC, **VOUCHER**, CÔNG NỢ; bản mới để VOUCHER ngay sau CHUYỂN KHOẢN. (2) Lưới chi tiết app gốc để **S.lượng ở cuối** (sau Ghi chú); bản mới để cột thứ ba.
+- **Khác do spec ghi sai thứ tự (Chiến chốt 25/11: giữ nguyên bản mới, chỉ khác vị trí):** (1) app gốc xếp CHUYỂN KHOẢN, TRỪ TÍCH LŨY, THẺ TRẢ TRƯỚC, **VOUCHER**, CÔNG NỢ; bản mới để VOUCHER ngay sau CHUYỂN KHOẢN. (2) Lưới chi tiết app gốc để **S.lượng ở cuối** (sau Ghi chú); bản mới để cột thứ ba.
 - **Chưa đối chiếu:** voucher, chuyển khoản, công nợ, tích lũy, thẻ trả trước, thuế, phí dịch vụ, nhiều cửa hàng.
 
 ## 7. Gợi ý implement (không bắt buộc)

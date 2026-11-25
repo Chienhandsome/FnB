@@ -19,7 +19,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Danh mục hóa đơn hủy — xem issue #7 (chưa kiểm 125% DPI)
 - [ ] Thống kê mặt hàng bán — xem issue #9 (đối chiếu số với app gốc; chưa kiểm 125% DPI)
 
-- [ ] Thống kê doanh thu — xem issue #12; số đã khớp app gốc (spec §6.1); chốt 2 chỗ khác thứ tự; chưa kiểm 125% DPI
+- [ ] Thống kê doanh thu — xem issue #12; số đã khớp app gốc (spec §6.1); chưa kiểm 125% DPI
 
 ## Hàng đợi spec (thứ tự làm)
 | # | Spec | Trạng thái | Loại | Ghi chú |
