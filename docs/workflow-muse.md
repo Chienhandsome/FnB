@@ -1,6 +1,6 @@
 # Workflow Muse → Drive → Claude → `main`
 
-Bản viết lại ngày 25/11/2026 từ `workflow-muse-drive-cho-claude.md`. Áp dụng cho repo `D:\Working\FnB`. **Chưa có hiệu lực** cho tới khi ngoại lệ ở §9 được thêm vào `CLAUDE.md`.
+Bản viết lại ngày 25/11/2026 từ `workflow-muse-drive-cho-claude.md`. Áp dụng cho repo `D:\Working\FnB`. **Có hiệu lực từ 25/11/2026:** ngoại lệ ở §9 đã thêm vào `CLAUDE.md`. Chưa chạy vòng nào; việc cần làm trước bài test đầu xem §12.
 
 **Chiến chốt 25/11:** Claude **push code thẳng lên `main`**, không qua nhánh hay pull request. Code lên `main` trước, review sau. Vì vậy các bước kiểm ở §5 là cổng chặn duy nhất trước `main`; code lỗi thì gỡ bằng `git revert` (§7).
 
@@ -128,5 +128,5 @@ Xóa cứng (không thùng rác) · tiền `decimal`, `LamTron` bội 1000 AwayF
 
 - **Một** chức năng, spec đã duyệt, base = `origin/main` lúc làm. Gợi ý: Lưu vết hoạt động (cần Chiến duyệt spec trước).
 - Patch gộp 7 chức năng trên `02ba7a7` **không dùng**: `main` đã đi trước (sửa `SelfTest.cs`, `ScreenFactory.cs`, các `.csproj`), và cả 7 spec còn NHÁP. Muốn giữ phần code đó thì Muse tách thành từng patch, gửi sau khi từng spec được duyệt.
-- Trước khi chạy: thêm §9 vào `CLAUDE.md`; tạo nhãn `muse-patch`; chạy selftest của `main` một lần để có mốc (đang ghi nhận 2 ca lỗi cũ ở phần xóa nhóm người dùng).
+- Trước khi chạy: ~~thêm §9 vào `CLAUDE.md`~~ (đã thêm 25/11); tạo nhãn `muse-patch`; chạy selftest của `main` một lần để có mốc (đang ghi nhận 2 ca lỗi cũ ở phần xóa nhóm người dùng).
 - **Thành công** = commit lên `main` fast-forward, báo cáo đủ §6 trên issue, Muse review xong, Chiến bấm thử. Thử thêm một lần `git revert` để chắc đường gỡ lỗi chạy được.
