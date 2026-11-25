@@ -2,7 +2,7 @@
 
 - Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
 - Ngày: 2026-11-23. Base: `main` @ `13d90f8` (đã `git fetch origin main`, working tree sạch). Đã sửa theo review Muse (issue #1) ngày 23/11 + Chiến chốt Q1/P3.
-- Rà lại ngày 25/11 trên `main` @ `cb8b5b7`, đối chiếu [`quy-tien.md`](quy-tien.md) (đã duyệt). **Quỹ nào tăng giảm theo `quy-tien.md`**; spec này quy định màn bán hàng ghi gì vào bill. **Q14–Q19 Chiến chốt 25/11** (§6.3). Q2–Q13 còn dùng mặc định tạm, chưa chốt.
+- Rà lại ngày 25/11 trên `main` @ `cb8b5b7`, đối chiếu [`quy-tien.md`](quy-tien.md) (đã duyệt). **Quỹ nào tăng giảm theo `quy-tien.md`**; spec này quy định màn bán hàng ghi gì vào bill. **Q14–Q20 Chiến chốt 25/11** (§6.3). Q2–Q13 còn dùng mặc định tạm, chưa chốt.
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Sử dụng dịch vụ** (`SMENU` `8e360da4-b18e-43ba-a0fe-aac67914aabf`, `SORTORDER = ZZZ013`, `MENUCODE = SuDungDichVu`, `OPERATION = 4`, `SFORMID` `141ca9a1-6819-49e2-b8a6-c1ac806ef0a9`, `SFUNCTIONID` `db591d0e-d671-42d0-b3b1-f705345cc641`). Không phải màn danh mục (form `141ca9a1` có `STABLEDESCID` rỗng; form hóa đơn `f3f7bb77` có `STABLEDESCID = 721de885-…`, chưa rõ desc bảng nào): là **form tùy biến** `SuDungDichVu` nhúng form hóa đơn `TDONHANG0Ae` ("Hóa đơn nhà hàng") ở chế độ `HoaDonMode.SuDungDichVu`.
 - Cùng lớp `TDONHANG0Ae` còn phục vụ **Điều chỉnh hóa đơn** (ZZZ014) và **Quản lý bán hàng** (ZZZ015) — hai màn đó sẽ có spec riêng, chỉ ghi phần khác chế độ. Spec này **là spec gốc của bộ máy hóa đơn nhà hàng**.
@@ -166,7 +166,8 @@ Nợ khách tính bằng `Σ(TONGCONG − TIENTHANHTOAN)` trừ phiếu thu/chi 
 ### 3.8 Chuyển / gộp bàn, hủy bill
 
 Chi tiết `ban-khu-vuc.md` §2–3. Thông báo nguyên văn quan trọng: "Bàn này đã in tạm tính, không thể thay đổi" (chặn khi `ChoPhepThayDoiHoaDonSauKhiInTamTinh=0`); "Bàn này đã thanh toán, không thể thay đổi"; "Mời bạn chọn bàn khác"; "<Bàn> <tên> đang bị giữ bởi <tài khoản>"; chuyển cần quyền `ChuyenBan`, gộp `GopBan`; hỏi "Bạn có muốn chuyển hóa đơn từ bàn 'A' sang bàn 'B' không?" / "Bạn có chắc chắn muốn gộp bàn 'A' và bàn 'B' không? Sau khi gộp, chỉ còn hóa đơn trên bàn 'B', các mặt hàng sẽ được chuyển sang bàn này." Gộp bị từ chối nếu bill nguồn tạo từ đặt hàng, hoặc tỉ lệ giảm giá hai bill khác nhau. Hộp chọn bàn: đích có bill mà chế độ "Chuyển" → "Bàn này đang sử dụng, mời bạn chọn bàn khác(bàn trống) để chuyển!"; đích trống mà chế độ "Gộp" → "Bàn này không sử dụng, mời bạn chọn bàn khác (bàn đang có khách) để gộp!". Hủy bill: quyền `HuyHoaDon`, trong `ThoiGianChoPhepHuyBill` (hiện 50 phút) từ lúc `BATDAU`, bill không thuộc nhóm gộp; `NhapLyDoKhiHuyHoaDon=30` (hiện 30) bắt nhập lý do, ngược lại hỏi "Bạn có muỗn hủy hóa đơn trên bàn '<tên>' không?" (**nguyên văn lỗi chính tả "muỗn"** — Q12); hủy = `HuyBill` (ghi `TDONHANGHUY`, xóa bill, chi tiết, `TINCHEBIEN`).
-Hủy bill chưa thanh toán không đổi quỹ; phiếu thu cọc/tạm ứng liên quan **không** tự xóa (`quy-tien.md` §4.2). **Gộp bàn khi bàn nguồn có tạm ứng (Q19, Chiến chốt 25/11): không cho gộp.** Bill nguồn có phiếu thu tạm ứng còn hiệu lực (`TTHUCHI.TDONHANGID` = bill, `STATUS ≠ -30`) thì từ chối gộp, vì gộp sẽ xóa bill nguồn và làm phiếu tạm ứng mất chỗ trừ. Câu báo (đề xuất): "Bàn '<A>' đã có tiền tạm ứng, không thể gộp. Mời bạn dùng Thanh toán chung hoặc thanh toán riêng." Muốn trả chung thì dùng Thanh toán chung (§3.7.3). Hủy bill có tạm ứng: chưa chốt, xem Q20.
+Hủy bill chưa thanh toán không đổi quỹ; phiếu thu cọc/tạm ứng liên quan **không** tự xóa (`quy-tien.md` §4.2). **Gộp bàn khi bàn nguồn có tạm ứng (Q19, Chiến chốt 25/11): không cho gộp.** Bill nguồn có phiếu thu tạm ứng còn hiệu lực (`TTHUCHI.TDONHANGID` = bill, `STATUS ≠ -30`) thì từ chối gộp, vì gộp sẽ xóa bill nguồn và làm phiếu tạm ứng mất chỗ trừ. Câu báo (đề xuất): "Bàn '<A>' đã có tiền tạm ứng, không thể gộp. Mời bạn dùng Thanh toán chung hoặc thanh toán riêng." Muốn trả chung thì dùng Thanh toán chung (§3.7.3).
+**Hủy bill khi có tạm ứng (Q20, Chiến chốt 25/11): không cho hủy**, cùng điều kiện và lý do như gộp bàn (khác gốc: gốc vẫn cho hủy). Câu báo (đề xuất): "Hóa đơn trên bàn '<A>' đã có tiền tạm ứng, không thể hủy. Mời bạn lập phiếu chi trả lại tạm ứng trước." Sau khi phiếu tạm ứng đã có phiếu chi trả lại và bị xóa mềm (`STATUS = -30`) thì hủy được.
 **Nút "Tách bàn" của app gốc là stub**, không thêm. Tách bill qua "Ngắt giờ" là chuyện khác, xem §3.7.3.
 
 ### 3.9 Phím tắt (màn Sử dụng dịch vụ) [CODE `mapper_OnKeyDown`]
@@ -261,7 +262,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 | Q17 | ~~Nợ cũ khi các bill khác khách~~ | **Chiến chốt 25/11:** theo khách ở hộp thanh toán (§3.7.3) |
 | Q18 | ~~Voucher, thẻ trả trước, tích lũy trong nhóm~~ | **Chiến chốt 25/11:** lấp từ bill đầu, trước thẻ ngân hàng; dư bỏ (§3.7.3) |
 | Q19 | ~~Gộp bàn khi bill nguồn có tạm ứng~~ | **Chiến chốt 25/11: không cho gộp** (§3.8). Khác đề xuất cũ (chuyển phiếu tạm ứng) |
-| Q20 | Hủy bill (trong 50 phút) khi bill đã có tạm ứng: gốc vẫn cho hủy, phiếu tạm ứng còn lại nhưng trỏ bill đã xóa (tiền đã vào quỹ, không trừ được vào đâu). Chặn hủy như gộp bàn? | Chặn, cùng lý do Q19; muốn hủy thì lập phiếu chi trả lại tạm ứng trước |
+| Q20 | ~~Hủy bill khi đã có tạm ứng~~ | **Chiến chốt 25/11: chặn hủy** (§3.8) |
 
 ## 7. Tiêu chí nghiệm thu (kiểm trên bản sao DB)
 
@@ -274,6 +275,7 @@ Nhiều máy trạm khóa bàn bằng `DBAN.TAIKHOANGIU/GIULUC` (120 giây) ✔ 
 - [ ] Nhóm có cọc dư (Q15): bill 1 = 300.000 cọc 400.000, bill 2 = 200.000 → chỉ thu 100.000, không phiếu chi; quỹ tăng đúng 100.000.
 - [ ] Bill đơn cọc dư (Q16): bill 300.000 cọc 400.000 → `TIENTHANHTOAN = 300.000`, `GetNoCu` của khách không tăng, phiếu chi 100.000.
 - [ ] Gộp bàn khi bàn nguồn có tạm ứng (Q19): bị từ chối, không bill nào đổi; phiếu tạm ứng đã xóa mềm thì cho gộp.
+- [ ] Hủy bill có tạm ứng (Q20): bị từ chối, bill và phiếu tạm ứng giữ nguyên; phiếu tạm ứng đã xóa mềm thì hủy được.
 - [ ] Nhóm trả thiếu: `ChoPhepKhachNo ≠ 30` thì chặn; bật thì chưa chọn khách đứng tên nợ không đóng được, chọn rồi mọi bill mang nợ gắn khách đó, bill không nợ giữ khách cũ.
 
 - [ ] (Seed trong selftest: ≥ 2 khu vực, vài bàn, vài mặt hàng, vài bill; không dựa vào DEMO trống.) Mở màn: tab khu vực đúng số `DKHUVUC.STATUS=30`; bàn `DBAN.STATUS=30` sắp theo tên; khu vực `TABHIENTHI=1` ở hàng dưới.

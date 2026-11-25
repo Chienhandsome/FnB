@@ -23,7 +23,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kết quả kinh doanh |
 | 6 | `bao-gia-ban-hang.md` | NHÁP | nặng | Giá bán |
 | 7 | `danh-muc-khach-hang.md` | NHÁP | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
-| 8 | `su-dung-dich-vu.md` | NHÁP | nặng | Thanh toán; Q14–Q19 chốt 25/11; còn Q20 và Q2–Q13 (đang dùng mặc định tạm) |
+| 8 | `su-dung-dich-vu.md` | NHÁP | nặng | Thanh toán; Q14–Q20 chốt 25/11; còn Q2–Q13 (đang dùng mặc định tạm) |
 | 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | NHÁP | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
 
 ## Ghi chú
