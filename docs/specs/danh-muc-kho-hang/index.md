@@ -1,6 +1,6 @@
 # Spec: Danh mục kho hàng (DKHOHANG)
 
-- Trạng thái: **NHÁP** (Claude viết 26/11/2026 trong vòng lặp tự động; chưa phân loại, chưa duyệt)
+- Trạng thái: **NHÁP** (Claude viết 26/11/2026). Phân loại **nặng** (workflow-agy §10.1); chưa duyệt, chờ Chiến ở issue #20.
 - Base: `main` @ `82d9f37`
 - Menu: KHO HÀNG > Danh mục kho hàng (`SMENU.SORTORDER = ZZZ001`, `STATUS = 30`, không có `VISIBLECONFIGID`; `STABLEDESC` `221299bf…`).
 

@@ -28,3 +28,5 @@
 | Q2 | Cờ âm kho: ghi 30 khi tích, 0 khi bỏ; kho mới mặc định gì? | kho | 30 / 0; mặc định không tích (0). Cần xác minh trên app gốc |
 | Q3 | Cột và thứ tự cột trên lưới của app gốc? | hiển thị | Như mục Giao diện |
 | Q4 | Chỉ có quyền Xem: hộp thoại mở chỉ đọc không? | quyền | Cùng câu trả lời với câu 1 của issue #17 |
+
+**Phân loại 26/11:** nặng. Hỏi Chiến ở issue #20 (Q1, Q2, Q4). Thêm bằng chứng cho Q2: kho có sẵn trong bản chép đang lưu `CHOPHEPAMKHO = 30`; mặc định của kho mới chưa rõ.

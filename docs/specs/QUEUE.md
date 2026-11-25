@@ -39,7 +39,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
 
 | 10 | `danh-muc-cua-hang/index.md` | **NHÁP**, **chờ Chiến** (issue #19) | nặng | Menu đang ẩn vì `NhieuCuaHang = 0` |
-| 11 | `danh-muc-kho-hang/index.md` | **NHÁP** 26/11, chờ phân loại | — | Cờ âm kho, xóa kho đang dùng |
+| 11 | `danh-muc-kho-hang/index.md` | **NHÁP**, **chờ Chiến** (issue #20) | nặng | Cờ âm kho, xóa kho đang dùng |
 
 ## Ghi chú
 - 25/11 (vòng lặp): #8 và #9 tạm bỏ qua vì phụ thuộc #7 đang chờ (#7 tạo lớp truy vấn khách cho màn hóa đơn; #9 dùng bộ máy của #8). Bỏ qua "Danh mục bảng giá" vì là bảng giá tiền giờ, ngoài phạm vi.
