@@ -111,7 +111,9 @@ Ví dụ hóa đơn 480.000, khách chuyển 500.000, quán trả lại 20.000 t
 
 Khách trả chung một lần; mỗi bill vẫn phải ghi `TIENMAT`, `CHUYENKHOAN`, `THE`, `DTAIKHOANNGANHANGID` của mình.
 
-- Số phải trả của từng bill = `MAX(0, TONGCONG − đặt trước của bill đó)`.
+- **Cách tạo nhóm v1:** chức năng mới "Thanh toán chung" ([`su-dung-dich-vu.md`](su-dung-dich-vu.md) §3.7.3, Chiến chốt 25/11).
+- Số phải trả của từng bill = `MAX(0, TONGCONG − đặt trước dùng cho bill đó)`. **Đặt trước tính chung cả nhóm (chốt 25/11, Q15 spec Sử dụng dịch vụ):** cọc dư của bill trước bù sang bill sau theo thứ tự nhóm; chỉ khi tổng cọc lớn hơn tổng tiền cả nhóm mới lập phiếu chi trả lại. Ví dụ bill 1 = 300.000 (cọc 400.000), bill 2 = 200.000 → thu thêm 100.000, không phiếu chi.
+- **Voucher, thẻ trả trước, điểm tích lũy (chốt 25/11, Q18):** lấp từ bill đầu theo thứ tự voucher → thẻ trả trước → tích lũy, **trước** tiền thẻ; phần dư bỏ, không trả lại tiền mặt. Không đổi quỹ (§4.2).
 - Duyệt bill theo **thứ tự xử lý nhóm**, cố định và lặp lại được (v1: giờ vào, rồi số phiếu). Lấp số phải trả của mỗi bill bằng **tiền thẻ trước, rồi chuyển khoản, cuối cùng tiền mặt**; hết nguồn này mới sang nguồn kế.
 - Chuyển khoản còn dư sau bill cuối ghi hết vào **bill cuối**; tiền trả lại trừ vào `TIENMAT` của bill cuối (có thể âm, như §4.3).
 - Mọi bill trong nhóm dùng chung một tài khoản đã chọn.
@@ -120,7 +122,7 @@ Khách trả chung một lần; mỗi bill vẫn phải ghi `TIENMAT`, `CHUYENKH
 
 Ví dụ chia: bill 1 = 300.000, bill 2 = 200.000; khách trả 350.000 chuyển khoản + 150.000 tiền mặt → bill 1: chuyển khoản 300.000; bill 2: chuyển khoản 50.000 + tiền mặt 150.000.
 
-- **Nợ cũ thu kèm, đã chốt 25/11:** phần tiền trả nợ cũ cộng vào **bill cuối** (tăng `TIENMAT`/`CHUYENKHOAN`/`THE` của bill đó theo cùng thứ tự phân bổ); không lập thêm phiếu thu. Đây chỉ là quy tắc ghi tiền vào quỹ; việc giảm công nợ của khách do spec công nợ quy định. Nhánh gộp bàn của app gốc xử lý nợ cũ thế nào [CHƯA XÁC MINH]. Ví dụ: bill 300.000 + 200.000, nợ cũ 100.000, trả 600.000 tiền mặt → bill 1 ghi 300.000, bill 2 ghi 300.000.
+- **Nợ cũ thu kèm, đã chốt 25/11:** phần tiền trả nợ cũ cộng vào **bill cuối** (tăng `TIENMAT`/`CHUYENKHOAN`/`THE` của bill đó theo cùng thứ tự phân bổ); không lập thêm phiếu thu. Đây chỉ là quy tắc ghi tiền vào quỹ; việc giảm công nợ của khách do spec công nợ quy định. Nhánh gộp bàn của app gốc xử lý nợ cũ thế nào [CHƯA XÁC MINH]. Ví dụ: bill 300.000 + 200.000, nợ cũ 100.000, trả 600.000 tiền mặt → bill 1 ghi 300.000, bill 2 ghi 300.000. **Các bill khác khách (chốt 25/11, Q17):** nợ cũ là của khách chọn ở hộp thanh toán; bill cuối được gán khách đó; nhóm đồng thời trả thiếu thì người đứng tên nợ là chính khách đó.
 - **Trả thiếu (ghi nợ), đã chốt 25/11:** các bill đầu được lấp đủ theo thứ tự trên, khoản thiếu nằm ở **bill cuối** (`CONGNO`). Thiếu nhiều hơn số phải trả của bill cuối thì phần còn lại nằm ở bill ngay trước, lùi dần. Σ `CONGNO` của nhóm = số thiếu; quỹ chỉ tăng đúng số tiền thực thu. Ví dụ: bill 300.000 + 200.000, khách trả 400.000 tiền mặt → bill 1 tiền mặt 300.000; bill 2 tiền mặt 100.000, nợ 100.000.
 - **Người đứng tên nợ, đã chốt 25/11:** nhóm trả thiếu thì **bắt chọn một khách hàng** đứng tên khoản nợ trước khi đóng, kể cả khi các bill đang gắn khách khác nhau; khách đó được gán (`DKHACHHANGID`) cho **mọi bill mang nợ**. Bill không mang nợ giữ khách đang có. Chưa chọn thì không đóng được và không bill nào được ghi.
 
@@ -158,6 +160,7 @@ Ví dụ chia: bill 1 = 300.000, bill 2 = 200.000; khách trả 350.000 chuyển
 20. (Q9) Tạm ứng lương chỉ tiền mặt, như form gốc.
 21. (Q10) Quản lý và Kế toán được nhập số dư đầu kỳ và chuyển quỹ.
 22. (Q13) Tồn của tài khoản ngân hàng chỉ hiện khi xem tất cả cửa hàng; mỗi tài khoản một mốc đầu kỳ chung (§4.4, §4.7).
+23. (Bổ sung 25/11, theo Q14–Q18 spec Sử dụng dịch vụ) Gộp tiền nhiều bàn qua "Thanh toán chung"; đặt trước tính chung cả nhóm; voucher/thẻ trả trước/tích lũy lấp từ bill đầu, trước tiền thẻ; nợ cũ theo khách ở hộp thanh toán (§4.8).
 
 ## 7. Tiêu chí nghiệm thu (trên bản sao DB, selftest tự seed)
 

@@ -39,7 +39,7 @@ Khoảng ngày: `NGAY BETWEEN Từ AND Đến`, **Đến tính trọn ngày** (q
 ### 2.2 Nạp lưu vết của hóa đơn đã chọn [CODE `grMain_CustomLoadData`, `GridView_OnCustomFilter`]
 
 - Chọn một dòng ở lưới trái (đổi dòng = tải lại): lấy `TLUUVET` với `SODONHANG = <ID hóa đơn>` (`TDONHANGID`).
-- Chọn tài khoản → thêm `TAIKHOAN = <tên tài khoản hiển thị>` (**so với tên hiển thị `lueNhanVien.DisplayText`**, vì cột `TAIKHOAN` của `TLUUVET` là chuỗi tên, không phải ID).
+- Chọn tài khoản → thêm `TAIKHOAN = <tên>` (cột `TAIKHOAN` của `TLUUVET` là chuỗi tên, không phải ID). Gốc so với tên hiển thị của ô (`lueNhanVien.DisplayText`). **Chiến chốt 25/11 (A1):** v1 ghi và lọc theo **tên đăng nhập** (`SUSER.USERNAME`, ví dụ `Admin`), ô lọc hiện tên đăng nhập; khi có dữ liệu cũ do app gốc ghi thì lọc theo cả tên đăng nhập lẫn tên hiển thị.
 - Cột "Số đơn hàng" hiển thị = `COALESCE(TDONHANG.NAME, TDONHANGHUY.NAME)` của `SODONHANG` (bill đã hủy vẫn ra tên số phiếu).
 - Sắp theo **`CAST(NGAY AS DATE)`, `GIO`** (tăng dần, theo thời điểm xảy ra).
 - Ô **Lọc dữ liệu** lọc thêm ở phía lưới (chuỗi gõ khớp các cột, chi tiết cách khớp do khung lưới).
@@ -142,6 +142,8 @@ Lưu vết **không bị xóa** khi bill bị hủy/xóa (khóa mềm bằng `SO
 | Q6 | Lưu vết có cần xuất Excel / in (gốc không có nút)? | Không |
 | Q7 | Dòng mồ côi (§3.5): có cần màn dọn? | Không |
 | Q8 | ~~Cột lưới phải~~ **Đã giải quyết 25/11:** đúng 9 cột, cột thứ 9 là Phân loại (§1) | — |
+| Q10 | (A1) Lọc tài khoản theo tên đăng nhập hay tên hiển thị? | **Đã chốt 25/11:** tên đăng nhập (§2.2) |
+| Q11 | (A2) Cột cố định rộng để dòng chữ đậm không bị cắt, đổi lại Chức năng/Phân loại phải cuộn ngang, Nội dung hẹp đi | **Đã chốt 25/11:** giữ như vậy |
 | Q9 | Cột Phân loại: gốc nhiều khả năng hiện **số** (0–16) vì không thấy chỗ đổi sang tên. Hiện tên ("Hủy bill", "Gộp bàn"…) cho dễ đọc? | **Đã chốt 25/11:** hiện tên theo cột "Ý nghĩa" bảng §2.5 (khác gốc, chỉ phần hiển thị; DB vẫn lưu số) |
 
 ## 6. Quyết định đã chốt (áp, không hỏi lại)
