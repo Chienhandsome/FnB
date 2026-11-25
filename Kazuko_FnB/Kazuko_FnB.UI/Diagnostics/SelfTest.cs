@@ -167,10 +167,122 @@ namespace Kazuko_FnB.UI.Diagnostics
             Check("Khóa nội bộ (không nhãn) không hiện", !items.Exists(i => i.Name == "SharedCode" || i.Name == "CompliedCode" || i.Name == "DatabaseVersion"));
         }
 
+        // ------------------------------------------------------------------ Quỹ tiền (docs/specs/quy-tien.md §4.2, §4.3, §4.5)
+
+        /// <summary>Mô tả các dòng quỹ thành chuỗi ngắn để so sánh: "TM +100; TK[A] +200; THE[A] +300".</summary>
+        private static string Funds(List<FundEntry> entries)
+        {
+            var parts = new List<string>();
+            foreach (FundEntry e in entries)
+                parts.Add((e.Fund == FundKind.Cash ? "TM" : (e.IsCard ? "THE[" : "TK[") + e.AccountId + "]") + " " +
+                          e.Amount.ToString("+0.##;-0.##", System.Globalization.CultureInfo.InvariantCulture));
+            return string.Join("; ", parts);
+        }
+
+        private static void CheckFunds(string name, List<FundEntry> entries, string expected)
+        {
+            string actual = Funds(entries);
+            Check("Quỹ: " + name, actual == expected, "ra: " + actual);
+        }
+
+        private static FundPaymentResult Pay(decimal due, decimal cash, decimal transfer, decimal card, decimal nonCash, string account)
+        {
+            return FundRules.SettlePayment(new FundPaymentInput
+            {
+                Due = due, CashTendered = cash, Transfer = transfer, Card = card, NonCash = nonCash, AccountId = account
+            });
+        }
+
+        private static void CheckPay(string name, FundPaymentResult r, decimal change, decimal cashKept)
+        {
+            Check("Quỹ: " + name, r.Error == null && r.Change == change && r.CashKept == cashKept,
+                  r.Error ?? ("trả lại " + r.Change + ", TIENMAT " + r.CashKept));
+        }
+
+        /// <summary>Hóa đơn đã thanh toán dựng từ kết quả hộp thanh toán, để kiểm tiền vào quỹ từ đầu đến cuối.</summary>
+        private static List<FundEntry> PaidBill(FundPaymentResult r, decimal transfer, decimal card, string account)
+        {
+            return FundRules.ForBill(new FundBill
+            {
+                PaidFlag = 30, Cash = r.CashKept, Transfer = transfer, Card = card, AccountId = account
+            });
+        }
+
+        private static void FundTests()
+        {
+            // Hóa đơn 480.000 theo bốn cách trả.
+            FundPaymentResult r = Pay(480000m, 500000m, 0m, 0m, 0m, "");
+            CheckPay("tiền mặt đưa 500.000", r, 20000m, 480000m);
+            CheckFunds("bill tiền mặt", PaidBill(r, 0m, 0m, ""), "TM +480000");
+            r = Pay(480000m, 0m, 480000m, 0m, 0m, "A");
+            CheckFunds("bill chuyển khoản", PaidBill(r, 480000m, 0m, "A"), "TK[A] +480000");
+            r = Pay(480000m, 0m, 0m, 480000m, 0m, "A");
+            CheckFunds("bill quẹt thẻ vào quỹ tài khoản", PaidBill(r, 0m, 480000m, "A"), "THE[A] +480000");
+            r = Pay(480000m, 180000m, 300000m, 0m, 0m, "A");
+            CheckFunds("bill tiền mặt + chuyển khoản", PaidBill(r, 300000m, 0m, "A"), "TM +180000; TK[A] +300000");
+
+            // §4.3: chuyển dư, trả lại tiền mặt.
+            r = Pay(480000m, 0m, 500000m, 0m, 0m, "A");
+            CheckPay("chuyển khoản dư", r, 20000m, -20000m);
+            CheckFunds("chuyển khoản dư trừ tiền mặt", PaidBill(r, 500000m, 0m, "A"), "TM -20000; TK[A] +500000");
+
+            // Q2.
+            Check("Quỹ: quẹt thẻ quá số phải trả bị chặn", Pay(480000m, 0m, 0m, 500000m, 0m, "A").Error == FundText.CardOverDue);
+            Check("Quỹ: thẻ cộng chuyển khoản quá bill bị chặn", Pay(480000m, 0m, 300000m, 200000m, 0m, "A").Error == FundText.CardOverDue);
+            Check("Quỹ: thẻ cộng voucher quá bill bị chặn", Pay(480000m, 0m, 0m, 100000m, 400000m, "A").Error == FundText.CardOverDue);
+            CheckPay("voucher lớn hơn bill không trả lại tiền", Pay(480000m, 0m, 0m, 0m, 500000m, ""), 0m, 0m);
+            CheckPay("voucher dư, khách vẫn đưa tiền mặt thì trả lại đủ tiền mặt", Pay(480000m, 50000m, 0m, 0m, 500000m, ""), 50000m, 0m);
+            CheckPay("thẻ 100.000 + đưa tiền mặt 500.000", Pay(480000m, 500000m, 0m, 100000m, 0m, "A"), 120000m, 380000m);
+            CheckPay("trả thiếu (ghi nợ) không có tiền trả lại", Pay(480000m, 400000m, 0m, 0m, 0m, ""), 0m, 400000m);
+            Check("Quỹ: chuyển khoản thiếu tài khoản bị chặn", Pay(480000m, 0m, 480000m, 0m, 0m, "").Error == FundText.AccountRequired);
+            Check("Quỹ: quẹt thẻ thiếu tài khoản bị chặn", Pay(480000m, 0m, 0m, 480000m, 0m, null).Error == FundText.AccountRequired);
+            Check("Quỹ: số tiền âm bị chặn", Pay(480000m, -1m, 0m, 0m, 0m, "").Error == FundText.NegativeAmount);
+
+            // Đặt trước 200.000 (phiếu thu) rồi đóng bill 480.000: chỉ còn phải trả 280.000.
+            var deposit = FundRules.ForVoucher(new FundVoucher { Income = 200000m });
+            deposit.AddRange(PaidBill(Pay(280000m, 280000m, 0m, 0m, 0m, ""), 0m, 0m, ""));
+            decimal total = 0m;
+            foreach (FundEntry e in deposit) total += e.Amount;
+            Check("Quỹ: đặt trước không bị tính hai lần", total == 480000m, "ra " + total);
+            CheckPay("hóa đơn âm không nhận thêm tiền", Pay(-50000m, 0m, 0m, 0m, 0m, ""), 0m, 0m);
+            Check("Quỹ: hóa đơn âm nhận thêm tiền bị chặn", Pay(-50000m, 10000m, 0m, 0m, 0m, "").Error == FundText.NothingDue);
+
+            // Hóa đơn không được tính.
+            CheckFunds("bill chưa thanh toán", FundRules.ForBill(new FundBill { PaidFlag = 0, Cash = 100m }), "");
+            CheckFunds("bill đã xóa mềm", FundRules.ForBill(new FundBill { PaidFlag = 30, Status = -30, Cash = 100m }), "");
+            CheckFunds("bill LOAI 5", FundRules.ForBill(new FundBill { Type = 5, PaidFlag = 30, Cash = 100m }), "");
+            CheckFunds("bill LOAI 6", FundRules.ForBill(new FundBill { Type = 6, PaidFlag = 30, Cash = 100m }), "");
+            CheckFunds("bill quẹt thẻ không ghi tài khoản", FundRules.ForBill(new FundBill { PaidFlag = 30, Card = 100m }), "THE[] +100");
+
+            // Phiếu thu/chi.
+            CheckFunds("phiếu thu tiền mặt", FundRules.ForVoucher(new FundVoucher { Income = 100m, AccountId = "A" }), "TM +100");
+            CheckFunds("phiếu chi chuyển khoản", FundRules.ForVoucher(new FundVoucher { Expense = 100m, TransferFlag = 30, AccountId = "A" }), "TK[A] -100");
+            CheckFunds("cờ chuyển khoản khác 0 và khác 30", FundRules.ForVoucher(new FundVoucher { Income = 100m, TransferFlag = 1, AccountId = "A" }), "TK[A] +100");
+            CheckFunds("phiếu đã xóa mềm", FundRules.ForVoucher(new FundVoucher { Status = -30, Income = 100m }), "");
+
+            // Phiếu nhập và xuất trả hàng.
+            CheckFunds("phiếu nhập cũ không ghi hình thức", FundRules.ForStockDocument(new FundStockDocument { Type = 1, PaidAmount = 300m }), "TM -300");
+            CheckFunds("phiếu nhập chuyển khoản", FundRules.ForStockDocument(new FundStockDocument { Type = 1, PaidAmount = 300m, Transfer = 300m, AccountId = "A" }), "TK[A] -300");
+            CheckFunds("xuất trả hàng NCC là tiền vào", FundRules.ForStockDocument(new FundStockDocument { Type = 2, SupplierId = "NCC", PaidAmount = 300m }), "TM +300");
+            CheckFunds("LOAI 2 không có NCC", FundRules.ForStockDocument(new FundStockDocument { Type = 2, PaidAmount = 300m }), "");
+            CheckFunds("phiếu nhập đã xóa mềm", FundRules.ForStockDocument(new FundStockDocument { Type = 1, Status = -30, PaidAmount = 300m }), "");
+            CheckFunds("chứng từ LOAI 5", FundRules.ForStockDocument(new FundStockDocument { Type = 5, PaidAmount = 300m }), "");
+
+            FundStockPaymentResult s = FundRules.StockPaymentFields(PayMethod.Cash, 300m, "A");
+            Check("Quỹ: ghi phiếu nhập tiền mặt", s.Error == null && s.Cash == 300m && s.Transfer == 0m && s.AccountId == "");
+            s = FundRules.StockPaymentFields(PayMethod.Transfer, 300m, "A");
+            Check("Quỹ: ghi phiếu nhập chuyển khoản", s.Error == null && s.Cash == 0m && s.Transfer == 300m && s.AccountId == "A");
+            Check("Quỹ: phiếu nhập chưa chọn hình thức bị chặn", FundRules.StockPaymentFields(null, 300m, "").Error == FundText.MethodRequired);
+            Check("Quỹ: phiếu nhập chuyển khoản thiếu tài khoản bị chặn", FundRules.StockPaymentFields(PayMethod.Transfer, 300m, "").Error == FundText.AccountRequired);
+            s = FundRules.StockPaymentFields(null, 0m, "");
+            Check("Quỹ: phiếu nhập chưa trả tiền không cần hình thức", s.Error == null && s.Cash == 0m && s.Transfer == 0m);
+        }
+
         // Các bước sau (ảnh, người dùng, quyền, mật khẩu) đăng ký thêm ở đây.
         private static void RunExtra(string db)
         {
             ThemeTests();
+            FundTests();
             CatalogTests(db);
             PhieuThuTests(db);
             ImageTests(db);
