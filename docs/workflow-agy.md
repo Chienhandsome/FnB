@@ -184,7 +184,7 @@ Chỉ áp khi có file `D:\Working\fnb-agy-work\auto.on`. **Chỉ Chiến tạo 
      - So mã băm các CSDL trong `POS TAP/Database` trước và sau; `Data/conn.dat` của bản chép chỉ ghi `DATA.fdb`.
      - App chỉ chạy một phiên: đang có bản chạy quyền admin, hoặc chưa được cấp quyền điều khiển máy → mở issue `cho-chien` nhờ Chiến, chuyển việc khác. Không chờ trong nhịp, không tự tắt app của Chiến.
      - Ảnh cũng có giới hạn: đối chiếu với DB và layout, lệch thì ghi cả hai và đặt câu hỏi, không kết luận một phía.
-     - **Chụp sớm:** app gốc là bản dùng thử, hết hạn khoảng 08/12/2026. Lần đầu mở được app thì chụp luôn một đợt cho **mọi spec còn lại** trong `QUEUE.md`. Lưu ở `D:\Working\fnb-agy-work\_tmp\_origin-shots\<spec>\` (không commit; thư mục này không bị `Test-AgyScope.ps1` quét) để dùng lại. Spec chưa tới lượt thì chỉ chụp và lưu, phân tích sau.
+     - **Lưu ảnh:** chỉ chụp cho spec đang làm (bản dùng thử hết hạn thì Chiến xin mở lại; hết hạn giữa chừng thì mở issue `cho-chien`). Lưu ở `D:\Working\fnb-agy-work\_tmp\_origin-shots\<spec>\` (không commit; thư mục này không bị `Test-AgyScope.ps1` quét) để dùng lại.
    - **Nhẹ:** chốt mọi câu theo mặc định, ghi trạng thái `**ĐÃ DUYỆT** (Claude tự duyệt <ngày> theo workflow-agy §10.1, loại nhẹ; các mặc định đã áp: …)`, cập nhật `QUEUE.md`, commit và push. Nhịp sau làm §4.
    - **Nặng, có `auto.on`:** chốt các câu đủ điều kiện theo §10.1.1. Còn câu phải chờ thì làm như dòng dưới.
    - **Nặng:** mở (hoặc cập nhật) issue `cho-chien: <spec>` liệt kê từng câu chưa chốt, mỗi câu kèm ví dụ số và đề xuất, như `kinh-nghiem.md` §3. Đánh dấu "chờ Chiến" trong `QUEUE.md`, chuyển sang spec kế tiếp.
