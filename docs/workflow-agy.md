@@ -152,4 +152,5 @@ Còn lại là **nặng**. Phân vân → nặng.
   - Vòng 1 (`3bec043`, chạy tay): đạt; đọc lại sau đó thấy báo cáo ghi "Đạt" quá mức và một lỗi cắt chữ dòng đậm.
   - Vòng 2 (`f9dd6bc`, chạy bằng script, quyền thu hẹp): sửa lỗi cắt chữ, thêm ca test màu thật, `Track` tĩnh, ngày mặc định.
   - Vướng: quy tắc lệnh thiếu dạng không tham số; agy nhầm thư mục prompt là repo (lời gọi nay ghi rõ đường dẫn); một app khác trong `D:\Working\FnB` ghi file log (nay chỉ cảnh báo).
+- **25/11, Danh mục hóa đơn hủy** (issue #7): 2 vòng, `de80345`. Vòng 2 do test không đi qua sự kiện thật và chọn dòng không nhất quán. agy không chạy được lệnh shell (xem `kinh-nghiem.md` §4).
 - Chưa thử: Claude tự sửa (bước 9); `main` đổi giữa chừng; 125% DPI.
