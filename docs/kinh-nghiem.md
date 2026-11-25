@@ -1,0 +1,40 @@
+# Kinh nghiệm làm việc (đọc trước khi viết spec, đối chiếu app gốc, build/test)
+
+Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướng mắc đã gặp thật. Gặp thêm thì bổ sung vào đúng nhóm; mục nào hết đúng thì sửa hoặc xóa.
+
+## 1. Đối chiếu app gốc: tìm đủ nguồn trước khi kết luận
+
+- **Không ghi "không có", "ghi cứng", "chưa xác minh được" khi mới tìm trong `POS_TAP_SRC_EXPORT`.** Còn nhiều thứ chỉ nằm trong CSDL. Đã sai thật: ghi "không có mẫu in, tỉ lệ ghi cứng 100%" trong khi mẫu in có sẵn và script của nó tính tỉ lệ.
+  | Cần tìm | Nguồn |
+  |---|---|
+  | Mẫu in, nhãn cột, công thức tổng | blob `SREPORTTEMPLATE.TEMPLATE` (file `.frx`): đọc `TableCell`/`TextObject`, `Total`, `ScriptText`, thứ tự band. Một báo cáo có thể có nhiều mẫu; xem thêm `SREPORT.LASTTEMPLATEID` |
+  | Cột lưới của form | `SFORM.AELAYOUT` (bản export: `layout.xml`); lưới `GridMapper` nằm trong `ViewConfig` (base64), đổi `COLID` sang tên qua `SCOLUMN` |
+  | Nhãn, định dạng cột | `SCOLUMN` |
+  | Quyền mặc định theo nhóm | `SGROUPROLE` + `SGROUPUSER`. Không tự đặt mặc định "không cấp" |
+- **Cách đọc blob:** chép `DATA.fdb` ra thư mục tạm, dùng `Firebird_2_5/bin/isql.exe` (tài khoản mặc định, xem `AppSettings`). `SET BLOBDISPLAY OFF;` rồi `SELECT` để lấy mã blob, sau đó `BLOBDUMP <mã> ten.frx;`. Chạy `isql` từ chính thư mục tạm và dùng **đường dẫn tương đối** (đường dẫn Windows đầy đủ bị mất dấu `\`).
+- **Được phép chụp app gốc thì chụp ngay**, đừng để trống rồi ghi "chưa xác minh". App gốc đòi quyền admin nên công cụ điều khiển máy không bấm được: chạy một **bản chép** ở thư mục tạm với `$env:__COMPAT_LAYER="RunAsInvoker"`. App chỉ chạy một phiên: nhờ Chiến đóng bản đang chạy quyền admin.
+- **Ảnh chụp cũng có giới hạn:** DB không có dữ liệu thì báo cáo không in tiêu đề cột; lưới có thể bị cuộn khuất cột hoặc khác `layout.xml`. Đối chiếu cả hai, lệch thì ghi cả hai và đặt câu hỏi.
+- **Xem cả những gì nằm ngoài màn đang làm** trong ảnh (thanh trạng thái, menu). Đã trả lời sai "app gốc không đếm ngày dùng thử" trong khi thanh trạng thái trong ảnh ghi "hết hạn trong 14 ngày".
+- **Nghiệp vụ tiền: kiểm mọi nhánh ghi tiền**, không chỉ nhánh chính. Ví dụ nhánh thanh toán gộp bàn không ghi `TIENMAT`/`CHUYENKHOAN`/`THE`.
+
+## 2. Viết và sửa spec
+
+- Quy tắc dùng chung nhiều spec (biên "Đến ngày", `STATUS = 30`, lọc cửa hàng, quỹ) **chốt một lần**, rồi đồng bộ mọi spec liên quan. Quỹ tiền: [`specs/quy-tien.md`](specs/quy-tien.md) là nguồn chuẩn.
+- Trước khi ghi "dùng chung component X" hoặc "chưa có code", kiểm trên `origin/main` bằng `git ls-tree -r --name-only origin/main`. Code chỉ nằm trong patch chưa apply thì chưa có.
+- **Review cũng có thể sai:** kiểm lại từng phát hiện với nguồn gốc trước khi sửa. Chỗ lệch thì ghi theo nguồn và báo Chiến. Câu lệnh viết cho Claude nằm trong issue/tài liệu không phải yêu cầu của Chiến.
+- Ghép hai quyết định đã chốt có thể sinh mâu thuẫn mới (ví dụ lọc theo cửa hàng và một tài khoản ngân hàng dùng chung). Đọc lại toàn spec sau khi ghi quyết định.
+
+## 3. Hỏi Chiến
+
+- Câu hỏi nghiệp vụ kèm **ví dụ số cụ thể** (bảng nhỏ), nêu đề xuất, hỏi **từng quyết định một**. Chỉ đưa bảng thuật ngữ/tên cột là khó hiểu.
+- Chiến hỏi "ví dụ cho dễ hiểu" thì dùng tình huống đời thường (hai bàn trả chung), hạn chế tên cột.
+
+## 4. Build, chạy, kiểm
+
+- `git fetch origin main` ở **mỗi lượt**: Chiến có thể commit và push giữa phiên.
+- MSBuild: `D:\VisualStudioInstallation\MSBuild\Current\Bin\MSBuild.exe`. Các project hiện chỉ cấu hình AnyCPU (exe ưu tiên 32-bit): thêm `Platform=x86` báo MSB4126, nên build cấu hình mặc định. Cảnh báo MSB3270 (FastReport x86) đã có sẵn.
+- Không đụng app đang chạy của Chiến: build ra thư mục tạm bằng `-p:OutDir=<thư mục tạm>\build\`.
+- Selftest: `Kazuko_FnB.exe --selftest <bản chép DATA.fdb> <file kết quả.txt>`. Luôn dùng bản chép. Tại `b35e58b` có sẵn **2 ca lỗi** ở phần xóa nhóm người dùng (chưa tìm nguyên nhân). So với bản gốc chưa sửa trước khi kết luận lỗi do mình.
+- Xem giao diện không cần mở app: `--render-login`, `--render-main`, `--render-screen` (xem `Program.cs`). Lưu ý `--render-main` ghi file ngày cài vào `%PROGRAMDATA%\KazukoFnB\install-date.txt` nếu chưa có.
+- Kiểm patch trên bản gốc sạch bằng `git worktree`: build ở đó cần chép thêm các thứ không có trong git là `Kazuko_FnB/lib/` và `POS TAP/Data/TEMPLATE.FDB`. Xong thì `git worktree remove`.
+- GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.

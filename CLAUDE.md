@@ -2,6 +2,8 @@
 
 Đọc trước khi làm bất cứ việc gì: spec trong `docs/specs/` liên quan tới task. Các quyết định trong `docs/` là chuẩn của dự án.
 
+Trước khi viết/sửa spec, đối chiếu app gốc, hỏi nghiệp vụ, build hoặc test: đọc [`docs/kinh-nghiem.md`](docs/kinh-nghiem.md) và làm theo. Rút thêm được kinh nghiệm thì bổ sung vào file đó.
+
 ## Dự án
 
 Viết lại nội bộ phần mềm quản lý F&B **KAZUKO F&B** (sản phẩm của chính công ty, sếp giao làm lại). Stack: **WinForms** desktop (Windows-only), **.NET Framework 4.8**, build **x86**, **Firebird 2.5 Embedded** (`fbembed.dll` 32-bit), SQL viết tay (không ORM), FastReport, MVP/MVVM nhẹ. Nghiệp vụ giữ **y hệt** app gốc; UI làm lại hiện đại hơn, có tính năng đổi bảng màu; dùng chung schema `DATA.FDB` (không đổi cấu trúc).
