@@ -63,6 +63,7 @@
     <Compile Include="GroupRepository.cs" />
     <Compile Include="ImageRepository.cs" />
     <Compile Include="ItemSalesRepository.cs" />
+    <Compile Include="RevenueReportRepository.cs" />
     <Compile Include="BookingGroupPlanner.cs" />
     <Compile Include="BookingRepository.cs" />
     <Compile Include="BookingCalendarRepository.cs" />

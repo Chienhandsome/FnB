@@ -37,8 +37,6 @@ namespace Kazuko_FnB.Data
             string pLoai = "@" + p + "BillLoai";
             string pPaid = "@" + p + "BillPaid";
             string pStatus = "@" + p + "BillStatus";
-            string pFrom = "@" + p + "BillFrom";
-            string pToExcl = "@" + p + "BillToExcl";
 
             conditions.Add(alias + ".LOAI = " + pLoai);
             args.Add(pLoai);
@@ -51,6 +49,34 @@ namespace Kazuko_FnB.Data
             conditions.Add(alias + ".STATUS = " + pStatus);
             args.Add(pStatus);
             args.Add(BillReportScope.ActiveStatus);
+
+            AppendDateAndStoreWhere(alias, scope, conditions, args, paramPrefix);
+        }
+
+        /// <summary>
+        /// Bổ sung điều kiện chỉ gồm khoảng ngày NGAY trong [FromDate, ToDate + 1 ngày)
+        /// và lọc cửa hàng theo quyền user (TNGUOIDUNGTHEOCUAHANG).
+        /// Dùng chung cho TDONHANG (gọi từ <see cref="AppendWhere"/>) và TTHUCHI (không lọc LOAI/DATHANHTOAN/STATUS).
+        /// </summary>
+        public static void AppendDateAndStoreWhere(
+            string alias,
+            BillReportScope scope,
+            List<string> conditions,
+            List<object> args,
+            string paramPrefix = "")
+        {
+            if (string.IsNullOrEmpty(alias))
+                throw new ArgumentException("Cần bí danh bảng.", "alias");
+            if (scope == null)
+                throw new ArgumentNullException("scope");
+            if (conditions == null)
+                throw new ArgumentNullException("conditions");
+            if (args == null)
+                throw new ArgumentNullException("args");
+
+            string p = paramPrefix ?? "";
+            string pFrom = "@" + p + "BillFrom";
+            string pToExcl = "@" + p + "BillToExcl";
 
             conditions.Add(alias + ".NGAY >= " + pFrom);
             args.Add(pFrom);

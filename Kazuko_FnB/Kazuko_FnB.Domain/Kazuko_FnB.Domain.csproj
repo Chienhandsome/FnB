@@ -54,6 +54,7 @@
     <Compile Include="MenuModels.cs" />
     <Compile Include="PhieuThuModels.cs" />
     <Compile Include="ProductModels.cs" />
+    <Compile Include="RevenueReportModels.cs" />
     <Compile Include="DetailModels.cs" />
     <Compile Include="RoomModels.cs" />
     <Compile Include="ScreenLayoutModels.cs" />

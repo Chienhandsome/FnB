@@ -31,6 +31,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.cancelledbill", session => new CancelledBillPreviewForm(session) },
                 { "preview.itemsales", session => new ItemSalesPreviewForm(session) },
                 { "preview.itemsalesdetail", session => ItemSalesDetailDialog.CreateForPreview(session) },
+                { "preview.revenue", session => new RevenueReportPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -64,6 +65,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Thống kê mặt hàng bán": form tự viết chỉ xem (OPERATION = 4).
             if (string.Equals(node.Id, ItemSalesView.MenuId, StringComparison.Ordinal))
                 return new ItemSalesView(session);
+            // Màn "Thống kê doanh thu": form tự viết chỉ xem (OPERATION = 4).
+            if (string.Equals(node.Id, RevenueReportView.MenuId, StringComparison.Ordinal))
+                return new RevenueReportView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
