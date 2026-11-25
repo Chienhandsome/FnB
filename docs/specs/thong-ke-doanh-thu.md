@@ -1,7 +1,7 @@
 # Spec (delta): Thống kê doanh thu
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
-- Ngày: 2026-11-24. Base: `main` @ `8ec3187` (đã `git fetch origin main`)
+- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code). Rà lại 25/11 theo workflow-agy §10.2: loại **nặng**; các câu tiền đã chốt, còn Q5, Q7, Q10, Q11 gửi Chiến (issue `cho-chien`).
+- Ngày: 2026-11-24, rà lại 2026-11-25. Base: `main` @ `62a4fc0`
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md). Spec này **chỉ ghi phần khác khuôn**; chỗ không nói = như khuôn. Là màn **báo cáo chỉ xem**, không thêm/sửa/xóa dữ liệu.
 - Menu: **HOẠT ĐỘNG > Thống kê doanh thu** (`SMENU` `c5164013-298f-4565-8594-819bc7ce992a`, `SORTORDER = ZZZ020`, `OPERATION = 4`, không `MENUCODE`, `SFORMID` `d913c8d9-4395-476c-9612-8ca7f35b6268`, `SFUNCTIONID` `b2a025da-9c16-4578-a864-bf32c4eb2d09` "Thống kê doanh thu", nhóm "Bán hàng", `NOTE = View`). Form tùy biến `ThongKeDoanhThu`.
 - Dữ liệu đọc: `TDONHANG` (danh sách bill), `TDONHANGCHITIET` (chi tiết), `TTHUCHI` (thu/chi khác), `DCUAHANG`, `TNGUOIDUNGTHEOCUAHANG`. DB chép hiện: `TDONHANG` 0, `TTHUCHI` 0, `DCUAHANG` 1, `TNGUOIDUNGTHEOCUAHANG` 0 → **không có dữ liệu mẫu**, selftest tự tạo.
@@ -10,8 +10,8 @@
 
 - **[DB]** `POS TAP\Database\DATA.fdb` bản chép (không dùng `DEMO.FDB`).
 - **[CODE]** `POS_TAP_SRC_EXPORT/SFORM/Thống kê doanh thu__d913c8d9/` (`code.cs`, `layout.xml`); tài liệu sẵn có [`pos-tap-nghiep-vu-bao-cao.md`](../pos-tap-nghiep-vu-bao-cao.md) §1 và `docs/deep/bao-cao.md` (C3) — đã đọc, không chép lại.
-- **[CHƯA XÁC MINH]**: (1) điều kiện **lọc bill nền** của lưới chính (nằm trong cấu hình `ViewConfig`/`AELAYOUT` nhị phân, chưa giải mã; `code.cs` chỉ thêm điều kiện ngày + cửa hàng); (2) mẫu in FastReport. **[APP]** đã chụp bố cục và cột lưới (24/11/2026, bản chạy thử, DB không có bill nên chưa đối chiếu số liệu thật); điều kiện lọc bill (1) vẫn **chưa xác minh** vì không có bill để thử.
-- Cho (1): bill đã thanh toán, `LOAI = 0 AND DATHANHTOAN = 30` (khớp điều kiện chuẩn của các báo cáo khác trong `deep/bao-cao.md` C1). **Chiến chốt 25/11 (issue #8, áp chung mọi báo cáo): thêm `TDONHANG.STATUS = 30`.**
+- **[ĐÃ GIẢI MÃ 25/11]** cấu hình lưới (`ViewConfig` trong `layout.xml`): lưới chính chỉ có điều kiện `NGAY BETWEEN @FromDate AND @ToDate` đang bật; `LOAI = 0` và `DATHANHTOAN = 30` có khai báo nhưng cờ `CHECKED = false` (giống Thống kê mặt hàng bán). **[CHƯA XÁC MINH]** mẫu in FastReport. **[APP]** đã chụp bố cục và cột lưới (24/11/2026; DB không có bill nên chưa đối chiếu số).
+- **Điều kiện bill áp cho v1 (Chiến chốt 25/11, issue #8, áp chung mọi báo cáo):** dùng `BillReportScope` đã có trên `main` (`67319b2`): `LOAI = 0`, `DATHANHTOAN = 30`, `STATUS = 30`, ngày "Đến" tính trọn ngày, lọc cửa hàng theo user như §2.1.
 
 ## 1. Bố cục UI (khác khuôn)
 
@@ -43,7 +43,9 @@ Một tab "Thống kê doanh thu":
 
 ### 2.2 Chi tiết bill [CODE `grDetail_CustomLoadData`]
 
-Dòng của bill chọn **trừ**: dòng xuất vật tư (`COALESCE(XUATVATTU, 0) <> 0`), dòng nguyên liệu (`DLOAIMATHANGID = LoaiMatHang.NguyenLieu`, **mã số của hằng này không có trong export** — Q4), dòng con combo (`COMBOPARENTID` không rỗng). Chưa chọn bill → `0 = 1` (trống).
+Dòng của bill chọn **trừ**: dòng xuất vật tư (`COALESCE(XUATVATTU, 0) <> 0`), dòng nguyên liệu (`DMATHANG.DLOAIMATHANGID = '2'`, `LoaiMatHang.NguyenLieu = 2` đọc từ DB 25/11), dòng con combo (`COMBOPARENTID` không rỗng). Chưa chọn bill → trống.
+
+Cột theo cấu hình lưới gốc (ẩn cột ID): **Mặt hàng (`TENHANG`), ĐVT, S.lượng (`SLXUATCHUAQUYDOI`), Đơn giá, CK%, Thành tiền, Ghi chú**. Ảnh app chỉ thấy 5 cột đầu do cuộn ngang. Cấu hình gốc còn Mã hàng, Bảo hành, Mã sẵn có: v1 bỏ (không dùng ở F&B), Q10.
 
 ### 2.3 Công thức khối tổng cộng [CODE `LoadData`]
 
@@ -59,7 +61,7 @@ PHÍ DỊCH VỤ        = Σ PHIDICHVU
 THUẾ               = Σ TIENTHUE
 TỔNG DOANH THU     = Σ TONGCONG                    (đã gồm thuế, phí DV, đã trừ giảm giá)
 TIỀN MẶT, VOUCHER, TIỀN THẺ(=THE), CHUYỂN KHOẢN, TRỪ TÍCH LŨY, THẺ TRẢ TRƯỚC, CÔNG NỢ = Σ các cột TIENMAT, VOUCHER, THE, CHUYENKHOAN, TRUTICHLUY, THETRATRUOC, CONGNO
-THU KHÁC = Σ COALESCE(THU,0) , CHI KHÁC = Σ COALESCE(CHI,0)   của TTHUCHI với NGAY trong [Từ, Đến]
+THU KHÁC = Σ COALESCE(THU,0) , CHI KHÁC = Σ COALESCE(CHI,0)   của TTHUCHI với NGAY >= Từ AND NGAY < Đến + 1 ngày, lọc cửa hàng như bill (Q13a)
 TỔNG THỰC THU = TIỀN MẶT + TIỀN THẺ + CHUYỂN KHOẢN + THU KHÁC − CHI KHÁC
 ```
 - Ba dòng "Thực thu" **không** cộng VOUCHER, TRỪ TÍCH LŨY, THẺ TRẢ TRƯỚC, CÔNG NỢ (không phải tiền thực nhận) — đúng như gốc, nhưng nhãn không nói rõ → ghi chú trong tooltip (P2).
@@ -90,15 +92,17 @@ Quyền xem màn = `SFUNCTION` `b2a025da-…` "Thống kê doanh thu". Mặc đ�
 
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|
-| Q1 | Điều kiện bill nền của lưới chính (chưa giải mã `ViewConfig`) | `LOAI = 0 AND DATHANHTOAN = 30` |
-| Q2 | Có đưa `LOAI = 5, 6` (phiếu thu bán chưa rõ nguồn) vào không? | Không (như điều kiện trên) |
+| Q1 | ~~Điều kiện bill nền~~ **Đã chốt 25/11 (issue #8):** `BillReportScope` | — |
+| Q2 | ~~`LOAI = 5, 6`?~~ **Đã chốt theo Q1:** chỉ `LOAI = 0` | — |
 | Q3 | ~~Thu/chi khác có lọc theo cửa hàng (P1)?~~ **Đã chốt: lọc (Q13a)** | — |
-| Q4 | Mã số `LoaiMatHang.NguyenLieu` (hằng trong thư viện) | Nhận diện nguyên liệu bằng loại mặt hàng tương ứng trong DB, **không đọc `LOAIDINHLUONG`** |
+| Q4 | ~~Mã số `LoaiMatHang.NguyenLieu`~~ **Đã xác minh: 2** | — |
 | Q5 | Mẫu in: tạo mới FastReport hay "chưa hỗ trợ" | "Chưa hỗ trợ" |
 | Q6 | Hiển thị `n2` khi `GiaBanLeUsd = 30` (đã chốt bỏ USD → luôn số nguyên) | Số nguyên |
 | Q7 | Tiền giờ/giảm giá giờ: ẩn dòng hay hiện 0 (v1 đã cắt tiền giờ) | Ẩn 2 dòng giờ, vẫn tính vào tổng (0) |
 | Q8 | Xuất Excel lưới chính (gốc không có nút) | Không |
 | Q9 | ~~Chụp app gốc để lấy đủ cột lưới~~ **Đã chụp 24/11/2026** (xem §1); còn thiếu ảnh khi có bill thật | Đã giải quyết phần cột |
+| Q10 | Lưới chi tiết bỏ Mã hàng, Bảo hành, Mã sẵn có (§2.2)? | Bỏ |
+| Q11 | Tự làm tươi khi máy khác đổi dữ liệu: bản viết lại chưa có cơ chế (như Thống kê mặt hàng bán) | v1 chưa làm, chỉ F5 và đổi lọc |
 
 ## 5. Quyết định đã chốt (áp, không hỏi lại)
 
