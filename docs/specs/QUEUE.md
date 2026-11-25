@@ -13,6 +13,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [x] Thống kê mặt hàng bán — `thong-ke-mat-hang-ban.md` (duyệt 25/11, issue #8); code `67319b2` (Antigravity), issue #9. **Chưa làm:** tự làm tươi khi dữ liệu đổi
 
 - [x] Thống kê doanh thu — `thong-ke-doanh-thu.md` (duyệt 25/11, issue #10); code `7a2fc98` (Antigravity). **Chưa làm:** tự làm tươi khi dữ liệu đổi
+- [x] Chi tiết hoạt động ngày — `chi-tiet-hoat-dong-ngay.md` (duyệt 25/11, issue #11); code `ffc119b` (Antigravity), issue #13. **Chưa làm:** mẫu in (Q5)
 
 ## Chờ Chiến bấm thử (gộp theo đợt, trước khi dùng ở quán)
 - [ ] Lưu vết hoạt động — xem issue #6 (điểm cần chốt: lọc tài khoản theo tên đăng nhập; cột rộng phải cuộn ngang)
@@ -20,6 +21,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Thống kê mặt hàng bán — xem issue #9 (đối chiếu số với app gốc; chưa kiểm 125% DPI)
 
 - [ ] Thống kê doanh thu — xem issue #12; số đã khớp app gốc (spec §6.1); chưa kiểm 125% DPI
+- [ ] Chi tiết hoạt động ngày — xem issue #13 (thử cuộn bằng chuột/chạm, chuyển tab rồi quay lại, đối chiếu số khi có phiếu nhập; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
 | # | Spec | Trạng thái | Loại | Ghi chú |
@@ -27,8 +29,8 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 1 | `danh-muc-hoa-don-huy.md` | **Đã code** (`de80345`) | nhẹ | Chờ bấm thử |
 | 2 | `thong-ke-mat-hang-ban.md` | **Đã code** (`67319b2`) | nặng | Chờ bấm thử |
 | 3 | `thong-ke-doanh-thu.md` | **Đã code** (`7a2fc98`) | nặng | Chờ bấm thử |
-| 4 | `chi-tiet-hoat-dong-ngay.md` | **ĐÃ DUYỆT** (issue #11) | nặng | Kế tiếp |
-| 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kết quả kinh doanh |
+| 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
+| 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kế tiếp: Kết quả kinh doanh |
 | 6 | `bao-gia-ban-hang.md` | NHÁP | nặng | Giá bán |
 | 7 | `danh-muc-khach-hang.md` | NHÁP | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
 | 8 | `su-dung-dich-vu.md` | NHÁP | nặng | Thanh toán; Q14–Q20 chốt 25/11; còn Q2–Q13 (đang dùng mặc định tạm) |
