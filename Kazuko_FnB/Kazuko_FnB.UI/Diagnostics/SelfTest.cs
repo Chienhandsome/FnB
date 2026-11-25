@@ -551,6 +551,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             DetailTabTests(db);
             CalendarTests(db);
             ActivityLogTests(db);
+            CancelledBillTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
@@ -2877,6 +2878,667 @@ namespace Kazuko_FnB.UI.Diagnostics
                 BookingExec(db, "DELETE FROM TDONHANGHUY WHERE ID IN (@A, @B)", "@A", billCancelRowId, "@B", billCancelOutRowId);
                 BookingExec(db, "DELETE FROM TDONHANG WHERE ID IN (@A, @B, @C, @D)", "@A", billDoneId, "@B", billInUseId, "@C", billOutId, "@D", billStockId);
                 BookingExec(db, "DELETE FROM DBAN WHERE ID = @I", "@I", tableId);
+            }
+        }
+
+        // ------------------------------------------------------------------ Danh mục hóa đơn hủy (docs/specs/danh-muc-hoa-don-huy.md §6)
+
+        private static void CollectAllButtons(System.Windows.Forms.Control root, List<System.Windows.Forms.Control> into)
+        {
+            if (root == null)
+                return;
+            if (root is Controls.FlatButton || root is System.Windows.Forms.Button)
+                into.Add(root);
+            foreach (System.Windows.Forms.Control child in root.Controls)
+                CollectAllButtons(child, into);
+        }
+
+        private static bool MenuContainsForbiddenWriteAction(System.Windows.Forms.ContextMenuStrip menu)
+        {
+            if (menu == null || menu.Items.Count == 0)
+                return true;
+            foreach (System.Windows.Forms.ToolStripItem item in menu.Items)
+            {
+                string text = (item.Text ?? "").Trim();
+                if (text.Length == 0)
+                    continue;
+                if (text.IndexOf("Thêm", StringComparison.OrdinalIgnoreCase) >= 0
+                    || text.IndexOf("Sửa", StringComparison.OrdinalIgnoreCase) >= 0
+                    || text.IndexOf("Xóa", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool MenuTreeContainsId(IEnumerable<MenuNode> nodes, string menuId)
+        {
+            if (nodes == null)
+                return false;
+            foreach (MenuNode n in nodes)
+            {
+                if (string.Equals(n.Id, menuId, StringComparison.Ordinal))
+                    return true;
+                if (MenuTreeContainsId(n.Children, menuId))
+                    return true;
+            }
+            return false;
+        }
+
+        private static void CancelledBillTests(string db)
+        {
+            var vi = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+
+            // 1. DateBox: chế độ mặc định (AllowEmpty = false) giữ nguyên hành vi cũ; chế độ AllowEmpty = true cho phép trống và không âm thầm đổi chữ sai thành ngày lạ.
+            using (var boxDefault = new Controls.DateBox())
+            {
+                int changedCount = 0;
+                boxDefault.ValueChanged += delegate { changedCount++; };
+                bool initDefault = !boxDefault.AllowEmpty && boxDefault.Value == DateTime.Today && boxDefault.NullableValue == DateTime.Today;
+                boxDefault.Inner.Text = "";
+                boxDefault.Commit();
+                bool emptyReverts = boxDefault.Value == DateTime.Today && boxDefault.Inner.Text == DateTime.Today.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture) && changedCount == 0;
+                boxDefault.Inner.Text = "ngay-sai";
+                boxDefault.Commit();
+                bool invalidReverts = boxDefault.Value == DateTime.Today && changedCount == 0;
+                boxDefault.NullableValue = null;
+                bool nullIgnored = boxDefault.NullableValue == DateTime.Today && changedCount == 0;
+                boxDefault.Inner.Text = "15/06/2026";
+                boxDefault.Commit();
+                bool validUpdates = boxDefault.Value == new DateTime(2026, 6, 15) && changedCount == 1;
+                Check("Hóa đơn hủy (DateBox mặc định AllowEmpty=false): luôn có ngày, xóa/gõ sai giữ ngày cũ, gõ đúng cập nhật",
+                    initDefault && emptyReverts && invalidReverts && nullIgnored && validUpdates,
+                    "init=" + initDefault + ", emptyRev=" + emptyReverts + ", invRev=" + invalidReverts + ", nullIgn=" + nullIgnored + ", ok=" + validUpdates);
+            }
+
+            using (var boxNullable = new Controls.DateBox(true))
+            {
+                int changedCount = 0;
+                boxNullable.ValueChanged += delegate { changedCount++; };
+                bool initEmpty = boxNullable.AllowEmpty && boxNullable.NullableValue == null && boxNullable.Inner.Text == "";
+                boxNullable.Inner.Text = "abc-99/99";
+                boxNullable.Commit();
+                bool badFromEmptyStaysEmpty = boxNullable.NullableValue == null && boxNullable.Inner.Text == "" && changedCount == 0;
+                boxNullable.Inner.Text = "31/02/2026";
+                boxNullable.Commit();
+                bool impossibleDateStaysEmpty = boxNullable.NullableValue == null && boxNullable.Inner.Text == "" && changedCount == 0;
+                boxNullable.Inner.Text = "10/06/2003";
+                boxNullable.Commit();
+                bool setValidDate = boxNullable.NullableValue == new DateTime(2003, 6, 10) && boxNullable.Inner.Text == "10/06/2003" && changedCount == 1;
+                boxNullable.Inner.Text = "sai-dinh-dang";
+                boxNullable.Commit();
+                bool badFromDateReverts = boxNullable.NullableValue == new DateTime(2003, 6, 10) && boxNullable.Inner.Text == "10/06/2003" && changedCount == 1;
+                boxNullable.Inner.Text = "   ";
+                boxNullable.Commit();
+                bool clearedToEmpty = boxNullable.NullableValue == null && boxNullable.Inner.Text == "" && changedCount == 2;
+                Check("Hóa đơn hủy (DateBox AllowEmpty=true): mở trống, gõ sai không thành ngày lạ, gõ đúng nhận ngày, xóa hết thành trống",
+                    initEmpty && badFromEmptyStaysEmpty && impossibleDateStaysEmpty && setValidDate && badFromDateReverts && clearedToEmpty,
+                    "init=" + initEmpty + ", badEmpty=" + badFromEmptyStaysEmpty + ", feb31=" + impossibleDateStaysEmpty
+                    + ", valid=" + setValidDate + ", badDate=" + badFromDateReverts + ", cleared=" + clearedToEmpty);
+            }
+
+            // 2. Route ScreenFactory (không vào Map hộp thoại, đi qua CreateView theo MenuId trước kiểm Operation) & quyền qua MainMenuBuilder (§2.4, §6).
+            var adminSession = new UserSession
+            {
+                UserId = "selftest",
+                UserName = "Admin",
+                DisplayName = "Administrator",
+                IsAdmin = true,
+                DatabasePath = db,
+                Permissions = new FunctionPermissions(true)
+            };
+            Check("Hóa đơn hủy (§6 route): MenuId không nằm trong Map hộp thoại",
+                !Dialogs.ScreenFactory.Has(CancelledBillView.MenuId));
+            var menuNode = new MenuNode
+            {
+                Id = CancelledBillView.MenuId,
+                Title = CancelledBillConstants.FunctionName,
+                Operation = 4,
+                StableDescId = null
+            };
+            using (System.Windows.Forms.Control created = Dialogs.ScreenFactory.CreateView(menuNode, adminSession))
+            {
+                Check("Hóa đơn hủy (§6 route): ScreenFactory.CreateView dựng CancelledBillView dù Operation=4 và không có StableDescId",
+                    created is CancelledBillView);
+            }
+
+            // Kiểm tra mapping quyền §2.4 trong DB + lọc menu qua MainMenuBuilder.
+            var permsAllowed = new FunctionPermissions(false);
+            permsAllowed.Add(CancelledBillConstants.FunctionId, CancelledBillConstants.FunctionName, RoleModes.View);
+            var permsDenied = new FunctionPermissions(false);
+            MenuModel menuAllowed = MainMenuBuilder.Build(new UserSession
+            {
+                UserId = "u_allow", UserName = "u_allow", DisplayName = "Cho phép", IsAdmin = false,
+                DatabasePath = db, Permissions = permsAllowed
+            });
+            MenuModel menuDenied = MainMenuBuilder.Build(new UserSession
+            {
+                UserId = "u_deny", UserName = "u_deny", DisplayName = "Chặn", IsAdmin = false,
+                DatabasePath = db, Permissions = permsDenied
+            });
+            Check("Hóa đơn hủy (§2.4/§6 phân quyền): MainMenuBuilder hiện menu khi có quyền SFUNCTION và ẩn khi không có quyền",
+                MenuTreeContainsId(menuAllowed.Roots, CancelledBillView.MenuId)
+                && !MenuTreeContainsId(menuDenied.Roots, CancelledBillView.MenuId));
+
+            // 3. Seed 4 bản hóa đơn hủy (tiền tố HDH-, năm 2003) kèm chi tiết vào bản sao DB; thêm HDH-05 sau khi mở màn để kiểm Refresh thật; dọn con trước cha trong finally.
+            string bill1Id = DbHelper.NewId();
+            string bill2Id = DbHelper.NewId();
+            string bill3Id = DbHelper.NewId();
+            string bill4Id = DbHelper.NewId();
+            string bill5Id = DbHelper.NewId();
+
+            string line1aId = DbHelper.NewId();
+            string line1bId = DbHelper.NewId();
+            string line1cId = DbHelper.NewId();
+            string line2aId = DbHelper.NewId();
+            string line4aId = DbHelper.NewId();
+            string line4bId = DbHelper.NewId();
+            string line5aId = DbHelper.NewId();
+
+            try
+            {
+                // HDH-01: NGAY = 08/06/2003 (khác NGAYHUY = 10/06/2003 09:15), DATHANHTOAN = 30, TIENGIAMGIA = TILEGIAMGIA = 15 (Q3), STATUS = 30.
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUY (" +
+                    "ID, NAME, STATUS, USERCREATEDID, NOTE, NGAY, KHACHHANG, NHANVEN, THUNGAN, " +
+                    "GIOHUY, NGAYHUY, DOITRA, DATHANHTOAN, GIOTHANHTOAN, TRALAI, " +
+                    "TIENHANG, TILETHUE, TIENTHUE, TILEGIAMGIA, TIENGIAMGIA, PHIVANCHUYEN, " +
+                    "THANHTOANBOI, LYDOHUY, TIENGIO, PHIDICHVU, TDONHANGID, BAN) VALUES (" +
+                    "@ID, @NAME, 30, 'selftest', @NOTE, @NGAY, @KH, @NV, @TN, " +
+                    "@GIOHUY, @NGAYHUY, @DOITRA, 30, @GIOTT, @TRALAI, " +
+                    "@TIENHANG, @TLTHUE, @TTHUE, @TLGG, @TGG, @PVC, " +
+                    "@TTBOI, @LYDO, @TGIO, @PDV, @ORIG, @BAN)",
+                    "@ID", bill1Id, "@NAME", "HDH-01", "@NOTE", "Ghi chú bill 1",
+                    "@NGAY", new DateTime(2003, 6, 8, 0, 0, 0),
+                    "@KH", "Nguyễn Thị Lan", "@NV", "Trần Văn B", "@TN", "Thu ngân 1",
+                    "@GIOHUY", new DateTime(2003, 6, 10, 9, 15, 0),
+                    "@NGAYHUY", new DateTime(2003, 6, 10, 9, 15, 0),
+                    "@DOITRA", 5000m,
+                    "@GIOTT", new DateTime(2003, 6, 8, 18, 45, 0),
+                    "@TRALAI", 10000m, "@TIENHANG", 125000m,
+                    "@TLTHUE", 10m, "@TTHUE", 12500m,
+                    "@TLGG", 15m, "@TGG", 15m,
+                    "@PVC", 20000m, "@TTBOI", "Thu ngân 2",
+                    "@LYDO", "Khách đổi ý", "@TGIO", 30000m, "@PDV", 15000m,
+                    "@ORIG", DbHelper.NewId(), "@BAN", "Bàn 05");
+
+                // HDH-02: STATUS = 0 (kiểm hiện mọi STATUS), NGAYHUY giữa ngày Đến (10/06/2003 16:30), DATHANHTOAN = 0, nhiều cột NULL.
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUY (" +
+                    "ID, NAME, STATUS, USERCREATEDID, NOTE, NGAY, KHACHHANG, NHANVEN, THUNGAN, " +
+                    "GIOHUY, NGAYHUY, DOITRA, DATHANHTOAN, GIOTHANHTOAN, TRALAI, " +
+                    "TIENHANG, TILETHUE, TIENTHUE, TILEGIAMGIA, TIENGIAMGIA, PHIVANCHUYEN, " +
+                    "THANHTOANBOI, LYDOHUY, TIENGIO, PHIDICHVU, TDONHANGID, BAN) VALUES (" +
+                    "@ID, @NAME, 0, 'selftest', NULL, @NGAY, NULL, NULL, @TN, " +
+                    "@GIOHUY, @NGAYHUY, NULL, 0, NULL, NULL, " +
+                    "@TIENHANG, NULL, NULL, NULL, NULL, NULL, " +
+                    "NULL, @LYDO, NULL, NULL, @ORIG, NULL)",
+                    "@ID", bill2Id, "@NAME", "HDH-02",
+                    "@NGAY", new DateTime(2003, 6, 10, 0, 0, 0),
+                    "@TN", "Thu ngân 2",
+                    "@GIOHUY", new DateTime(2003, 6, 10, 16, 30, 0),
+                    "@NGAYHUY", new DateTime(2003, 6, 10, 16, 30, 0),
+                    "@TIENHANG", 120000m, "@LYDO", "Nhập nhầm món",
+                    "@ORIG", DbHelper.NewId());
+
+                // HDH-03: NGAY = 10/06/2003 nhưng NGAYHUY = 11/06/2003 00:00 (00:00 hôm sau → không tính khi Đến = 10/06, chứng minh lọc đúng NGAYHUY).
+                // DATHANHTOAN = NULL (ô đánh dấu tắt), TILEGIAMGIA = 12.5, TIENGIAMGIA = 25000, 0 dòng chi tiết.
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUY (" +
+                    "ID, NAME, STATUS, USERCREATEDID, NOTE, NGAY, KHACHHANG, NHANVEN, THUNGAN, " +
+                    "GIOHUY, NGAYHUY, DOITRA, DATHANHTOAN, GIOTHANHTOAN, TRALAI, " +
+                    "TIENHANG, TILETHUE, TIENTHUE, TILEGIAMGIA, TIENGIAMGIA, PHIVANCHUYEN, " +
+                    "THANHTOANBOI, LYDOHUY, TIENGIO, PHIDICHVU, TDONHANGID, BAN) VALUES (" +
+                    "@ID, @NAME, 30, 'selftest', @NOTE, @NGAY, @KH, @NV, @TN, " +
+                    "@GIOHUY, @NGAYHUY, 0, NULL, NULL, 0, " +
+                    "@TIENHANG, 0, 0, @TLGG, @TGG, 0, " +
+                    "@TTBOI, @LYDO, 0, 0, @ORIG, @BAN)",
+                    "@ID", bill3Id, "@NAME", "HDH-03", "@NOTE", "Hủy 00:00 hôm sau",
+                    "@NGAY", new DateTime(2003, 6, 10, 0, 0, 0),
+                    "@KH", "Khách vãng lai", "@NV", "NV 03", "@TN", "Thu ngân 3",
+                    "@GIOHUY", new DateTime(2003, 6, 11, 0, 0, 0),
+                    "@NGAYHUY", new DateTime(2003, 6, 11, 0, 0, 0),
+                    "@TIENHANG", 200000m, "@TLGG", 12.5m, "@TGG", 25000m,
+                    "@TTBOI", "", "@LYDO", "Hủy đầu ngày hôm sau",
+                    "@ORIG", DbHelper.NewId(), "@BAN", "Bàn 09");
+
+                // HDH-04: NGAYHUY = 09/06/2003 23:59 (sớm nhất → đứng đầu khi mở màn, có 2 dòng chi tiết để chứng minh mở màn tự nạp chi tiết dòng đầu).
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUY (" +
+                    "ID, NAME, STATUS, USERCREATEDID, NOTE, NGAY, KHACHHANG, NHANVEN, THUNGAN, " +
+                    "GIOHUY, NGAYHUY, DOITRA, DATHANHTOAN, GIOTHANHTOAN, TRALAI, " +
+                    "TIENHANG, TILETHUE, TIENTHUE, TILEGIAMGIA, TIENGIAMGIA, PHIVANCHUYEN, " +
+                    "THANHTOANBOI, LYDOHUY, TIENGIO, PHIDICHVU, TDONHANGID, BAN) VALUES (" +
+                    "@ID, @NAME, 30, 'selftest', @NOTE, @NGAY, @KH, @NV, @TN, " +
+                    "@GIOHUY, @NGAYHUY, 0, 30, @GIOTT, 0, " +
+                    "@TIENHANG, 0, 0, 0, 0, 0, " +
+                    "@TTBOI, @LYDO, 0, 0, @ORIG, @BAN)",
+                    "@ID", bill4Id, "@NAME", "HDH-04", "@NOTE", "Hủy hôm trước",
+                    "@NGAY", new DateTime(2003, 6, 9, 0, 0, 0),
+                    "@KH", "Khách cũ", "@NV", "NV 04", "@TN", "Thu ngân 4",
+                    "@GIOHUY", new DateTime(2003, 6, 9, 23, 59, 0),
+                    "@NGAYHUY", new DateTime(2003, 6, 9, 23, 59, 0),
+                    "@GIOTT", new DateTime(2003, 6, 9, 22, 10, 0),
+                    "@TIENHANG", 50000m, "@TTBOI", "Thu ngân 4", "@LYDO", "Hủy hôm trước",
+                    "@ORIG", DbHelper.NewId(), "@BAN", "Bàn 01");
+
+                // Chi tiết cho HDH-01 (3 dòng, TIMECREATED tăng dần).
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                    "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                    "@ID", line1aId, "@TC", new DateTime(2003, 6, 10, 9, 15, 1), "@PID", bill1Id,
+                    "@MA", "CF-01", "@TEN", "Cà phê sữa đá", "@DVT", "Ly", "@SL", 2m, "@DG", 25000m, "@TT", 50000m, "@NOTE", "Ít đường");
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                    "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                    "@ID", line1bId, "@TC", new DateTime(2003, 6, 10, 9, 15, 2), "@PID", bill1Id,
+                    "@MA", "TR-02", "@TEN", "Trà đào cam sả", "@DVT", "Ly", "@SL", 1.5m, "@DG", 35000m, "@TT", 52500m, "@NOTE", "Nhiều đá");
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                    "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                    "@ID", line1cId, "@TC", new DateTime(2003, 6, 10, 9, 15, 3), "@PID", bill1Id,
+                    "@MA", "DX-03", "@TEN", "Đá xay Matcha", "@DVT", "Ly", "@SL", 1m, "@DG", 22500m, "@TT", 22500m, "@NOTE", "Ít ngọt");
+
+                // Chi tiết cho HDH-02 (1 dòng) và HDH-04 (2 dòng).
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                    "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                    "@ID", line2aId, "@TC", new DateTime(2003, 6, 10, 16, 30, 1), "@PID", bill2Id,
+                    "@MA", "BN-01", "@TEN", "Bánh ngọt socola", "@DVT", "Cái", "@SL", 3m, "@DG", 40000m, "@TT", 120000m, "@NOTE", "Ghi chú bánh");
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                    "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                    "@ID", line4aId, "@TC", new DateTime(2003, 6, 9, 23, 59, 1), "@PID", bill4Id,
+                    "@MA", "TS-01", "@TEN", "Trà sữa trân châu", "@DVT", "Ly", "@SL", 1m, "@DG", 30000m, "@TT", 30000m, "@NOTE", "Ít đá");
+                BookingExec(db,
+                    "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                    "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                    "@ID", line4bId, "@TC", new DateTime(2003, 6, 9, 23, 59, 2), "@PID", bill4Id,
+                    "@MA", "NC-01", "@TEN", "Nước cam ép", "@DVT", "Ly", "@SL", 1m, "@DG", 20000m, "@TT", 20000m, "@NOTE", "Không đường");
+
+                // 4. Repository: kiểm biên lọc ngày trên NGAYHUY, từng đầu trống, mọi STATUS, thứ tự sắp xếp, tham số hóa (P4).
+                var repo = new CancelledBillRepository(db);
+                Func<List<CancelledBillRow>, List<CancelledBillRow>> onlySeeded = rows =>
+                    rows.FindAll(r => r.Name != null && r.Name.StartsWith("HDH-", StringComparison.Ordinal));
+
+                List<CancelledBillRow> allSeeded = onlySeeded(repo.LoadBills(null, null));
+                Check("Hóa đơn hủy (§6/Q16): hai đầu trống tải đủ mọi bản HDH (kể cả STATUS=0), sắp tăng NGAYHUY, GIOHUY, NAME",
+                    allSeeded.Count == 4
+                    && allSeeded[0].Name == "HDH-04"
+                    && allSeeded[1].Name == "HDH-01"
+                    && allSeeded[2].Name == "HDH-02" && allSeeded[2].Status == 0
+                    && allSeeded[3].Name == "HDH-03",
+                    "n=" + allSeeded.Count);
+
+                List<CancelledBillRow> day10 = onlySeeded(repo.LoadBills(new DateTime(2003, 6, 10), new DateTime(2003, 6, 10)));
+                Check("Hóa đơn hủy (§6/Q10 biên lọc NGAYHUY): tính giữa ngày Đến (16:30), loại 00:00 hôm sau dù NGAY=10/06, lấy bản NGAY=08/06 hủy 10/06",
+                    day10.Count == 2 && day10[0].Name == "HDH-01" && day10[1].Name == "HDH-02",
+                    "n=" + day10.Count);
+
+                List<CancelledBillRow> fromOnly = onlySeeded(repo.LoadBills(new DateTime(2003, 6, 10), null));
+                Check("Hóa đơn hủy (§6 đầu Đến trống): lấy từ 10/06 trở đi (HDH-01, HDH-02, HDH-03)",
+                    fromOnly.Count == 3 && fromOnly[0].Name == "HDH-01" && fromOnly[1].Name == "HDH-02" && fromOnly[2].Name == "HDH-03",
+                    "n=" + fromOnly.Count);
+
+                List<CancelledBillRow> toOnly = onlySeeded(repo.LoadBills(null, new DateTime(2003, 6, 10)));
+                Check("Hóa đơn hủy (§6 đầu Từ trống): lấy đến trọn 10/06 (HDH-04, HDH-01, HDH-02)",
+                    toOnly.Count == 3 && toOnly[0].Name == "HDH-04" && toOnly[1].Name == "HDH-01" && toOnly[2].Name == "HDH-02",
+                    "n=" + toOnly.Count);
+
+                List<CancelledBillLine> bill1Lines = repo.LoadLines(bill1Id);
+                List<CancelledBillLine> emptyLines = repo.LoadLines("");
+                List<CancelledBillLine> injectionSafe = repo.LoadLines("x' OR '1'='1");
+                Check("Hóa đơn hủy (§6/P4 chi tiết & tham số hóa): LoadLines trả đúng 3 dòng theo TIMECREATED, rỗng/SQL-injection an toàn",
+                    bill1Lines.Count == 3
+                    && bill1Lines[0].MaHang == "CF-01" && bill1Lines[1].MaHang == "TR-02" && bill1Lines[2].MaHang == "DX-03"
+                    && emptyLines.Count == 0 && injectionSafe.Count == 0,
+                    "n=" + bill1Lines.Count);
+
+                // 5. Dựng CancelledBillView trong Form được Show thật (đặt ngoài màn hình, ShowInTaskbar=false); mọi thao tác đi qua sự kiện thật của control.
+                string[] expectedMasterHeaders =
+                {
+                    "Số phiếu", "Ghi chú", "Ngày", "Khách hàng", "Nhân viên", "Thu ngân hủy",
+                    "Giờ hủy", "Ngày hủy", "Đổi trả", "Đã thanh toán", "Giờ thanh toán", "Trả lại",
+                    "Tiền hàng", "Tỉ lệ thuế", "Tiền thuế", "Tỉ lệ giảm giá (%)", "Tiền giảm giá",
+                    "Phí vận chuyển", "Thanh toán bởi", "Lý do hủy", "Tiền giờ", "Phí dịch vụ"
+                };
+                string[] expectedDetailHeaders =
+                {
+                    "Ghi chú", "Mã hàng", "Tên hàng", "ĐVT", "Số lượng", "Đơn giá", "Thành tiền"
+                };
+
+                using (var hostForm = new System.Windows.Forms.Form
+                {
+                    StartPosition = System.Windows.Forms.FormStartPosition.Manual,
+                    ShowInTaskbar = false,
+                    Location = new System.Drawing.Point(-20000, -20000),
+                    ClientSize = new System.Drawing.Size(1360, 740)
+                })
+                {
+                    var view = new CancelledBillView(adminSession)
+                    {
+                        Dock = System.Windows.Forms.DockStyle.Fill,
+                        SuppressErrorPopup = true
+                    };
+                    hostForm.Controls.Add(view);
+                    hostForm.Show();
+                    System.Windows.Forms.Application.DoEvents();
+                    try
+                    {
+                        // Mở màn (trên Form đã Show): 2 ô ngày trống, nạp đủ 4 bản HDH, chọn dòng đầu và nạp chi tiết của dòng đầu đó.
+                        var firstRowTag = view.MasterRowCount > 0 ? view.MasterGridForTest.Rows[0].Tag as CancelledBillRow : null;
+                        int expectedFirstDetailCount = firstRowTag == null ? 0 : repo.LoadLines(firstRowTag.Id).Count;
+                        bool firstSelectedOnOpen = view.MasterGridForTest.SelectedRows.Count == 1
+                            && view.MasterGridForTest.SelectedRows[0].Index == 0
+                            && firstRowTag != null
+                            && view.DetailRowCount == expectedFirstDetailCount
+                            && (firstRowTag.Id != bill4Id || view.DetailRowCount == 2);
+                        Check("Hóa đơn hủy UI (§6 mở màn trên Form đã Show): hai ô ngày trống, nạp đủ bản HDH, tự chọn dòng đầu và nạp chi tiết của dòng đầu",
+                            view.FromDateValue == null && view.ToDateValue == null
+                            && view.FindMasterRowIndexById(bill1Id) >= 0
+                            && view.FindMasterRowIndexById(bill2Id) >= 0
+                            && view.FindMasterRowIndexById(bill3Id) >= 0
+                            && view.FindMasterRowIndexById(bill4Id) >= 0
+                            && firstSelectedOnOpen,
+                            "firstId=" + (firstRowTag == null ? "null" : firstRowTag.Name) + ", detailRows=" + view.DetailRowCount + "/" + expectedFirstDetailCount);
+
+                        // Đúng 22 cột lưới trên + đúng nhãn, thứ tự; không cột Bàn / Tổng cộng; không ép Fill để cuộn ngang; độ rộng >= nhãn tiêu đề.
+                        List<string> masterHeaders = view.MasterColumnHeaders();
+                        bool masterHeadersOk = masterHeaders.Count == expectedMasterHeaders.Length;
+                        for (int i = 0; masterHeadersOk && i < expectedMasterHeaders.Length; i++)
+                            if (masterHeaders[i] != expectedMasterHeaders[i])
+                                masterHeadersOk = false;
+                        bool noBanNoTotal = !masterHeaders.Contains("Bàn") && !masterHeaders.Contains("Tổng cộng");
+                        bool noFillOnMaster = true;
+                        bool headersNotClipped = true;
+                        int totalMasterWidth = 0;
+                        foreach (System.Windows.Forms.DataGridViewColumn col in view.MasterGridForTest.Columns)
+                        {
+                            if (col.AutoSizeMode == System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill)
+                                noFillOnMaster = false;
+                            int needW = System.Windows.Forms.TextRenderer.MeasureText(col.HeaderText, view.HeadingFontForTest).Width;
+                            if (col.Width < needW)
+                                headersNotClipped = false;
+                            totalMasterWidth += col.Width;
+                        }
+                        Check("Hóa đơn hủy UI (§6/Q8 lưới trên 22 cột): đúng nhãn/thứ tự, không Bàn/Tổng cộng, không Fill, đủ rộng cuộn ngang",
+                            masterHeadersOk && noBanNoTotal && noFillOnMaster && headersNotClipped && totalMasterWidth > 1400,
+                            "cols=" + masterHeaders.Count + ", totalW=" + totalMasterWidth + ", noFill=" + noFillOnMaster);
+
+                        // Đúng 7 cột lưới dưới theo spec §1 (Q9).
+                        List<string> detailHeaders = view.DetailColumnHeaders();
+                        bool detailHeadersOk = detailHeaders.Count == expectedDetailHeaders.Length;
+                        for (int i = 0; detailHeadersOk && i < expectedDetailHeaders.Length; i++)
+                            if (detailHeaders[i] != expectedDetailHeaders[i])
+                                detailHeadersOk = false;
+                        Check("Hóa đơn hủy UI (§6/Q9 lưới dưới 7 cột): đúng nhãn và thứ tự ViewConfig (Ghi chú đứng đầu)",
+                            detailHeadersOk, string.Join(" | ", detailHeaders.ToArray()));
+
+                        // Chuỗi hiển thị thật của ô trên lưới master (ngày, giờ hủy HH:mm, giờ TT dd/MM HH:mm, n0, 0.##, ô đánh dấu, NULL trống, TIENGIAMGIA=TILEGIAMGIA Q3).
+                        int r1 = view.FindMasterRowIndexById(bill1Id);
+                        int r2 = view.FindMasterRowIndexById(bill2Id);
+                        int r3 = view.FindMasterRowIndexById(bill3Id);
+                        string fNgay1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colNgay"));
+                        string fGioHuy1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colGioHuy"));
+                        string fNgayHuy1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colNgayHuy"));
+                        string fGioTT1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colGioThanhToan"));
+                        object fPaid1 = view.GetMasterFormattedValue(r1, "colDaThanhToan");
+                        string fTienHang1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colTienHang"));
+                        string fTiLeGG1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colTiLeGiamGia"));
+                        string fTienGG1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colTienGiamGia"));
+                        string fNhanVien1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colNhanVien"));
+                        string fPhiVC1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colPhiVanChuyen"));
+                        string fTienGio1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colTienGio"));
+                        string fPhiDV1 = Convert.ToString(view.GetMasterFormattedValue(r1, "colPhiDichVu"));
+
+                        Check("Hóa đơn hủy UI (§6 định dạng ô thật): dd/MM/yyyy, GIOHUY HH:mm, GIOTHANHTOAN dd/MM HH:mm, DATHANHTOAN=30 đánh dấu, n0, NHANVEN",
+                            fNgay1 == "08/06/2003"
+                            && fGioHuy1 == "09:15"
+                            && fNgayHuy1 == "10/06/2003"
+                            && fGioTT1 == "08/06 18:45"
+                            && (fPaid1 is bool && (bool)fPaid1)
+                            && fTienHang1 == 125000m.ToString("n0", vi)
+                            && fPhiVC1 == 20000m.ToString("n0", vi)
+                            && fTienGio1 == 30000m.ToString("n0", vi)
+                            && fPhiDV1 == 15000m.ToString("n0", vi)
+                            && fNhanVien1 == "Trần Văn B",
+                            "ngay=" + fNgay1 + ", gioHuy=" + fGioHuy1 + ", gioTT=" + fGioTT1 + ", paid=" + fPaid1 + ", th=" + fTienHang1);
+
+                        // Q3: TIENGIAMGIA = TILEGIAMGIA hiện nguyên trạng + dòng ghi chú hiện trên màn; TILEGIAMGIA định dạng 0.##; NULL để trống; DATHANHTOAN != 30 không đánh dấu.
+                        object fPaid2 = view.GetMasterFormattedValue(r2, "colDaThanhToan");
+                        string fGioTT2 = Convert.ToString(view.GetMasterFormattedValue(r2, "colGioThanhToan"));
+                        string fTienGG2 = Convert.ToString(view.GetMasterFormattedValue(r2, "colTienGiamGia"));
+                        string fTiLeGG2 = Convert.ToString(view.GetMasterFormattedValue(r2, "colTiLeGiamGia"));
+                        object fPaid3 = view.GetMasterFormattedValue(r3, "colDaThanhToan");
+                        string fTiLeGG3 = Convert.ToString(view.GetMasterFormattedValue(r3, "colTiLeGiamGia"));
+                        string fTienGG3 = Convert.ToString(view.GetMasterFormattedValue(r3, "colTienGiamGia"));
+
+                        Check("Hóa đơn hủy UI (§6/Q3 TIENGIAMGIA & NULL): bản cũ TIENGIAMGIA=TILEGIAMGIA hiện đúng DB kèm ghi chú, NULL để trống, ô đánh dấu tắt khi !=30/NULL",
+                            fTiLeGG1 == 15m.ToString("0.##", vi)
+                            && fTienGG1 == 15m.ToString("n0", vi)
+                            && view.NoteVisible && view.NoteText.IndexOf("Tiền giảm giá", StringComparison.OrdinalIgnoreCase) >= 0
+                            && (fPaid2 is bool && !(bool)fPaid2)
+                            && fGioTT2 == "" && fTienGG2 == "" && fTiLeGG2 == ""
+                            && (fPaid3 is bool && !(bool)fPaid3)
+                            && fTiLeGG3 == 12.5m.ToString("0.##", vi)
+                            && fTienGG3 == 25000m.ToString("n0", vi),
+                            "r1=" + fTiLeGG1 + "/" + fTienGG1 + ", r3=" + fTiLeGG3 + "/" + fTienGG3 + ", note=" + view.NoteVisible);
+
+                        // Đổi dòng lưới trên CHỈ bằng CurrentCell/Selected (qua sự kiện thật SelectionChanged, KHÔNG gọi ReloadLines) + kiểm chuỗi hiển thị chi tiết.
+                        bool sel1 = view.SelectMasterById(bill1Id);
+                        string dSl1b = Convert.ToString(view.GetDetailFormattedValue(1, "colDetailSoLuong"));
+                        string dDg1b = Convert.ToString(view.GetDetailFormattedValue(1, "colDetailDonGia"));
+                        string dTt1b = Convert.ToString(view.GetDetailFormattedValue(1, "colDetailThanhTien"));
+                        int countBill1 = view.DetailRowCount;
+
+                        bool sel2 = view.SelectMasterById(bill2Id);
+                        int countBill2 = view.DetailRowCount;
+                        string dTen2a = Convert.ToString(view.GetDetailFormattedValue(0, "colDetailTenHang"));
+
+                        bool sel3 = view.SelectMasterById(bill3Id);
+                        int countBill3 = view.DetailRowCount;
+
+                        Check("Hóa đơn hủy UI (§6 sự kiện SelectionChanged & định dạng chi tiết): đổi CurrentCell tự nạp chi tiết đúng SL/Đơn giá/Thành tiền",
+                            sel1 && countBill1 == 3
+                            && dSl1b == 1.5m.ToString("#,##0.##", vi)
+                            && dDg1b == 35000m.ToString("n0", vi)
+                            && dTt1b == 52500m.ToString("n0", vi)
+                            && sel2 && countBill2 == 1 && dTen2a == "Bánh ngọt socola"
+                            && sel3 && countBill3 == 0,
+                            "c1=" + countBill1 + " (" + dSl1b + "/" + dDg1b + "/" + dTt1b + "), c2=" + countBill2 + ", c3=" + countBill3);
+
+                        // Ô Lọc: CHỈ gán FilterBoxForTest.Text (qua sự kiện thật TextChanged, KHÔNG gọi ApplyDetailFilter).
+                        int masterBeforeFilter = view.MasterRowCount;
+                        view.SelectMasterById(bill1Id);
+                        view.FilterBoxForTest.Text = "TRÀ ĐÀO";
+                        bool filterViUpper = view.DetailRowCount == 1
+                            && Convert.ToString(view.GetDetailFormattedValue(0, "colDetailTenHang")) == "Trà đào cam sả"
+                            && view.MasterRowCount == masterBeforeFilter;
+
+                        view.FilterBoxForTest.Text = "đá xay";
+                        bool filterViD = view.DetailRowCount == 1
+                            && Convert.ToString(view.GetDetailFormattedValue(0, "colDetailMaHang")) == "DX-03";
+
+                        view.FilterBoxForTest.Text = "cf-01";
+                        bool filterCode = view.DetailRowCount == 1
+                            && Convert.ToString(view.GetDetailFormattedValue(0, "colDetailMaHang")) == "CF-01";
+
+                        view.FilterBoxForTest.Text = "Ít đường"; // chỉ có trong NOTE, không có trong TENHANG/MAHANG
+                        bool filterNoteIgnored = view.DetailRowCount == 0;
+
+                        view.FilterBoxForTest.Text = "bánh";
+                        int bill1WithBanh = view.DetailRowCount;
+                        view.SelectMasterById(bill2Id);
+                        int bill2WithBanh = view.DetailRowCount; // đổi dòng lưới trên vẫn áp chuỗi đang gõ
+
+                        Check("Hóa đơn hủy UI (§6/Q2/Q13 sự kiện TextChanged ô Lọc): chỉ gán Text lọc TENHANG/MAHANG chữ Việt và giữ khi đổi dòng",
+                            filterViUpper && filterViD && filterCode && filterNoteIgnored
+                            && bill1WithBanh == 0 && bill2WithBanh == 1,
+                            "vi=" + filterViUpper + ", d=" + filterViD + ", code=" + filterCode + ", noteIgn=" + filterNoteIgnored
+                            + ", switch=" + bill1WithBanh + "->" + bill2WithBanh);
+
+                        // Đổi từng ô ngày CHỈ bằng gán Inner.Text + Commit() (qua sự kiện thật ValueChanged, KHÔNG gọi ReloadBills).
+                        // 1) Đổi Từ = 10/06/2003 → loại HDH-04, tự chọn dòng đầu mới (HDH-01) và nạp chi tiết (đang lọc "bánh" → 0 dòng).
+                        view.FromDateBoxForTest.Inner.Text = "10/06/2003";
+                        view.FromDateBoxForTest.Commit();
+                        bool fromEventReloaded = view.FindMasterRowIndexById(bill4Id) < 0
+                            && view.FindMasterRowIndexById(bill1Id) == 0
+                            && view.FindMasterRowIndexById(bill3Id) >= 0
+                            && view.MasterGridForTest.SelectedRows.Count == 1
+                            && view.MasterGridForTest.SelectedRows[0].Index == 0;
+
+                        // 2) Đổi Đến = 10/06/2003 → loại HDH-03, còn HDH-01 & HDH-02, tự chọn dòng đầu (HDH-01).
+                        view.ToDateBoxForTest.Inner.Text = "10/06/2003";
+                        view.ToDateBoxForTest.Commit();
+                        bool toEventReloaded = view.MasterRowCount == 2
+                            && view.FindMasterRowIndexById(bill1Id) == 0
+                            && view.FindMasterRowIndexById(bill2Id) == 1
+                            && view.FindMasterRowIndexById(bill3Id) < 0
+                            && view.MasterGridForTest.SelectedRows.Count == 1
+                            && view.MasterGridForTest.SelectedRows[0].Index == 0;
+
+                        Check("Hóa đơn hủy UI (§6 sự kiện ValueChanged Từ & Đến): gán Inner.Text + Commit tự tải lại lưới trên và chọn dòng đầu",
+                            fromEventReloaded && toEventReloaded,
+                            "fromOk=" + fromEventReloaded + ", toOk=" + toEventReloaded + ", rows=" + view.MasterRowCount);
+
+                        // Refresh thật bằng PerformClick(): chọn sang dòng thứ 2 (HDH-02), chèn thêm HDH-05 sau khi mở màn, bấm Refresh.
+                        // Chứng minh: bản mới HDH-05 xuất hiện, giữ 2 ô ngày & ô Lọc "bánh", KHÔNG giữ vị trí dòng cũ (quay về chọn dòng đầu HDH-01).
+                        view.SelectMasterById(bill2Id);
+                        bool beforeRefreshOnBill2 = view.MasterGridForTest.SelectedRows.Count == 1
+                            && view.MasterGridForTest.SelectedRows[0].Index == 1
+                            && view.DetailRowCount == 1;
+
+                        BookingExec(db,
+                            "INSERT INTO TDONHANGHUY (" +
+                            "ID, NAME, STATUS, USERCREATEDID, NOTE, NGAY, KHACHHANG, NHANVEN, THUNGAN, " +
+                            "GIOHUY, NGAYHUY, DOITRA, DATHANHTOAN, GIOTHANHTOAN, TRALAI, " +
+                            "TIENHANG, TILETHUE, TIENTHUE, TILEGIAMGIA, TIENGIAMGIA, PHIVANCHUYEN, " +
+                            "THANHTOANBOI, LYDOHUY, TIENGIO, PHIDICHVU, TDONHANGID, BAN) VALUES (" +
+                            "@ID, @NAME, 30, 'selftest', @NOTE, @NGAY, @KH, @NV, @TN, " +
+                            "@GIOHUY, @NGAYHUY, 0, 30, @GIOTT, 0, " +
+                            "@TIENHANG, 0, 0, 0, 0, 0, " +
+                            "@TTBOI, @LYDO, 0, 0, @ORIG, @BAN)",
+                            "@ID", bill5Id, "@NAME", "HDH-05", "@NOTE", "Chèn mới trước Refresh",
+                            "@NGAY", new DateTime(2003, 6, 10, 0, 0, 0),
+                            "@KH", "Khách mới", "@NV", "NV 05", "@TN", "Thu ngân 5",
+                            "@GIOHUY", new DateTime(2003, 6, 10, 17, 45, 0),
+                            "@NGAYHUY", new DateTime(2003, 6, 10, 17, 45, 0),
+                            "@GIOTT", new DateTime(2003, 6, 10, 17, 0, 0),
+                            "@TIENHANG", 60000m, "@TTBOI", "Thu ngân 5", "@LYDO", "Kiểm nút Refresh thật",
+                            "@ORIG", DbHelper.NewId(), "@BAN", "Bàn 10");
+                        BookingExec(db,
+                            "INSERT INTO TDONHANGHUYCHITIET (ID, STATUS, USERCREATEDID, TIMECREATED, TDONHANGHUYID, MAHANG, TENHANG, DVT, SOLUONG, DONGIA, THANHTIEN, NOTE) " +
+                            "VALUES (@ID, 30, 'selftest', @TC, @PID, @MA, @TEN, @DVT, @SL, @DG, @TT, @NOTE)",
+                            "@ID", line5aId, "@TC", new DateTime(2003, 6, 10, 17, 45, 1), "@PID", bill5Id,
+                            "@MA", "BN-05", "@TEN", "Bánh bông lan", "@DVT", "Cái", "@SL", 2m, "@DG", 30000m, "@TT", 60000m, "@NOTE", "Mới thêm");
+
+                        view.RefreshButtonForTest.PerformClick();
+                        bool refreshLoadedNewAndResetToFirst = beforeRefreshOnBill2
+                            && view.FindMasterRowIndexById(bill5Id) >= 0
+                            && view.FromDateValue == new DateTime(2003, 6, 10)
+                            && view.ToDateValue == new DateTime(2003, 6, 10)
+                            && view.FilterText == "bánh"
+                            && view.MasterGridForTest.SelectedRows.Count == 1
+                            && view.MasterGridForTest.SelectedRows[0].Index == 0
+                            && view.DetailRowCount == 0; // dòng đầu là HDH-01, đang giữ lọc "bánh" → 0 dòng
+
+                        // Xóa chuỗi ô Lọc → trả đủ 3 dòng của HDH-01 đang chọn ở dòng đầu; thử luôn Refresh từ menu chuột phải khi đang chọn HDH-05 → quay về dòng đầu HDH-01 (3 dòng).
+                        view.FilterBoxForTest.Text = "";
+                        bool clearFilterRestoresAll = view.DetailRowCount == 3;
+
+                        view.SelectMasterById(bill5Id);
+                        bool onBill5BeforeMenuRefresh = view.DetailRowCount == 1;
+                        System.Windows.Forms.ToolStripItem menuRefreshItem = null;
+                        foreach (System.Windows.Forms.ToolStripItem item in view.MasterMenuForTest.Items)
+                            if (string.Equals(item.Text, "Refresh", StringComparison.Ordinal))
+                                menuRefreshItem = item;
+                        if (menuRefreshItem != null)
+                            menuRefreshItem.PerformClick();
+                        bool menuRefreshResetsToFirst = onBill5BeforeMenuRefresh
+                            && menuRefreshItem != null
+                            && view.MasterGridForTest.SelectedRows.Count == 1
+                            && view.MasterGridForTest.SelectedRows[0].Index == 0
+                            && view.DetailRowCount == 3;
+
+                        // Đổi sang khoảng ngày không có dữ liệu bằng Inner.Text + Commit() → lưới trên rỗng và lưới dưới rỗng.
+                        view.FromDateBoxForTest.Inner.Text = "01/01/2000";
+                        view.FromDateBoxForTest.Commit();
+                        view.ToDateBoxForTest.Inner.Text = "01/01/2000";
+                        view.ToDateBoxForTest.Commit();
+                        bool emptyMasterClearsDetail = view.MasterRowCount == 0 && view.DetailRowCount == 0;
+
+                        Check("Hóa đơn hủy UI (§6/Q11 nút Refresh & menu Refresh): PerformClick tải bản mới HDH-05, giữ ngày & ô Lọc, chọn lại dòng đầu, rỗng→chi tiết rỗng",
+                            refreshLoadedNewAndResetToFirst && clearFilterRestoresAll && menuRefreshResetsToFirst && emptyMasterClearsDetail,
+                            "refNew=" + refreshLoadedNewAndResetToFirst + ", clear=" + clearFilterRestoresAll
+                            + ", menuRef=" + menuRefreshResetsToFirst + ", empty=" + emptyMasterClearsDetail);
+
+                        // Chỉ đọc, đủ cao cảm ứng, không có nút Thêm/Sửa/Xóa/Excel/In, menu chuột phải hai lưới không có Thêm/Sửa/Xóa (Q15).
+                        bool gridsReadOnly = view.MasterGridForTest.ReadOnly
+                            && !view.MasterGridForTest.AllowUserToAddRows
+                            && !view.MasterGridForTest.AllowUserToDeleteRows
+                            && view.DetailGridForTest.ReadOnly
+                            && !view.DetailGridForTest.AllowUserToAddRows
+                            && !view.DetailGridForTest.AllowUserToDeleteRows;
+                        bool touchFriendlyRows = view.MasterGridForTest.RowTemplate.Height >= 32
+                            && view.DetailGridForTest.RowTemplate.Height >= 32;
+
+                        var allButtons = new List<System.Windows.Forms.Control>();
+                        CollectAllButtons(view, allButtons);
+                        bool onlyRefreshButton = allButtons.Count == 1
+                            && string.Equals(allButtons[0].Text, "Refresh", StringComparison.Ordinal);
+
+                        bool menusReadOnly = !MenuContainsForbiddenWriteAction(view.MasterMenuForTest)
+                            && !MenuContainsForbiddenWriteAction(view.DetailMenuForTest);
+
+                        Check("Hóa đơn hủy UI (§6/Q15 chỉ xem): hai lưới chỉ đọc + đủ cao cảm ứng, chỉ có nút Refresh, menu chuột phải không có Thêm/Sửa/Xóa",
+                            gridsReadOnly && touchFriendlyRows && onlyRefreshButton && menusReadOnly,
+                            "ro=" + gridsReadOnly + ", touch=" + touchFriendlyRows + ", btns=" + allButtons.Count + ", menuRo=" + menusReadOnly);
+                    }
+                    finally
+                    {
+                        hostForm.Close();
+                    }
+                }
+
+                // 6. Preview form --render-screen preview.cancelledbill (Show ngoài màn hình) với tùy chọn select=1 đi qua sự kiện thật.
+                using (System.Windows.Forms.Form previewForm = Dialogs.ScreenFactory.Create("preview.cancelledbill", adminSession))
+                {
+                    var pv = previewForm as Dialogs.CancelledBillPreviewForm;
+                    bool previewOk = false;
+                    if (pv != null)
+                    {
+                        pv.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+                        pv.ShowInTaskbar = false;
+                        pv.Location = new System.Drawing.Point(-20000, -20000);
+                        pv.Show();
+                        System.Windows.Forms.Application.DoEvents();
+                        try
+                        {
+                            pv.Preview("from=10/06/2003");
+                            pv.Preview("to=10/06/2003");
+                            pv.Preview("select=1");
+                            previewOk = pv.ViewForTest.MasterRowCount >= 2
+                                && pv.ViewForTest.MasterGridForTest.SelectedRows.Count == 1
+                                && pv.ViewForTest.MasterGridForTest.SelectedRows[0].Index == 1
+                                && pv.ViewForTest.DetailRowCount == 1;
+                        }
+                        finally
+                        {
+                            pv.Close();
+                        }
+                    }
+                    Check("Hóa đơn hủy (preview.cancelledbill): Show form chụp màn hình và select=1 đổi dòng + nạp chi tiết qua sự kiện thật",
+                        previewOk);
+                }
+            }
+            finally
+            {
+                // Dọn con (TDONHANGHUYCHITIET) trước cha (TDONHANGHUY).
+                BookingExec(db,
+                    "DELETE FROM TDONHANGHUYCHITIET WHERE TDONHANGHUYID IN (@A, @B, @C, @D, @E)",
+                    "@A", bill1Id, "@B", bill2Id, "@C", bill3Id, "@D", bill4Id, "@E", bill5Id);
+                BookingExec(db,
+                    "DELETE FROM TDONHANGHUY WHERE ID IN (@A, @B, @C, @D, @E)",
+                    "@A", bill1Id, "@B", bill2Id, "@C", bill3Id, "@D", bill4Id, "@E", bill5Id);
             }
         }
     }

@@ -19,6 +19,12 @@ namespace Kazuko_FnB.UI.Controls
         /// <summary>Gắn menu vào lưới; <paramref name="refresh"/> null thì mục Refresh bị mờ.</summary>
         public static void Attach(DataGridView grid, IWin32Window owner, Action refresh)
         {
+            AttachMenu(grid, owner, refresh);
+        }
+
+        /// <summary>Gắn menu vào lưới và trả về thể hiện menu (để kiểm thử kiểm tra mục menu thật).</summary>
+        internal static ThemedContextMenu AttachMenu(DataGridView grid, IWin32Window owner, Action refresh)
+        {
             var menu = new ThemedContextMenu();
             ToolStripMenuItem copy = menu.AddItem("Sao chép", null);
             copy.DropDownItems.Add(Sub(menu, "Sao chép ô", delegate { CopyCell(grid); }));
@@ -55,6 +61,7 @@ namespace Kazuko_FnB.UI.Controls
                 menu.Show(grid, e.Location);
             };
             grid.Disposed += delegate { menu.Dispose(); };
+            return menu;
         }
 
         private static ToolStripMenuItem Sub(ThemedContextMenu menu, string text, EventHandler onClick)

@@ -28,6 +28,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.booking", session => new BookingPreviewForm(session) },
                 { "preview.fund", session => new FundPreviewForm(session) },
                 { "preview.activitylog", session => new ActivityLogPreviewForm(session) },
+                { "preview.cancelledbill", session => new CancelledBillPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -55,6 +56,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Lưu vết hoạt động": form tự viết (OPERATION = 4, không có STABLEDESCID).
             if (string.Equals(node.Id, ActivityLogView.MenuId, StringComparison.Ordinal))
                 return new ActivityLogView(session);
+            // Màn "Danh mục hóa đơn hủy": form tự viết chỉ xem (OPERATION = 4).
+            if (string.Equals(node.Id, CancelledBillView.MenuId, StringComparison.Ordinal))
+                return new CancelledBillView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

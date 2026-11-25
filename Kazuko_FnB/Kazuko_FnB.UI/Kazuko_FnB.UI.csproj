@@ -158,7 +158,13 @@
     <Compile Include="ActivityLogView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CancelledBillView.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Dialogs\ActivityLogPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\CancelledBillPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\ConfirmDeleteActivityLogDialog.cs" />

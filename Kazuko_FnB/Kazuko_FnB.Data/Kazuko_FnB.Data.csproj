@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivityLogRepository.cs" />
+    <Compile Include="CancelledBillRepository.cs" />
     <Compile Include="CatalogRepository.cs" />
     <Compile Include="DataAccessException.cs" />
     <Compile Include="ConfigRepository.cs" />
