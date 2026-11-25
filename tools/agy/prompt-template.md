@@ -1,8 +1,9 @@
-Bạn viết code cho repo KAZUKO F&B ở {WORKTREE} (thư mục hiện tại; một git worktree, solution Kazuko_FnB/Kazuko_FnB.slnx, WinForms .NET Framework 4.8, Firebird 2.5, SQL viết tay, không ORM).
+Bạn viết code cho repo KAZUKO F&B ở {WORKTREE} (một git worktree, solution Kazuko_FnB/Kazuko_FnB.slnx, WinForms .NET Framework 4.8, Firebird 2.5, SQL viết tay, không ORM).
 
 Cách dùng công cụ:
-- Đọc và tìm file bằng công cụ đọc/tìm của bạn. Chỉ đọc trong thư mục hiện tại; mọi file ngoài thư mục này sẽ bị từ chối và làm dừng lượt chạy.
+- Đọc và tìm file bằng công cụ đọc/tìm của bạn. Chỉ đọc trong {WORKTREE}; mọi file ngoài thư mục này sẽ bị từ chối và làm dừng lượt chạy.
 - Thư mục POS TAP/ bị chặn đọc. Không cần đọc nó.
+- Shell của bạn KHÔNG đứng ở repo: mọi đường dẫn trong lệnh phải tuyệt đối, bắt đầu bằng {WORKTREE}\.
 - Lệnh shell: mỗi lần MỘT lệnh đơn, không dùng | ; && > và dấu backtick ở BẤT KỲ đâu, kể cả trong chuỗi mẫu tìm. Lệnh git có thể báo not a git repository, bỏ qua. Lệnh được phép: Get-Content, Get-ChildItem, Select-String, Test-Path, git status/diff/log/show/ls-files, MSBuild ở dưới. Lệnh khác bị từ chối và làm dừng lượt chạy, nên đừng thử.
 
 Đọc trước, theo thứ tự:
@@ -27,6 +28,6 @@ Bắt buộc:
 - Sửa file dùng chung (Theme/, SelfTest.cs, ScreenFactory.cs, Controls/, DbHelper.cs) chỉ khi thật cần, và liệt kê trong AGY-NOTES.md kèm lý do.
 - Chỗ spec không rõ: KHÔNG đoán. Ghi vào file AGY-NOTES.md ở gốc thư mục này.
 - Có thể build để tự kiểm (tùy chọn):
-  & 'D:\VisualStudioInstallation\MSBuild\Current\Bin\MSBuild.exe' Kazuko_FnB\Kazuko_FnB.slnx -nologo -v:m -p:OutDir={BUILD_OUT}\
+  & 'D:\VisualStudioInstallation\MSBuild\Current\Bin\MSBuild.exe' {WORKTREE}\Kazuko_FnB\Kazuko_FnB.slnx -nologo -v:m -p:OutDir={BUILD_OUT}\
 
 Xong thì tóm tắt: file đã thêm/sửa, phần chưa làm, chỗ không chắc.

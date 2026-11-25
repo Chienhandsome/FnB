@@ -6,12 +6,14 @@
   Từ chối nếu: code đổi sau lần Test-AgyBuild cuối; còn lỗi phạm vi; origin/main đã đổi ngoài docs/.
   origin/main chỉ đổi trong docs/: rebase rồi dừng, yêu cầu chạy lại Test-AgyBuild.ps1 trước khi push.
 .EXAMPLE
-  .\tools\agy\Publish-AgyFeature.ps1 -Feature luu-vet-hoat-dong -Round 2 -Title "luu-vet-hoat-dong r2: sua cat chu dong dam"
+  .\tools\agy\Publish-AgyFeature.ps1 -Feature luu-vet-hoat-dong -Round 2 -Title "luu-vet-hoat-dong r2: sua cat chu dong dam" -CoAuthor "Claude Sonnet 5.5" -ReviewedFullDiff
 #>
 param(
     [Parameter(Mandatory)][string]$Feature,
     [Parameter(Mandatory)][int]$Round,
     [Parameter(Mandatory)][string]$Title,
+    # Tên model Claude của phiên đã kiểm, ghi vào dòng Co-Authored-By.
+    [Parameter(Mandatory)][string]$CoAuthor,
     [string]$Body = '',
     [switch]$ReviewedFullDiff
 )
@@ -19,6 +21,7 @@ param(
 $P = Get-FeaturePaths $Feature
 if (-not $ReviewedFullDiff) { throw 'Thiếu -ReviewedFullDiff: Claude phải đọc hết diff (kể cả selftest) trước khi push.' }
 if ($Title -match '"' -or $Body -match '"') { throw 'Title/Body không được chứa dấu ".' }
+if ($CoAuthor -notmatch '^Claude [A-Za-z0-9 .]+$') { throw "CoAuthor phải là tên model Claude, ví dụ Claude Sonnet 5.5 (nhận: $CoAuthor)." }
 
 $baseInfo = Read-Json $P.BaseFile
 $build = Read-Json (Join-Path $P.Tmp "build-r$Round.json")
@@ -59,7 +62,7 @@ Generated-By: Antigravity CLI $($agy.agyVersion) ($($agy.model))
 Agy-Conversation: $($agy.conversation)
 Reviewed-By: Claude (đọc diff, build, selftest theo docs/workflow-agy.md)
 
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Co-Authored-By: $CoAuthor <noreply@anthropic.com>
 "@
 $msgFile = Join-Path $P.Tmp "commit-msg-r$Round.txt"
 Write-Utf8 $msgFile $msg

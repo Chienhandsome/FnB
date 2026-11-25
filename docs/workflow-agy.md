@@ -3,7 +3,7 @@
 Ngày 25/11/2026, thay cho bản Muse → Drive. Áp dụng cho repo `D:\Working\FnB`, trên máy Windows của Chiến.
 
 **Chiến chốt 25/11:**
-- Bên viết code là **Antigravity CLI** (`agy`, cài ở `%LOCALAPPDATA%\agy\bin\agy.exe`, bản 1.5.16), chạy trên chính máy này. Không dùng Drive.
+- Bên viết code là **Antigravity CLI** (`agy`, cài ở `%LOCALAPPDATA%\agy\bin\agy.exe`, bản 1.5.17), chạy trên chính máy này. Không dùng Drive.
 - Claude điều phối: giao việc cho `agy`, kiểm, rồi **push code thẳng lên `main`**, không qua nhánh hay pull request.
 
 Vì code lên `main` mà không ai khác xem, **Claude là người review** và các bước kiểm ở §4 là cổng chặn duy nhất. Code lỗi thì gỡ bằng `git revert` (§6). Các bước máy làm được đã viết thành script trong [`tools/agy/`](../tools/agy/).
@@ -35,7 +35,7 @@ Vì code lên `main` mà không ai khác xem, **Claude là người review** và
 | `Test-AgyScope.ps1` | 5–6 | Lỗi chặn: thư mục chính đổi, worktree có commit, file cấm, `.csproj` ngoài `<Compile Include>`, cấu hình chung của agy bị sửa, file ngoài worktree bị sửa. Cảnh báo: file dùng chung, mẫu code đáng ngờ, file `.log`/`.tmp` bên ngoài đổi |
 | `Get-AgyDelta.ps1 -Feature [-Full] [-MarkRead <tree>]` | 6, 9, 11 | Ghi ra file phần diff chưa đọc; lưu tree đã đọc |
 | `Test-AgyBuild.ps1 -Feature -Round` | 7 | Build; so cảnh báo với mốc; selftest trên bản chép DB; so ca lỗi với mốc; bắt buộc có ca mới; chặn file `.cs` vượt 500 dòng (§4.2); lưu dấu vân tay code đã kiểm |
-| `Publish-AgyFeature.ps1 -Feature -Round -Title -ReviewedFullDiff` | 11 | Từ chối nếu code đổi sau lần kiểm, `main` đổi code, thiếu cờ đã đọc diff. Commit có dòng ghi công, push fast-forward, ghi `state.txt` |
+| `Publish-AgyFeature.ps1 -Feature -Round -Title -CoAuthor -ReviewedFullDiff` | 11 | Từ chối nếu code đổi sau lần kiểm, `main` đổi code, thiếu cờ đã đọc diff. Commit có dòng ghi công, push fast-forward, ghi `state.txt` |
 | `Remove-AgyFeature.ps1 -Feature [-Discard]` | 13 | Xóa worktree, giữ `_tmp` |
 
 | Đường dẫn | Dùng cho |
@@ -69,17 +69,17 @@ Bắt đầu khi Chiến bảo "làm <chức năng>". **Dừng ở bước nào 
    - **Không nới, không xóa ca selftest** để qua.
    - **Cách ghi:** không commit trong worktree (`Test-AgyScope.ps1` coi commit mới là lỗi chặn). Sửa xong thì chụp tree, đọc delta (§4.2), chạy lại `Test-AgyBuild.ps1` với **cùng số vòng**. Phần sửa nằm chung commit `feat`; ghi `fix(claude): <file> - <lý do>` vào `-Body` của `Publish` và vào báo cáo §7.
 10. **Đối chiếu tiêu chí nghiệm thu** (§7).
-11. **Push:** `Publish-AgyFeature.ps1 ... -ReviewedFullDiff`. Cờ này nghĩa là **toàn bộ diff đã được đọc đủ, cộng dồn qua các vòng**, không bắt đọc lại hết trong một lần. Trước khi chạy, chụp tree lần nữa; khác tree đã đọc thì đọc phần khác trước. `main` chỉ đổi trong `docs/` thì script chuyển worktree lên `main` mới và bắt chạy lại `Test-AgyBuild.ps1`; đổi code thì dừng, giao lại từ bước 1.
+11. **Push:** `Publish-AgyFeature.ps1 ... -CoAuthor "Claude <model của phiên>" -ReviewedFullDiff`. Cờ `-ReviewedFullDiff` nghĩa là **toàn bộ diff đã được đọc đủ, cộng dồn qua các vòng**, không bắt đọc lại hết trong một lần. Trước khi chạy, chụp tree lần nữa; khác tree đã đọc thì đọc phần khác trước. `main` chỉ đổi trong `docs/` thì script chuyển worktree lên `main` mới và bắt chạy lại `Test-AgyBuild.ps1`; đổi code thì dừng, giao lại từ bước 1.
 12. **Báo cáo** lên issue `agy/<feature>` (nhãn `agy-patch`), nội dung §7. Ghi `docs/briefs/<feature>.md` (tối đa khoảng 30 dòng: đã làm gì, commit, còn gì, điều chưa kiểm, số issue) ở thư mục chính khi `agy` không còn chạy; commit và push cùng đợt cập nhật `docs/`. Dừng giữa chừng cũng ghi.
 13. **Dọn dẹp:** `Remove-AgyFeature.ps1`.
 
 ### 4.1 Quyền của agy (file `agy-settings.json` do `New-AgyFeature.ps1` sinh, chỉ dùng cho phiên)
 
 - **Đọc/ghi:** mặc định agy chỉ tự đọc/ghi trong thư mục làm việc (worktree) và thư mục `--add-dir` (`agy-in`); ngoài đó bị từ chối. **Không** dùng `read_file(*)` (lần đầu dùng quy tắc này đã mở quyền đọc cả máy).
-- **Chặn trong worktree:** đọc `POS TAP/`; ghi `docs/`, `CLAUDE.md`, `.gitignore`, `.git`, `Kazuko_FnB/lib/`, `.slnx`, `tools/`. Chặn cả repo chính (`D:/Working/FnB/`).
+- **Chặn trong worktree:** đọc `POS TAP/`; ghi `docs/`, `CLAUDE.md`, `.gitignore`, `.git`, `Kazuko_FnB/lib/`, `.slnx`, `tools/`. Chặn cả repo chính (`D:/Working/FnB/`) và đọc, ghi `%TEMP%` (agy 1.5.17 mặc định đọc, ghi được `%TEMP%` dù ngoài workspace).
 - **Cách viết đường dẫn:** phải có ký tự ổ đĩa (`D:/Working/...`) hoặc tương đối theo worktree (`POS TAP/`). Dạng bỏ ổ đĩa như tài liệu Antigravity ghi **không có tác dụng** (đã thử 25/11).
 - **Lệnh:** chỉ `Get-Content`, `Get-ChildItem`, `Select-String`, `Test-Path`, `dir`, `ls`, `pwd`, `git status|diff|log|show|ls-files`, MSBuild; không `| ; & < >` và dấu backtick. Chặn git ghi, lệnh nhắc `.fdb`/`POS TAP`, xóa/chép/ghi file, tải mạng, `Start-Process`.
-- **Đã thử 25/11:** đọc ngoài worktree, đọc repo chính, ghi ra ngoài, lệnh nhắc `DATA.fdb` đều bị chặn; đọc và ghi `agy-in` được.
+- **Đã thử 25/11:** đọc ngoài worktree, đọc repo chính, ghi ra ngoài, lệnh nhắc `DATA.fdb` đều bị chặn; đọc và ghi `agy-in` được. Các thử này trên bản 1.5.16; **agy đổi bản thì thử lại quyền** (`kinh-nghiem.md` §4).
 - `Test-AgyScope.ps1` còn so băm file cấu hình chung `~/.gemini/antigravity-cli/settings.json` trước/sau, để bắt agy tự nới quyền.
 
 ### 4.2 Mốc đã đọc, ghi chú và tiết kiệm token

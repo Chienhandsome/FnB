@@ -52,6 +52,8 @@ Copy-Item $baseJson (Join-Path $P.Tmp 'baseline.json') -Force
 $repoFwd = ($repo -replace '\\', '/').TrimEnd('/') + '/'
 # agy chạy --sandbox: quy tắc chặn phải là đường dẫn tuyệt đối, dạng tương đối làm MỌI lệnh shell bị dừng (25/11).
 $wtFwd = ($P.Worktree -replace '\\', '/').TrimEnd('/') + '/'
+# agy 1.5.17 tự đọc, ghi được %TEMP% dù ngoài workspace (đã thử 25/11): chặn hẳn.
+$tempFwd = ([IO.Path]::GetTempPath() -replace '\\', '/').TrimEnd('/') + '/'
 $settings = [ordered]@{
     permissions = [ordered]@{
         allow = @(
@@ -63,6 +65,7 @@ $settings = [ordered]@{
         )
         deny = @(
             "read_file($repoFwd)", "write_file($repoFwd)",
+            "read_file($tempFwd)", "write_file($tempFwd)",
             "read_file(${wtFwd}POS TAP/)", "write_file(${wtFwd}POS TAP/)",
             "write_file(${wtFwd}docs/)", "write_file(${wtFwd}CLAUDE.md)", "write_file(${wtFwd}.gitignore)", "write_file(${wtFwd}.git)",
             "write_file(${wtFwd}Kazuko_FnB/lib/)", "write_file(${wtFwd}Kazuko_FnB/Kazuko_FnB.slnx)", "write_file(${wtFwd}tools/)",

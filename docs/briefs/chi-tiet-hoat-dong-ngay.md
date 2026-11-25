@@ -10,9 +10,9 @@ Spec: [`../specs/chi-tiet-hoat-dong-ngay.md`](../specs/chi-tiet-hoat-dong-ngay.m
 
 ## Còn lại
 - Chiến bấm thử (xem `QUEUE.md`). Mẫu in: "chưa hỗ trợ" (Q5).
-- `tools/agy/`, chờ Chiến duyệt diff: chặn `%TEMP%` cho agy 1.5.17; dòng `Co-Authored-By` ghi cứng trong `Publish`; đường dẫn build tương đối trong `prompt-template.md`.
+- `tools/agy/` đã sửa sau khi Chiến duyệt (25/11): chặn `%TEMP%`, thêm `-CoAuthor` cho `Publish`, đường dẫn tuyệt đối trong `prompt-template.md`. Chưa chạy một vòng agy với bản sửa.
 
 ## Chưa kiểm
 - 125% DPI; bấm chuột/chạm thật khi cuộn; đăng nhập bằng user từng nhóm quyền; ca "ngày bắt buộc"; ca gộp theo riêng `TENHANG`.
 - Hai chốt `de1bea6` không gặp ca đáng bị chặn trong lần chạy này. `MSB1025` khi agy build: chưa rõ do quy tắc chặn Temp mới hay không.
-- `workflow-agy.md` còn ghi agy 1.5.16 và "đã thử" trên bản đó (chưa sửa).
+- Các thử quyền ghi ở `workflow-agy.md` §4.1 là trên agy 1.5.16.
