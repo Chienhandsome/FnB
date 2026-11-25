@@ -23,7 +23,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 1 | `danh-muc-hoa-don-huy.md` | **Đã code** (`de80345`) | nhẹ | Chờ bấm thử |
 | 2 | `thong-ke-mat-hang-ban.md` | **Đã code** (`67319b2`) | nặng | Chờ bấm thử |
 | 3 | `thong-ke-doanh-thu.md` | NHÁP, **chờ Chiến** (issue #10) | nặng | Câu tiền đã chốt; còn Q5, Q7, Q10, Q11 (hiển thị, nút In) |
-| 4 | `chi-tiet-hoat-dong-ngay.md` | NHÁP | nặng | Tiền theo quỹ |
+| 4 | `chi-tiet-hoat-dong-ngay.md` | NHÁP, **chờ Chiến** (issue #11) | nặng | Còn Q1 (còn nợ phiếu nhập), Q2, Q5, Q13, Q15 |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kết quả kinh doanh |
 | 6 | `bao-gia-ban-hang.md` | NHÁP | nặng | Giá bán |
 | 7 | `danh-muc-khach-hang.md` | NHÁP | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |

@@ -1,6 +1,6 @@
 # Spec (delta): Chi tiết hoạt động ngày
 
-- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code)
+- Trạng thái: **NHÁP — chờ Chiến duyệt** (chưa code). Rà lại 25/11 theo workflow-agy §10.2 (base `729683c`): loại **nặng**; Q3, Q6, Q14, Q16 đã xác minh/chốt; còn Q1, Q2, Q5, Q13, Q15 gửi Chiến (issue `cho-chien`). Bill dùng `BillReportScope` có sẵn trên `main`.
 - Ngày: 2026-11-24; sửa theo review [issue #4](https://github.com/Chienhandsome/FnB/issues/4) ngày 25/11/2026 (đối chiếu lại tại `main` @ `954f133`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md); cùng họ báo cáo chỉ xem với [`tong-hop-ket-qua-kinh-doanh.md`](tong-hop-ket-qua-kinh-doanh.md) (cùng cơ chế `OPERATION = 5`, cùng bộ lọc ngày/cửa hàng, cùng lỗi ràng buộc cửa hàng). Spec này **chỉ ghi phần khác**; chỗ không nói = như hai spec trên.
 - Menu: **HOẠT ĐỘNG > Chi tiết hoạt động ngày** (`SMENU` `b2555738-5bc9-4f84-9e6a-80188bbfac99`, `SORTORDER = ZZZ023`, **`OPERATION = 5`**, `SFORMID = NULL`, `SREPORTID` `5b986bf4-406f-45ec-896d-81951fcde35b`, `SFUNCTIONID` `5d90c04e-ca76-4941-8f48-575a07e73e19` "Chi tiết hoạt động ngày", nhóm "Bán hàng", **`NOTE` rỗng** (khác các quyền `View`)).
@@ -110,12 +110,12 @@ Quyền xem = `SFUNCTION` `5d90c04e-…` "Chi tiết hoạt động ngày". `SGR
 
 | # | Câu hỏi | Mặc định tạm |
 |---|---|---|
-| Q1 | Sửa "Còn nợ" phiếu nhập (P1)? | Sửa |
+| Q1 | Sửa "Còn nợ" phiếu nhập (P1)? Rà 25/11: `LOAITHANHTOAN` chỉ được ghi ở bill bán, phiếu nhập để 0/NULL, nên gốc thực tế = `TONGCONG − TIENTHANHTOAN` khi `TONGCONG > 0`. Sửa chỉ khác khi trả dư (gốc ra số âm, sửa ra 0) | Sửa |
 | Q2 | Có giữ khối "Phiếu nhập" trong báo cáo hoạt động ngày (F&B thuần chỉ bán, nhưng kho/nhập vẫn có)? | Giữ |
-| Q3 | "Giảm giá tổng bill": giữ `TIENGIAMGIA` như gốc hay đổi `TIENGIAMGIATONG` cho khớp KQKD? | `TIENGIAMGIA` như gốc |
+| Q3 | ~~"Giảm giá tổng bill": `TIENGIAMGIA` hay `TIENGIAMGIATONG`?~~ **Đã xác minh 25/11:** màn bán gốc đặt `TIENGIAMGIATONG = TIENGIAMGIA + TIENGIAMGIAGIO`; v1 bỏ tính giờ nên `TIENGIAMGIAGIO = 0` và hai cột bằng nhau. Giữ `TIENGIAMGIA` như gốc | — |
 | Q4 | ~~Ràng buộc cửa hàng theo user (P2)?~~ **Đã chốt: áp** | — |
 | Q5 | Mẫu in "Mẫu đầy đủ": tạo FastReport mới hay "chưa hỗ trợ"? | "Chưa hỗ trợ" |
-| Q6 | Quyền `5d90c04e-…` có hành vi gì khác quyền `View` không, hay chỉ khác nhãn? | Như quyền xem thông thường |
+| Q6 | ~~Quyền `NOTE` rỗng khác `View`?~~ **Đã xác minh 25/11:** 9 menu khác (8 màn `OPERATION = 4`) cũng có `NOTE` rỗng; chỉ là nhãn. Như quyền xem thông thường | — |
 | Q7 | Thêm xuất Excel? | Không |
 | Q8 | Chụp app gốc để xác minh bố cục. Đã chụp bộ lọc, đầu trang, ô ký, khối tổng hợp (24/11). **Còn thiếu:** ảnh khi có dữ liệu (gồm tiêu đề cột các khối) | Có, sau |
 | Q9 | ~~Mẫu in mặc định~~ **Đã chốt 25/11: "Mẫu đầy đủ"** `75d5af0a` (khối Bán hàng 12 cột), dù `LASTTEMPLATEID` của dữ liệu gốc đang trỏ mẫu `765b861a`. v1 không đọc `LASTTEMPLATEID` để chọn mẫu | — |
@@ -123,9 +123,9 @@ Quyền xem = `SFUNCTION` `5d90c04e-…` "Chi tiết hoạt động ngày". `SGR
 | Q11 | ~~Bill có thêm `STATUS = 30`?~~ **Chốt 25/11 (issue #8, áp chung mọi báo cáo): thêm cho bill** (khối Bán hàng, Mặt hàng bán, `GiamGiaTongBill`); phiếu nhập giữ như gốc | — |
 | Q12 | ~~TIỀN MẶT trừ cả tiền nhập trả bằng chuyển khoản~~ **Đã chốt 25/11: sửa**, tiền nhập trừ đúng quỹ theo hình thức trả ([`quy-tien.md`](quy-tien.md)) | — |
 | Q13 | Lưới khối Bán hàng: chỉ cột in của mẫu chốt ở Q9, hay đủ 16 cột truy vấn? | Chỉ cột in của "Mẫu đầy đủ" |
-| Q14 | Phiếu thu gắn `TDONHANGID` (khách trả nợ bill) có làm tiền bị cộng 2 lần vào TIỀN MẶT/CHUYỂN KHOẢN không? Cần dữ liệu thật hoặc chạy app gốc | Giữ như gốc |
+| Q14 | ~~Phiếu thu gắn bill có bị cộng 2 lần?~~ **Đã xác minh 25/11 trong mã màn bán gốc:** phiếu thu gắn `TDONHANGID` (tạm ứng đơn hàng) hoặc `TDATHANGID` (đặt trước) được trừ vào bill dưới dạng "đã đặt" (`SUM(THU)` theo hai cột này), nên `TIENMAT` của bill không chứa lại khoản đó. Phiếu thu công nợ không làm đổi `TIENMAT` bill. Không cộng 2 lần; giữ như gốc | — |
 | Q15 | Cửa hàng chọn sẵn trên bộ lọc lấy từ đâu (cửa hàng của user hay cửa hàng duy nhất)? | User chỉ có 1 cửa hàng thì chọn sẵn, ngược lại để trống |
-| Q16 | Biên "Đến ngày": tính trọn ngày cuối như KQKD hay giữ `BETWEEN` như gốc? | Trọn ngày cuối |
+| Q16 | ~~Biên "Đến ngày"~~ **Đã chốt (áp chung các báo cáo, `BillReportScope`):** trọn ngày cuối, cho cả thu chi và phiếu nhập | — |
 
 ## 6. Quyết định đã chốt (áp, không hỏi lại)
 
@@ -144,4 +144,4 @@ Tiền `NUMERIC(18,2)`/`decimal`; chỉ VNĐ; F&B thuần COFFEE + POS; bán l�
 
 ## 8. Gợi ý implement (không bắt buộc)
 
-`DailyActivityRepository` (Data: 5 truy vấn tham số hóa), `DailyActivitySummary` (Services: dòng tổng từng khối, 8 dòng §2.7, "Còn nợ" phiếu nhập; thuần, selftest ≥ 8 ca), `DailyActivityView` (UI: bộ lọc + 4 khối + khối tổng hợp). `main` @ `954f133` **chưa có** component lọc dùng chung (`ReportFilterBar`), nên patch này tự chứa phần lọc ngày/cửa hàng/ràng buộc user (nếu patch báo cáo khác vào `main` trước thì dùng lại), và thêm route `MenuId = b2555738-5bc9-4f84-9e6a-80188bbfac99` trong `ScreenFactory`.
+`DailyActivityRepository` (Data: 5 truy vấn tham số hóa), `DailyActivitySummary` (Services: dòng tổng từng khối, 8 dòng §2.7, "Còn nợ" phiếu nhập; thuần, selftest ≥ 8 ca), `DailyActivityView` (UI: bộ lọc + 4 khối + khối tổng hợp). Dùng lại `BillReportScope` / `BillReportScopeSql` (có trên `main` từ `67319b2`) cho phần bill; thu chi và phiếu nhập dùng cùng khoảng ngày trọn ngày cuối và cùng danh sách cửa hàng của user. Thêm route `MenuId = b2555738-5bc9-4f84-9e6a-80188bbfac99` trong `ScreenFactory`.
