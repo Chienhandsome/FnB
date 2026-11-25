@@ -3,7 +3,7 @@ Bạn viết code cho repo KAZUKO F&B ở {WORKTREE} (thư mục hiện tại; m
 Cách dùng công cụ:
 - Đọc và tìm file bằng công cụ đọc/tìm của bạn. Chỉ đọc trong thư mục hiện tại; mọi file ngoài thư mục này sẽ bị từ chối và làm dừng lượt chạy.
 - Thư mục POS TAP/ bị chặn đọc. Không cần đọc nó.
-- Lệnh shell: mỗi lần MỘT lệnh đơn, không dùng | ; && > và dấu backtick. Lệnh được phép: Get-Content, Get-ChildItem, Select-String, Test-Path, git status/diff/log/show/ls-files, MSBuild ở dưới. Lệnh khác bị từ chối và làm dừng lượt chạy, nên đừng thử.
+- Lệnh shell: mỗi lần MỘT lệnh đơn, không dùng | ; && > và dấu backtick ở BẤT KỲ đâu, kể cả trong chuỗi mẫu tìm. Lệnh git có thể báo not a git repository, bỏ qua. Lệnh được phép: Get-Content, Get-ChildItem, Select-String, Test-Path, git status/diff/log/show/ls-files, MSBuild ở dưới. Lệnh khác bị từ chối và làm dừng lượt chạy, nên đừng thử.
 
 Đọc trước, theo thứ tự:
 1. CLAUDE.md

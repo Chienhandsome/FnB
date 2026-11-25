@@ -10,16 +10,18 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [x] Quỹ tiền bước 1–2 — `quy-tien.md` (đã duyệt); bước 3–5 chờ spec bán hàng
 - [x] Lưu vết hoạt động — `luu-vet-hoat-dong.md` (đã duyệt 25/11); code `3bec043`, `f9dd6bc` (Antigravity), issue #6
 - [x] Danh mục hóa đơn hủy — `danh-muc-hoa-don-huy.md` (Claude tự duyệt 25/11); code `de80345` (Antigravity), issue #7
+- [x] Thống kê mặt hàng bán — `thong-ke-mat-hang-ban.md` (duyệt 25/11, issue #8); code `67319b2` (Antigravity), issue #9. **Chưa làm:** tự làm tươi khi dữ liệu đổi
 
 ## Chờ Chiến bấm thử (gộp theo đợt, trước khi dùng ở quán)
 - [ ] Lưu vết hoạt động — xem issue #6 (điểm cần chốt: lọc tài khoản theo tên đăng nhập; cột rộng phải cuộn ngang)
 - [ ] Danh mục hóa đơn hủy — xem issue #7 (chưa kiểm 125% DPI)
+- [ ] Thống kê mặt hàng bán — xem issue #9 (đối chiếu số với app gốc; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
 | # | Spec | Trạng thái | Loại | Ghi chú |
 |---|---|---|---|---|
 | 1 | `danh-muc-hoa-don-huy.md` | **Đã code** (`de80345`) | nhẹ | Chờ bấm thử |
-| 2 | `thong-ke-mat-hang-ban.md` | ĐÃ DUYỆT 25/11 (issue #8), đang code | nặng | `STATUS = 30` cho bill áp chung mọi báo cáo |
+| 2 | `thong-ke-mat-hang-ban.md` | **Đã code** (`67319b2`) | nặng | Chờ bấm thử |
 | 3 | `thong-ke-doanh-thu.md` | NHÁP | nặng | Công thức doanh thu |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | NHÁP | nặng | Tiền theo quỹ |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | NHÁP | nặng | Kết quả kinh doanh |

@@ -153,4 +153,5 @@ Còn lại là **nặng**. Phân vân → nặng.
   - Vòng 2 (`f9dd6bc`, chạy bằng script, quyền thu hẹp): sửa lỗi cắt chữ, thêm ca test màu thật, `Track` tĩnh, ngày mặc định.
   - Vướng: quy tắc lệnh thiếu dạng không tham số; agy nhầm thư mục prompt là repo (lời gọi nay ghi rõ đường dẫn); một app khác trong `D:\Working\FnB` ghi file log (nay chỉ cảnh báo).
 - **25/11, Danh mục hóa đơn hủy** (issue #7): 2 vòng, `de80345`. Vòng 2 do test không đi qua sự kiện thật và chọn dòng không nhất quán. agy không chạy được lệnh shell (xem `kinh-nghiem.md` §4).
+- **25/11, Thống kê mặt hàng bán** (issue #9): 2 vòng, `67319b2`. Một lần chặn phạm vi do app đang chạy ở thư mục chính; vòng 2 sửa lộ giá vốn qua sao chép cột ẩn.
 - Chưa thử: Claude tự sửa (bước 9); `main` đổi giữa chừng; 125% DPI.
