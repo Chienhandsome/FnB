@@ -82,6 +82,7 @@ namespace Kazuko_FnB.UI.Printing
             Report report = null;
             try
             {
+                FastReportFunctions.EnsureRegistered();
                 Config.ReportSettings.ShowProgress = false;
                 report = new Report();
                 LoadTemplateIntoReport(report, template);

@@ -279,7 +279,7 @@ namespace Kazuko_FnB.UI
             _btnEdit.Click += delegate { EditQuote(); };
             _btnRemove.Click += delegate { DeleteQuote(); };
             _btnExcel.Click += delegate { ShowInfo(QuoteText.Unsupported); };
-            _btnPrint.Click += delegate { ShowInfo(QuoteText.Unsupported); };
+            _btnPrint.Click += delegate { PrintSelectedQuote(); };
             _btnRefresh.Click += delegate { Reload(); };
 
             _count.Width = (int)(110 * s);

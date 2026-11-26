@@ -21,6 +21,12 @@ namespace Kazuko_FnB.Domain
         /// <summary>SREPORT.ID của báo cáo "Tổng hợp kết quả kinh doanh" trong bảng SREPORT / SREPORTTEMPLATE.</summary>
         public const string BusinessResultReportId = "9c30f012-bec1-4d53-b8f9-7abf9d476d7d";
 
+        /// <summary>STABLEDESCID của bảng TDATHANG (Khách đặt hàng) trong bảng STEMPLATE.</summary>
+        public const string BookingTableDescId = "780a9daf-b2b7-417c-8ff3-21700fab6990";
+
+        /// <summary>STABLEDESCID của bảng TBAOGIA (Báo giá) trong bảng STEMPLATE.</summary>
+        public const string QuoteTableDescId = "b2d3ffd4-9037-4dd1-b255-ec16dd122e66";
+
         public const int ActiveStatus = 30;
         /// <summary>Giá trị INTVALUE bật cấu hình trong bảng SCONFIG (cùng quy ước SystemConfig.On = 30).</summary>
         public const int ConfigEnabledValue = 30;
@@ -29,12 +35,19 @@ namespace Kazuko_FnB.Domain
         public const string ConfigCompanyAddress = "CompanyAddress";
         public const string ConfigCompanyPhone = "CompanyPhone";
         public const string ConfigCompanyEmail = "CompanyEmail";
+        public const string ConfigCompanyFax = "CompanyFax";
+        public const string PrintedByParameterName = "In bởi";
 
         public const string DefaultPreviewTitle = "IN PHIẾU";
         public const string SelectTemplateDialogTitle = "CHỌN MẪU IN";
+        public const string PrintReportDialogTitle = "IN BÁO CÁO";
+        public const string DefaultBookingTemplateName = "Mẫu đặt hàng A4";
+        public const string DefaultQuoteTemplateName = "Báo Giá A4";
         public const string ConfirmOpenExportedFileMessage = "Bạn có muốn mở file đã xuất không?";
         public const string NoTemplateFoundMessage = "Không tìm thấy mẫu in nào đang hoạt động cho màn hình này.";
         public const string NoCostPermissionPrintMessage = "Bạn không có quyền Xem giá nhập để in báo cáo này.";
+        public const string SelectBookingToPrintMessage = "Mời bạn chọn phiếu đặt hàng cần in.";
+        public const string SelectQuoteToPrintMessage = "Mời bạn chọn phiếu báo giá cần in.";
     }
 
     /// <summary>Bốn tùy chọn thực hiện trong hộp "CHỌN MẪU IN" (không có Thiết kế mẫu in theo Q8).</summary>
@@ -52,6 +65,7 @@ namespace Kazuko_FnB.Domain
         public string Id { get; set; }
         public string Name { get; set; }
         public string FormId { get; set; }
+        public string TableDescId { get; set; }
         public byte[] TemplateBytes { get; set; }
         public string TemplateXml { get; set; }
         /// <summary>Trạng thái bật/tắt (INTVALUE = 30) của các SCONFIG.ID được mẫu dùng qua VisibleByConfigID.</summary>
@@ -70,6 +84,7 @@ namespace Kazuko_FnB.Domain
         public string CompanyAddress { get; set; }
         public string CompanyPhone { get; set; }
         public string CompanyEmail { get; set; }
+        public string CompanyFax { get; set; }
 
         public CompanyPrintInfo()
         {
@@ -77,7 +92,71 @@ namespace Kazuko_FnB.Domain
             CompanyAddress = "";
             CompanyPhone = "";
             CompanyEmail = "";
+            CompanyFax = "";
         }
+    }
+
+    /// <summary>Dữ liệu đầy đủ để in phiếu Khách đặt hàng (đọc lại từ CSDL sau khi lưu).</summary>
+    public sealed class BookingPrintDocument
+    {
+        public BookingRow Header { get; set; }
+        public string RoomId { get; set; }
+        public string RoomNames { get; set; }
+        public decimal DepositAmount { get; set; }
+        public List<BookingPrintLine> Lines { get; set; }
+
+        public BookingPrintDocument()
+        {
+            RoomId = "";
+            RoomNames = "";
+            Lines = new List<BookingPrintLine>();
+        }
+    }
+
+    /// <summary>Một dòng chi tiết phiếu đặt hàng phục vụ đổ Data.Table0 khi in.</summary>
+    public sealed class BookingPrintLine
+    {
+        public string Id { get; set; }
+        public string BookingId { get; set; }
+        public string ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string UnitId { get; set; }
+        public string UnitName { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount { get; set; }
+        public decimal DiscountPct { get; set; }
+        public string Warranty { get; set; }
+        public string Note { get; set; }
+    }
+
+    /// <summary>Dữ liệu đầy đủ để in phiếu Báo giá (đọc lại từ CSDL sau khi lưu).</summary>
+    public sealed class QuotePrintDocument
+    {
+        public QuoteRow Header { get; set; }
+        public List<QuotePrintLine> Lines { get; set; }
+
+        public QuotePrintDocument()
+        {
+            Lines = new List<QuotePrintLine>();
+        }
+    }
+
+    /// <summary>Một dòng chi tiết phiếu báo giá phục vụ đổ Data.Table0 khi in.</summary>
+    public sealed class QuotePrintLine
+    {
+        public string Id { get; set; }
+        public string ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string ProductUnitId { get; set; }
+        public string UnitName { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
+        public decimal Amount { get; set; }
+        public decimal DiscountPct { get; set; }
+        public string Note { get; set; }
     }
 
     /// <summary>Kết quả người dùng chọn trong hộp "CHỌN MẪU IN".</summary>

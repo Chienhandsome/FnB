@@ -7,6 +7,7 @@ using Kazuko_FnB.Domain;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.Theme;
 using Kazuko_FnB.UI.Dialogs;
+using Kazuko_FnB.UI.Printing;
 
 namespace Kazuko_FnB.UI.Diagnostics
 {
@@ -110,14 +111,16 @@ namespace Kazuko_FnB.UI.Diagnostics
                     Check("Báo giá UI §7 bộ lọc Số phiếu & Khách hàng hoạt động qua sự kiện thật",
                         filterNumOk && filterCustOk, "num=" + filterNumOk + ", cust=" + filterCustOk);
 
-                    // Nút Xuất excel và In báo "chưa hỗ trợ"; nút đủ lớn cảm ứng (>= 36px ở 96 DPI).
+                    // Tên ca giữ nguyên để khớp mốc: nút Xuất excel vẫn "chưa hỗ trợ"; nút In (P2) mở luồng in phiếu đang chọn.
                     view.ExcelButtonForTest.PerformClick();
                     string excelMsg = view.LastInfoMessageForTest;
+                    var printRec = new PrintOutputRecorder();
+                    view.PrintOutputHandlerForTest = printRec;
+                    view.PrintTemplatePickerForTest = (owner, list) => new PrintSelectionResult { Template = list[0], Action = PrintActionKind.Preview };
                     view.PrintButtonForTest.PerformClick();
-                    string printMsg = view.LastInfoMessageForTest;
                     bool touchHeightOk = view.AddButtonForTest.Height >= 36 && view.PrintButtonForTest.Height >= 36;
                     Check("Báo giá UI §7 nút Xuất excel/In báo chưa hỗ trợ & nút đủ lớn cảm ứng",
-                        excelMsg == QuoteText.Unsupported && printMsg == QuoteText.Unsupported && touchHeightOk);
+                        excelMsg == QuoteText.Unsupported && printRec.PreviewCount == 1 && touchHeightOk);
 
                     // Đổi theme lúc chạy -> kiểm màu thật trên nền view và header/ô lưới khớp ThemeTokens.
                     ThemeManager.Apply(BuiltInThemes.Ocean);

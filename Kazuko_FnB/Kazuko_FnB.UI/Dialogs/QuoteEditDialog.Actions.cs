@@ -297,6 +297,8 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSave.Enabled = dirty && !_readOnly;
             _btnSaveNew.Enabled = dirty && !_readOnly;
             _btnSaveClose.Enabled = dirty && !_readOnly;
+            _btnSavePrint.Enabled = dirty && !_readOnly;
+            _btnSaveViewPrint.Enabled = dirty && !_readOnly;
             _btnDelete.Enabled = !_isNew && _service.CanRemove && !_readOnly;
         }
 

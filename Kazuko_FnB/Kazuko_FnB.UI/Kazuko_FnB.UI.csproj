@@ -187,10 +187,16 @@
     <Compile Include="BookingListView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="BookingListView.Print.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="QuoteListView.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="QuoteListView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="QuoteListView.Print.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="FundBalanceView.cs">
@@ -320,8 +326,15 @@
     <Compile Include="Diagnostics\SelfTest.Print.Embedded.Helpers.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Embedded.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Embedded.Kqkd.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.P2.Helpers.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Booking.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Booking.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Quote.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Quote.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
+    <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\IPrintOutputHandler.cs" />
+    <Compile Include="Printing\PrintDialogOptions.cs" />
     <Compile Include="Printing\PrintWorkflowService.cs" />
     <Compile Include="Printing\PrintTemplateDialog.cs">
       <SubType>Form</SubType>
@@ -330,6 +343,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Printing\FormPrintCoordinator.cs" />
+    <Compile Include="Printing\BookingPrintDataBuilder.cs" />
+    <Compile Include="Printing\QuotePrintDataBuilder.cs" />
+    <Compile Include="Printing\DocumentPrintCoordinator.cs" />
     <Compile Include="Printing\ItemSalesPrintDataBuilder.cs" />
     <Compile Include="Printing\ItemSalesPrintCoordinator.cs" />
     <Compile Include="Printing\RevenueReportPrintDataBuilder.cs" />
@@ -338,10 +354,12 @@
     <Compile Include="Printing\BusinessResultReportDataBuilder.cs" />
     <Compile Include="Printing\EmbeddedReportPreviewController.cs" />
     <Compile Include="Dialogs\BookingEditDialog.cs" />
+    <Compile Include="Dialogs\BookingEditDialog.Print.cs" />
     <Compile Include="Dialogs\NumericEditGridCell.cs" />
     <Compile Include="Dialogs\QuoteEditDialog.cs" />
     <Compile Include="Dialogs\QuoteEditDialog.Actions.cs" />
     <Compile Include="Dialogs\QuoteEditDialog.Lines.cs" />
+    <Compile Include="Dialogs\QuoteEditDialog.Print.cs" />
     <Compile Include="Dialogs\QuoteExcelImportDialog.cs" />
     <Compile Include="Dialogs\QuoteExcelReader.cs" />
     <Compile Include="Dialogs\QuotePreviewForm.cs">

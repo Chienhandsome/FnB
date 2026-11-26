@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Windows.Forms;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Domain;
@@ -7,9 +8,9 @@ using Kazuko_FnB.Domain;
 namespace Kazuko_FnB.UI.Printing
 {
     /// <summary>
-    /// Luồng điều phối in dùng chung cho các màn lấy mẫu từ STEMPLATE theo SFORMID:
-    /// khóa nút + con trỏ chờ tránh bấm hai lần, đọc danh sách mẫu, mở hộp "CHỌN MẪU IN" (hoặc picker cho test),
-    /// đọc thông tin công ty, dựng dữ liệu in và gọi <see cref="PrintWorkflowService.Execute"/>.
+    /// Luồng điều phối in dùng chung cho các màn lấy mẫu từ STEMPLATE theo SFORMID hoặc STABLEDESCID:
+    /// khóa nút + con trỏ chờ tránh bấm hai lần, đọc danh sách mẫu, mở hộp chọn mẫu (hoặc in thẳng mẫu mặc định),
+    /// đọc cấu hình ẩn cột VisibleByConfigID và thông tin công ty, dựng dữ liệu in và gọi <see cref="PrintWorkflowService.Execute"/>.
     /// </summary>
     internal sealed class FormPrintCoordinator
     {
@@ -30,6 +31,84 @@ namespace Kazuko_FnB.UI.Printing
             Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> templatePickerOverride,
             Action<string> recordMessage)
         {
+            return ExecuteCore(
+                hostControl,
+                triggerButton,
+                databasePath,
+                repo => repo.LoadTemplatesForForm(formId),
+                null,
+                PrintDialogOptions.ForFormSelectDialog(),
+                false,
+                buildJob,
+                outputOverride,
+                templatePickerOverride,
+                recordMessage);
+        }
+
+        public bool PrintForTable(
+            Control hostControl,
+            Control triggerButton,
+            string databasePath,
+            string stableDescId,
+            PrintDialogOptions dialogOptions,
+            Func<CompanyPrintInfo, PrintJobData> buildJob,
+            IPrintOutputHandler outputOverride,
+            Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> templatePickerOverride,
+            Func<string, List<PrintTemplateRecord>> templateLoaderOverride,
+            Action<string> recordMessage)
+        {
+            return ExecuteCore(
+                hostControl,
+                triggerButton,
+                databasePath,
+                repo => repo.LoadTemplatesForTable(stableDescId),
+                templateLoaderOverride == null ? (Func<List<PrintTemplateRecord>>)null : delegate { return templateLoaderOverride(stableDescId); },
+                dialogOptions,
+                false,
+                buildJob,
+                outputOverride,
+                templatePickerOverride,
+                recordMessage);
+        }
+
+        public bool PrintDirectForTable(
+            Control hostControl,
+            Control triggerButton,
+            string databasePath,
+            string stableDescId,
+            PrintDialogOptions dialogOptions,
+            Func<CompanyPrintInfo, PrintJobData> buildJob,
+            IPrintOutputHandler outputOverride,
+            Func<string, List<PrintTemplateRecord>> templateLoaderOverride,
+            Action<string> recordMessage)
+        {
+            return ExecuteCore(
+                hostControl,
+                triggerButton,
+                databasePath,
+                repo => repo.LoadTemplatesForTable(stableDescId),
+                templateLoaderOverride == null ? (Func<List<PrintTemplateRecord>>)null : delegate { return templateLoaderOverride(stableDescId); },
+                dialogOptions,
+                true,
+                buildJob,
+                outputOverride,
+                null,
+                recordMessage);
+        }
+
+        private bool ExecuteCore(
+            Control hostControl,
+            Control triggerButton,
+            string databasePath,
+            Func<PrintTemplateRepository, List<PrintTemplateRecord>> loadFromRepo,
+            Func<List<PrintTemplateRecord>> loadOverride,
+            PrintDialogOptions dialogOptions,
+            bool directPrintDefault,
+            Func<CompanyPrintInfo, PrintJobData> buildJob,
+            IPrintOutputHandler outputOverride,
+            Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> templatePickerOverride,
+            Action<string> recordMessage)
+        {
             if (_isBusy)
                 return false;
             if (buildJob == null)
@@ -37,6 +116,7 @@ namespace Kazuko_FnB.UI.Printing
 
             IPrintOutputHandler output = outputOverride ?? new WinFormsPrintOutputHandler();
             IWin32Window owner = hostControl == null ? null : hostControl.FindForm();
+            PrintDialogOptions effectiveOptions = dialogOptions ?? PrintDialogOptions.ForFormSelectDialog();
 
             _isBusy = true;
             bool oldEnabled = triggerButton != null && triggerButton.Enabled;
@@ -52,7 +132,7 @@ namespace Kazuko_FnB.UI.Printing
                 List<PrintTemplateRecord> templates;
                 try
                 {
-                    templates = repo.LoadTemplatesForForm(formId);
+                    templates = loadOverride != null ? loadOverride() : loadFromRepo(repo);
                 }
                 catch (DataAccessException ex)
                 {
@@ -71,16 +151,28 @@ namespace Kazuko_FnB.UI.Printing
                     return false;
                 }
 
+                int defaultIdx;
+                List<PrintTemplateRecord> ordered = PrintTemplateOrdering.OrderAndFindDefault(templates, effectiveOptions, out defaultIdx);
                 PrintSelectionResult selection;
-                if (templatePickerOverride != null)
+                if (directPrintDefault)
                 {
-                    selection = templatePickerOverride(owner, templates);
+                    PrintTemplateRecord chosen = defaultIdx >= 0 && defaultIdx < ordered.Count ? ordered[defaultIdx] : ordered[0];
+                    selection = new PrintSelectionResult
+                    {
+                        Template = chosen,
+                        Action = PrintActionKind.Print,
+                        PrinterName = GetDefaultWindowsPrinter()
+                    };
+                }
+                else if (templatePickerOverride != null)
+                {
+                    selection = templatePickerOverride(owner, ordered);
                 }
                 else
                 {
                     if (hostControl != null)
                         hostControl.Cursor = oldCursor;
-                    using (var dlg = new PrintTemplateDialog(templates))
+                    using (var dlg = new PrintTemplateDialog(ordered, effectiveOptions))
                     {
                         selection = dlg.ShowDialog(owner) == DialogResult.OK ? dlg.Selection : null;
                     }
@@ -108,8 +200,9 @@ namespace Kazuko_FnB.UI.Printing
                 CompanyPrintInfo company = LoadCompanyInfoSafe(repo);
                 using (PrintJobData job = buildJob(company))
                 {
-                    if (job != null)
-                        job.ConfigVisibilityById = configFlags;
+                    if (job == null)
+                        return false;
+                    job.ConfigVisibilityById = configFlags;
                     return PrintWorkflowService.Execute(owner, selection, job, output);
                 }
             }
@@ -120,6 +213,19 @@ namespace Kazuko_FnB.UI.Printing
                 if (hostControl != null)
                     hostControl.Cursor = oldCursor;
                 _isBusy = false;
+            }
+        }
+
+        private static string GetDefaultWindowsPrinter()
+        {
+            try
+            {
+                var settings = new PrinterSettings();
+                return settings.PrinterName ?? "";
+            }
+            catch
+            {
+                return "";
             }
         }
 

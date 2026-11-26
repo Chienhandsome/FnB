@@ -20,7 +20,7 @@ namespace Kazuko_FnB.UI.Dialogs
     /// câu "Giờ ra phải sau giờ vào", so cả ngày+giờ (§5.4); giữ đặt theo đoàn nhiều bàn (§5.6).
     /// Enter không lưu; ba nút Lưu mờ tới khi có thay đổi; không hard-code màu (ô màu là dữ liệu, lưu ARGB).
     /// </summary>
-    internal sealed class BookingEditDialog : ThemedDialog
+    internal sealed partial class BookingEditDialog : ThemedDialog
     {
         private const int ContentWidth96 = 1020;
         private const int ContentHeight96 = 451;
@@ -78,6 +78,8 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly FlatButton _btnSave;
         private readonly FlatButton _btnSaveNew;
         private readonly FlatButton _btnSaveClose;
+        private readonly FlatButton _btnSavePrint;
+        private readonly FlatButton _btnSaveViewPrint;
 
         // ---- Panel trái (§1.2) ----
         private readonly DateTimePicker _dtNgay = new DateTimePicker { Format = DateTimePickerFormat.Short };
@@ -183,6 +185,8 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSaveClose = AddButton("Lưu & thoát", "primary", delegate { SaveAndClose(); });
             _btnSaveNew = AddButton("Lưu & Mới", null, delegate { SaveAndNew(); });
             _btnSave = AddButton("Lưu", null, delegate { SaveStay(); });
+            _btnSaveViewPrint = AddButton("Lưu & Xem in", null, delegate { SaveAndViewPrint(); });
+            _btnSavePrint = AddButton("Lưu & In", null, delegate { SaveAndPrint(); });
             CancelButton = exit;
 
             if (!_fromCalendar)
@@ -1096,7 +1100,7 @@ namespace Kazuko_FnB.UI.Dialogs
             BookingRules.BookingValidationResult vr = BookingRules.ValidateBeforeSave(input);
             if (!vr.IsValid)
             {
-                Msg.Warning(this, vr.Error);
+                ShowWarning(vr.Error);
                 if (vr.Error == BookingText.SelectRoomFirst)
                     _btnPickRoom.Focus();
                 else if (vr.Error == BookingText.Required("Số phiếu"))
@@ -1119,12 +1123,12 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             catch (DataAccessException ex)
             {
-                Msg.Error(this, "Không ghi được dữ liệu: " + ex.Message);
+                ShowError("Không ghi được dữ liệu: " + ex.Message);
                 return false;
             }
             if (!result.Ok)
             {
-                Msg.Warning(this, result.ErrorMessage);
+                ShowWarning(result.ErrorMessage);
                 if (result.ErrorMessage == BookingText.NumberDuplicate(_row.Name ?? ""))
                     FocusText(_txtNumber);
                 return false;
@@ -1377,6 +1381,8 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSave.Enabled = dirty && !_readOnly;
             _btnSaveNew.Enabled = dirty && !_readOnly;
             _btnSaveClose.Enabled = dirty && !_readOnly;
+            _btnSavePrint.Enabled = dirty && !_readOnly;
+            _btnSaveViewPrint.Enabled = dirty && !_readOnly;
             _btnDelete.Enabled = !_isNew && _canRemove && !_readOnly;
         }
 

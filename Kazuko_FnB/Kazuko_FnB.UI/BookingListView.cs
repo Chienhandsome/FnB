@@ -17,7 +17,7 @@ namespace Kazuko_FnB.UI
     /// bên trái; thanh nút + lưới chứng từ bên phải. Mỗi dòng TDATHANG một hàng (§6.2 Q6).
     /// Mở dialog sửa bằng BookingEditDialog (dùng chung với "Theo dõi đặt phòng" sau này).
     /// </summary>
-    internal sealed class BookingListView : Panel
+    internal sealed partial class BookingListView : Panel
     {
         private readonly string _databasePath;
         private readonly BookingRepository _repo;
@@ -679,7 +679,7 @@ namespace Kazuko_FnB.UI
             _btnEdit.Click += delegate { EditBooking(); };
             _btnRemove.Click += delegate { DeleteBooking(); };
             _btnExcel.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
-            _btnPrint.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
+            _btnPrint.Click += delegate { PrintSelectedBooking(); };
             _btnTotal.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
             _btnAnalysis.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
             _refresh.Click += delegate { Reload(); };

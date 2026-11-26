@@ -25,6 +25,8 @@ namespace Kazuko_FnB.UI.Printing
             IntegralHeight = false,
             BorderStyle = BorderStyle.FixedSingle
         };
+        private readonly ComboBox _cboTemplates = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
+        private readonly FieldFrame _templateFrame;
 
         private readonly Panel _optionsPanel = new Panel { Tag = "surface" };
         private readonly Label _lblOptions = new Label { AutoSize = false, Text = "Tùy chọn", TextAlign = ContentAlignment.MiddleLeft };
@@ -40,13 +42,20 @@ namespace Kazuko_FnB.UI.Printing
         private readonly FlatButton _btnCancel;
         private readonly Font _bodyFont;
         private readonly Font _headingFont;
+        private readonly PrintDialogOptions _options;
+        private readonly bool _useComboBox;
 
         private ThemeTokens _theme = ThemeManager.Current;
 
         public PrintSelectionResult Selection { get; private set; }
 
         public PrintTemplateDialog(IList<PrintTemplateRecord> templates)
-            : this(templates, LoadInstalledPrinters(), GetDefaultWindowsPrinter())
+            : this(templates, LoadInstalledPrinters(), GetDefaultWindowsPrinter(), null)
+        {
+        }
+
+        public PrintTemplateDialog(IList<PrintTemplateRecord> templates, PrintDialogOptions options)
+            : this(templates, LoadInstalledPrinters(), GetDefaultWindowsPrinter(), options)
         {
         }
 
@@ -54,32 +63,72 @@ namespace Kazuko_FnB.UI.Printing
             IList<PrintTemplateRecord> templates,
             IList<string> installedPrinters,
             string defaultPrinterName)
-            : base(PrintConstants.SelectTemplateDialogTitle, "Chọn mẫu in và hình thức xuất báo cáo", 480, 460)
+            : this(templates, installedPrinters, defaultPrinterName, null)
         {
+        }
+
+        internal PrintTemplateDialog(
+            IList<PrintTemplateRecord> templates,
+            IList<string> installedPrinters,
+            string defaultPrinterName,
+            PrintDialogOptions options)
+            : base(
+                ResolveDialogTitle(options),
+                ResolveDialogSubtitle(options),
+                480,
+                options != null && options.UseComboBox ? 378 : 460)
+        {
+            _options = options ?? PrintDialogOptions.ForFormSelectDialog();
+            _useComboBox = _options.UseComboBox;
+
             float s = Dpi;
             _bodyFont = new Font(ThemeManager.BodyFontName, ThemeManager.BodyFontSize);
             _headingFont = new Font(ThemeManager.HeadingFontName, ThemeManager.BodyFontSize);
+            _templateFrame = new FieldFrame(_cboTemplates, 0);
             _printerFrame = new FieldFrame(_cboPrinter, 0);
 
-            _btnCancel = AddButton("Cancel", null, delegate
+            string cancelText = string.IsNullOrWhiteSpace(_options.CancelButtonText) ? "Cancel" : _options.CancelButtonText;
+            string okText = string.IsNullOrWhiteSpace(_options.OkButtonText) ? "OK" : _options.OkButtonText;
+
+            _btnCancel = AddButton(cancelText, null, delegate
             {
                 Selection = null;
                 DialogResult = DialogResult.Cancel;
                 Close();
             });
-            _btnOk = AddButton("OK", "primary", delegate { AcceptSelection(); });
+            _btnOk = AddButton(okText, "primary", delegate { AcceptSelection(); });
             AcceptButton = _btnOk;
             CancelButton = _btnCancel;
 
             Body.AutoScroll = false;
-            FitBody(480, 344);
+            FitBody(480, _useComboBox ? 262 : 344);
 
             BuildLayout(s);
             PopulateTemplates(templates);
             PopulatePrinters(installedPrinters, defaultPrinterName);
             UpdatePrinterControlState();
 
-            Shown += delegate { _lstTemplates.Focus(); };
+            Shown += delegate
+            {
+                if (_useComboBox)
+                    _cboTemplates.Focus();
+                else
+                    _lstTemplates.Focus();
+            };
+        }
+
+        private static string ResolveDialogTitle(PrintDialogOptions options)
+        {
+            return options == null || string.IsNullOrWhiteSpace(options.Title)
+                ? PrintConstants.SelectTemplateDialogTitle
+                : options.Title;
+        }
+
+        private static string ResolveDialogSubtitle(PrintDialogOptions options)
+        {
+            return options == null || string.IsNullOrWhiteSpace(options.Subtitle)
+                ? "Chọn mẫu in và hình thức xuất báo cáo"
+                : options.Subtitle;
         }
 
         private void BuildLayout(float s)
@@ -90,13 +139,26 @@ namespace Kazuko_FnB.UI.Printing
             _lblTemplates.Font = _headingFont;
             _lblTemplates.SetBounds(padX, (int)(12 * s), fullW, (int)(22 * s));
 
-            _lstTemplates.Font = _bodyFont;
-            _lstTemplates.ItemHeight = (int)(32 * s);
-            _lstTemplates.SetBounds(padX, (int)(38 * s), fullW, (int)(116 * s));
-            _lstTemplates.DrawItem += DrawTemplateItem;
-            _lstTemplates.DoubleClick += delegate { AcceptSelection(); };
+            if (_useComboBox)
+            {
+                _cboTemplates.Font = _bodyFont;
+                _templateFrame.SetBounds(padX, (int)(38 * s), fullW, (int)(34 * s));
+                _lstTemplates.Visible = false;
+                _templateFrame.Visible = true;
+            }
+            else
+            {
+                _lstTemplates.Font = _bodyFont;
+                _lstTemplates.ItemHeight = (int)(32 * s);
+                _lstTemplates.SetBounds(padX, (int)(38 * s), fullW, (int)(116 * s));
+                _lstTemplates.DrawItem += DrawTemplateItem;
+                _lstTemplates.DoubleClick += delegate { AcceptSelection(); };
+                _lstTemplates.Visible = true;
+                _templateFrame.Visible = false;
+            }
 
-            _optionsPanel.SetBounds(padX, (int)(166 * s), fullW, (int)(166 * s));
+            int optionsTop = _useComboBox ? (int)(84 * s) : (int)(166 * s);
+            _optionsPanel.SetBounds(padX, optionsTop, fullW, (int)(166 * s));
             _optionsPanel.Paint += DrawOptionsPanelBorder;
 
             int innerX = (int)(14 * s);
@@ -138,34 +200,32 @@ namespace Kazuko_FnB.UI.Printing
             _optionsPanel.Controls.Add(_rbPdf);
 
             Body.Controls.Add(_lblTemplates);
-            Body.Controls.Add(_lstTemplates);
+            if (_useComboBox)
+                Body.Controls.Add(_templateFrame);
+            else
+                Body.Controls.Add(_lstTemplates);
             Body.Controls.Add(_optionsPanel);
         }
 
         private void PopulateTemplates(IList<PrintTemplateRecord> templates)
         {
-            var sorted = new List<PrintTemplateRecord>();
-            if (templates != null)
-            {
-                for (int i = 0; i < templates.Count; i++)
-                {
-                    if (templates[i] != null)
-                        sorted.Add(templates[i]);
-                }
-            }
-            sorted.Sort(delegate (PrintTemplateRecord a, PrintTemplateRecord b)
-            {
-                return StringComparer.OrdinalIgnoreCase.Compare(a.Name ?? "", b.Name ?? "");
-            });
+            int defaultIndex;
+            List<PrintTemplateRecord> sorted = PrintTemplateOrdering.OrderAndFindDefault(templates, _options, out defaultIndex);
 
             _lstTemplates.Items.Clear();
+            _cboTemplates.Items.Clear();
             foreach (PrintTemplateRecord t in sorted)
+            {
                 _lstTemplates.Items.Add(t);
+                _cboTemplates.Items.Add(t);
+            }
 
-            // Chọn sẵn mẫu CUỐI danh sách (54mm, 80mm, A4 -> chọn A4; khớp app gốc).
-            if (_lstTemplates.Items.Count > 0)
-                _lstTemplates.SelectedIndex = _lstTemplates.Items.Count - 1;
-            _btnOk.Enabled = _lstTemplates.Items.Count > 0;
+            if (defaultIndex >= 0 && defaultIndex < sorted.Count)
+            {
+                _lstTemplates.SelectedIndex = defaultIndex;
+                _cboTemplates.SelectedIndex = defaultIndex;
+            }
+            _btnOk.Enabled = sorted.Count > 0;
         }
 
         private void PopulatePrinters(IList<string> installedPrinters, string defaultPrinterName)
@@ -217,7 +277,9 @@ namespace Kazuko_FnB.UI.Printing
 
         private void AcceptSelection()
         {
-            var selected = _lstTemplates.SelectedItem as PrintTemplateRecord;
+            PrintTemplateRecord selected = _useComboBox
+                ? (_cboTemplates.SelectedItem as PrintTemplateRecord)
+                : (_lstTemplates.SelectedItem as PrintTemplateRecord);
             if (selected == null)
                 return;
 
@@ -272,6 +334,11 @@ namespace Kazuko_FnB.UI.Printing
             _lblOptions.ForeColor = _theme.Primary;
             _lstTemplates.BackColor = _theme.Surface;
             _lstTemplates.ForeColor = _theme.Text;
+            if (_useComboBox)
+            {
+                _templateFrame.ApplyTheme(_theme, Body.BackColor);
+                _templateFrame.Invalidate();
+            }
             ApplyPrinterFrameTheme();
             _lstTemplates.Invalidate();
             _optionsPanel.Invalidate();
@@ -349,6 +416,7 @@ namespace Kazuko_FnB.UI.Printing
 
         // ---- Thuộc tính nội bộ cho selftest ----
         internal ListBox TemplateListForTest { get { return _lstTemplates; } }
+        internal ComboBox TemplateComboForTest { get { return _cboTemplates; } }
         internal RadioButton RadioPreviewForTest { get { return _rbPreview; } }
         internal RadioButton RadioPrintForTest { get { return _rbPrint; } }
         internal RadioButton RadioExcelForTest { get { return _rbExcel; } }

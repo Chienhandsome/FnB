@@ -35,7 +35,7 @@ namespace Kazuko_FnB.Data
             return DbHelper.Read(_databasePath, conn =>
             {
                 const string sql =
-                    "SELECT ID, NAME, SFORMID, TEMPLATE " +
+                    "SELECT ID, NAME, SFORMID, STABLEDESCID, TEMPLATE " +
                     "FROM STEMPLATE " +
                     "WHERE SFORMID = @FormId AND STATUS = @Status " +
                     "ORDER BY NAME";
@@ -44,37 +44,68 @@ namespace Kazuko_FnB.Data
                     "@FormId", formId,
                     "@Status", PrintConstants.ActiveStatus);
 
-                var list = new List<PrintTemplateRecord>(dt.Rows.Count);
-                foreach (DataRow r in dt.Rows)
-                {
-                    byte[] rawBytes;
-                    string xmlText;
-                    ReadTemplateContent(r["TEMPLATE"], out rawBytes, out xmlText);
-
-                    list.Add(new PrintTemplateRecord
-                    {
-                        Id = DbHelper.Str(r["ID"]) ?? "",
-                        Name = DbHelper.Str(r["NAME"]) ?? "",
-                        FormId = DbHelper.Str(r["SFORMID"]) ?? "",
-                        TemplateBytes = rawBytes,
-                        TemplateXml = xmlText
-                    });
-                }
-
-                list.Sort(delegate (PrintTemplateRecord a, PrintTemplateRecord b)
-                {
-                    return StringComparer.OrdinalIgnoreCase.Compare(
-                        a == null ? "" : (a.Name ?? ""),
-                        b == null ? "" : (b.Name ?? ""));
-                });
-
-                List<string> configIds = PrintTemplateVisibilityParser.ExtractDistinctConfigIds(list);
-                Dictionary<string, bool> configFlags = LoadConfigVisibilityByIds(conn, configIds);
-                for (int i = 0; i < list.Count; i++)
-                    list[i].ConfigVisibilityById = new Dictionary<string, bool>(configFlags, StringComparer.OrdinalIgnoreCase);
-
-                return list;
+                return ReadTemplatesAndConfig(conn, dt);
             });
+        }
+
+        /// <summary>
+        /// Đọc danh sách mẫu in đang dùng (STATUS = 30, có nội dung TEMPLATE) gắn theo bảng (STABLEDESCID),
+        /// sắp tăng dần theo NAME. Dùng cho các phiếu (Đặt hàng, Báo giá) có SFORMID rỗng.
+        /// </summary>
+        public List<PrintTemplateRecord> LoadTemplatesForTable(string stableDescId)
+        {
+            if (string.IsNullOrEmpty(stableDescId))
+                return new List<PrintTemplateRecord>();
+
+            return DbHelper.Read(_databasePath, conn =>
+            {
+                const string sql =
+                    "SELECT ID, NAME, SFORMID, STABLEDESCID, TEMPLATE " +
+                    "FROM STEMPLATE " +
+                    "WHERE STABLEDESCID = @TableDescId AND STATUS = @Status AND TEMPLATE IS NOT NULL " +
+                    "ORDER BY NAME";
+
+                DataTable dt = DbHelper.Table(conn, null, sql,
+                    "@TableDescId", stableDescId,
+                    "@Status", PrintConstants.ActiveStatus);
+
+                return ReadTemplatesAndConfig(conn, dt);
+            });
+        }
+
+        private static List<PrintTemplateRecord> ReadTemplatesAndConfig(FbConnection conn, DataTable dt)
+        {
+            var list = new List<PrintTemplateRecord>(dt.Rows.Count);
+            foreach (DataRow r in dt.Rows)
+            {
+                byte[] rawBytes;
+                string xmlText;
+                ReadTemplateContent(r["TEMPLATE"], out rawBytes, out xmlText);
+
+                list.Add(new PrintTemplateRecord
+                {
+                    Id = DbHelper.Str(r["ID"]) ?? "",
+                    Name = DbHelper.Str(r["NAME"]) ?? "",
+                    FormId = DbHelper.Str(r["SFORMID"]) ?? "",
+                    TableDescId = DbHelper.Str(r["STABLEDESCID"]) ?? "",
+                    TemplateBytes = rawBytes,
+                    TemplateXml = xmlText
+                });
+            }
+
+            list.Sort(delegate (PrintTemplateRecord a, PrintTemplateRecord b)
+            {
+                return StringComparer.OrdinalIgnoreCase.Compare(
+                    a == null ? "" : (a.Name ?? ""),
+                    b == null ? "" : (b.Name ?? ""));
+            });
+
+            List<string> configIds = PrintTemplateVisibilityParser.ExtractDistinctConfigIds(list);
+            Dictionary<string, bool> configFlags = LoadConfigVisibilityByIds(conn, configIds);
+            for (int i = 0; i < list.Count; i++)
+                list[i].ConfigVisibilityById = new Dictionary<string, bool>(configFlags, StringComparer.OrdinalIgnoreCase);
+
+            return list;
         }
 
         /// <summary>
@@ -244,20 +275,21 @@ namespace Kazuko_FnB.Data
             return list;
         }
 
-        /// <summary>Đọc 4 thông tin công ty từ SCONFIG (TEXTVALUE): CompanyName, CompanyAddress, CompanyPhone, CompanyEmail.</summary>
+        /// <summary>Đọc thông tin công ty từ SCONFIG (TEXTVALUE): CompanyName, CompanyAddress, CompanyPhone, CompanyEmail, CompanyFax.</summary>
         public CompanyPrintInfo LoadCompanyInfo()
         {
             return DbHelper.Read(_databasePath, conn =>
             {
                 const string sql =
                     "SELECT NAME, TEXTVALUE FROM SCONFIG " +
-                    "WHERE NAME IN (@K1, @K2, @K3, @K4)";
+                    "WHERE NAME IN (@K1, @K2, @K3, @K4, @K5)";
 
                 DataTable dt = DbHelper.Table(conn, null, sql,
                     "@K1", PrintConstants.ConfigCompanyName,
                     "@K2", PrintConstants.ConfigCompanyAddress,
                     "@K3", PrintConstants.ConfigCompanyPhone,
-                    "@K4", PrintConstants.ConfigCompanyEmail);
+                    "@K4", PrintConstants.ConfigCompanyEmail,
+                    "@K5", PrintConstants.ConfigCompanyFax);
 
                 var info = new CompanyPrintInfo();
                 foreach (DataRow r in dt.Rows)
@@ -272,6 +304,8 @@ namespace Kazuko_FnB.Data
                         info.CompanyPhone = val;
                     else if (string.Equals(name, PrintConstants.ConfigCompanyEmail, StringComparison.Ordinal))
                         info.CompanyEmail = val;
+                    else if (string.Equals(name, PrintConstants.ConfigCompanyFax, StringComparison.Ordinal))
+                        info.CompanyFax = val;
                 }
                 return info;
             });

@@ -1,4 +1,6 @@
+using System;
 using System.Diagnostics;
+using System.Drawing.Printing;
 using System.Windows.Forms;
 using FastReport;
 using Kazuko_FnB.Domain;
@@ -33,6 +35,14 @@ namespace Kazuko_FnB.UI.Printing
 
         public void PrintToPrinter(Report preparedReport, PrintTemplateRecord template, string printerName)
         {
+            if (PrinterSettings.InstalledPrinters.Count == 0)
+                throw new InvalidOperationException("Không tìm thấy máy in nào được cài đặt trên máy.");
+            if (!string.IsNullOrWhiteSpace(printerName))
+            {
+                var ps = new PrinterSettings { PrinterName = printerName };
+                if (!ps.IsValid)
+                    throw new InvalidOperationException("Máy in '" + printerName + "' không hợp lệ hoặc chưa sẵn sàng.");
+            }
             FastReportEngine.PrintPrepared(preparedReport, printerName);
         }
 

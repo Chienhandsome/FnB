@@ -563,6 +563,8 @@ namespace Kazuko_FnB.UI.Diagnostics
             PrintP0Tests(db);
             PrintP1RevenueTests(db);
             PrintP1EmbeddedTests(db);
+            PrintP2BookingTests(db);
+            PrintP2QuoteTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

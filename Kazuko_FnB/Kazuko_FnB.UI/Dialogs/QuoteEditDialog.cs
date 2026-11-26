@@ -55,6 +55,8 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly FlatButton _btnSave;
         private readonly FlatButton _btnSaveNew;
         private readonly FlatButton _btnSaveClose;
+        private readonly FlatButton _btnSavePrint;
+        private readonly FlatButton _btnSaveViewPrint;
 
         private readonly DateBox _dtNgay = new DateBox();
         private readonly TextBox _txtNumber = new TextBox();
@@ -142,6 +144,8 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnSaveClose = AddButton("Lưu & thoát", "primary", delegate { SaveAndClose(); });
             _btnSaveNew = AddButton("Lưu & Mới", null, delegate { SaveAndNew(); });
             _btnSave = AddButton("Lưu", null, delegate { SaveStay(); });
+            _btnSaveViewPrint = AddButton("Lưu & Xem in", null, delegate { SaveAndViewPrint(); });
+            _btnSavePrint = AddButton("Lưu & In", null, delegate { SaveAndPrint(); });
             CancelButton = exit;
 
             BuildBottom();
