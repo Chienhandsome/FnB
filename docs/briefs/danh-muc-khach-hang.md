@@ -8,3 +8,5 @@
 - Còn: chờ trả lời, ghi vào spec, rồi làm `workflow-agy.md` §4. Q7, Q8, Q12 là phần hiển thị.
 
 - 26/11: Chiến chốt đủ (spec §9.0.2, #17). **Hết chặn**, chưa code.
+- **26/11 đã code, push `018ba78`** (#33): Danh mục khách hàng và nhóm khách hàng trên khung `CatalogView` (cây nhóm, lưới, hộp Thêm/Sửa/Xóa khách và nhóm, kiểm trùng Mã/Tên theo §9.0.2, xóa chỉ khi 7 bảng tham chiếu `DKHACHHANGID` không còn dòng nào, xuất Excel qua `GridExcelExporter`). agy 2 vòng (vòng 1 dừng vì gọi Bash), Claude sửa 1 ca test. In, Thêm nhanh/Cập nhật nhanh/nhập Excel: "chưa hỗ trợ".
+- **Chưa kiểm:** bấm thật, 125% DPI, Ctrl+K, xóa nhóm có nhóm con (agy chọn chặn, Chiến đã chốt chặn, agy làm đúng), điểm tích lũy, thẻ trả trước (chưa có màn).
