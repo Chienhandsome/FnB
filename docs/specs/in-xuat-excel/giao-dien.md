@@ -1,30 +1,49 @@
 # Giao diện
 
-Mục "In" theo app gốc đã chụp 26/11 (Thống kê doanh thu, bản chép ngoài repo; ảnh ở `_tmp/_origin-shots/in-xuat-excel/`). Các mục còn lại là **đề xuất**.
+Các mục "App gốc" đã bấm thử ngày 26/11 trên bản chép ngoài repo, chỉ xem trên màn hình; ảnh ở `_tmp/_origin-shots/in-xuat-excel/` (số trong ngoặc). CSDL mẫu gần như không có dữ liệu. Bản mới làm như app gốc, chỗ khác phải được Chiến chốt.
 
-## In (nhóm A, B)
+Mọi cửa sổ xem trước là trình xem của FastReport: Print, mở, Save, gửi mail, tìm, chuyển trang, thu phóng, Close. Menu Save: Prepared report, Adobe Acrobat, Rich Text, HTML, XML (Excel), Excel 2007, PowerPoint 2007, OpenOffice Calc, CSV, Text/Matrix Printer, Image (3).
 
-1. Bấm "In báo cáo": hiện hộp **"CHỌN MẪU IN"**: danh sách mẫu của màn, tên như trong CSDL (ở đây: 58mm, 80mm, Báo cáo tổng hợp bán hàng A4, Báo cáo tổng hợp thanh toán A4); dưới là "Tùy chọn" gồm 5 nút chọn một: **Xem trên màn hình** (chọn sẵn), **In ra máy in** (kèm ô chọn máy in), **Xuất excel**, **Xuất pdf**, **Thiết kế mẫu in**; nút OK, Cancel.
-   - Lúc mở, mẫu "thanh toán A4" được chọn sẵn và có biểu tượng khác ba mẫu kia. **Chưa kiểm** app chọn mẫu mặc định theo gì, có nhớ lần chọn trước không.
-   - "Thiết kế mẫu in" ngoài phạm vi spec này (câu Q8).
-2. "Xem trên màn hình": cửa sổ **"IN PHIẾU"** là xem trước của FastReport: Print, mở, Save, gửi mail, tìm, chuyển trang, thu phóng, Close. Menu Save có: Prepared report, Adobe Acrobat, Rich Text, HTML, XML (Excel), Excel 2007, PowerPoint 2007, OpenOffice Calc, CSV, Text/Matrix Printer, Image.
-3. Không có dữ liệu: app gốc **vẫn mở xem trước** (tiêu đề, khoảng ngày, tiêu đề cột, dòng TỔNG CỘNG trống).
-4. Đang dựng mẫu thì nút In bị khóa, tránh bấm hai lần.
-5. Cửa sổ dùng token màu của `ThemeManager` cho phần khung của app; thanh công cụ của FastReport giữ nguyên.
-6. Nút đủ lớn để bấm bằng tay; không thêm thanh cuộn dọc vào dialog hiện có.
+## A1. Thống kê doanh thu, Thống kê mặt hàng bán (App gốc, 1, 2, 4)
 
-## Xuất Excel của lưới (nhóm C)
+- Nút "In báo cáo" mở hộp **"CHỌN MẪU IN"**: danh sách mẫu (Doanh thu: 58mm, 80mm, tổng hợp bán hàng A4, tổng hợp thanh toán A4; Mặt hàng bán: 54mm, 80mm, A4), "Tùy chọn" chọn một: **Xem trên màn hình** (chọn sẵn), In ra máy in (kèm ô chọn máy), Xuất excel, Xuất pdf, Thiết kế mẫu in; nút OK, Cancel.
+- Xem trước mở cửa sổ **"IN PHIẾU"** (đã xem ở Doanh thu). Không có dữ liệu vẫn mở.
+- Mỗi màn có một mẫu được chọn sẵn (thanh toán A4; A4). **Chưa kiểm** app chọn theo gì.
 
-- Xuất đúng các cột đang hiện, đúng thứ tự, đúng bộ lọc và sắp xếp đang áp.
-- Ô số xuất ra kiểu số (không phải chữ), ngày ra kiểu ngày.
-- Chọn nơi lưu bằng hộp Lưu file; xong hỏi mở file.
-- Cột bị chặn quyền không có trong file (quy tắc N3).
+## A2. Chi tiết hoạt động ngày, Kết quả kinh doanh (App gốc, 5, 6)
 
-## Mã vạch (nhóm D)
+- **Cả màn là trình xem FastReport nhúng trong tab**: trên là bộ lọc (Từ ngày, Đến ngày, Thu ngân ở màn chi tiết, Cửa hàng, "Tải dữ liệu (F5)"), dưới là bản báo cáo cùng thanh công cụ. **Không có nút "In báo cáo", không có hộp chọn mẫu.**
+- Bản mới đang dựng hai màn này bằng lưới tự làm và có nút "In báo cáo". Cách ghép là câu **Q9**.
 
-- Chọn mặt hàng, số tem mỗi mặt hàng, mẫu giấy; xem trước rồi in.
-- Mẫu có hai mặt hàng một hàng (`NAME0`, `NAME1`…): cách chia dòng phải theo app gốc (**chưa kiểm**).
+## B. Phiếu đặt hàng, Báo giá (App gốc, 9–11, 16)
+
+- Hộp sửa có hai nút ở góc dưới trái: **"Lưu & In"** và **"Lưu & Xem in"**. **Bản mới chưa có hai nút này.** Phải lưu được phiếu trước (thiếu phòng hay trường bắt buộc thì báo như khi Lưu).
+- "Lưu & Xem in" mở hộp **"IN BÁO CÁO"** (khác hộp ở A1): ô thả "Mẫu in" (đặt hàng: 54mm, 54mm 2 dòng, 80mm, A4, A5, chọn sẵn A4; báo giá chọn sẵn "Báo Giá A4"), tùy chọn Xem trên màn hình (chọn sẵn), In ra máy in, Xuất excel, Xuất pdf, **Gửi mail**, Thiết kế mẫu in; nút "Thực hiện", "Thoát".
+- Xem trước phiếu đặt hàng có dòng đọc tiền thành chữ.
+- **Chưa bấm** "Lưu & In" (nhiều khả năng in thẳng).
+
+## C. Lưới danh sách (App gốc, 7, 8, 12, 13; thử ở Danh mục mặt hàng)
+
+- **"Xuất excel":** mở thẳng hộp Lưu file, loại `.xls`, tên để trống; xong hỏi "Bạn có muốn mở file đã xuất không?". File thử có **11 cột đúng các cột đang hiện trên lưới, cùng thứ tự**; ô số là kiểu số, ô tích là `TRUE/FALSE`, dòng đầu là tiêu đề cột. **Chưa thử** khi đang lọc (CSDL chỉ có 1 mặt hàng).
+- **"In"** (và nhiều khả năng cả "In danh sách" ở menu chuột phải, chưa bấm): hộp **"In lưới" / "Cấu hình trang in"**: Tiêu đề (sẵn "Mặt hàng"), Ghi chú, Mẫu in (Mẫu 80, A4 nằm ngang, A4 thẳng đứng), danh sách "Cột hiển thị" có ô tích, "In cột số thứ tự"; nút "Hiển thị", "Thoát". "Hiển thị" mở xem trước **"In danh sách"**: đầu trang công ty, tiêu đề, bảng đúng các cột đã tích, chữ ký "Trưởng phòng", "Người lập".
+- Menu chuột phải còn có: Thêm nhanh (excel), Cập nhật nhanh (excel), Sao chép ô, Sao chép vùng chọn, Cột hiển thị.
+
+## D. Mã vạch (App gốc, 14, 15)
+
+1. Chọn dòng mặt hàng, bấm "In mã vạch": mở **khung bên phải "IN MÃ VẠCH"** gồm Thêm, Xóa, Xuất excel, In, Bartender; lưới Mã, Tên, Số lượng; "Tổng sl".
+2. "Thêm" đưa mặt hàng đang chọn vào khung, số lượng 1. Lần bấm "In mã vạch" đầu khi chưa chọn dòng không thấy gì xảy ra.
+3. "In" trong khung mở hộp **"MẪU IN MÃ VẠCH"**: 6 mẫu, Thêm mới, Chỉnh sửa, Xóa mẫu, Thiết kế, Chấp nhận, Thoát.
+4. "Chấp nhận" mở xem trước, không in thẳng. Mẫu "2 tem, CODE128" xếp hai tem một hàng; mặt hàng thử không có mã nên **chưa thấy vạch**.
+
+"Bartender" gọi phần mềm ngoài: **chưa xem**.
+
+## Đề xuất cho bản mới
+
+- Đang dựng mẫu thì khóa nút, tránh bấm hai lần.
+- Phần khung của app dùng token màu `ThemeManager`; thanh công cụ FastReport giữ nguyên.
+- Nút đủ lớn để bấm bằng tay; không thêm thanh cuộn dọc vào dialog hiện có.
+- Cột bị chặn quyền không có trong file hay bản in (quy tắc N3).
 
 ## Chỗ không đổi
 
-Menu Báo giá vẫn ẩn như app gốc. Bố cục các màn hiện có không đổi; chỉ thay câu "chưa hỗ trợ" bằng chức năng.
+Menu Báo giá vẫn ẩn như app gốc (đã bật tạm **chỉ trên bản chép** để xem).
