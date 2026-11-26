@@ -1,6 +1,6 @@
 # Spec: In, xuất Excel và FastReport cho mọi chỗ còn thiếu
 
-- Trạng thái: **NHÁP**, Q1 đã chốt; Q3 đã đối chiếu app gốc, Q9 đã chốt; chờ Chiến trả lời Q2, Q4–Q8 ở [`nghiem-thu.md`](nghiem-thu.md) và duyệt.
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 26/11/2026 trong phiên: "Ok duyệt theo đề xuất"; Q1, Q9 chốt riêng, Q2 và Q4–Q8 theo đề xuất). Code được ngay P0, P1; P3, P4 còn phải đối chiếu thêm với app gốc trước khi code; P5 tách spec riêng; P6 chưa làm.
 - Ngày: 2026-11-26. Base: `origin/main` @ `9e7c6f1`.
 - Nguồn quyết định: Chiến yêu cầu 26/11: viết spec cho **tất cả chỗ thiếu**, **dùng các DLL FastReport** của dự án.
 - Loại: **nặng** (mẫu in có số tiền).

@@ -37,13 +37,13 @@
 | # | Câu hỏi, ví dụ | Đề xuất |
 |---|---|---|
 | Q1 | **Chiến chốt 26/11:** "Đồng ý, chép" `No1Lib*.dll` và `DbMapping.DLL` từ app gốc vào `Kazuko_FnB/lib/` | Đã chép 9 file (mã băm khớp `POS TAP/`). Chưa thêm tham chiếu nào vào project |
-| Q2 | Làm theo thứ tự nào? | P0 → P1 → P2 → P3 → P4; P5, P6 để sau |
+| Q2 | **Chiến duyệt 26/11 theo đề xuất.** Làm theo thứ tự nào? | P0 → P1 → P2 → P3 → P4; P5, P6 để sau |
 | Q3 | **Đã kiểm trên app gốc 26/11:** không in thẳng. App hiện hộp "CHỌN MẪU IN" (mẫu + Xem trên màn hình, In ra máy in, Xuất excel, Xuất pdf, Thiết kế mẫu in) | Làm y như vậy, xem [`giao-dien.md`](giao-dien.md). Phần "Thiết kế mẫu in" hỏi ở Q8 |
-| Q4 | **App gốc (26/11):** "Xuất excel" ra file `.xls` đúng các cột đang hiện. Còn chưa thử khi đang lọc: ví dụ lọc còn 3 trong 50 mặt hàng, file có 3 hay 50 dòng? | 3 dòng, đúng cái đang hiện. Có thể dùng `Aspose.Cells` đã có trong `lib/` |
-| Q5 | **Đã kiểm:** khung "IN MÃ VẠCH", thêm từng mặt hàng, chọn 1 trong 6 mẫu, xem trước. Nút "Bartender" (phần mềm in tem ngoài) có cần không? | Làm khung và 6 mẫu; chưa làm Bartender |
-| Q6 | "Nhập Excel" có thuộc đợt này không? Nó ghi dữ liệu (giá, mặt hàng), không phải in. | Tách spec riêng vì sai thì hỏng giá |
-| Q7 | Ctrl+P ở hộp sửa mặt hàng, bàn, khu vực in gì? **Chưa xem** trên app gốc | Giữ "chưa hỗ trợ" đợt này |
-| Q8 | Hộp chọn mẫu của app gốc có "Thiết kế mẫu in" (sửa mẫu và lưu vào CSDL). Ví dụ quán muốn thêm số điện thoại vào chân bill. Bản mới có cần không? | Chưa làm đợt này: ẩn lựa chọn đó. Làm sau nếu quán cần sửa mẫu |
+| Q4 | **Chiến duyệt 26/11 theo đề xuất.** **App gốc (26/11):** "Xuất excel" ra file `.xls` đúng các cột đang hiện. Còn chưa thử khi đang lọc: ví dụ lọc còn 3 trong 50 mặt hàng, file có 3 hay 50 dòng? | 3 dòng, đúng cái đang hiện. Có thể dùng `Aspose.Cells` đã có trong `lib/` |
+| Q5 | **Chiến duyệt 26/11 theo đề xuất.** **Đã kiểm:** khung "IN MÃ VẠCH", thêm từng mặt hàng, chọn 1 trong 6 mẫu, xem trước. Nút "Bartender" (phần mềm in tem ngoài) có cần không? | Làm khung và 6 mẫu; chưa làm Bartender |
+| Q6 | **Chiến duyệt 26/11 theo đề xuất.** "Nhập Excel" có thuộc đợt này không? Nó ghi dữ liệu (giá, mặt hàng), không phải in. | Tách spec riêng vì sai thì hỏng giá |
+| Q7 | **Chiến duyệt 26/11 theo đề xuất.** Ctrl+P ở hộp sửa mặt hàng, bàn, khu vực in gì? **Chưa xem** trên app gốc | Giữ "chưa hỗ trợ" đợt này |
+| Q8 | **Chiến duyệt 26/11 theo đề xuất.** Hộp chọn mẫu của app gốc có "Thiết kế mẫu in" (sửa mẫu và lưu vào CSDL). Ví dụ quán muốn thêm số điện thoại vào chân bill. Bản mới có cần không? | Chưa làm đợt này: ẩn lựa chọn đó. Làm sau nếu quán cần sửa mẫu |
 | Q9 | **Chiến chốt 26/11:** "Chốt y hệt": màn Chi tiết hoạt động ngày và Kết quả kinh doanh làm như app gốc, **cả màn là trình xem FastReport nhúng trong tab**, bộ lọc ở trên, không nút "In báo cáo" | Thứ tự làm (đề xuất của Claude): giữ lưới hiện nay cho đến khi mẫu dựng được và số trên trang in khớp số đang hiện, rồi mới thay |
 
-Duyệt spec này chưa đủ để code P3 đến P6: các phần đó cần trả lời câu tương ứng và đối chiếu app gốc.
+Spec đã duyệt 26/11. Trước khi code P3, P4 vẫn phải đối chiếu thêm với app gốc (Excel khi đang lọc, "In danh sách" ở menu chuột phải, lưới chi tiết, tem có mã vạch). P5 (nhập Excel) cần spec riêng được duyệt. P6 (Ctrl+P) giữ "chưa hỗ trợ".
