@@ -332,3 +332,9 @@ Thứ tự: (1) `OrderCalculator` + selftest; (2) `TableService`/`InvoiceNumberS
 1. `img/su-dung-dich-vu/01-man-hinh-chinh.png` — màn lúc mở (khu vực "Lầu 1", 3 bàn demo, hóa đơn trống).
 
 Ghi chú: đường dẫn code `POS_TAP_SRC_EXPORT/SFORM/…` không có trên máy cloud (bản tương đương: `pos-tap-review/raw/sform_code/*.txt`). `OrderCalculator`: mặc định chỉ phục vụ 3 chế độ nhà hàng; form bán lẻ quyết khi có spec bán lẻ. Chỉ có 1 ảnh [APP]; cần chụp bổ sung phần dưới màn và các dialog (Q13).
+
+### 6.6 Chiến chốt 26/11/2026 (thắng mọi chỗ khác nếu lệch)
+- **Âm kho:** có cấu hình toàn hệ thống "cho phép âm kho"; bản đầu mặc định **chặn**: gọi món hoặc thanh toán làm tồn kho âm thì không cho (báo một câu rõ, nêu mặt hàng và tồn hiện có).
+- **Nợ:** chỉ khách **có hồ sơ** (`DKHACHHANG`) mới được thanh toán một phần bằng nợ; bill chưa chọn khách thì không cho ghi nợ.
+- **In:** làm cả **in hóa đơn thanh toán** (A4 và 80mm, mẫu trong `STEMPLATE` của màn hóa đơn, cùng cách của `in-xuat-excel` P2: đăng ký hàm, đọc mẫu theo bảng/màn, hộp "IN BÁO CÁO", dữ liệu đọc lại từ CSDL sau khi lưu) và **in bếp** (phiếu gọi món theo từng máy in/khu vực).
+- **Chia patch (Claude, 26/11):** (a) `OrderCalculator` + sơ đồ bàn chỉ đọc + mở bàn + gọi món/giảm/xóa/sửa dòng; (b) thanh toán (+ trừ kho theo cấu hình âm kho, nợ khách); (c) chuyển/gộp bàn, hủy bill; (d) in hóa đơn thanh toán và in bếp.
