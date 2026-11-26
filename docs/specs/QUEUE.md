@@ -30,6 +30,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Nhập số patch 1 (ô ngoài lưới): xem issue #25 (bấm chuột/chạm vào ô có số lớn, thử từng màn)
 - [ ] Nhập số patch 2 (4 lưới): xem issue #26 (gõ bàn phím thật, Ctrl+V, dấu cách ở Ghi chú Báo giá, sửa định lượng rồi Lưu)
 - [ ] In P0, Thống kê mặt hàng bán: xem issue #27 (xem trước, xuất Excel và PDF rồi mở, in thật A4 và 80mm; mở lướt các màn khác)
+- [ ] In P1a, Thống kê doanh thu (`100513f`): xem trước đủ 4 mẫu, xuất Excel và PDF rồi mở, in thật A4 và 80mm
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
@@ -49,7 +50,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 10 | `danh-muc-cua-hang/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Menu đang ẩn vì `NhieuCuaHang = 0` |
 | 11 | `danh-muc-kho-hang/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Cần rà lại giao diện (app gốc là hộp thoại cây) |
 | 12 | `danh-muc-nha-cung-cap/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Phụ thuộc #7 (dùng chung khung cây nhóm) |
-| – | `in-xuat-excel/index.md` | **ĐÃ DUYỆT** 26/11; P0 đã code `8a9c0ee`, còn P1–P4 | nặng | In, xuất Excel, mã vạch; dùng FastReport |
+| – | `in-xuat-excel/index.md` | **ĐÃ DUYỆT** 26/11; P0 `8a9c0ee`, P1a `100513f` đã code; còn P1b, P2–P4 | nặng | In, xuất Excel, mã vạch; dùng FastReport |
 
 ## Ghi chú
 - 26/11: Chiến chốt quy tắc nhập số cho **mọi ô số** (`khach-dat-hang.md`, đợt 2, điểm 5): chấm hay phẩy đều là dấu thập phân, dấu ngăn nghìn chỉ để hiển thị. Mới áp cho lưới Khách đặt hàng (`bf45f06`); các ô còn lại cần spec riêng.

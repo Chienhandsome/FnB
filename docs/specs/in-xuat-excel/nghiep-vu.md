@@ -72,3 +72,8 @@ Dữ liệu: `fnb-agy-work/_tmp/in-p1/seeded.fdb`; ảnh `_tmp/_origin-shots/in-
 - **Chi tiết hoạt động ngày:** app gốc dùng mẫu `765b861a` (khối Bán hàng có "Đặt trước", không có "Chuyển khoản"). Mọi số trên trang gốc trùng bản dựng thử (tổng 165.000; mặt hàng 190.000 − 10.000 − 15.000 = 165.000; TIỀN MẶT −39.000; CHUYỂN KHOẢN 34.000; nợ NCC 200.000). **Chiến chốt 26/11:** "Theo app gốc": đọc `SREPORT.LASTTEMPLATEID` (thay Q9 ngày 25/11 "Mẫu đầy đủ").
 - **Kết quả kinh doanh:** trang gốc có cột % (ví dụ chi phí 70.000 / doanh thu 165.000 = 42%), có dòng "Tiền giờ", biểu tượng Wingdings. Bản mới vẫn ẩn "Tiền giờ" theo Q7 của spec KQKD.
 - **Lọc ngày:** app gốc để "Đến ngày" lúc 0 giờ nên xem 26/11–26/11 không thấy bill ngày 26/11. Bản mới giữ quyết định đã có (trọn ngày cuối).
+## Cột ẩn theo cấu hình (ĐÃ KIỂM 26/11, code `100513f`)
+
+- `TableColumn` trong `.frx` có thể mang `VisibleByConfigID` = ID bản ghi `SCONFIG`. Cột chỉ hiện khi `INTVALUE = 30`. ID không có trong `SCONFIG` thì giữ cột hiện (quy tắc của bản mới, chưa kiểm app gốc).
+- Doanh thu: bán hàng A4 có `CoTienGio` (Tiền giờ, Giảm giờ), `CoPhiDichVu` (Phí dv), `CoThueSuat` (Thuế); thanh toán A4 có `SuDungDiemTichLuyDeThanhToan` (Trừ tích lũy). Cả bốn đang tắt trên CSDL mẫu, trang app gốc thiếu đúng các cột đó. Trạng thái bật mới kiểm bằng selftest, chưa xem trên app gốc.
+- 4 trang Thống kê doanh thu của bản mới đã so bằng mắt với app gốc trên cùng hai hóa đơn: số, cột và dòng tổng khớp. Tiêu đề ngày khác nhau do lọc trọn ngày cuối.
