@@ -6,6 +6,7 @@ Mỗi ca giao diện đi qua sự kiện thật của ô, và chạy ở **cả 
 
 - [ ] A1. Hàm đọc: đủ bảng ở N1.
 - [ ] A2. Mỗi loại ô ngoài lưới: `2.5` và `2,5` ra 2,5; `1600` ra 1600 và hiện `1.600`.
+- [ ] A2b. Bấm phím `.` thật thì ô đang sửa hiện `,`; dán `2.5` hiện `2,5`; gõ `1.500.000` thì ô giữ đủ hai dấu và khi rời ô giữ số cũ.
 - [ ] A3. Đang sửa không có dấu ngăn nghìn; số có phần lẻ vào rồi ra giữ nguyên.
 - [ ] A4. Vào rồi ra không đổi: không đánh dấu đã sửa; kiểu giảm giá (tiền hay %) không đổi.
 - [ ] A5. Ô tiền: gõ `15,5` hiện `15,5`, giá trị đúng 15,5.

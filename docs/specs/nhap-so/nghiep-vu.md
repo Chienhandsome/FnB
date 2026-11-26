@@ -17,6 +17,8 @@ Nhãn: **CHỐT** là Chiến đã quyết; **ĐỀ XUẤT** là chờ duyệt (
 
 Không phụ thuộc cài đặt vùng của Windows.
 
+**Lúc gõ (CHỐT, Chiến 26/11: "dấu chấm thành dấu phẩy, dấu phẩy tức là thập phân"):** bấm `.` thì ô hiện ngay `,`; chuỗi dán vào cũng đổi `.` thành `,`. Vậy ô đang sửa không bao giờ có dấu chấm. **Không chặn** dấu thứ hai: nếu nuốt phím thì `1.500.000` sẽ thành 1,5 mà không ai biết. Ô giữ đủ hai dấu, rời ô thì coi là không đọc được và giữ số cũ.
+
 ## N2. Hiển thị (CHỐT: app tự thêm dấu ngăn nghìn)
 
 - Mọi ô trong phạm vi hiện kiểu Việt: ngăn nghìn `.`, thập phân `,`, kể cả ô chỉ đọc trên cùng hộp thoại (Tiền hàng, Tổng cộng). Máy en-US đang hiện `30,000` sẽ thành `30.000`.
