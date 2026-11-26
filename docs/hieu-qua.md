@@ -22,6 +22,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 Sửa 7 ca selftest (`9e7c6f1`) | 1, +1 −0 | 2, +163 −14 | 0 / 1 / 0 / 0 | 0 | 857 (7) → 864 (0) | không có lỗi sau vòng 1 | không áp dụng (chủ yếu sửa test) |
 | 26/11 Spec in, xuất Excel | không đổi code | – | – | – | – | thử ngoài app: thiếu `No1Lib*.dll` | – |
 | 26/11 In FastReport P0 (`30ced3e`, `8a9c0ee`, #27) | 14, +1570 −7 | 4, +1161 −4 | 0 / 0 / 0 / 1 | 1 (biên dịch, trong test) | 864 → 898 (0) | build 1, selftest 3, thử ngoài app + app gốc (lỗi tiền) | chưa bấm thử. Claude thấy khi làm P1a: lớp in chưa ẩn cột theo `VisibleByConfigID` (sửa ở `100513f`; chưa kiểm 3 mẫu mặt hàng bán có dùng thuộc tính này không) |
+| 26/11 Sử dụng dịch vụ patch (b), thanh toán (`56f2036`, #35) | 23, +3866 −11 | 6, +1292 −4 | 0 / 1 / 0 / 0 | 0 | 1064 → 1092 (0) | selftest 0, build 0 (đạt ngay vòng 2); đọc diff: luật phân bổ nợ/cọc | chưa bấm thử |
 | 26/11 Sử dụng dịch vụ patch (a) (`91a57c7`, #34) | 22, +5460 −0 | 4, +842 −0 | 0 / 0 / 0 / 0 | 3 (4 hàm `internal` gọi qua assembly; `NULLIF(@T)` Firebird −804; ca test bấm nút khi chưa chọn bàn) | 1018 → 1064 (0) | build 1 (không dịch được), selftest 2 (SQL −804; ca nút) | chưa bấm thử |
 | 26/11 Danh mục khách hàng (`018ba78`, #33) | 16, +3346 −33 | 4, +1097 −0 | 0 / 1 / 0 / 0 | 1 (thứ tự ca test sửa chính mình) | 979 → 1018 (0) | selftest 2 (cùng gốc); đọc diff: không thấy lỗi ở tầng Data, luật xóa | chưa bấm thử |
 | 26/11 In P4, mã vạch ở Danh mục (`bdbf7b0`, #32) | 14, +1565 −11 | 4, +1170 −0 | 0 / 0 / 0 / 0 | 1 (4 ca test kỳ vọng sai về FastReport: tem trống không phát ô mã vạch; ca tự xóa mặt hàng rồi so snapshot) | 965 → 979 (0) | selftest 4 (cùng gốc: kỳ vọng test); đọc diff 0 | chưa bấm thử |
@@ -30,7 +31,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 12 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 13 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -50,6 +51,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | In P4 | 1065 s; 429 / 92 | 1065 s (18 phút) | 521 (4.592) |
 | Danh mục khách hàng | 333 s; 325 / 6 (dừng: gọi Bash bị từ chối) · 1721 s; 253 / 125 | 2054 s (34 phút) | 709 (8.850) |
 | Sử dụng dịch vụ patch (a) | 1572 s; 1077 / 153 | 1572 s (26 phút) | 1.230 (8.450) |
+| Sử dụng dịch vụ patch (b) | 1572 s; 697 / 144 (dừng: gọi Bash) · 2090 s; 157 / 49 | 3662 s (61 phút) | 1.046 (12.208) |
 
 In P1a còn 3 lượt thử quyền sau khi agy lên 1.5.18 (3, 6, 4 s; 37 nghìn token), không tính vào tổng.
 
@@ -71,3 +73,4 @@ Các tổng ghi ở bản trước (khoảng 59, 67, 38 phút) đã cộng chồ
 | In P4 | 5 giờ 83% → 85%; tuần 11% → 12% | có: sửa test, ghi docs P3a | agy không chạy được selftest nên kỳ vọng về cách FastReport phát đối tượng (ô mã vạch của tem trống) chỉ lộ khi chạy: Claude chạy và sửa test |
 | Danh mục khách hàng | 5 giờ 85% → chưa đo lúc push; tuần 12% | có: đổi yêu cầu, trả lời câu hỏi nghiệp vụ, danh sách bắt buộc 2 ngày | Prompt ngắn chỉ trỏ spec thì agy tự đọc đủ, nhưng nhớ nhắc không dùng Bash. Không commit docs ở thư mục chính khi agy đang chạy (phạm vi chặn, mất một vòng) |
 | Sử dụng dịch vụ patch (a) | 5 giờ chưa đo; tuần 12% | có: viết spec §6.6, trả lời câu hỏi, loop | agy không dịch được trong sandbox (MSBuild bị chặn thư mục tạm) nên lỗi biên dịch và SQL −804 chỉ lộ ở bước Claude chạy `Test-AgyBuild`. Cho ca selftest in ngăn xếp ngoại lệ đầy đủ (tạm sửa `SelfTest.cs` để chẩn đoán rồi hoàn lại) giúp tìm câu SQL nhanh |
+| Sử dụng dịch vụ patch (b) | chưa đo (làm xen kẽ nhiều việc); tuần 12% → chưa đo | có: loop, hỏi đáp, viết docs | Dặn "không dùng Bash" trong prompt vẫn bị agy bỏ qua một lần; thêm bài học lỗi cũ (internal/public, -804) vào prompt giúp vòng 2 đạt ngay lần build đầu |
