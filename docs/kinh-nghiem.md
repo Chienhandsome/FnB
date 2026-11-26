@@ -25,6 +25,8 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Không dùng `open_application` để đưa app gốc lên trước:** nó mở thêm phiên chạy quyền quản trị, hộp thoại của phiên đó không bấm được, phải nhờ Chiến bấm "No".
 - **Báo Chiến TRƯỚC khi mở app gốc rồi xin quyền điều khiển:** app chiếm màn hình nên Chiến không thấy hộp xin quyền, kết quả về `user_denied` (26/11). Đừng coi đó là Chiến chủ ý từ chối; hỏi lại.
 - **Thao tác app gốc:** bấm chọn dòng mặt hàng rồi Enter mới thêm vào bill. Ô tiền không bôi chọn được (số mới nối vào số cũ): bấm vào ô, End, Backspace nhiều lần rồi mới gõ. Telex trong app đổi chữ gõ thử. Báo Chiến đừng dùng chuột phím trong lúc thao tác.
+- **Trước khi bấm In ở app gốc, kiểm máy in mặc định** (`Win32_Printer`): 26/11 máy mặc định là máy in tem thật. Tên tham số hàm của `No1Lib` đọc được bằng reflection (PowerShell 32-bit), cho biết trước `PrintInvoice` có hộp chọn mẫu và xem trước. Sau đó kiểm `Get-PrintJob` không có lệnh nào.
+- **Mở tab ở app gốc mất vài giây:** bấm nút thanh công cụ một lần rồi chờ khoảng 10 giây; bấm tiếp sẽ hiện thông báo "đang ở trong cửa sổ".
 - **Điều khiển bản chép app gốc:** chạy `Application.exe` của bản chép trước, rồi `request_access` bằng **đường dẫn đầy đủ** tới file exe đó (tên "Application" hay tiêu đề cửa sổ không khớp, hộp xin quyền không hiện).
 - **Menu trong spec có thể đang bị app gốc ẩn:** kiểm `SMENU.STATUS` (Báo giá bán hàng có `STATUS = 0`). Muốn thử thì bật lại **chỉ trên bản chép**.
 - **Trước khi viết spec cho một mục menu:** đọc `No1System_OnCustomSeeMenu` trong `SharedCode`. Loại phòng và Thông báo sửa chữa chỉ hiện ở bản HOTEL, Bảng giá chỉ hiện khi tính tiền giờ; `SMENU` đang bật không có nghĩa là menu hiện.

@@ -21,7 +21,7 @@ Nhãn: **ĐÃ KIỂM** là đã đọc nguồn hoặc chạy thử; **CHƯA KI�
 | Thống kê mặt hàng bán (A4, 80mm, 54mm) | dựng được cả 3 |
 | Mã vạch (6) | dựng được cả 6 |
 | "Mẫu A4 nằm ngang", "Mẫu A4 thẳng đứng" | dựng được |
-| Báo giá (2) | lỗi: thiếu hàm `ToVndWords` (đọc tiền thành chữ). **CHƯA KIỂM** hàm này nằm ở đâu |
+| Báo giá (2) | lỗi: script không thấy `ToVndWords`. **ĐÃ KIỂM** (đọc chữ ký DLL): hàm là `No1Lib.Sys.DocSo.ToVndWords(Decimal)`; **chưa thử** cách cho script của mẫu gọi được |
 | Mẫu đặt hàng (5) | lỗi trừ `decimal` với chữ; nhiều khả năng do dữ liệu giả sai kiểu. **CHƯA KIỂM** với dữ liệu đúng kiểu |
 | Chi tiết hoạt động ngày, Kết quả kinh doanh (`SREPORTTEMPLATE`) | **CHƯA THỬ** |
 
@@ -30,7 +30,9 @@ Nhãn: **ĐÃ KIỂM** là đã đọc nguồn hoặc chạy thử; **CHƯA KI�
 ## Cách app gốc gọi in (ĐÃ KIỂM một phần)
 
 - Thống kê doanh thu và Thống kê mặt hàng bán: `btnIn_Click` gọi `Config.PrintInvoice(null, <form>, "", true, true, ...)`, chép lưới vào `DataSet` (`CopyToDataSet`) rồi thêm tham số `TuNgay`, `DenNgay`.
-- **CHƯA KIỂM:** ý nghĩa hai cờ `true, true` (hộp chọn mẫu, xem trước hay in thẳng), cách chọn mẫu mặc định và máy in, nguồn các tham số chung (`CompanyName`, `CompanyAddress`, logo).
+- **ĐÃ KIỂM** (đọc tên tham số trong `No1Lib.Sys.DLL`): lời gọi trên ứng với `PrintInvoice(row, SFORMID, RecordID, showSelectTemplate, showPreview, OnCustomReport)`, tức hai cờ là hiện hộp chọn mẫu và xem trước. Bấm thử khớp: app hiện hộp "CHỌN MẪU IN", không in thẳng.
+- Cùng DLL có `Config.ShowReport(title, ID, dicParams)`, `UiUtils.ExportToExcel(DataGridView)` và các `UiUtils.PrintBarCode(...)` (nhận mẫu, danh sách mã và số lượng). **Chưa đọc** thân hàm, chưa biết màn nào gọi hàm nào để xuất lưới.
+- **CHƯA KIỂM:** cách chọn mẫu mặc định và máy in, nguồn các tham số chung (`CompanyName`, `CompanyAddress`, logo; trên CSDL mẫu chân trang hiện chữ "(TÊN CÔNG TY)").
 - Báo cáo trong menu Báo cáo gọi `ShowReport`. **CHƯA KIỂM** với hai báo cáo thuộc phạm vi này.
 
 ## Quy tắc bản mới (đề xuất)

@@ -38,10 +38,11 @@
 |---|---|---|
 | Q1 | **Chiến chốt 26/11:** "Đồng ý, chép" `No1Lib*.dll` và `DbMapping.DLL` từ app gốc vào `Kazuko_FnB/lib/` | Đã chép 9 file (mã băm khớp `POS TAP/`). Chưa thêm tham chiếu nào vào project |
 | Q2 | Làm theo thứ tự nào? | P0 → P1 → P2 → P3 → P4; P5, P6 để sau |
-| Q3 | Bấm In ở app gốc thì in thẳng ra máy in hay hiện xem trước? Ví dụ thu ngân bấm "In" ở Thống kê doanh thu. | Mở app gốc xem rồi làm y như vậy (cần bạn sẵn sàng). Chưa xem được thì dùng xem trước |
+| Q3 | **Đã kiểm trên app gốc 26/11:** không in thẳng. App hiện hộp "CHỌN MẪU IN" (mẫu + Xem trên màn hình, In ra máy in, Xuất excel, Xuất pdf, Thiết kế mẫu in) | Làm y như vậy, xem [`giao-dien.md`](giao-dien.md). Phần "Thiết kế mẫu in" hỏi ở Q8 |
 | Q4 | "Xuất Excel" của lưới lấy đúng cái đang hiện, hay theo mẫu in? Ví dụ lưới đang lọc còn 3 trong 50 mặt hàng: file có 3 hay 50 dòng? | 3 dòng, đúng cái đang hiện; xác nhận lại với app gốc. Có thể dùng `Aspose.Cells` đã có trong `lib/` |
 | Q5 | In mã vạch: in cho các dòng đang chọn hay mở màn chọn riêng, ví dụ 3 món, mỗi món 20 tem? | Theo app gốc, cần xem trước khi viết P4 |
 | Q6 | "Nhập Excel" có thuộc đợt này không? Nó ghi dữ liệu (giá, mặt hàng), không phải in. | Tách spec riêng vì sai thì hỏng giá |
 | Q7 | Ctrl+P ở hộp sửa mặt hàng, bàn, khu vực in gì ở app gốc? | Chưa biết; xem app gốc, không có mẫu thì giữ "chưa hỗ trợ" |
+| Q8 | Hộp chọn mẫu của app gốc có "Thiết kế mẫu in" (sửa mẫu và lưu vào CSDL). Ví dụ quán muốn thêm số điện thoại vào chân bill. Bản mới có cần không? | Chưa làm đợt này: ẩn lựa chọn đó. Làm sau nếu quán cần sửa mẫu |
 
 Duyệt spec này chưa đủ để code P3 đến P6: các phần đó cần trả lời câu tương ứng và đối chiếu app gốc.

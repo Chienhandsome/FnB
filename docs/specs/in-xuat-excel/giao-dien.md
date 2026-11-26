@@ -1,12 +1,14 @@
 # Giao diện
 
-Mọi điểm ở đây là **đề xuất**; luồng của app gốc chưa được chụp (câu Q3).
+Mục "In" theo app gốc đã chụp 26/11 (Thống kê doanh thu, bản chép ngoài repo; ảnh ở `_tmp/_origin-shots/in-xuat-excel/`). Các mục còn lại là **đề xuất**.
 
 ## In (nhóm A, B)
 
-1. Bấm In: nếu màn có từ 2 mẫu thì hiện hộp chọn mẫu (tên mẫu như trong CSDL), nhớ mẫu chọn lần trước trên máy đó.
-2. Hiện cửa sổ xem trước của FastReport, có: In (chọn máy in), Xuất Excel, Xuất PDF, thu phóng, chuyển trang.
-3. Không có dữ liệu: vẫn mở được bản xem trước như app gốc (**chưa kiểm** hành vi app gốc).
+1. Bấm "In báo cáo": hiện hộp **"CHỌN MẪU IN"**: danh sách mẫu của màn, tên như trong CSDL (ở đây: 58mm, 80mm, Báo cáo tổng hợp bán hàng A4, Báo cáo tổng hợp thanh toán A4); dưới là "Tùy chọn" gồm 5 nút chọn một: **Xem trên màn hình** (chọn sẵn), **In ra máy in** (kèm ô chọn máy in), **Xuất excel**, **Xuất pdf**, **Thiết kế mẫu in**; nút OK, Cancel.
+   - Lúc mở, mẫu "thanh toán A4" được chọn sẵn và có biểu tượng khác ba mẫu kia. **Chưa kiểm** app chọn mẫu mặc định theo gì, có nhớ lần chọn trước không.
+   - "Thiết kế mẫu in" ngoài phạm vi spec này (câu Q8).
+2. "Xem trên màn hình": cửa sổ **"IN PHIẾU"** là xem trước của FastReport: Print, mở, Save, gửi mail, tìm, chuyển trang, thu phóng, Close. Menu Save có: Prepared report, Adobe Acrobat, Rich Text, HTML, XML (Excel), Excel 2007, PowerPoint 2007, OpenOffice Calc, CSV, Text/Matrix Printer, Image.
+3. Không có dữ liệu: app gốc **vẫn mở xem trước** (tiêu đề, khoảng ngày, tiêu đề cột, dòng TỔNG CỘNG trống).
 4. Đang dựng mẫu thì nút In bị khóa, tránh bấm hai lần.
 5. Cửa sổ dùng token màu của `ThemeManager` cho phần khung của app; thanh công cụ của FastReport giữ nguyên.
 6. Nút đủ lớn để bấm bằng tay; không thêm thanh cuộn dọc vào dialog hiện có.
