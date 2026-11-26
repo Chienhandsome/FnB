@@ -635,9 +635,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             string childId = null;
             try
             {
-                List<BookingMethodRow> baseline = methods.LoadAll();
-                Check("Phương thức đặt: có sẵn các thư mục tạo sẵn (Công văn, Điện thoại, Email, Tin nhắn, Trực tiếp)",
-                    baseline.Exists(r => r.Name == "Công văn") && baseline.Exists(r => r.Name == "Trực tiếp"), "n=" + baseline.Count);
+                CheckBookingMethodLoadAll(db, methods);
                 var root = new BookingMethodRow { Name = "  THƯ MỤC THỬ KĐH  " };
                 rootId = methods.Save(root, "selftest", out mErr);
                 Check("Thêm thư mục gốc (cắt khoảng trắng hai đầu tên)", rootId != null && root.Name == "THƯ MỤC THỬ KĐH", mErr);
@@ -1279,6 +1277,8 @@ namespace Kazuko_FnB.UI.Diagnostics
                 before.Types.Count + "/" + before.Rooms.Count + "/" + before.Bars.Count);
             if (before.Types.Count != 0 || before.Rooms.Count != 0 || before.Bars.Count != 0)
                 return;
+            int existingRooms = CountActiveRoomsSql(db);
+            int expectedTotalRooms = existingRooms + 4;
             string typeVip = DbHelper.NewId();
             string typeThuong = DbHelper.NewId();
             string room1Id = DbHelper.NewId();
@@ -1343,8 +1343,9 @@ namespace Kazuko_FnB.UI.Diagnostics
                 Check("Lịch tải lưới: 3 phòng có loại (phòng không loại không hiện)",
                     loaded.Rooms.Count == 3 && loaded.Rooms.Exists(r => r.Id == room1Id) &&
                     loaded.Rooms.Exists(r => r.Id == room2Id) && loaded.Rooms.Exists(r => r.Id == room3Id));
-                Check("Lịch tải lưới: tổng số phòng = 4 (kể cả phòng không loại)",
-                    loaded.TotalRooms == 4, loaded.TotalRooms.ToString());
+                Check("Lịch tải lưới: tổng số phòng = P + 4 (kể cả phòng không loại)",
+                    loaded.TotalRooms == expectedTotalRooms,
+                    "actual=" + loaded.TotalRooms + ", expected=" + expectedTotalRooms + " (P=" + existingRooms + ")");
                 Check("Lịch tải lưới: 4 thanh (B3 bao trùm không hiện)", loaded.Bars.Count == 4,
                     loaded.Bars.Count.ToString());
                 Check("Lịch tải lưới: B3 không có trong danh sách", !loaded.Bars.Exists(b => b.Id == b3Id));
@@ -1353,16 +1354,16 @@ namespace Kazuko_FnB.UI.Diagnostics
                 Check("Lịch lọc loại VIP: 1 loại, 2 phòng, 3 thanh (B1+B2 bàn 2+B4)",
                     vipOnly.Types.Count == 1 && vipOnly.Rooms.Count == 2 && vipOnly.Bars.Count == 3,
                     vipOnly.Types.Count + "/" + vipOnly.Rooms.Count + "/" + vipOnly.Bars.Count);
-                Check("Lịch lọc loại VIP: tổng số phòng vẫn 4", vipOnly.TotalRooms == 4);
+                Check("Lịch lọc loại VIP: tổng số phòng vẫn là P + 4",
+                    vipOnly.TotalRooms == expectedTotalRooms,
+                    "actual=" + vipOnly.TotalRooms + ", expected=" + expectedTotalRooms + " (P=" + existingRooms + ")");
 
                 BookingCalendarRules.CalendarTotals lt = BookingCalendarRules.BuildTotals(loaded, from, days);
                 Check("Lịch tổng trên DB: Đã bán [1,2,3,1,0,0,0]",
                     lt.SoldPerDay[0] == 1 && lt.SoldPerDay[1] == 2 && lt.SoldPerDay[2] == 3 &&
                     lt.SoldPerDay[3] == 1 && lt.SoldPerDay[4] == 0,
                     string.Join(",", Array.ConvertAll(lt.SoldPerDay, i => i.ToString())));
-                Check("Lịch tổng trên DB: Còn lại [3,2,1,3,4,4,4]",
-                    lt.RemainingPerDay[0] == 3 && lt.RemainingPerDay[2] == 1 && lt.RemainingPerDay[4] == 4);
-                Check("Lịch tổng trên DB: Công suất ngày 2 = 75.0%", lt.CapacityPerDay[2] == 75.0);
+                CheckCalendarTotalsOnDb(lt, existingRooms);
                 Check("Lịch tổng trên DB: hàng nhóm VIP ngày 2 = 2, Thường ngày 2 = 1",
                     lt.SoldPerDayByType[typeVip][2] == 2 && lt.SoldPerDayByType[typeThuong][2] == 1);
                 Check("Lịch tổng trên DB: cột Tổng bàn 1 = 2, bàn 2 = 1, bàn 3 = 0",
@@ -2056,11 +2057,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             Check("Có nhóm Thu ngân", thuNgan != null);
             if (thuNgan != null)
             {
-                int n = groups.CountReferences(thuNgan.Id);
-                Check("Không xóa được nhóm còn tài khoản: đếm (1) như app gốc", n == 1, "n=" + n);
-                Check("Thông báo xóa nhóm đúng chữ gốc",
-                    ReferenceChecker.BlockedMessage("nhóm người dùng", "Thu ngân", n) ==
-                    "Bạn không thể xóa nhóm người dùng 'Thu ngân' vì còn (1) dữ liệu khác liên kết tới 'Thu ngân'");
+                CheckThuNganDeleteBlocked(db, groups, users, thuNgan);
             }
 
             // Nhóm mới: AUTOID/SORTORDER theo quy ước, chặn trùng tên.
