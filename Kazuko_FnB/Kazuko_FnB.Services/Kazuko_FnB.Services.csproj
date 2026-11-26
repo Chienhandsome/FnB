@@ -71,6 +71,10 @@
     <Compile Include="PasswordPolicy.cs" />
     <Compile Include="PhieuThuRules.cs" />
     <Compile Include="ProductRules.cs" />
+    <Compile Include="QuoteCalculator.cs" />
+    <Compile Include="QuoteExcelImporter.cs" />
+    <Compile Include="QuoteItemRules.cs" />
+    <Compile Include="QuoteService.cs" />
     <Compile Include="RoomRules.cs" />
     <Compile Include="RoleLogic.cs" />
     <Compile Include="SystemConfig.cs" />

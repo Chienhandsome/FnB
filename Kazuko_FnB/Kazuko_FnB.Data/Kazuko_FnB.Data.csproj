@@ -68,6 +68,7 @@
     <Compile Include="BusinessResultRepository.cs" />
     <Compile Include="BookingGroupPlanner.cs" />
     <Compile Include="BookingRepository.cs" />
+    <Compile Include="QuoteRepository.cs" />
     <Compile Include="BookingCalendarRepository.cs" />
     <Compile Include="PhieuThuRepository.cs" />
     <Compile Include="KazukoConnection.cs" />

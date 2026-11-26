@@ -26,6 +26,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "sys.password", session => new ChangePasswordDialog(session) },
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
                 { "preview.booking", session => new BookingPreviewForm(session) },
+                { "preview.quote", session => new QuotePreviewForm(session) },
+                { "preview.quoteedit", session => QuoteEditDialog.CreateForPreview(session) },
                 { "preview.fund", session => new FundPreviewForm(session) },
                 { "preview.activitylog", session => new ActivityLogPreviewForm(session) },
                 { "preview.cancelledbill", session => new CancelledBillPreviewForm(session) },
@@ -86,6 +88,8 @@ namespace Kazuko_FnB.UI.Dialogs
                     string table = new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId);
                     if (string.Equals(table, "TDATHANG", StringComparison.OrdinalIgnoreCase))
                         return new BookingListView(session.DatabasePath);
+                    if (string.Equals(table, "TBAOGIA", StringComparison.OrdinalIgnoreCase))
+                        return new QuoteListView(session);
                     return null;
                 }
             }
