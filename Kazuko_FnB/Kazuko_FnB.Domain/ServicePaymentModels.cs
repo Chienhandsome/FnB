@@ -230,6 +230,8 @@ namespace Kazuko_FnB.Domain
         public List<CustomerLookupItem> Customers { get; set; }
         public List<LookupItem> BankAccounts { get; set; }
         public List<LookupItem> Employees { get; set; }
+        public bool IsEditPaidBill { get; set; }
+        public ExistingPaymentSnapshot ExistingPayment { get; set; }
         public bool IsGroupPayment { get { return Bills != null && Bills.Count > 1; } }
 
         public PaymentDialogContext()
@@ -283,6 +285,8 @@ namespace Kazuko_FnB.Domain
         public string PaidBillNames { get; set; }
         public DateTime PaymentDate { get; set; }
         public decimal ExcessDeposit { get; set; }
+        public decimal AlreadyRefundedDeposit { get; set; }
+        public string RefundDepositWarning { get; set; }
         public string CustomerId { get; set; }
         public string CustomerName { get; set; }
         public string CustomerAddress { get; set; }

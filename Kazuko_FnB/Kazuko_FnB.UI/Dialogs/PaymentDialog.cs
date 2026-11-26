@@ -20,6 +20,7 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly TableService _service;
         private readonly UserSession _session;
         private readonly PaymentDialogContext _ctx;
+        private readonly Func<PaymentRequest, UserSession, PaymentExecutionResult> _customSubmit;
         private readonly List<string> _billIds = new List<string>();
         private readonly ServiceInvoicePrintCoordinator _invoicePrintCoordinator = new ServiceInvoicePrintCoordinator();
 
@@ -93,9 +94,15 @@ namespace Kazuko_FnB.UI.Dialogs
         internal FlatButton TempPrintButtonForTest { get { return _btnTempPrint; } }
         internal Label StatusLabelForTest { get { return _lblStatus; } }
 
-        public PaymentDialog(TableService service, UserSession session, PaymentDialogContext context)
+        public PaymentDialog(
+            TableService service,
+            UserSession session,
+            PaymentDialogContext context,
+            Func<PaymentRequest, UserSession, PaymentExecutionResult> customSubmit = null)
             : base(
-                context != null && context.IsGroupPayment ? "XÁC NHẬN THANH TOÁN CHUNG" : "XÁC NHẬN THANH TOÁN",
+                context != null && context.IsEditPaidBill
+                    ? "CẬP NHẬT THANH TOÁN HÓA ĐƠN"
+                    : (context != null && context.IsGroupPayment ? "XÁC NHẬN THANH TOÁN CHUNG" : "XÁC NHẬN THANH TOÁN"),
                 BuildSubtitle(context), 580, 620)
         {
             if (service == null) throw new ArgumentNullException("service");
@@ -105,41 +112,50 @@ namespace Kazuko_FnB.UI.Dialogs
             _service = service;
             _session = session;
             _ctx = context;
+            _customSubmit = customSubmit;
             _customerState = context.InitialCustomerState ?? new CustomerPaymentState { PointRate = SystemConfig.QuyDoi1DiemSangTien };
             foreach (PaymentBillSlice b in context.Bills)
                 _billIds.Add(b.BillId);
 
-            _showCardRow = SystemConfig.CoThanhToanThe;
-            _showTransferRow = SystemConfig.CoThanhToanChuyenKhoan;
+            ExistingPaymentSnapshot initPay = context.IsEditPaidBill ? context.ExistingPayment : null;
+            _showCardRow = SystemConfig.CoThanhToanThe || (initPay != null && initPay.Card != 0m);
+            _showTransferRow = SystemConfig.CoThanhToanChuyenKhoan || (initPay != null && initPay.Transfer != 0m);
             // §3.7 & §7: ô Tài khoản hiện khi có ô thẻ HOẶC ô chuyển khoản (khác gốc chỉ hiện theo cờ chuyển khoản).
-            _showBankRow = _showCardRow || _showTransferRow;
-            _showVoucherRow = SystemConfig.CoThanhToanVoucher;
-            _showPrepaidRow = SystemConfig.SuDungTheTraTruoc;
-            _showPointsRow = SystemConfig.SuDungDiemTichLuyDeThanhToan;
+            _showBankRow = _showCardRow || _showTransferRow || (initPay != null && !string.IsNullOrEmpty(initPay.AccountId));
+            _showVoucherRow = SystemConfig.CoThanhToanVoucher || (initPay != null && (initPay.Voucher != 0m || !string.IsNullOrEmpty(initPay.VoucherId)));
+            _showPrepaidRow = SystemConfig.SuDungTheTraTruoc || (initPay != null && (initPay.PrepaidCard != 0m || !string.IsNullOrEmpty(initPay.PrepaidCardId)));
+            _showPointsRow = SystemConfig.SuDungDiemTichLuyDeThanhToan || (initPay != null && initPay.PointsMoney != 0m);
             _showDebtCheck = SystemConfig.ChoPhepKhachNo;
-            _showOrderRow = SystemConfig.BatChucNangKiemSoatOrder;
-            _showEmployeeRow = SystemConfig.BatBuocNhapNhanVienBanHang;
+            _showOrderRow = SystemConfig.BatChucNangKiemSoatOrder || (initPay != null && !string.IsNullOrEmpty(initPay.OrderNumbers));
+            _showEmployeeRow = SystemConfig.BatBuocNhapNhanVienBanHang || (initPay != null && !string.IsNullOrEmpty(initPay.EmployeeId));
 
             float s = Dpi;
             int btnH = Math.Max((int)(44 * s), 44);
             _btnCancel = AddButton("Hủy", null, delegate { DialogResult = DialogResult.Cancel; Close(); });
             _btnTempPrint = AddButton("In thử bill (F8)", null, delegate { DoTempPrint(); });
             _btnNoPrint = AddButton("Đóng bill không in (F9)", null, delegate { SubmitPayment(false); });
-            _btnOk = AddButton("Thanh toán & In", "primary", delegate { SubmitPayment(true); });
+            _btnOk = AddButton(context.IsEditPaidBill ? "Cập nhật & In" : "Thanh toán & In", "primary", delegate { SubmitPayment(true); });
             foreach (FlatButton b in new[] { _btnCancel, _btnTempPrint, _btnNoPrint, _btnOk })
                 b.Height = btnH;
             CompactFooter();
 
             _btnNoPrint.Enabled = !SystemConfig.BatBuocInKhiThanhToan;
-            _btnTempPrint.Visible = _service.CanTempPrint();
+            _btnTempPrint.Visible = !context.IsEditPaidBill && _service.CanTempPrint();
             CancelButton = _btnCancel;
             AcceptButton = _btnOk;
 
             BuildBody(s);
             BindData();
             WireEvents();
-            ApplyCustomerLinkedCardIfAny();
-            ResetDefaultCash();
+            if (initPay == null)
+            {
+                ApplyCustomerLinkedCardIfAny();
+                ResetDefaultCash();
+            }
+            else
+            {
+                RestoreExistingCash(initPay);
+            }
             UpdateChangeAndStatus();
             ApplyDialogTheme();
             Shown += delegate { if (_numCash.Enabled) _numCash.Focus(); };
@@ -270,6 +286,25 @@ namespace Kazuko_FnB.UI.Dialogs
                 _numDeposit.Value = _ctx.TotalDeposit;
                 _numOldDebt.Value = _customerState.OldDebt;
                 _numNetDue.Value = CurrentNetDue();
+
+                // §2.2 Quản lý bán hàng / Điều chỉnh hóa đơn: nạp lại giá trị thanh toán cũ của bill.
+                if (_ctx.IsEditPaidBill && _ctx.ExistingPayment != null)
+                {
+                    ExistingPaymentSnapshot p = _ctx.ExistingPayment;
+                    _voucherId = p.VoucherId ?? "";
+                    _prepaidCardId = p.PrepaidCardId ?? "";
+                    _numVoucher.Value = Math.Max(0m, Math.Min(_numVoucher.Maximum, p.Voucher));
+                    _numPrepaid.Value = Math.Max(0m, Math.Min(_numPrepaid.Maximum, p.PrepaidCard));
+                    _numPoints.Value = Math.Max(0m, Math.Min(_numPoints.Maximum, p.PointsMoney));
+                    _numCard.Value = Math.Max(0m, Math.Min(_numCard.Maximum, p.Card));
+                    _numTransfer.Value = Math.Max(0m, Math.Min(_numTransfer.Maximum, p.Transfer));
+                    if (!string.IsNullOrEmpty(p.AccountId))
+                        _cboBank.SelectId(p.AccountId);
+                    if (_showOrderRow)
+                        _txtOrderNumbers.Text = p.OrderNumbers ?? "";
+                    if (_showEmployeeRow && !string.IsNullOrEmpty(p.EmployeeId))
+                        _cboEmployee.SelectId(p.EmployeeId);
+                }
             }
             finally { _updating = false; }
         }

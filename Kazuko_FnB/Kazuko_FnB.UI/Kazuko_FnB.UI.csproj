@@ -262,6 +262,30 @@
     <Compile Include="ServiceOrderView.Print.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="SalesManageView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SalesManageView.Layout.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SalesManageView.Render.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SalesManageView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SalesManageView.EditLines.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SalesManageView.Commit.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ReturnItemsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\SalesManagePreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\ActivityLogPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -396,6 +420,10 @@
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.Invoice.cs" />
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.Kitchen.cs" />
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.SalesManage.cs" />
+    <Compile Include="Diagnostics\SelfTest.SalesManage.Repo.cs" />
+    <Compile Include="Diagnostics\SelfTest.SalesManage.Repo2.cs" />
+    <Compile Include="Diagnostics\SelfTest.SalesManage.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />

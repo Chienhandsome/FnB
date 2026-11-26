@@ -98,6 +98,8 @@
     <Compile Include="ServicePaymentRepository.Write.cs" />
     <Compile Include="ServicePrintRepository.cs" />
     <Compile Include="ServiceTransferRepository.cs" />
+    <Compile Include="SalesManageRepository.cs" />
+    <Compile Include="SalesManageRepository.Write.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

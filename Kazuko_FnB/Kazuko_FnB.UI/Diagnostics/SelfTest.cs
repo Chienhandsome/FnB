@@ -53,7 +53,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             }
             catch (Exception ex)
             {
-                Check("Ngoại lệ không mong đợi", false, ex.GetType().Name + ": " + ex.Message);
+                Check("Ngoại lệ không mong đợi", false, ex.ToString());
             }
             Lines.Add("");
             Lines.Add("TỔNG: " + _pass + " đạt, " + _fail + " lỗi");
@@ -569,6 +569,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             PrintP4BarcodeTests(db);
             CustomerTests(db);
             ServiceOrderTests(db);
+            SalesManageTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

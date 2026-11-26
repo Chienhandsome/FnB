@@ -104,6 +104,31 @@ namespace Kazuko_FnB.UI.Dialogs
             finally { _updating = false; }
         }
 
+        private void RestoreExistingCash(ExistingPaymentSnapshot initPay)
+        {
+            _updating = true;
+            try
+            {
+                decimal due = CurrentNetDue();
+                if (due <= 0m)
+                {
+                    _numCash.Value = 0m;
+                    _numCash.Enabled = false;
+                    return;
+                }
+                _numCash.Enabled = true;
+                if (initPay != null && initPay.CongNo > 0m)
+                {
+                    _numCash.Value = Math.Max(0m, Math.Min(_numCash.Maximum, initPay.KhachDua));
+                }
+                else
+                {
+                    ResetDefaultCashCore();
+                }
+            }
+            finally { _updating = false; }
+        }
+
         private void ResetDefaultCashCore()
         {
             decimal due = CurrentNetDue();
@@ -259,7 +284,9 @@ namespace Kazuko_FnB.UI.Dialogs
             UserSession overrideUser = null;
             for (int step = 0; step < 5; step++)
             {
-                PaymentExecutionResult res = _service.ExecutePayment(req, overrideUser);
+                PaymentExecutionResult res = _customSubmit != null
+                    ? _customSubmit(req, overrideUser)
+                    : _service.ExecutePayment(req, overrideUser);
                 if (res.Ok)
                 {
                     ExecutionResult = res;

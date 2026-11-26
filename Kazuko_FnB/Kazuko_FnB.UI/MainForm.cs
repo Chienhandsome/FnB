@@ -230,6 +230,9 @@ namespace Kazuko_FnB.UI
             Control view;
             if (_views.TryGetValue(key, out view))
             {
+                var guard = view as IConfirmCloseView;
+                if (guard != null && !guard.ConfirmClose())
+                    return;
                 _views.Remove(key);
                 _content.Controls.Remove(view);
                 view.Dispose();

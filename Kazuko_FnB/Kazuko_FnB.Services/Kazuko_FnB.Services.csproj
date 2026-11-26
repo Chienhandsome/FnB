@@ -97,6 +97,11 @@
     <Compile Include="TableService.Cancel.cs" />
     <Compile Include="KitchenPrintRules.cs" />
     <Compile Include="TableService.Print.cs" />
+    <Compile Include="OrderModePolicy.cs" />
+    <Compile Include="ReturnItemRules.cs" />
+    <Compile Include="BillAdjustService.cs" />
+    <Compile Include="BillAdjustService.Update.cs" />
+    <Compile Include="BillAdjustService.Cancel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

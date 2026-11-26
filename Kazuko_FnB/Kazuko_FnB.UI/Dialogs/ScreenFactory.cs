@@ -38,6 +38,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.dailyactivity", session => new DailyActivityPreviewForm(session) },
                 { "preview.businessresult", session => new BusinessResultPreviewForm(session) },
                 { "preview.service", session => new ServicePreviewForm(session) },
+                { "preview.salesmanage", session => new SalesManagePreviewForm(session, BillManageMode.Manage) },
+                { "preview.billadjust", session => new SalesManagePreviewForm(session, BillManageMode.Adjust) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -83,6 +85,11 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Sử dụng dịch vụ" (OPERATION = 4, không có STABLEDESCID).
             if (string.Equals(node.Id, ServiceOrderView.MenuId, StringComparison.Ordinal))
                 return new ServiceOrderView(session);
+            // Màn "Quản lý bán hàng" và "Điều chỉnh hóa đơn" (cùng form, khác chế độ).
+            if (string.Equals(node.Id, SalesManageView.ManageMenuId, StringComparison.Ordinal))
+                return new SalesManageView(session, BillManageMode.Manage);
+            if (string.Equals(node.Id, SalesManageView.AdjustMenuId, StringComparison.Ordinal))
+                return new SalesManageView(session, BillManageMode.Adjust);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

@@ -18,6 +18,8 @@ namespace Kazuko_FnB.UI.Dialogs
     {
         private readonly TableService _service;
         private readonly PaymentExecutionResult _payment;
+        private readonly Panel _warningPanel = new Panel { Dock = DockStyle.Top, Visible = false };
+        private readonly Label _lblWarning = new Label { Dock = DockStyle.Fill, AutoSize = false };
         private readonly TextBox _txtNumber = new TextBox();
         private readonly DateBox _dtDate = new DateBox();
         private readonly TextBox _txtCustomer = new TextBox();
@@ -44,6 +46,8 @@ namespace Kazuko_FnB.UI.Dialogs
         internal LookupCombo BankComboForTest { get { return _cboBank; } }
         internal FlatButton SaveButtonForTest { get { return _btnSave; } }
         internal FlatButton CloseButtonForTest { get { return _btnClose; } }
+        internal bool RefundWarningVisibleForTest { get { return _warningPanel.Visible; } }
+        internal string RefundWarningTextForTest { get { return _lblWarning.Text ?? ""; } }
 
         public RefundDepositDialog(TableService service, PaymentExecutionResult payment, List<LookupItem> bankAccounts)
             : base("PHIẾU CHI — TRẢ LẠI TIỀN ĐẶT TRƯỚC",
@@ -112,7 +116,37 @@ namespace Kazuko_FnB.UI.Dialogs
             AddRow(grid, 7, "Công nợ:", _chkNoDebtChange);
             AddRow(grid, 8, "Diễn giải:", _txtNote);
 
+            bool hasWarning = !string.IsNullOrWhiteSpace(payment.RefundDepositWarning);
+            if (hasWarning)
+            {
+                _warningPanel.Visible = true;
+                _warningPanel.Height = (int)(74 * s);
+                _warningPanel.Padding = new Padding((int)(10 * s), (int)(6 * s), (int)(10 * s), (int)(6 * s));
+                _lblWarning.Text = payment.RefundDepositWarning;
+                _lblWarning.TextAlign = ContentAlignment.MiddleLeft;
+                _lblWarning.Font = new Font(ThemeManager.BodyFontName, ThemeManager.SmallFontSize, FontStyle.Bold);
+                _warningPanel.Controls.Add(_lblWarning);
+            }
+
             Body.Controls.Add(grid);
+            if (hasWarning)
+            {
+                Body.Controls.Add(_warningPanel);
+                FitBody(520, 440);
+            }
+            ApplyDialogTheme();
+        }
+
+        protected override void ApplyDialogTheme()
+        {
+            base.ApplyDialogTheme();
+            ThemeTokens t = ThemeManager.Current;
+            if (_warningPanel != null)
+            {
+                _warningPanel.BackColor = Draw.Mix(t.Surface, t.Danger, 0.12f);
+                _lblWarning.BackColor = Color.Transparent;
+                _lblWarning.ForeColor = t.Danger;
+            }
         }
 
         private void Save()
