@@ -42,7 +42,7 @@ Số hiện, số tính và số lưu luôn trùng nhau.
 
 - Bằng chứng: bấm thử app gốc 26/11, Khách đặt hàng (bản chép, chưa bấm Lưu): lưới gõ `2.125`, `2.128` đều còn `2.12`, giá 100.000 ra 212.000; ô Số lượng gõ `1.128` thành `1.13`. Ảnh: `_tmp/_origin-shots/nhap-so/`.
 - Chỉ thử cột và ô Số lượng. Ô khác, gồm lưới định lượng (4 số lẻ), áp theo cùng luật, **chưa thử trên app gốc**. Điểm giữa (`1.125`) chưa thử: bản mới làm tròn AwayFromZero theo quy ước dự án.
-- **ĐỀ XUẤT:** dán chuỗi thừa chữ số vào ô lưới thì cắt phần thừa, như khi gõ.
+- **CHỐT (duyệt cùng spec):** dán chuỗi thừa chữ số vào ô lưới thì cắt phần thừa, như khi gõ.
 - Lưới Đặt hàng đã push (`bf45f06`) chưa giới hạn số chữ số lẻ; sửa trong spec này.
 
 ## N5. Ô chỉ nhận số nguyên (CHỐT: giữ số cũ)

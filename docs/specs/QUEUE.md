@@ -38,7 +38,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | **Đã code** (`c6c6c42`) | nặng | Chờ bấm thử |
 | 6 | `bao-gia-ban-hang.md` | **Đã code** (`cca8711`) | nặng | Chờ bấm thử; menu đang ẩn như app gốc |
-| – | `nhap-so/index.md` | **NHÁP** 26/11, làm trước #7 (Chiến chọn) | nặng | Nhập số dùng chung; hết câu hỏi, chờ duyệt |
+| – | `nhap-so/index.md` | **ĐÃ DUYỆT** 26/11, làm trước #7 (Chiến chọn) | nặng | Nhập số dùng chung; 2 patch |
 | 7 | `danh-muc-khach-hang.md` | **ĐÃ DUYỆT** 25/11, hết chặn (chốt 26/11, §9.0.2), chưa code | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
 | 8 | `su-dung-dich-vu.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Thanh toán; Q2–Q20 đã chốt 25/11 (spec §6.3–§6.5) |
 | 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |

@@ -1,6 +1,6 @@
 # Spec: Nhập số dùng chung cho mọi ô số
 
-- Trạng thái: **NHÁP**
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 26/11/2026 trong phiên; kể cả đề xuất dán ở N4). Làm 2 patch theo [`nghiem-thu.md`](nghiem-thu.md); chưa code.
 - Ngày: 2026-11-26. Base: `origin/main` @ `5bb66f2`.
 - Nguồn quyết định: Chiến chốt 26/11/2026 trong phiên (cũng ghi ở [`../khach-dat-hang.md`](../khach-dat-hang.md), đợt 2, điểm 5).
 - Loại: **nặng** (số lượng, giá, tiền). Khác app gốc (Chiến chốt).
