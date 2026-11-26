@@ -28,6 +28,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Khách đặt hàng, số lượng 2 đơn vị tính: xem issue #23 (thử cả ở Theo dõi đặt phòng)
 - [ ] Khách đặt hàng, chặn SL 0, gộp dòng, nhập số trên lưới: xem issue #24 (gõ bàn phím thật, thử cả Theo dõi đặt phòng)
 - [ ] Nhập số patch 1 (ô ngoài lưới): xem issue #25 (bấm chuột/chạm vào ô có số lớn, thử từng màn)
+- [ ] Nhập số patch 2 (4 lưới): xem issue #26 (gõ bàn phím thật, Ctrl+V, dấu cách ở Ghi chú Báo giá, sửa định lượng rồi Lưu)
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
@@ -39,7 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | **Đã code** (`c6c6c42`) | nặng | Chờ bấm thử |
 | 6 | `bao-gia-ban-hang.md` | **Đã code** (`cca8711`) | nặng | Chờ bấm thử; menu đang ẩn như app gốc |
-| – | `nhap-so/index.md` | **ĐÃ DUYỆT** 26/11, làm trước #7 (Chiến chọn) | nặng | Nhập số dùng chung; patch 1 `969285d`, còn patch 2 |
+| – | `nhap-so/index.md` | **ĐÃ DUYỆT** 26/11, làm trước #7 (Chiến chọn) | nặng | Nhập số dùng chung; patch 1 `969285d`, patch 2 `054d7c7`; chờ bấm thử |
 | 7 | `danh-muc-khach-hang.md` | **ĐÃ DUYỆT** 25/11, hết chặn (chốt 26/11, §9.0.2), chưa code | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
 | 8 | `su-dung-dich-vu.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Thanh toán; Q2–Q20 đã chốt 25/11 (spec §6.3–§6.5) |
 | 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
