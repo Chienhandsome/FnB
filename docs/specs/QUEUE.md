@@ -25,6 +25,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Thống kê doanh thu — xem issue #12; số đã khớp app gốc (spec §6.1); chưa kiểm 125% DPI
 - [ ] Chi tiết hoạt động ngày — xem issue #13 (thử cuộn bằng chuột/chạm, chuyển tab rồi quay lại, đối chiếu số khi có phiếu nhập; chưa kiểm 125% DPI)
 - [ ] Tổng hợp kết quả kinh doanh — xem issue #15 (chưa đối chiếu số với app gốc; chưa kiểm 125% DPI)
+- [ ] Khách đặt hàng, số lượng 2 đơn vị tính: xem issue #23 (thử cả ở Theo dõi đặt phòng)
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
@@ -45,7 +46,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 12 | `danh-muc-nha-cung-cap/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Phụ thuộc #7 (dùng chung khung cây nhóm) |
 
 ## Ghi chú
-- Việc chờ làm (Chiến chốt 26/11): sửa Khách đặt hàng theo `bao-gia-ban-hang.md` §5.0.2; sau này thêm cấu hình toàn hệ thống cho phép âm kho.
+- Đã làm 26/11: Khách đặt hàng theo `bao-gia-ban-hang.md` §5.0.2, code `cc928e9` (issue #23). Việc chờ làm (Chiến chốt 26/11): sau này thêm cấu hình toàn hệ thống cho phép âm kho.
 - 25/11 (vòng lặp): #8 và #9 tạm bỏ qua vì phụ thuộc #7 đang chờ (#7 tạo lớp truy vấn khách cho màn hóa đơn; #9 dùng bộ máy của #8). Bỏ qua "Danh mục bảng giá" vì là bảng giá tiền giờ, ngoài phạm vi.
 - 26/11: `danh-muc-loai-phong/index.md` tạm bỏ (menu chỉ hiện ở bản HOTEL); "Thông báo sửa chữa" bỏ cùng lý do.
 - Review cũ của Muse (issue #1–#5) đã đóng. Quyết định chốt áp cho mọi spec: xóa cứng cả app, LamTron 1000, tiền decimal, F&B thuần COFFEE + POS, bán lẻ tự phục vụ.
