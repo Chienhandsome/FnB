@@ -22,11 +22,12 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 Sửa 7 ca selftest (`9e7c6f1`) | 1, +1 −0 | 2, +163 −14 | 0 / 1 / 0 / 0 | 0 | 857 (7) → 864 (0) | không có lỗi sau vòng 1 | không áp dụng (chủ yếu sửa test) |
 | 26/11 Spec in, xuất Excel | không đổi code | – | – | – | – | thử ngoài app: thiếu `No1Lib*.dll` | – |
 | 26/11 In FastReport P0 (`30ced3e`, `8a9c0ee`, #27) | 14, +1570 −7 | 4, +1161 −4 | 0 / 0 / 0 / 1 | 1 (biên dịch, trong test) | 864 → 898 (0) | build 1, selftest 3, thử ngoài app + app gốc (lỗi tiền) | chưa bấm thử. Claude thấy khi làm P1a: lớp in chưa ẩn cột theo `VisibleByConfigID` (sửa ở `100513f`; chưa kiểm 3 mẫu mặt hàng bán có dùng thuộc tính này không) |
+| 26/11 In P3a, xuất Excel của lưới (`f9874e2`, #31) | 12, +356 −6 | 5, +967 −4 | 0 / 0 / 0 / 0 | 0 | 949 → 965 (0) | không có lỗi bắt được; phạm vi, build, selftest đạt ngay lần đầu | chưa bấm thử |
 | 26/11 In P2, Báo giá và Khách đặt hàng (`29fdaa8`, #30) | 23, +1515 −77 | 7, +1244 −3 | 0 / 0 / 0 / 0 | 2 (cột `LOAILYDO` trong dữ liệu test; thứ tự tên phòng) + đổi xuống dòng 1 file để gỡ chặn nhầm | 923 → 949 (0) | selftest 2 (cùng một ca vỡ giữa chừng, rồi lỗi thứ tự phòng); đọc diff 0 | chưa bấm thử |
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 8 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 9 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -42,6 +43,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | In P1a | 848 s; 270 / 84 · 499 s; 83 / 41 | 1347 s (22 phút) | 477 (6.309) |
 | In P1b | 1283 s; 464 / 113 | 1283 s (21 phút) | 577 (6.645) |
 | In P2 | 1143 s; 841 / 104 | 1143 s (19 phút) | 945 (8.970) |
+| In P3a | 769 s; 330 / 66 | 769 s (13 phút) | 396 (4.666) |
 
 In P1a còn 3 lượt thử quyền sau khi agy lên 1.5.18 (3, 6, 4 s; 37 nghìn token), không tính vào tổng.
 
@@ -59,3 +61,4 @@ Các tổng ghi ở bản trước (khoảng 59, 67, 38 phút) đã cộng chồ
 | In P1a | tuần 92% → 95%; 5 giờ: 79% lúc đầu, làm mới giữa chừng, 7% sau push | có: dựng thử 3 mẫu của P1b, đối chiếu app gốc cả 3 màn, câu hỏi về file này. Tuần lúc giao agy: 94%. Phần sửa file này (sau lúc đo) chưa tính | Trang app gốc ít cột hơn mẫu thì phải tìm luật ẩn (`VisibleByConfigID`) trước khi viết prompt |
 | In P1b | tuần 4% → 7% (vừa làm mới đầu việc); 5 giờ 24% → 47% | có: câu hỏi về FVM, gỡ chặn phạm vi | Thử dựng mẫu và cách gọi script trước khi viết prompt thì agy làm đúng ngay vòng 1. Chi tiết ca test có xuống dòng làm script đọc sai tên ca |
 | In P2 | tuần 7% → 11% (7% đo trước khi bắt đầu P2); 5 giờ 78% lúc push | có: thử dựng mẫu, hỏi/xin mở app gốc (không điều khiển được), một lần nén ngữ cảnh | Mẫu của phiếu gắn theo `STABLEDESCID` chứ không theo `SFORMID`: dựng thử chỉ ra trước khi viết prompt. Test tự tạo dữ liệu vỡ vì sai tên cột (`DLYDOTHUCHI.LOAILYDO`), làm selftest dừng giữa chừng và báo "mất ca" |
+| In P3a | 5 giờ 78% → 83%; tuần 11% → 11% (đo trước khi viết prompt và sau khi push) | có: soạn trước prompt P4 và dựng thử 9 mẫu lưới, mã vạch | Việc nhỏ, ranh giới rõ (một hàm dùng chung và các nút nối vào) thì agy làm đúng vòng 1, không có sửa của Claude |
