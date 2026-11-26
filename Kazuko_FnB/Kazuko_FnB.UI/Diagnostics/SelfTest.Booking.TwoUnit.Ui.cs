@@ -244,18 +244,23 @@ namespace Kazuko_FnB.UI.Diagnostics
                         Check("Đặt hàng 2 ĐVT UI [NhapMotMatHangNhieuLan=30]: lẻ vẫn gộp (2+3=5), chẵn thêm dòng mới (1 và 2)", twoUnitMultiOk,
                             "rows=" + dlgMulti.DetailGridForTest.Rows.Count + ", tc=" + dlgMulti.TongCongBoxForTest.Value);
 
-                        // Nhánh 1 ĐVT giữ nguyên: thêm 2 lần tạo 2 dòng riêng biệt khi NhapMotMatHangNhieuLan = 30.
+                        // Tên ca đã lỗi thời, giữ để khớp mốc; luật mới theo spec đợt 2 (Chiến chốt 26/11):
+                        // nhánh 1 ĐVT luôn gộp dù NhapMotMatHangNhieuLanTrongPhieu = 30.
                         SelectBookingProductRow(dlgMulti.ProductGridForTest, prod1Id);
                         dlgMulti.QtyBoxForTest.Value = 0m;
                         dlgMulti.AddProductButtonForTest.PerformClick();
-                        bool singleZeroWarn = dlgMulti.LastWarningForTest == BookingText.EnterQuantity && dlgMulti.DetailGridForTest.Rows.Count == 3;
+                        bool singleZeroWarn = dlgMulti.LastWarningForTest == BookingText.EnterQuantity
+                            && dlgMulti.DetailGridForTest.Rows.Count == 3
+                            && dlgMulti.TongCongBoxForTest.Value == 1095000m;
                         dlgMulti.QtyBoxForTest.Value = 2m;
                         dlgMulti.AddProductButtonForTest.PerformClick();
                         dlgMulti.AddProductButtonForTest.PerformClick();
                         Application.DoEvents();
-                        bool singleMultiOk = singleZeroWarn && dlgMulti.DetailGridForTest.Rows.Count == 5
-                            && Convert.ToDecimal(dlgMulti.DetailGridForTest.Rows[3].Cells["d_qty"].Value) == 2m
-                            && Convert.ToDecimal(dlgMulti.DetailGridForTest.Rows[4].Cells["d_qty"].Value) == 2m
+                        bool singleMultiOk = singleZeroWarn && dlgMulti.DetailGridForTest.Rows.Count == 4
+                            && dlgMulti.LastWarningForTest == null
+                            && Convert.ToDecimal(dlgMulti.DetailGridForTest.Rows[3].Cells["d_qty"].Value) == 4m
+                            && Convert.ToDecimal(dlgMulti.DetailGridForTest.Rows[3].Cells["d_price"].Value) == 20000m
+                            && Convert.ToDecimal(dlgMulti.DetailGridForTest.Rows[3].Cells["d_amount"].Value) == 80000m
                             && dlgMulti.TongCongBoxForTest.Value == 1175000m;
                         Check("Đặt hàng 1 ĐVT UI [nhánh 1 ĐVT giữ nguyên]: SL=0 cảnh báo; thêm 2 lần khi không cho gộp tạo 2 dòng riêng", singleMultiOk,
                             "rows=" + dlgMulti.DetailGridForTest.Rows.Count + ", tc=" + dlgMulti.TongCongBoxForTest.Value);

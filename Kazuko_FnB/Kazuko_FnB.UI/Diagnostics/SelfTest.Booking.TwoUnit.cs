@@ -11,6 +11,7 @@ namespace Kazuko_FnB.UI.Diagnostics
         {
             BookingTwoUnitRuleTests();
             BookingTwoUnitUiTests(db);
+            BookingGridQtyTests(db);
         }
 
         private static BookingSaleItem MakeTwoUnitBookingItem()
@@ -171,17 +172,22 @@ namespace Kazuko_FnB.UI.Diagnostics
                 && l11[0].Price == 14000m && l11[0].Amount == 28000m
                 && l11[1].Price == 340000m && l11[1].Amount == 340000m);
 
-            // Ca 12: nhánh 1 đơn vị tính giữ nguyên hành vi cũ (SL <= 0 báo cảnh báo; gộp theo mergeAllowed).
+            // Tên ca đã lỗi thời, giữ để khớp mốc; luật mới theo spec đợt 2 (Chiến chốt 26/11):
+            // nhánh 1 ĐVT luôn gộp theo mặt hàng + ĐVT (không phụ thuộc NhapMotMatHangNhieuLanTrongPhieu).
             var l12 = new List<BookingLine>();
-            BookingAddItemOutcome s0 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 0m, true);
-            BookingAddItemOutcome s1 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 2m, true);
-            BookingAddItemOutcome s2 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 3m, true);
-            BookingAddItemOutcome s3 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 1m, false);
+            BookingAddItemOutcome s0 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 0m);
+            BookingAddItemOutcome s1 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 2m);
+            BookingAddItemOutcome s2 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 3m);
+            BookingAddItemOutcome s3 = BookingItemRules.AddSingleUnitItem(l12, singleItem, 0, 1m);
             Check("Đặt hàng 1 ĐVT [thuần 12]: giữ nguyên hành vi cũ (SL=0 cảnh báo; gộp khi mergeAllowed=true, thêm dòng mới khi false)",
                 !s0.Changed && s0.WarningMessage == BookingText.EnterQuantity
-                && s1.Changed && s2.Changed && s3.Changed && l12.Count == 2
-                && l12[0].Quantity == 5m && l12[0].Amount == 100000m
-                && l12[1].Quantity == 1m && l12[1].Amount == 20000m);
+                && s1.Changed && s1.WarningMessage == null
+                && s2.Changed && s2.WarningMessage == null
+                && s3.Changed && s3.WarningMessage == null
+                && l12.Count == 1
+                && l12[0].ProductId == singleItem.Id && l12[0].UnitId == singleItem.UnitId
+                && l12[0].Quantity == 6m && l12[0].Price == 20000m && l12[0].DiscountPct == 0m && l12[0].Amount == 120000m,
+                "cnt=" + l12.Count + ", qty=" + (l12.Count > 0 ? l12[0].Quantity.ToString() : "-"));
         }
     }
 }

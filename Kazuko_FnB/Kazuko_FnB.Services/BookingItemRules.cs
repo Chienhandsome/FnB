@@ -19,23 +19,32 @@ namespace Kazuko_FnB.Services
         public decimal EvenQuantity { get; set; }
     }
 
+    /// <summary>Kết quả kiểm tra số lượng vừa sửa trực tiếp trên ô Số lượng lưới chi tiết phiếu đặt hàng.</summary>
+    public sealed class BookingGridQtyEditResult
+    {
+        public bool Accepted { get; set; }
+        public bool Changed { get; set; }
+        public decimal Quantity { get; set; }
+        public string WarningMessage { get; set; }
+    }
+
     /// <summary>
-    /// Luật thuần quyết định số lượng, tạo/gộp dòng khi thêm mặt hàng vào phiếu Khách đặt hàng
-    /// (docs/specs/khach-dat-hang.md mục "Thay đổi chốt sau khi đã code", theo bao-gia-ban-hang.md §5.0.2).
+    /// Luật thuần quyết định số lượng, tạo/gộp dòng khi thêm mặt hàng và kiểm tra sửa ô Số lượng
+    /// trên lưới chi tiết phiếu Khách đặt hàng (docs/specs/khach-dat-hang.md mục "Thay đổi chốt sau khi đã code" đợt 1 &amp; 2).
     /// </summary>
     public static class BookingItemRules
     {
         /// <summary>
         /// Thêm mặt hàng nhánh 1 đơn vị tính (hoặc khi SuDung2DonViTinh != 30).
-        /// Giữ nguyên hành vi cũ: SL &lt;= 0 cảnh báo "Mời bạn nhập số lượng";
-        /// gộp dòng theo mergeAllowed (NhapMotMatHangNhieuLanTrongPhieu != 30).
+        /// Luật đợt 2: SL &lt;= 0 cảnh báo "Mời bạn nhập số lượng";
+        /// LUÔN gộp theo mặt hàng + ĐVT (không phụ thuộc NhapMotMatHangNhieuLanTrongPhieu),
+        /// cộng số lượng, giữ nguyên đơn giá và % giảm của dòng cũ, tính lại thành tiền.
         /// </summary>
         public static BookingAddItemOutcome AddSingleUnitItem(
             List<BookingLine> lines,
             BookingSaleItem item,
             int customerPriceType,
-            decimal outerQty,
-            bool mergeAllowed)
+            decimal outerQty)
         {
             var outcome = new BookingAddItemOutcome();
             if (lines == null || item == null)
@@ -45,11 +54,73 @@ namespace Kazuko_FnB.Services
                 outcome.WarningMessage = BookingText.EnterQuantity;
                 return outcome;
             }
-            BookingLine added = CreateLine(item, item.UnitId, item.UnitName, outerQty, item.PriceForCustomer(customerPriceType));
-            if (!BookingRules.TryMergeLine(lines, added, mergeAllowed))
-                lines.Add(added);
+            BookingLine existing = FindLine(lines, item.Id, item.UnitId);
+            if (existing != null)
+            {
+                existing.Quantity += outerQty;
+                existing.Amount = BookingRules.CalcLineAmount(existing.Quantity, existing.Price, existing.DiscountPct);
+            }
+            else
+            {
+                lines.Add(CreateLine(item, item.UnitId, item.UnitName, outerQty, item.PriceForCustomer(customerPriceType)));
+            }
             outcome.Changed = true;
             return outcome;
+        }
+
+        /// <summary>
+        /// Phân tích giá trị số từ ô lưới theo quy tắc dùng chung NumberInput.TryParse:
+        /// dấu '.' hay ',' đều là dấu thập phân (tối đa một dấu); từ hai dấu trở lên, chữ, trống, null, DBNull trả về false.
+        /// </summary>
+        public static bool TryParseCellDecimal(object rawValue, out decimal value)
+        {
+            return NumberInput.TryParse(rawValue, out value);
+        }
+
+        /// <summary>
+        /// Kiểm tra giá trị mới của ô Số lượng trên lưới chi tiết (spec đợt 2):
+        /// - Không đọc được (chữ, trống, null) hoặc &lt;= 0 (khác giá trị cũ): trả về số lượng cũ, báo EnterQuantity.
+        /// - Giá trị không đổi (kể cả dòng cũ đang có SL 0): chấp nhận, không báo, không đánh dấu đã sửa.
+        /// - Giá trị dương mới: chấp nhận và đánh dấu đã đổi.
+        /// </summary>
+        public static BookingGridQtyEditResult EvaluateEditedQuantity(object rawValue, decimal oldQty)
+        {
+            decimal parsed;
+            if (!TryParseCellDecimal(rawValue, out parsed))
+            {
+                return new BookingGridQtyEditResult
+                {
+                    Accepted = false,
+                    Changed = false,
+                    Quantity = oldQty,
+                    WarningMessage = BookingText.EnterQuantity
+                };
+            }
+            if (parsed == oldQty)
+            {
+                return new BookingGridQtyEditResult
+                {
+                    Accepted = true,
+                    Changed = false,
+                    Quantity = oldQty
+                };
+            }
+            if (parsed <= 0m)
+            {
+                return new BookingGridQtyEditResult
+                {
+                    Accepted = false,
+                    Changed = false,
+                    Quantity = oldQty,
+                    WarningMessage = BookingText.EnterQuantity
+                };
+            }
+            return new BookingGridQtyEditResult
+            {
+                Accepted = true,
+                Changed = true,
+                Quantity = parsed
+            };
         }
 
         /// <summary>

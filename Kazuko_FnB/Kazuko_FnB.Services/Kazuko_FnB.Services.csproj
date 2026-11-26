@@ -69,6 +69,7 @@
     <Compile Include="BusinessResultCalculator.cs" />
     <Compile Include="LoginService.cs" />
     <Compile Include="MoneyRounding.cs" />
+    <Compile Include="NumberInput.cs" />
     <Compile Include="PasswordPolicy.cs" />
     <Compile Include="PhieuThuRules.cs" />
     <Compile Include="ProductRules.cs" />

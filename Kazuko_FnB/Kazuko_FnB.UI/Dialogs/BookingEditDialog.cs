@@ -62,6 +62,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private bool _discountByMoney;
         private bool _recalc;
+        private bool _cellParseFailed;
         private bool _useTwoUnits;
         private bool _mergeAllowed;
         private bool _sortByCode;
@@ -128,6 +129,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         internal bool SuppressPopup { get; set; }
         internal string LastWarningForTest { get; private set; }
+        internal int DetailDataErrorCountForTest { get; private set; }
         internal Func<BookingSaleItem, decimal, BookingQuantityPromptResult> QuantityPromptOverrideForTest { get; set; }
         internal NumericUpDown QtyBoxForTest { get { return _numQty; } }
         internal FlatButton AddProductButtonForTest { get { return _btnAddProduct; } }
@@ -519,7 +521,9 @@ namespace Kazuko_FnB.UI.Dialogs
             AddMoneyColumn(_detailGrid, "d_disc", "Giảm giá %", 80, "#,##0.##");
             AddMoneyColumn(_detailGrid, "d_amount", "Thành tiền", 100);
             _detailGrid.Columns["d_amount"].ReadOnly = true;
+            _detailGrid.CellParsing += DetailCellParsing;
             _detailGrid.CellEndEdit += DetailCellEndEdit;
+            _detailGrid.DataError += DetailDataError;
             split.Panel2.Controls.Add(_detailGrid);
         }
 
@@ -555,6 +559,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 Name = name,
                 HeaderText = header,
                 Width = (int)(width96 * s),
+                CellTemplate = new NumericEditGridCell(),
                 ValueType = typeof(decimal),
                 DefaultCellStyle = { Format = format, FormatProvider = new CultureInfo("vi-VN"), Alignment = DataGridViewContentAlignment.MiddleRight }
             };
@@ -832,7 +837,7 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             else
             {
-                outcome = BookingItemRules.AddSingleUnitItem(_lines, item, _customerPriceType, outerQty, _mergeAllowed);
+                outcome = BookingItemRules.AddSingleUnitItem(_lines, item, _customerPriceType, outerQty);
             }
             if (outcome.Changed)
             {
@@ -866,43 +871,76 @@ namespace Kazuko_FnB.UI.Dialogs
                 Msg.Warning(this, message);
         }
 
-        private void DetailCellEndEdit(object sender, DataGridViewCellEventArgs e)
+        private void DetailCellParsing(object sender, DataGridViewCellParsingEventArgs e)
         {
-            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count)
-                return;
+            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count || e.ColumnIndex < 0) return;
+            string col = _detailGrid.Columns[e.ColumnIndex].Name;
+            if (col != "d_qty" && col != "d_price" && col != "d_disc") return;
+            decimal parsed;
+            if (NumberInput.TryParse(e.Value, out parsed))
+            {
+                _cellParseFailed = false;
+                e.Value = parsed;
+            }
+            else
+            {
+                _cellParseFailed = true;
+                BookingLine line = _lines[e.RowIndex];
+                e.Value = col == "d_qty" ? line.Quantity : (col == "d_price" ? line.Price : line.DiscountPct);
+            }
+            e.ParsingApplied = true;
+        }
+
+        private void DetailDataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            DetailDataErrorCountForTest++;
+            e.ThrowException = false;
+            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count) return;
             BookingLine line = _lines[e.RowIndex];
             DataGridViewRow r = _detailGrid.Rows[e.RowIndex];
-            decimal qty = ReadCellDecimal(r.Cells["d_qty"].Value, line.Quantity);
-            decimal price = ReadCellDecimal(r.Cells["d_price"].Value, line.Price);
-            decimal disc = ReadCellDecimal(r.Cells["d_disc"].Value, line.DiscountPct);
-            if (qty < 0m)
-                qty = 0m;
-            if (price < 0m)
-                price = 0m;
-            if (disc < 0m)
-                disc = 0m;
-            if (disc > 100m)
-                disc = 100m;
-            line.Quantity = qty;
-            line.Price = price;
-            line.DiscountPct = disc;
-            line.Amount = BookingRules.CalcLineAmount(qty, price, disc);
-            r.Cells["d_qty"].Value = qty;
-            r.Cells["d_price"].Value = price;
-            r.Cells["d_disc"].Value = disc;
+            r.Cells["d_qty"].Value = line.Quantity;
+            r.Cells["d_price"].Value = line.Price;
+            r.Cells["d_disc"].Value = line.DiscountPct;
+        }
+
+        private void DetailCellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            LastWarningForTest = null;
+            bool parseFailed = _cellParseFailed;
+            _cellParseFailed = false;
+            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count || e.ColumnIndex < 0) return;
+            BookingLine line = _lines[e.RowIndex];
+            DataGridViewRow r = _detailGrid.Rows[e.RowIndex];
+            string col = _detailGrid.Columns[e.ColumnIndex].Name;
+            if (col == "d_qty")
+            {
+                object raw = parseFailed ? null : r.Cells["d_qty"].Value;
+                BookingGridQtyEditResult res = BookingItemRules.EvaluateEditedQuantity(raw, line.Quantity);
+                r.Cells["d_qty"].Value = res.Quantity;
+                if (!res.Accepted) { ShowWarning(res.WarningMessage); return; }
+                if (!res.Changed) return;
+                line.Quantity = res.Quantity;
+            }
+            else if (col == "d_price" || col == "d_disc")
+            {
+                bool isPrice = col == "d_price";
+                decimal oldVal = isPrice ? line.Price : line.DiscountPct;
+                decimal v;
+                if (parseFailed || !NumberInput.TryParse(r.Cells[col].Value, out v))
+                {
+                    r.Cells[col].Value = oldVal;
+                    return;
+                }
+                decimal clamped = isPrice ? Math.Max(0m, v) : Math.Min(100m, Math.Max(0m, v));
+                r.Cells[col].Value = clamped;
+                if (clamped == oldVal) return;
+                if (isPrice) line.Price = clamped; else line.DiscountPct = clamped;
+            }
+            else return;
+            line.Amount = BookingRules.CalcLineAmount(line.Quantity, line.Price, line.DiscountPct);
             r.Cells["d_amount"].Value = line.Amount;
             RecalcTotals();
             OnDirtyChanged();
-        }
-
-        private static decimal ReadCellDecimal(object v, decimal fallback)
-        {
-            if (v == null || v is DBNull)
-                return fallback;
-            decimal d;
-            return decimal.TryParse(Convert.ToString(v), NumberStyles.Any, new CultureInfo("vi-VN"), out d)
-                ? d
-                : fallback;
         }
 
         private void DeleteLine()
