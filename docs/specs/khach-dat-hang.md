@@ -1,6 +1,6 @@
 # Spec (delta): Khách đặt hàng (TDATHANG)
 
-- Trạng thái: **ĐÃ CÓ CODE trên `main`** (`BookingListView`, `BookingEditDialog`; theo `QUEUE.md`: patch 3 đã giao). Đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí** trong spec; file chưa ghi việc duyệt spec.
+- Trạng thái: **ĐÃ DUYỆT** chỉ cho mục "Thay đổi chốt sau khi đã code" ở cuối file (Chiến chốt 26/11/2026 và giao làm trong phiên 26/11). Phần còn lại: đã có code trên `main` (`BookingListView`, `BookingEditDialog`; theo `QUEUE.md`: patch 3 đã giao); đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí**, trước đó file chưa ghi việc duyệt spec.
 - Ngày: 2026-11-21. Base: `main` @ `6a87224` (đã `git fetch origin main`, working tree sạch)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md) (6 phần + §7 nghiệm thu + §8 gợi ý implement). Spec này **chỉ ghi phần khác khuôn**; chỗ nào không nói = **như khuôn**.
 - Menu: **HOẠT ĐỘNG > Khách đặt hàng** (`SMENU` `3d3bb426-91f5-449a-8e84-1c3ca42cdb06`, `SORTORDER = ZZZ010`, `OPERATION = 0`, **không phím tắt**, `SMENU.SFUNCTIONID = NULL`). Nhóm [Khách đặt hàng, Theo dõi đặt phòng] cùng cha `a7424f09…` (HOẠT ĐỘNG); "Theo dõi đặt phòng" (`ZZZ011`, `SFORM` `11f4bf28…`) là chức năng riêng, **ngoài phạm vi** spec này.
