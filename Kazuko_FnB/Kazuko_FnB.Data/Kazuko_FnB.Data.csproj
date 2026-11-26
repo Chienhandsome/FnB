@@ -71,6 +71,7 @@
     <Compile Include="QuoteRepository.cs" />
     <Compile Include="BookingCalendarRepository.cs" />
     <Compile Include="PhieuThuRepository.cs" />
+    <Compile Include="PrintTemplateRepository.cs" />
     <Compile Include="KazukoConnection.cs" />
     <Compile Include="MenuRepository.cs" />
     <Compile Include="ProductGroupRepository.cs" />

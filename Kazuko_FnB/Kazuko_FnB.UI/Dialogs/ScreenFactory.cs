@@ -33,6 +33,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.cancelledbill", session => new CancelledBillPreviewForm(session) },
                 { "preview.itemsales", session => new ItemSalesPreviewForm(session) },
                 { "preview.itemsalesdetail", session => ItemSalesDetailDialog.CreateForPreview(session) },
+                { "preview.printtemplate", session => Printing.PrintTemplateDialog.CreateForPreview(session) },
                 { "preview.revenue", session => new RevenueReportPreviewForm(session) },
                 { "preview.dailyactivity", session => new DailyActivityPreviewForm(session) },
                 { "preview.businessresult", session => new BusinessResultPreviewForm(session) },

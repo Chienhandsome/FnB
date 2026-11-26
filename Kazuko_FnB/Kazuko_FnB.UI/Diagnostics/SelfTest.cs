@@ -560,6 +560,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             BookingTwoUnitTests(db);
             NumberBoxTests(db);
             NumberGridTests(db);
+            PrintP0Tests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
@@ -4029,13 +4030,26 @@ namespace Kazuko_FnB.UI.Diagnostics
                             && view.CurrentSummaryForTest.TotalCost == 140000m
                             && view.CurrentSummaryForTest.NetProfit == 198000m;
 
-                        // Bấm nút In báo cáo bằng PerformClick() → báo chưa hỗ trợ.
+                        // Bấm nút In báo cáo bằng PerformClick() → đi qua luồng in P0 với interface giả (không bật hộp thoại/máy in thật).
+                        var printStub = new PrintOutputRecorder();
+                        view.PrintOutputHandlerForTest = printStub;
+                        view.PrintTemplatePickerForTest = delegate (System.Windows.Forms.IWin32Window owner, IList<PrintTemplateRecord> templates)
+                        {
+                            return templates != null && templates.Count > 0
+                                ? new PrintSelectionResult { Template = templates[templates.Count - 1], Action = PrintActionKind.Preview }
+                                : null;
+                        };
                         view.PrintButtonForTest.PerformClick();
-                        bool printMsgOk = view.LastInfoMessageForTest == ItemSalesConstants.PrintUnsupportedMessage;
+                        bool printFlowOk = printStub.PreviewCount == 1
+                            && printStub.PrintCount == 0
+                            && printStub.ErrorMessages.Count == 0;
+                        view.PrintOutputHandlerForTest = null;
+                        view.PrintTemplatePickerForTest = null;
 
+                        // Tên ca giữ nguyên để so mốc; nội dung kiểm đã đổi theo spec in (kiểm nút In đi qua luồng in với interface giả).
                         Check("Thống kê MH bán UI (§6 sự kiện radio, combo cửa hàng, nút In): đổi radio đổi giá & tổng, đổi cửa hàng tải lại ngay, nút In báo chưa hỗ trợ",
-                            buyPriceModeOk && storeSwitchOk && printMsgOk,
-                            "buy=" + buyPriceModeOk + ", store=" + storeSwitchOk + ", print=" + printMsgOk);
+                            buyPriceModeOk && storeSwitchOk && printFlowOk,
+                            "buy=" + buyPriceModeOk + ", store=" + storeSwitchOk + ", print=" + printFlowOk);
 
                         // 6. Dialog chi tiết (mở từ dòng prodA @ 30,000 của admin không chọn cửa hàng): Show ngoài màn hình, kiểm 22+11 cột, chọn bill đầu, đổi bill bằng CurrentCell, màu + chữ đậm thật sau CellFormatting (kể cả khi đang chọn dòng).
                         view.StoreComboForTest.SelectedIndex = 0;

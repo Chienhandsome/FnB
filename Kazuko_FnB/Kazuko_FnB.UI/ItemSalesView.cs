@@ -93,6 +93,10 @@ namespace Kazuko_FnB.UI
         private ThemeTokens _theme = ThemeManager.Current;
         private List<ItemSalesRow> _allRows = new List<ItemSalesRow>();
         private ItemSalesSummary _summary = new ItemSalesSummary();
+        private readonly Dictionary<string, string> _groupNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        private readonly Printing.ItemSalesPrintCoordinator _printCoordinator = new Printing.ItemSalesPrintCoordinator();
+        private DateTime _loadedFromDate;
+        private DateTime _loadedToDate;
         private string _selectedGroupId;
         private bool _loading = true;
         private bool _splitPlaced;
@@ -100,8 +104,11 @@ namespace Kazuko_FnB.UI
         /// <summary>Tắt hộp thoại báo lỗi/thông báo modal khi chụp màn hình (--render-screen) hoặc selftest.</summary>
         internal bool SuppressErrorPopup { get; set; }
 
-        /// <summary>Ghi nhận thông báo cuối cùng (ví dụ bấm nút In báo cáo) để selftest kiểm khi SuppressErrorPopup = true.</summary>
+        /// <summary>Ghi nhận thông báo cuối cùng để selftest kiểm khi SuppressErrorPopup = true.</summary>
         internal string LastInfoMessageForTest { get; private set; }
+
+        internal Printing.IPrintOutputHandler PrintOutputHandlerForTest { get; set; }
+        internal Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> PrintTemplatePickerForTest { get; set; }
 
         public ItemSalesView(UserSession session)
         {
@@ -201,12 +208,7 @@ namespace Kazuko_FnB.UI
             int printW = Math.Max((int)(108 * s), TextRenderer.MeasureText(_btnPrint.Text, _bodyFont).Width + (int)(26 * s));
             _btnPrint.Size = new Size(printW, (int)(32 * s));
             _btnPrint.Margin = new Padding(0, (int)(3 * s), 0, (int)(3 * s));
-            _btnPrint.Click += delegate
-            {
-                LastInfoMessageForTest = ItemSalesConstants.PrintUnsupportedMessage;
-                if (!SuppressErrorPopup)
-                    Msg.Info(this, ItemSalesConstants.PrintUnsupportedMessage);
-            };
+            _btnPrint.Click += delegate { PrintReport(); };
 
             _topBar.Controls.Add(MakeFlowLabel("Từ", s));
             _topBar.Controls.Add(_fromDate);
@@ -654,10 +656,14 @@ namespace Kazuko_FnB.UI
             _tree.Nodes.Add(root);
 
             var byId = new Dictionary<string, ItemSalesGroupNode>(StringComparer.Ordinal);
+            _groupNames.Clear();
             foreach (ItemSalesGroupNode g in groups)
             {
                 if (!string.IsNullOrEmpty(g.Id))
+                {
                     byId[g.Id] = g;
+                    _groupNames[g.Id] = g.Name ?? "";
+                }
             }
 
             var byParent = new Dictionary<string, List<ItemSalesGroupNode>>(StringComparer.Ordinal);
@@ -740,6 +746,8 @@ namespace Kazuko_FnB.UI
             try
             {
                 BillReportScope scope = BuildCurrentScope();
+                _loadedFromDate = scope.FromDate;
+                _loadedToDate = scope.ToDate;
                 ItemSalesCostMode costMode = CurrentCostMode();
                 bool sortByCode = _repository.ShouldSortByCode();
 
@@ -863,6 +871,49 @@ namespace Kazuko_FnB.UI
                 };
             }
             return new ItemSalesDetailDialog(_session.DatabasePath, BuildCurrentScope(), key);
+        }
+
+        // ------------------------------------------------------------------ In báo cáo (logic ở Printing/ItemSalesPrintCoordinator)
+
+        internal bool PrintReport()
+        {
+            return _printCoordinator.Print(
+                this,
+                _btnPrint,
+                _session.DatabasePath,
+                _canViewCost,
+                CollectVisibleRowsForPrint(),
+                _groupNames,
+                _summary,
+                _loadedFromDate,
+                _loadedToDate,
+                PrintOutputHandlerForTest,
+                PrintTemplatePickerForTest,
+                delegate (string msg) { LastInfoMessageForTest = msg; });
+        }
+
+        internal PrintJobData BuildPrintJobDataForTest()
+        {
+            return _printCoordinator.BuildJobData(
+                _session.DatabasePath,
+                _canViewCost,
+                CollectVisibleRowsForPrint(),
+                _groupNames,
+                _summary,
+                _loadedFromDate,
+                _loadedToDate);
+        }
+
+        private List<ItemSalesRow> CollectVisibleRowsForPrint()
+        {
+            var rows = new List<ItemSalesRow>(_grid.Rows.Count);
+            for (int i = 0; i < _grid.Rows.Count; i++)
+            {
+                var row = _grid.Rows[i].Tag as ItemSalesRow;
+                if (row != null)
+                    rows.Add(row);
+            }
+            return rows;
         }
 
         // ------------------------------------------------------------------ Vẽ cây nhóm theo theme
