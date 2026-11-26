@@ -93,6 +93,41 @@
       <SpecificVersion>False</SpecificVersion>
       <Private>True</Private>
     </Reference>
+    <Reference Include="DbMapping">
+      <HintPath>..\lib\DbMapping.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="No1Lib.Db">
+      <HintPath>..\lib\No1Lib.Db.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="No1Lib.Designer">
+      <HintPath>..\lib\No1Lib.Designer.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="No1Lib.PluginHelper">
+      <HintPath>..\lib\No1Lib.PluginHelper.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="No1Lib.Sys">
+      <HintPath>..\lib\No1Lib.Sys.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="No1Lib.Sys.Ts">
+      <HintPath>..\lib\No1Lib.Sys.Ts.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="No1Lib.Utils">
+      <HintPath>..\lib\No1Lib.Utils.DLL</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Ionic.Zip.Reduced">
       <HintPath>..\lib\Ionic.Zip.Reduced.DLL</HintPath>
       <SpecificVersion>False</SpecificVersion>
