@@ -24,7 +24,7 @@ namespace Kazuko_FnB.UI
     /// Hai danh mục đã có Thêm/Sửa/Xóa: Danh mục mặt hàng (DMATHANG, _productMode) và Danh mục bàn khu vực
     /// (DBAN, _roomMode, docs/specs/danh-muc-ban-khu-vuc.md); các danh mục khác vẫn chỉ xem (xem docs/specs/goi-demo-ui.md, B2).
     /// </summary>
-    internal sealed class CatalogView : Panel
+    internal sealed partial class CatalogView : Panel
     {
         private const string ColSearch = "_search";
         private const string ColCategory = "_cat";
@@ -725,7 +725,7 @@ namespace Kazuko_FnB.UI
             _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else EditProduct(); };
             _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else DeleteProduct(); };
             _btnExcelAdd.Click += delegate { Msg.Info(this, UnsupportedText); };
-            _btnExcelExport.Click += delegate { Msg.Info(this, UnsupportedText); };
+            _btnExcelExport.Click += delegate { ExportGridToExcel(); };
             _btnExcelImport.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnPrint.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnPrintBarcode.Click += delegate { Msg.Info(this, UnsupportedText); };

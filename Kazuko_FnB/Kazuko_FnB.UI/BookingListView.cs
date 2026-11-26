@@ -678,7 +678,7 @@ namespace Kazuko_FnB.UI
             _btnAdd.Click += delegate { AddBooking(); };
             _btnEdit.Click += delegate { EditBooking(); };
             _btnRemove.Click += delegate { DeleteBooking(); };
-            _btnExcel.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
+            _btnExcel.Click += delegate { ExportGridToExcel(); };
             _btnPrint.Click += delegate { PrintSelectedBooking(); };
             _btnTotal.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
             _btnAnalysis.Click += delegate { Msg.Info(this, BookingText.Unsupported); };

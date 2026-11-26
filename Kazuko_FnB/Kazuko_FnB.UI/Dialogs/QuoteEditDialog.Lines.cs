@@ -123,7 +123,7 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             _btnDeleteLine.Click += delegate { DeleteLine(); };
             _btnImportExcel.Click += delegate { ImportExcel(); };
-            _btnExportExcel.Click += delegate { ShowInfo(QuoteText.Unsupported); };
+            _btnExportExcel.Click += delegate { ExportDetailGridToExcel(); };
             lineRow.Controls.Add(lineFlow);
 
             SetupGrid(_detailGrid, false, s);

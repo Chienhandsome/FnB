@@ -12,8 +12,19 @@ namespace Kazuko_FnB.UI
         private readonly DocumentPrintCoordinator _printCoordinator = new DocumentPrintCoordinator();
 
         internal IPrintOutputHandler PrintOutputHandlerForTest { get; set; }
+        internal IGridExportOutput GridExportOutputForTest { get; set; }
         internal Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> PrintTemplatePickerForTest { get; set; }
         internal Func<string, List<PrintTemplateRecord>> PrintTemplateLoaderForTest { get; set; }
+
+        internal bool ExportGridToExcel()
+        {
+            return GridExcelExporter.Export(
+                this,
+                _grid,
+                "",
+                GridExportOutputForTest,
+                delegate (string msg) { LastInfoMessageForTest = msg; });
+        }
 
         internal bool PrintSelectedQuote()
         {

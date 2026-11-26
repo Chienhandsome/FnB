@@ -16,16 +16,29 @@ namespace Kazuko_FnB.UI
         internal bool SuppressPopup { get; set; }
         internal string LastInfoMessageForTest { get; private set; }
         internal DataGridView GridForTest { get { return _grid; } }
+        internal FlatButton ExcelButtonForTest { get { return _btnExcel; } }
         internal FlatButton PrintButtonForTest { get { return _btnPrint; } }
+        internal InputBox NumberBoxForTest { get { return _txtNumber; } }
         internal DateBox FromDateBoxForTest { get { return _dtFrom; } }
         internal DateBox ToDateBoxForTest { get { return _dtTo; } }
         internal IPrintOutputHandler PrintOutputHandlerForTest { get; set; }
+        internal IGridExportOutput GridExportOutputForTest { get; set; }
         internal Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> PrintTemplatePickerForTest { get; set; }
         internal Func<string, List<PrintTemplateRecord>> PrintTemplateLoaderForTest { get; set; }
 
         internal void ReloadForTest()
         {
             Reload();
+        }
+
+        internal bool ExportGridToExcel()
+        {
+            return GridExcelExporter.Export(
+                this,
+                _grid,
+                "",
+                GridExportOutputForTest,
+                delegate (string msg) { LastInfoMessageForTest = msg; });
         }
 
         internal bool PrintSelectedBooking()

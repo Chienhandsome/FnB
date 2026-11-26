@@ -184,6 +184,9 @@
     <Compile Include="CatalogView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.Excel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BookingListView.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -331,8 +334,12 @@
     <Compile Include="Diagnostics\SelfTest.Print.Booking.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Quote.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Quote.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.GridExcel.Helpers.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.GridExcel.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.GridExcel.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
+    <Compile Include="Printing\GridExcelExporter.cs" />
     <Compile Include="Printing\IPrintOutputHandler.cs" />
     <Compile Include="Printing\PrintDialogOptions.cs" />
     <Compile Include="Printing\PrintWorkflowService.cs" />

@@ -514,7 +514,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _btnImportExcel.SetBounds((int)(116 * s), (int)(2 * s), (int)(110 * s), (int)(26 * s));
             _btnImportExcel.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
             _btnExportExcel.SetBounds((int)(232 * s), (int)(2 * s), (int)(90 * s), (int)(26 * s));
-            _btnExportExcel.Click += delegate { Msg.Info(this, BookingText.Unsupported); };
+            _btnExportExcel.Click += delegate { ExportDetailGridToExcel(); };
             lineRow.Controls.Add(_btnDeleteLine);
             lineRow.Controls.Add(_btnImportExcel);
             lineRow.Controls.Add(_btnExportExcel);

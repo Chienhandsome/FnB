@@ -18,6 +18,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         internal FlatButton SavePrintButtonForTest { get { return _btnSavePrint; } }
         internal FlatButton SaveViewPrintButtonForTest { get { return _btnSaveViewPrint; } }
+        internal FlatButton ExportExcelButtonForTest { get { return _btnExportExcel; } }
         internal TextBox NumberBoxForTest { get { return _txtNumber; } }
         internal TextBox TenKhachBoxForTest { get { return _txtTenKhach; } }
         internal TextBox DiaChiBoxForTest { get { return _txtDiaChi; } }
@@ -26,8 +27,19 @@ namespace Kazuko_FnB.UI.Dialogs
         internal NumberBox TileThueBoxForTest { get { return _numTileThue; } }
         internal string LastPrintMessageForTest { get; private set; }
         internal IPrintOutputHandler PrintOutputHandlerForTest { get; set; }
+        internal IGridExportOutput GridExportOutputForTest { get; set; }
         internal Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> PrintTemplatePickerForTest { get; set; }
         internal Func<string, List<PrintTemplateRecord>> PrintTemplateLoaderForTest { get; set; }
+
+        internal bool ExportDetailGridToExcel()
+        {
+            return GridExcelExporter.Export(
+                this,
+                _detailGrid,
+                "",
+                GridExportOutputForTest,
+                delegate (string msg) { LastPrintMessageForTest = msg; });
+        }
 
         internal void SetRoomsForTest(List<string> roomIds, List<string> roomNames)
         {

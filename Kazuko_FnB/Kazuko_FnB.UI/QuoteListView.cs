@@ -278,7 +278,7 @@ namespace Kazuko_FnB.UI
             _btnAdd.Click += delegate { AddQuote(); };
             _btnEdit.Click += delegate { EditQuote(); };
             _btnRemove.Click += delegate { DeleteQuote(); };
-            _btnExcel.Click += delegate { ShowInfo(QuoteText.Unsupported); };
+            _btnExcel.Click += delegate { ExportGridToExcel(); };
             _btnPrint.Click += delegate { PrintSelectedQuote(); };
             _btnRefresh.Click += delegate { Reload(); };
 
