@@ -203,9 +203,35 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void DoTempPrint()
         {
-            LastInfoForTest = ServiceOrderConstants.NotSupportedYet;
-            if (!SuppressPopup)
-                Msg.Info(this, "In tạm tính: " + ServiceOrderConstants.NotSupportedYet);
+            if (_invoicePrintCoordinator.IsBusy)
+                return;
+
+            // Patch (d): "In thử bill (F8)" trong hộp thanh toán -> xem trước (ShowPreview) không lưu / không sửa DB.
+            TempPrintPrepareResult prep = _service.PrepareInvoicePreviewOnly(_ctx.PrimaryBillId, null);
+            if (prep.NeedsReLogin && !SuppressPopup)
+            {
+                using (var login = new ServiceReLoginDialog(_session.DatabasePath, prep.RequiredFunctionId, "In tạm tính"))
+                {
+                    if (login.ShowDialog(this) != DialogResult.OK || login.VerifiedSession == null)
+                        return;
+                    prep = _service.PrepareInvoicePreviewOnly(_ctx.PrimaryBillId, login.VerifiedSession);
+                }
+            }
+            if (!prep.Ok)
+            {
+                Warn(prep.ErrorMessage);
+                return;
+            }
+
+            _invoicePrintCoordinator.PreviewBillOnly(
+                this,
+                _btnTempPrint,
+                _session.DatabasePath,
+                _session,
+                prep.Document,
+                PrintOutputHandlerForTest,
+                PrintTemplateLoaderForTest,
+                delegate (string msg) { LastPrintMessageForTest = msg; });
         }
 
         private void SubmitPayment(bool printAfterClose)

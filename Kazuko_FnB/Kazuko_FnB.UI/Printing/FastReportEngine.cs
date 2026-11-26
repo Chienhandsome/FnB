@@ -57,6 +57,15 @@ namespace Kazuko_FnB.UI.Printing
             return trimmed;
         }
 
+        private static bool TemplateUsesFlagAsBool(PrintTemplateRecord template, string paramName)
+        {
+            string xml = template == null ? null : template.TemplateXml;
+            if (string.IsNullOrEmpty(xml) && template != null && template.TemplateBytes != null)
+                xml = System.Text.Encoding.UTF8.GetString(template.TemplateBytes);
+            return !string.IsNullOrEmpty(xml)
+                && xml.IndexOf("VisibleExpression=\"[" + paramName + "]\"", StringComparison.Ordinal) >= 0;
+        }
+
         /// <summary>
         /// Nạp mẫu từ bộ nhớ (XML chuỗi hoặc mảng byte đọc từ CSDL), đổ dữ liệu/tham số và dựng trang (Prepare).
         /// Mọi lỗi (mẫu thiếu, XML hỏng, script lỗi) đều được bắt và trả về một câu tiếng Việt nêu tên mẫu.
@@ -107,8 +116,15 @@ namespace Kazuko_FnB.UI.Printing
                 if (job != null && job.Parameters != null)
                 {
                     RemoveConflictingTotals(report, job.Parameters);
+                    bool tempAsBool = TemplateUsesFlagAsBool(template, "Tạm tính");
                     foreach (KeyValuePair<string, object> kv in job.Parameters)
-                        report.SetParameterValue(kv.Key, kv.Value);
+                    {
+                        object value = kv.Value;
+                        // Một số mẫu dùng [Tạm tính] làm VisibleExpression (cần bool), mẫu khác so sánh với 30 (cần int).
+                        if (tempAsBool && kv.Key == "Tạm tính" && value is int)
+                            value = ((int)value) != 0;
+                        report.SetParameterValue(kv.Key, value);
+                    }
                 }
 
                 ResolveReferencedAssemblies(report);

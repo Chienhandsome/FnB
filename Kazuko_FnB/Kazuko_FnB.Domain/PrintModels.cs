@@ -27,6 +27,9 @@ namespace Kazuko_FnB.Domain
         /// <summary>STABLEDESCID của bảng TBAOGIA (Báo giá) trong bảng STEMPLATE.</summary>
         public const string QuoteTableDescId = "b2d3ffd4-9037-4dd1-b255-ec16dd122e66";
 
+        /// <summary>SFORMID của màn "Hóa đơn bán hàng" (mẫu in hóa đơn nhà hàng/bán hàng) trong bảng STEMPLATE.</summary>
+        public const string SalesInvoiceFormId = "5f029a5b-8ec2-4229-bd1d-03fed9569db2";
+
         /// <summary>STABLEDESCID của bảng DMATHANG (Danh mục mặt hàng / In mã vạch) trong bảng STEMPLATE.</summary>
         public const string ProductTableDescId = "a4a16216-aee9-4dd3-9f92-c1e4d85c06a2";
 
@@ -51,6 +54,7 @@ namespace Kazuko_FnB.Domain
         public const string BarcodeDefaultFileName = "Ma-vach";
         public const string DefaultBookingTemplateName = "Mẫu đặt hàng A4";
         public const string DefaultQuoteTemplateName = "Báo Giá A4";
+        public const string DefaultSalesInvoiceTemplateName = "Mẫu in bill 80mm";
         public const string ConfirmOpenExportedFileMessage = "Bạn có muốn mở file đã xuất không?";
         public const string NoTemplateFoundMessage = "Không tìm thấy mẫu in nào đang hoạt động cho màn hình này.";
         public const string NoCostPermissionPrintMessage = "Bạn không có quyền Xem giá nhập để in báo cáo này.";

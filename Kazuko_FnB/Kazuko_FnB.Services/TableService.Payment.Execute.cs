@@ -319,6 +319,7 @@ namespace Kazuko_FnB.Services
                         CustomerAddress = custAddr,
                         StoreId = primaryStoreId ?? (_session.CurrentStore != null ? _session.CurrentStore.Id : null),
                         UpgradedGroupName = upgradedGroup,
+                        PrintAfterClose = request.PrintAfterClose,
                         Allocation = alloc
                     };
                 });

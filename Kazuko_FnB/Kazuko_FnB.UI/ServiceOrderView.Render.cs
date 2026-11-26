@@ -122,6 +122,7 @@ namespace Kazuko_FnB.UI
             _btnTransferItem.Enabled = hasLine;
             _btnCancelBill.Enabled = hasBill;
             _btnKitchenPrint.Enabled = hasBill;
+            _btnTempPrint.Enabled = hasBill && _canViewPrice;
             _btnPay.Enabled = hasBill && _canViewPrice;
             _btnGroupPay.Enabled = hasBill && _canViewPrice;
 

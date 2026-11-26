@@ -47,6 +47,7 @@ namespace Kazuko_FnB.UI
         public event EventHandler<ServiceTableInfo> OpenTableRequested;
         public event EventHandler<ServiceTableInfo> PayRequested;
         public event EventHandler<ServiceTableInfo> GroupPayRequested;
+        public event EventHandler<ServiceTableInfo> TempPrintRequested;
         public event EventHandler<ServiceTableInfo> MoveTableRequested;
         public event EventHandler<ServiceTableInfo> MergeTableRequested;
         public event EventHandler<ServiceTableInfo> CancelBillRequested;
@@ -204,6 +205,11 @@ namespace Kazuko_FnB.UI
             {
                 if (_contextTable != null && GroupPayRequested != null)
                     GroupPayRequested(this, _contextTable);
+            });
+            _busyMenu.AddItem("In tạm tính", delegate
+            {
+                if (_contextTable != null && TempPrintRequested != null)
+                    TempPrintRequested(this, _contextTable);
             });
             _busyMenu.AddItem("Chuyển bàn", delegate
             {

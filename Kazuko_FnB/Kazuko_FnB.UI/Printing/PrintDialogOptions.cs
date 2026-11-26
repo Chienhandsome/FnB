@@ -16,6 +16,7 @@ namespace Kazuko_FnB.UI.Printing
         public string CancelButtonText { get; set; }
         public bool UseComboBox { get; set; }
         public bool HideActionOptions { get; set; }
+        public string DefaultTemplateId { get; set; }
         public string DefaultTemplateName { get; set; }
         public bool SelectLastByDefault { get; set; }
         public bool UseBookingOrder { get; set; }
@@ -58,6 +59,22 @@ namespace Kazuko_FnB.UI.Printing
                 CancelButtonText = "Thoát",
                 UseComboBox = true,
                 DefaultTemplateName = PrintConstants.DefaultQuoteTemplateName,
+                SelectLastByDefault = false,
+                UseBookingOrder = false
+            };
+        }
+
+        public static PrintDialogOptions ForSalesInvoiceReportDialog(string preferredTemplateIdOrName = null)
+        {
+            return new PrintDialogOptions
+            {
+                Title = PrintConstants.PrintReportDialogTitle,
+                Subtitle = "Chọn mẫu in hóa đơn và hình thức thực hiện",
+                OkButtonText = "Thực hiện",
+                CancelButtonText = "Thoát",
+                UseComboBox = true,
+                DefaultTemplateId = preferredTemplateIdOrName ?? "",
+                DefaultTemplateName = PrintConstants.DefaultSalesInvoiceTemplateName,
                 SelectLastByDefault = false,
                 UseBookingOrder = false
             };
@@ -141,6 +158,21 @@ namespace Kazuko_FnB.UI.Printing
         {
             if (ordered.Count == 0)
                 return -1;
+
+            if (!string.IsNullOrWhiteSpace(options.DefaultTemplateId))
+            {
+                string wantId = options.DefaultTemplateId.Trim();
+                for (int i = 0; i < ordered.Count; i++)
+                {
+                    string id = (ordered[i].Id ?? "").Trim();
+                    string name = (ordered[i].Name ?? "").Trim();
+                    if (string.Equals(id, wantId, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(name, wantId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return i;
+                    }
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(options.DefaultTemplateName))
             {

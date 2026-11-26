@@ -288,6 +288,7 @@ namespace Kazuko_FnB.Domain
         public string CustomerAddress { get; set; }
         public string StoreId { get; set; }
         public string UpgradedGroupName { get; set; }
+        public bool PrintAfterClose { get; set; }
         public PaymentAllocationResult Allocation { get; set; }
 
         public PaymentExecutionResult()

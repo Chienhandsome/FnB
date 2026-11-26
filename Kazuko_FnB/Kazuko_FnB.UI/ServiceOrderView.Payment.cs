@@ -33,6 +33,8 @@ namespace Kazuko_FnB.UI
 
             using (var dlg = new PaymentDialog(_service, _session, ctx))
             {
+                dlg.PrintOutputHandlerForTest = PrintOutputHandlerForTest;
+                dlg.PrintTemplateLoaderForTest = PrintTemplateLoaderForTest;
                 if (dlg.ShowDialog(this) == DialogResult.OK && dlg.ExecutionResult != null && dlg.ExecutionResult.Ok)
                     HandlePaymentCompleted(dlg.ExecutionResult, ctx.BankAccounts);
             }
@@ -87,6 +89,8 @@ namespace Kazuko_FnB.UI
 
             using (var dlg = new PaymentDialog(_service, _session, ctx))
             {
+                dlg.PrintOutputHandlerForTest = PrintOutputHandlerForTest;
+                dlg.PrintTemplateLoaderForTest = PrintTemplateLoaderForTest;
                 if (dlg.ShowDialog(this) == DialogResult.OK && dlg.ExecutionResult != null && dlg.ExecutionResult.Ok)
                 {
                     HandlePaymentCompleted(dlg.ExecutionResult, ctx.BankAccounts);
@@ -105,6 +109,9 @@ namespace Kazuko_FnB.UI
         private void HandlePaymentCompleted(PaymentExecutionResult result, List<LookupItem> bankAccounts)
         {
             _lockRenewTimer.Stop();
+
+            // Patch (d): "Thanh toán & In" -> in thẳng hóa đơn sau khi đóng bill thành công (bill vẫn đóng kể cả khi in lỗi).
+            DoPrintAfterPayment(result);
 
             // §3.7.2: nếu đặt trước dư -> mở phiếu chi trả lại tiền đặt trước (ghi thật vào TTHUCHI).
             if (result.ExcessDeposit > 0m && !SuppressPopup)

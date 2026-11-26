@@ -34,6 +34,7 @@ namespace Kazuko_FnB.UI
                 int innerW = _actionCol.Width - (int)(12 * s);
                 AddActionBtn(actionFlow, _btnCancelBill, innerW, btnH, s);
             }
+            InitPrintControls(s);
         }
 
         private void DoMoveTable()

@@ -31,6 +31,11 @@ namespace Kazuko_FnB.UI
                 OnTableSelected(t);
                 DoGroupPay();
             };
+            _tableMap.TempPrintRequested += delegate(object s, ServiceTableInfo t)
+            {
+                OnTableSelected(t);
+                DoTempPrint();
+            };
             _tableMap.MoveTableRequested += delegate(object s, ServiceTableInfo t)
             {
                 OnTableSelected(t);
@@ -67,12 +72,13 @@ namespace Kazuko_FnB.UI
             _btnMergeTable.Click += delegate { DoMergeTable(); };
             _btnTransferItem.Click += delegate { DoTransferItem(); };
             _btnCancelBill.Click += delegate { DoCancelBill(); };
-            // Các chức năng thuộc patch (d) / thống kê -> hiện nút nhưng báo "chưa hỗ trợ" (§7).
-            _btnKitchenPrint.Click += delegate { ShowNotSupported("In chế biến"); };
+            // Các chức năng patch (d): In chế biến (F10), In tạm tính, In lại bill (F8); Thống kê để sau (§7).
+            _btnKitchenPrint.Click += delegate { DoKitchenPrint(false); };
+            _btnTempPrint.Click += delegate { DoTempPrint(); };
             _btnPay.Click += delegate { DoPay(); };
             _btnGroupPay.Click += delegate { DoGroupPay(); };
             _btnStats.Click += delegate { ShowNotSupported("Thống kê"); };
-            _btnReprint.Click += delegate { ShowNotSupported("In lại bill"); };
+            _btnReprint.Click += delegate { DoReprintBill(); };
 
             _detailGrid.SelectionChanged += delegate { if (!_updatingUi) UpdateControlStates(); };
             _detailGrid.CellFormatting += DetailGrid_CellFormatting;
@@ -99,13 +105,13 @@ namespace Kazuko_FnB.UI
                     _menuPicker.FocusSearch();
                     return true;
                 case Keys.F8:
-                    ShowNotSupported("In lại bill");
+                    DoReprintBill();
                     return true;
                 case Keys.F9:
                     ShowNotSupported("Thống kê");
                     return true;
                 case Keys.F10:
-                    ShowNotSupported("In chế biến");
+                    DoKitchenPrint(false);
                     return true;
                 case Keys.F11:
                     if (_canViewPrice)

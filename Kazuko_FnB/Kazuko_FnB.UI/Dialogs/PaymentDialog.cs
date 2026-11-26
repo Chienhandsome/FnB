@@ -6,6 +6,7 @@ using Kazuko_FnB.Domain;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.Theme;
 using Kazuko_FnB.UI.Controls;
+using Kazuko_FnB.UI.Printing;
 
 namespace Kazuko_FnB.UI.Dialogs
 {
@@ -20,6 +21,7 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly UserSession _session;
         private readonly PaymentDialogContext _ctx;
         private readonly List<string> _billIds = new List<string>();
+        private readonly ServiceInvoicePrintCoordinator _invoicePrintCoordinator = new ServiceInvoicePrintCoordinator();
 
         private readonly TableLayoutPanel _grid = new TableLayoutPanel { Dock = DockStyle.Top, ColumnCount = 3 };
         private readonly LookupCombo _cboCustomer = new LookupCombo();
@@ -70,6 +72,9 @@ namespace Kazuko_FnB.UI.Dialogs
         internal bool SuppressPopup { get; set; }
         internal string LastWarningForTest { get; private set; }
         internal string LastInfoForTest { get; private set; }
+        internal string LastPrintMessageForTest { get; private set; }
+        internal IPrintOutputHandler PrintOutputHandlerForTest { get; set; }
+        internal Func<string, List<PrintTemplateRecord>> PrintTemplateLoaderForTest { get; set; }
         internal bool AutoConfirmPromptsForTest { get; set; }
         internal LookupCombo CustomerComboForTest { get { return _cboCustomer; } }
         internal LookupCombo BankComboForTest { get { return _cboBank; } }

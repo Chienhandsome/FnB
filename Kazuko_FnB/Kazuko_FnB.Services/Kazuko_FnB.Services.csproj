@@ -95,6 +95,8 @@
     <Compile Include="TableService.Transfer.cs" />
     <Compile Include="TableService.TransferItem.cs" />
     <Compile Include="TableService.Cancel.cs" />
+    <Compile Include="KitchenPrintRules.cs" />
+    <Compile Include="TableService.Print.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

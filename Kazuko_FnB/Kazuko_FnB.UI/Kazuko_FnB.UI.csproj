@@ -259,6 +259,9 @@
     <Compile Include="ServiceOrderView.Render.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ServiceOrderView.Print.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Dialogs\ActivityLogPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -389,6 +392,10 @@
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Transfer.cs" />
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Transfer2.cs" />
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Transfer.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.Invoice.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.Kitchen.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Print.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -414,6 +421,10 @@
     <Compile Include="Printing\DailyActivityReportDataBuilder.cs" />
     <Compile Include="Printing\BusinessResultReportDataBuilder.cs" />
     <Compile Include="Printing\EmbeddedReportPreviewController.cs" />
+    <Compile Include="Printing\SalesInvoicePrintDataBuilder.cs" />
+    <Compile Include="Printing\ServiceInvoicePrintCoordinator.cs" />
+    <Compile Include="Printing\KitchenTicketPrintDataBuilder.cs" />
+    <Compile Include="Printing\KitchenPrintCoordinator.cs" />
     <Compile Include="Dialogs\BookingEditDialog.cs" />
     <Compile Include="Dialogs\BookingEditDialog.Print.cs" />
     <Compile Include="Dialogs\NumericEditGridCell.cs" />
@@ -470,6 +481,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\RefundDepositDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\KitchenPrintDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\ThemeChooserDialog.cs" />

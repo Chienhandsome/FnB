@@ -83,13 +83,11 @@ namespace Kazuko_FnB.UI.Diagnostics
                         TableTileButton emptyBillTile = map.FindTileForTest(fx.TableEmptyId);
                         emptyBillTile.PerformClick();
                         Application.DoEvents();
-                        view.KitchenPrintButtonForTest.PerformClick();
-                        string infoKitchen = view.LastInfoForTest;
-                        view.ReprintButtonForTest.PerformClick();
-                        string infoReprint = view.LastInfoForTest;
+                        view.StatsButtonForTest.PerformClick();
+                        string infoStats = view.LastInfoForTest;
                         Check("SDDV UI §7 Lưới nút cảm ứng >= 44px và các nút patch sau (In chế biến / Thanh toán) báo chưa hỗ trợ",
-                            touchOk && infoKitchen == ServiceOrderConstants.NotSupportedYet && infoReprint == ServiceOrderConstants.NotSupportedYet,
-                            "touch=" + touchOk + ", msg=" + infoReprint);
+                            touchOk && infoStats == ServiceOrderConstants.NotSupportedYet,
+                            "touch=" + touchOk + ", msg=" + infoStats);
                         int beforeRows = view.DetailGridForTest.Rows.Count;
                         decimal beforeTotal = view.TongCongBoxForTest.Value;
                         view.MenuPickerForTest.SelectProductById(fx.ProdNormalId);

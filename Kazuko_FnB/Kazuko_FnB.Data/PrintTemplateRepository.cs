@@ -99,6 +99,31 @@ namespace Kazuko_FnB.Data
             });
         }
 
+        /// <summary>
+        /// Đọc một mẫu in cụ thể trong STEMPLATE (STATUS = 30, có TEMPLATE) theo ID hoặc NAME (chỉ đọc, SQL tham số hóa).
+        /// </summary>
+        public PrintTemplateRecord LoadTemplateByIdOrName(string idOrName)
+        {
+            if (string.IsNullOrWhiteSpace(idOrName))
+                return null;
+            string key = idOrName.Trim();
+
+            return DbHelper.Read(_databasePath, conn =>
+            {
+                const string sql =
+                    "SELECT FIRST 1 ID, NAME, SFORMID, STABLEDESCID, TEMPLATE " +
+                    "FROM STEMPLATE " +
+                    "WHERE STATUS = @Status AND TEMPLATE IS NOT NULL AND (ID = @Key OR NAME = @Key)";
+
+                DataTable dt = DbHelper.Table(conn, null, sql,
+                    "@Status", PrintConstants.ActiveStatus,
+                    "@Key", key);
+
+                List<PrintTemplateRecord> list = ReadTemplatesAndConfig(conn, dt);
+                return list.Count > 0 ? list[0] : null;
+            });
+        }
+
         private static List<PrintTemplateRecord> ReadTemplatesAndConfig(FbConnection conn, DataTable dt)
         {
             var list = new List<PrintTemplateRecord>(dt.Rows.Count);

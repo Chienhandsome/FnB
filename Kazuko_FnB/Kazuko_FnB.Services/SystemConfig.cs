@@ -184,5 +184,30 @@ namespace Kazuko_FnB.Services
         public static bool InDoUong { get { return GetBool("InDoUong"); } }
         public static bool InDichVu { get { return GetBool("InDichVu"); } }
         public static bool InDoKhac { get { return GetBool("InDoKhac"); } }
+
+        // ---- Khóa phần In hóa đơn & In bếp/chế biến (docs/specs/su-dung-dich-vu.md §3.7, §3.10, §6.6) ----
+
+        public static int SoLanInTamTinhToiDa { get { return GetInt("SoLanInTamTinhToiDa", 0); } }
+        public static int SoLanInToiDa { get { return GetInt("SoLanInToiDa", 0); } }
+        public static bool HienThiTruocKhiIn { get { return GetBool("HienThiTruocKhiIn"); } }
+        public static bool LuaChonMauKhiIn { get { return GetBool("LuaChonMauKhiIn"); } }
+        public static int SoLanIn { get { return GetInt("SoLanIn", 1); } }
+        public static string MauHoaDon { get { return GetText("MauHoaDon", ""); } }
+        /// <summary>0 = tại quầy, 1 = theo khu vực, 2 = tạm tính theo KV + HĐ tại quầy, 3 = 1 liên quầy + 1 liên KV.</summary>
+        public static int InHoaDonTheoKhuVuc { get { return GetInt("InHoaDonTheoKhuVuc", 0); } }
+        public static bool InHoaDonCongGopMatHang { get { return GetBool("InHoaDonCongGopMatHang"); } }
+        public static bool HienThiDiemCuaKhachHangTrenHoaDon { get { return GetBool("HienThiDiemCuaKhachHangTrenHoaDon"); } }
+        public static string LoiCamOn { get { return GetText("LoiCamOn", ""); } }
+
+        public static bool InRiengDoAnUong { get { return GetBool("InRiengDoAnUong"); } }
+        public static bool InPhaCheTheoKhuVuc { get { return GetBool("InPhaCheTheoKhuVuc"); } }
+        public static bool InDonGiaTrenMauInBep { get { return GetBool("InDonGiaTrenMauInBep"); } }
+        public static int SoLienInCheBien { get { return GetInt("SoLienInCheBien", 1); } }
+        public static string MauInCheBien { get { return GetText("MauInCheBien", ""); } }
+        public static bool InMoiDoRa1To { get { return GetBool("InMoiDoRa1To"); } }
+        public static bool InThem1LienTaiQuay { get { return GetBool("InThem1LienTaiQuay"); } }
+        public static bool LuuVetInCheBien { get { return GetBool("LuuVetInCheBien"); } }
+        public static bool TuDongInPhaCheSauKhiGoiMon { get { return GetBool("TuDongInPhaCheSauKhiGoiMon"); } }
+        public static int ThoiGianTuDongIn { get { return GetInt("ThoiGianTuDongIn", 10); } }
     }
 }
