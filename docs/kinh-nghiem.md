@@ -88,4 +88,5 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Mẫu in có `<Total>` trùng tên tham số:** truyền tham số có thể `NullReferenceException`, không truyền thì in số mẫu tự cộng. Gỡ `Total` trùng trước khi truyền, và so số với app gốc bằng hóa đơn **có giảm giá** để các cách tính ra khác nhau.
 - **Dựng mẫu từ bản build bằng PowerShell:** thêm `[AppDomain]::CurrentDomain.SetData("APPBASE", "<thư mục build>\")`, không thì báo CS0006 vì tìm DLL ở thư mục của PowerShell. Lớp xuất ảnh tìm theo tên `ImageExport` qua reflection.
 - **Hóa đơn thử cho app gốc:** chèn thẳng vào `TDONHANG` (`LOAI = 0`, `DATHANHTOAN = 30`, có `DCUAHANGID`) và `TDONHANGCHITIET` trên bản chép là đủ để Thống kê mặt hàng bán hiện số (26/11).
+- **Mẫu có `StartReportEvent` có thể in thiếu số mà không báo lỗi** (KQKD, 26/11: mất mọi cột %). Dựng được trang chưa đủ: đọc chữ trên trang và tìm từng cột script phải điền. Cách chạy ở `specs/in-xuat-excel/nghiep-vu.md`. Chạy mẫu từ PowerShell còn cần `AssemblyResolve` trỏ vào thư mục build.
 - GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.
