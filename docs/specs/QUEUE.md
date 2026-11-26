@@ -37,6 +37,16 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] In P4, mã vạch (`bdbf7b0`, #32): chọn mặt hàng, In mã vạch, Thêm, đổi số lượng, In, chọn mẫu, xem trước; in tem thật
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
+## Bắt buộc xong trong 2 ngày (Chiến yêu cầu 26/11 "trong vòng 2 ngày phải xong toàn bộ"; Claude chốt danh sách ưu tiên theo lõi bán hàng, Chiến giao quyền chốt)
+Làm theo thứ tự; "chưa có spec" thì viết spec nháp và tự duyệt theo workflow-agy §10.1.1 (có `auto.on`), câu về tiền, kho, công nợ không đủ căn cứ thì mở issue `cho-chien` rồi làm mục kế tiếp.
+1. Danh mục khách hàng (spec đã duyệt; **đang làm**, worktree `danh-muc-khach-hang`)
+2. Sử dụng dịch vụ: bán hàng và thanh toán (spec đã duyệt)
+3. Quản lý bán hàng, Điều chỉnh hóa đơn (spec đã duyệt)
+4. Quỹ bước 3–5: Tạo phiếu thu, Tạo phiếu chi, Danh mục phiếu thu, phiếu chi, Tồn quỹ, Danh mục lý do thu chi, Danh mục tài khoản ngân hàng (chưa có spec riêng)
+5. Kho: Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)
+6. Công nợ khách hàng, Công nợ nhà cung cấp (chưa có spec)
+**Ngoài 2 ngày (làm sau):** Kiểm kê kho, Tính lại giá vốn, Xuất lại định lượng, Tồn nhiều kho, Danh mục cửa hàng, khuyến mại, voucher, thẻ trả trước, khách hàng thân thiết, Kiểm soát order, mật khẩu wifi, toàn bộ Nhân sự, Dữ liệu ban đầu, cấu hình máy in theo khu vực, in P3b, nhập Excel P5, Ctrl+P P6.
+
 ## Hàng đợi spec (thứ tự làm)
 | # | Spec | Trạng thái | Loại | Ghi chú |
 |---|---|---|---|---|
