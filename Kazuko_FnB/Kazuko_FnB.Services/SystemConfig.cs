@@ -136,5 +136,27 @@ namespace Kazuko_FnB.Services
         public static bool PhanQuyenTruyCapTheoKhuVuc { get { return GetBool("PhanQuyenTruyCapTheoKhuVuc"); } }
         public static bool CoSuDungCongTacDienTu { get { return GetBool("CoSuDungCongTacDienTu"); } }
         public static bool SuDungNhieuKho { get { return GetBool("SuDungNhieuKho"); } }
+
+        // ---- Khóa của chức năng Sử dụng dịch vụ (docs/specs/su-dung-dich-vu.md §3.10, §6.5, §6.6) ----
+
+        public static bool HeThongChayNhieuMayTram { get { return GetBool("HeThongChayNhieuMayTram"); } }
+        public static bool ChoPhepThayDoiHoaDonSauKhiInTamTinh { get { return GetBool("ChoPhepThayDoiHoaDonSauKhiInTamTinh"); } }
+        public static bool KhongDuocGiamDoSauKhiInPhaChe { get { return GetBool("KhongDuocGiamDoSauKhiInPhaChe"); } }
+        public static bool NhapMatKhauGiamDo { get { return GetBool("NhapMatKhauGiamDo"); } }
+        public static bool NhapLyDoKhiXoaMon { get { return GetBool("NhapLyDoKhiXoaMon"); } }
+        public static bool ChoPhepNhapGiamGia { get { return GetBool("ChoPhepNhapGiamGia"); } }
+        public static bool CoPhiDichVu { get { return GetBool("CoPhiDichVu"); } }
+        public static decimal MacDinhPhiDichVu { get { return GetDecimal("MacDinhPhiDichVu", 0m); } }
+        public static decimal MacDinhThueSuat { get { return GetDecimal("MacDinhThueSuat", 0m); } }
+        public static decimal MacDinhGiamGia { get { return GetDecimal("MacDinhGiamGia", 0m); } }
+        public static int TuDongDoiGioVaoVeTruoc { get { return GetInt("TuDongDoiGioVaoVeTruoc", 0); } }
+        public static bool HienThiGhiChuTrenGiaoDienBan { get { return GetBool("HienThiGhiChuTrenGiaoDienBan"); } }
+        public static int KichThuocHienThiOGiaoDienDichVu { get { return GetInt("KichThuocHienThiOGiaoDienDichVu", 0); } }
+        /// <summary>0 = theo ngày mở bàn, 1 = theo ngày thanh toán (§6.5).</summary>
+        public static int CachChonNgayGiaoDich { get { return GetInt("CachChonNgayGiaoDich", 1); } }
+        public static bool HienThiCuaSoNhapSoLuongKhiQuetMaVach { get { return GetBool("HienThiCuaSoNhapSoLuongKhiQuetMaVach"); } }
+        public static bool BatBuocNhapNhanVienBanHang { get { return GetBool("BatBuocNhapNhanVienBanHang"); } }
+        /// <summary>Cấu hình toàn hệ thống cho phép âm kho (§6.6). Mặc định tắt (chặn âm kho).</summary>
+        public static bool ChoPhepAmKho { get { return GetBool("ChoPhepAmKho"); } }
     }
 }

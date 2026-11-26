@@ -90,6 +90,9 @@
     <Compile Include="ScreenLayout.cs" />
     <Compile Include="UserAdminRepository.cs" />
     <Compile Include="UserRepository.cs" />
+    <Compile Include="InvoiceNumberRepository.cs" />
+    <Compile Include="ServiceOrderRepository.cs" />
+    <Compile Include="ServiceOrderRepository.Write.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

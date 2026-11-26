@@ -37,6 +37,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.revenue", session => new RevenueReportPreviewForm(session) },
                 { "preview.dailyactivity", session => new DailyActivityPreviewForm(session) },
                 { "preview.businessresult", session => new BusinessResultPreviewForm(session) },
+                { "preview.service", session => new ServicePreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -79,6 +80,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Tổng hợp kết quả kinh doanh": báo cáo chỉ xem (OPERATION = 5).
             if (string.Equals(node.Id, BusinessResultView.MenuId, StringComparison.Ordinal))
                 return new BusinessResultView(session);
+            // Màn "Sử dụng dịch vụ" (OPERATION = 4, không có STABLEDESCID).
+            if (string.Equals(node.Id, ServiceOrderView.MenuId, StringComparison.Ordinal))
+                return new ServiceOrderView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

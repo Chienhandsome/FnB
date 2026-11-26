@@ -238,6 +238,21 @@
     <Compile Include="BusinessResultView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="TableMapView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="MenuPickerView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ServiceOrderView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ServiceOrderView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ServiceOrderView.Render.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Dialogs\ActivityLogPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -358,6 +373,9 @@
     <Compile Include="Diagnostics\SelfTest.Customer.cs" />
     <Compile Include="Diagnostics\SelfTest.Customer.Group.cs" />
     <Compile Include="Diagnostics\SelfTest.Customer.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Repo.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -425,6 +443,7 @@
     <Compile Include="Dialogs\QuantityDialog.cs" />
     <Compile Include="Dialogs\RolesPanel.cs" />
     <Compile Include="Dialogs\ScreenFactory.cs" />
+    <Compile Include="Dialogs\ServiceOrderDialogs.cs" />
     <Compile Include="Dialogs\ThemeChooserDialog.cs" />
     <Compile Include="Dialogs\ThemedDialog.cs" />
     <Compile Include="Dialogs\UserEditDialog.cs" />
