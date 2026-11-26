@@ -1,7 +1,9 @@
 # Brief: In, xuất Excel, FastReport
 
-- Spec **ĐÃ DUYỆT** `docs/specs/in-xuat-excel/` (Chiến duyệt 26/11, theo đề xuất). Chưa code. Làm P0 trước (phần in chung + Thống kê mặt hàng bán), rồi P1. P3, P4 cần đối chiếu thêm; P5 tách spec; P6 chưa làm.
-- Điểm chính: chỉ DLL FastReport thì không dựng được mẫu; cần thêm `No1Lib*.dll`, `DbMapping.DLL` của app gốc. Đã chép 9 file từ `POS TAP/` vào `Kazuko_FnB/lib/` (thư mục không nằm trong git: **máy khác phải chép tay**).
-- Đã thử ngoài app với dữ liệu giả: 30/64 mẫu `STEMPLATE` dựng được, gồm mẫu của Thống kê doanh thu, Thống kê mặt hàng bán, mã vạch. Báo giá thiếu hàm `ToVndWords`. Mẫu `SREPORTTEMPLATE` chưa thử.
-- Đã đối chiếu app gốc 26/11 (không gửi lệnh in): 4 màn báo cáo, Khách đặt hàng, Báo giá (bật menu tạm trên bản chép), Danh mục: Xuất excel, In lưới, mã vạch. Ảnh `_tmp/_origin-shots/in-xuat-excel/`.
-- Chưa xem: Ctrl+P, hộp sửa bàn và khu vực, lưới chi tiết, xuất định lượng, nhập Excel, "Lưu & In", Bartender, Excel khi đang lọc; chưa mở file Excel xuất từ mẫu báo cáo.
+- Spec **ĐÃ DUYỆT** `docs/specs/in-xuat-excel/` (Chiến duyệt 26/11, theo đề xuất).
+- **P0 đã code, đã push** `8a9c0ee` (issue #27): `Kazuko_FnB.UI/Printing/`, hộp CHỌN MẪU IN, xem trước, in Thống kê mặt hàng bán. Trước đó `30ced3e` tham chiếu 7 DLL .NET của app gốc. Selftest 898 đạt, 0 lỗi.
+- `Kazuko_FnB/lib/` không nằm trong git: **máy khác phải chép tay** `No1Lib*.DLL`, `DbMapping.DLL` từ `POS TAP/`.
+- Quan trọng cho P1, P2: mẫu có `<Total>` trùng tên tham số; engine đã gỡ trước khi truyền. A4 mặt hàng bán đã khớp app gốc từng ô.
+- Chưa kiểm: in thật, mở file PDF/Excel xem bằng mắt, nút Close của xem trước, 125% DPI, 54mm và 80mm so với app gốc.
+- Còn: P1 (in Doanh thu; đổi Chi tiết hoạt động ngày và KQKD thành trình xem nhúng, Q9; mẫu `SREPORTTEMPLATE` chưa dựng thử), P2 (đặt hàng, báo giá; `ToVndWords` = `No1Lib.Sys.DocSo.ToVndWords`), P3, P4 (đối chiếu thêm), P5 (spec riêng), P6 (chưa làm).
+- Đã đối chiếu app gốc: ảnh `_tmp/_origin-shots/in-xuat-excel/`. Chưa xem: Ctrl+P, hộp sửa bàn và khu vực, lưới chi tiết, xuất định lượng, nhập Excel, "Lưu & In", Bartender, Excel khi đang lọc.

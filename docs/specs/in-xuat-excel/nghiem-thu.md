@@ -15,7 +15,7 @@
 
 | Patch | Nội dung | Phụ thuộc |
 |---|---|---|
-| P0 | Thêm thư viện, lớp dịch vụ in, cửa sổ xem trước, áp cho **Thống kê mặt hàng bán** (3 mẫu đều dựng được) | Q1 |
+| P0 | **Đã code `8a9c0ee` (26/11, issue #27).** Thêm thư viện, lớp dịch vụ in, cửa sổ xem trước, áp cho **Thống kê mặt hàng bán** | Q1 |
 | P1 | In Thống kê doanh thu; đổi Chi tiết hoạt động ngày và Kết quả kinh doanh thành trình xem nhúng (Q9) | P0; mẫu `SREPORTTEMPLATE` chưa dựng thử |
 | P2 | In Báo giá, Khách đặt hàng: thêm nút "Lưu & In", "Lưu & Xem in" và hộp "IN BÁO CÁO" | P0, cho script gọi được `ToVndWords` |
 | P3 | Xuất excel của lưới; "In" qua hộp "Cấu hình trang in" (3 mẫu) | Q4 |

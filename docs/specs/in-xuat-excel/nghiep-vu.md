@@ -43,3 +43,10 @@ Nhãn: **ĐÃ KIỂM** là đã đọc nguồn hoặc chạy thử; **CHƯA KI�
 - N4. Mọi truy vấn có tham số hóa, nằm ở tầng Data; dựng mẫu nằm ở một lớp dịch vụ in riêng, View chỉ gọi.
 - N5. Mẫu lỗi hoặc thiếu: báo một câu rõ tên mẫu, không văng app.
 - N6. **Mẫu in có script C# được biên dịch và chạy khi in.** Ai sửa được CSDL thì chạy được mã trên máy in. App gốc cũng vậy. Bản mới giữ nguyên hành vi, không thêm cách nạp mẫu từ file ngoài.
+
+## Ô tổng của mẫu trùng tên tham số (ĐÃ KIỂM 26/11)
+
+- Mẫu A4 của Thống kê mặt hàng bán có `<Total>` tên `TongTienBan`, `TongTienNhap`, `TongLai`, `TongGiamGia`, `ThucLai`, trùng 5 tham số app truyền.
+- Truyền `TongGiamGia` hoặc `TongLai` mà không gỡ: `NullReferenceException`. Không truyền: trang in tổng mẫu tự cộng, `ThucLai` cộng dồn sai (lãi 1.000 + 2.000, giảm 100 + 200: in 3.600 thay vì 2.700).
+- **App gốc in đúng số trên màn** (hóa đơn thử trên bản chép: 180.000 / 68.000 / 112.000 / −14.000 / 108.000).
+- Bản mới: trước khi truyền tham số, gỡ `Total` trùng tên khỏi `report.Dictionary.Totals` (chỉ trong bộ nhớ). `Total` không trùng giữ nguyên. Áp cho mọi mẫu của các đợt sau; mỗi mẫu mới vẫn phải so số với màn.
