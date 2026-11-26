@@ -268,3 +268,6 @@ Mặt hàng 2 đơn vị tính: số lượng dòng lẻ làm theo [`bao-gia-ban
    - Bằng chứng: bấm thử app gốc 26/11 (bản chép, cờ = 30): thêm 2 rồi 3 ra **một dòng SL 5**; mã `grMatHang_OnAddSameItem` không đọc cờ.
 3. Áp cho cả hộp thoại dùng chung ở Theo dõi đặt phòng.
 4. **Selftest (Chiến chốt 26/11: "Gộp, giữ tên ca cũ"):** hai ca cũ `Đặt hàng 1 ĐVT [thuần 12]…` và `Đặt hàng 1 ĐVT UI [nhánh 1 ĐVT giữ nguyên]…` được sửa nội dung kiểm theo luật mới, **giữ nguyên tên** (script so ca theo tên), kèm chú thích trong code rằng tên đã lỗi thời; thêm ca mới có tên đúng.
+5. **Quy tắc nhập số (Chiến chốt 26/11, áp cho MỌI ô số trong app; khác app gốc và thay cách đọc kiểu Việt chốt trước đó cùng ngày):** dấu chấm hay dấu phẩy do người dùng gõ đều là **dấu thập phân**; dấu ngăn hàng nghìn chỉ do app tự thêm khi hiển thị. Để dấu hiển thị không lẫn vào chữ người dùng sửa, khi vào chế độ sửa ô hiện số **không có dấu ngăn nghìn**. Có từ hai dấu trở lên thì coi là không đọc được.
+   - Ví dụ: ô hiện `1.500`, bấm sửa thì thành `1500`; gõ `1600` ra `1.600`; gõ `2.5` hoặc `2,5` ra `2,5`.
+   - Phạm vi việc này: ba cột Số lượng, Đơn giá, Giảm giá % của lưới Khách đặt hàng (và Theo dõi đặt phòng). Cột Số lượng không đọc được thì theo điểm 1; cột Đơn giá, % giảm không đọc được thì giữ giá trị cũ, không báo. Các ô số khác trong app làm thành việc riêng, dùng chung một hàm đọc số.
