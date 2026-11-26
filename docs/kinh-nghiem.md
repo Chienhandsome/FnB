@@ -75,4 +75,6 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **`CellParsing` trả `DBNull` cho cột `decimal` không có tác dụng:** lưới tự phân tích lại, hiện hộp "DataGridView Default Error Dialog". Selftest treo vì hộp đó. Lưới sửa được phải có `DataError`, ca test đếm số lần.
 - **Selftest chạy lâu bất thường mà CPU gần như không tăng:** đang chờ một hộp thoại. Liệt kê cửa sổ của tiến trình bằng `EnumWindows` để đọc chữ, rồi tắt đúng tiến trình trong `_tmp`.
 - **Chụp hộp thoại chưa có `--render-screen`:** PowerShell 32-bit, `LoadFrom` exe và DLL của bản build, dựng bằng reflection trên bản chép DB. Ảnh kiểu này có thể thiếu vùng, không dùng để nghiệm thu bố cục.
+- **Làm xong một chức năng thì ghi số đo vào `docs/hieu-qua.md`** (Chiến dặn 26/11): vòng thừa do ai, token và thời gian agy, lỗi bắt ở bước nào. Ghi phần trăm hạn mức **lúc bắt đầu** (`get_usage`), cuối việc không đo lại được.
+- **Ảnh có dữ liệu bắt được lỗi selftest không kiểm** (ô số lượng thiếu dấu ngăn nghìn, 26/11). `--render-screen` không có dữ liệu thì nạp bản build bằng PowerShell 32-bit rồi gán giá trị.
 - GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.
