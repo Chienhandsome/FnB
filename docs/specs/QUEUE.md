@@ -48,7 +48,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 10 | `danh-muc-cua-hang/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Menu đang ẩn vì `NhieuCuaHang = 0` |
 | 11 | `danh-muc-kho-hang/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Cần rà lại giao diện (app gốc là hộp thoại cây) |
 | 12 | `danh-muc-nha-cung-cap/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Phụ thuộc #7 (dùng chung khung cây nhóm) |
-| – | `in-xuat-excel/index.md` | **NHÁP**, chờ Chiến trả lời Q1–Q7 và duyệt | nặng | In, xuất Excel, mã vạch; dùng FastReport |
+| – | `in-xuat-excel/index.md` | **NHÁP**, Q1 đã chốt, chờ Q2–Q7 và duyệt | nặng | In, xuất Excel, mã vạch; dùng FastReport |
 
 ## Ghi chú
 - 26/11: Chiến chốt quy tắc nhập số cho **mọi ô số** (`khach-dat-hang.md`, đợt 2, điểm 5): chấm hay phẩy đều là dấu thập phân, dấu ngăn nghìn chỉ để hiển thị. Mới áp cho lưới Khách đặt hàng (`bf45f06`); các ô còn lại cần spec riêng.

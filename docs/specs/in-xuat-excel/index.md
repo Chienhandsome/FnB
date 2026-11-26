@@ -1,6 +1,6 @@
 # Spec: In, xuất Excel và FastReport cho mọi chỗ còn thiếu
 
-- Trạng thái: **NHÁP**, chờ Chiến trả lời câu hỏi ở [`nghiem-thu.md`](nghiem-thu.md) và duyệt.
+- Trạng thái: **NHÁP**, Q1 đã chốt; chờ Chiến trả lời Q2–Q7 ở [`nghiem-thu.md`](nghiem-thu.md) và duyệt.
 - Ngày: 2026-11-26. Base: `origin/main` @ `9e7c6f1`.
 - Nguồn quyết định: Chiến yêu cầu 26/11: viết spec cho **tất cả chỗ thiếu**, **dùng các DLL FastReport** của dự án.
 - Loại: **nặng** (mẫu in có số tiền).

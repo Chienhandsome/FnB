@@ -36,7 +36,7 @@
 
 | # | Câu hỏi, ví dụ | Đề xuất |
 |---|---|---|
-| Q1 | Chỉ DLL FastReport thì không dựng được mẫu nào. Có cho chép `No1Lib*.dll`, `DbMapping.DLL` từ app gốc vào `Kazuko_FnB/lib/` không? Ví dụ mẫu "Thống kê mặt hàng bán A4" thiếu chúng thì báo "Metadata file No1Lib.Utils.dll could not be found". | **Có** (sản phẩm của công ty). Phương án khác là sửa từng mẫu hoặc dựng lại mẫu: tốn hơn nhiều và lệch app gốc |
+| Q1 | **Chiến chốt 26/11:** "Đồng ý, chép" `No1Lib*.dll` và `DbMapping.DLL` từ app gốc vào `Kazuko_FnB/lib/` | Đã chép 9 file (mã băm khớp `POS TAP/`). Chưa thêm tham chiếu nào vào project |
 | Q2 | Làm theo thứ tự nào? | P0 → P1 → P2 → P3 → P4; P5, P6 để sau |
 | Q3 | Bấm In ở app gốc thì in thẳng ra máy in hay hiện xem trước? Ví dụ thu ngân bấm "In" ở Thống kê doanh thu. | Mở app gốc xem rồi làm y như vậy (cần bạn sẵn sàng). Chưa xem được thì dùng xem trước |
 | Q4 | "Xuất Excel" của lưới lấy đúng cái đang hiện, hay theo mẫu in? Ví dụ lưới đang lọc còn 3 trong 50 mặt hàng: file có 3 hay 50 dòng? | 3 dòng, đúng cái đang hiện; xác nhận lại với app gốc. Có thể dùng `Aspose.Cells` đã có trong `lib/` |
