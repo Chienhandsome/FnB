@@ -27,7 +27,12 @@ namespace Kazuko_FnB.Domain
         /// <summary>STABLEDESCID của bảng TBAOGIA (Báo giá) trong bảng STEMPLATE.</summary>
         public const string QuoteTableDescId = "b2d3ffd4-9037-4dd1-b255-ec16dd122e66";
 
+        /// <summary>STABLEDESCID của bảng DMATHANG (Danh mục mặt hàng / In mã vạch) trong bảng STEMPLATE.</summary>
+        public const string ProductTableDescId = "a4a16216-aee9-4dd3-9f92-c1e4d85c06a2";
+
         public const int ActiveStatus = 30;
+        /// <summary>Giá trị cột STEMPLATE.BARCODE đánh dấu mẫu tem mã vạch.</summary>
+        public const int BarcodeFlagValue = 30;
         /// <summary>Giá trị INTVALUE bật cấu hình trong bảng SCONFIG (cùng quy ước SystemConfig.On = 30).</summary>
         public const int ConfigEnabledValue = 30;
 
@@ -41,6 +46,9 @@ namespace Kazuko_FnB.Domain
         public const string DefaultPreviewTitle = "IN PHIẾU";
         public const string SelectTemplateDialogTitle = "CHỌN MẪU IN";
         public const string PrintReportDialogTitle = "IN BÁO CÁO";
+        public const string BarcodeTemplateDialogTitle = "MẪU IN MÃ VẠCH";
+        public const string BarcodePreviewTitle = "IN MÃ VẠCH";
+        public const string BarcodeDefaultFileName = "Ma-vach";
         public const string DefaultBookingTemplateName = "Mẫu đặt hàng A4";
         public const string DefaultQuoteTemplateName = "Báo Giá A4";
         public const string ConfirmOpenExportedFileMessage = "Bạn có muốn mở file đã xuất không?";
@@ -48,6 +56,7 @@ namespace Kazuko_FnB.Domain
         public const string NoCostPermissionPrintMessage = "Bạn không có quyền Xem giá nhập để in báo cáo này.";
         public const string SelectBookingToPrintMessage = "Mời bạn chọn phiếu đặt hàng cần in.";
         public const string SelectQuoteToPrintMessage = "Mời bạn chọn phiếu báo giá cần in.";
+        public const string NoBarcodeItemsMessage = "Chưa có mặt hàng nào để in mã vạch";
     }
 
     /// <summary>Bốn tùy chọn thực hiện trong hộp "CHỌN MẪU IN" (không có Thiết kế mẫu in theo Q8).</summary>

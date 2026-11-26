@@ -187,6 +187,12 @@
     <Compile Include="CatalogView.Excel.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.Barcode.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="BarcodePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BookingListView.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -337,6 +343,9 @@
     <Compile Include="Diagnostics\SelfTest.Print.GridExcel.Helpers.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.GridExcel.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.GridExcel.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Barcode.Helpers.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Barcode.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Barcode.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -353,6 +362,8 @@
     <Compile Include="Printing\BookingPrintDataBuilder.cs" />
     <Compile Include="Printing\QuotePrintDataBuilder.cs" />
     <Compile Include="Printing\DocumentPrintCoordinator.cs" />
+    <Compile Include="Printing\BarcodePrintDataBuilder.cs" />
+    <Compile Include="Printing\BarcodePrintCoordinator.cs" />
     <Compile Include="Printing\ItemSalesPrintDataBuilder.cs" />
     <Compile Include="Printing\ItemSalesPrintCoordinator.cs" />
     <Compile Include="Printing\RevenueReportPrintDataBuilder.cs" />

@@ -15,6 +15,7 @@ namespace Kazuko_FnB.UI.Printing
         public string OkButtonText { get; set; }
         public string CancelButtonText { get; set; }
         public bool UseComboBox { get; set; }
+        public bool HideActionOptions { get; set; }
         public string DefaultTemplateName { get; set; }
         public bool SelectLastByDefault { get; set; }
         public bool UseBookingOrder { get; set; }
@@ -57,6 +58,21 @@ namespace Kazuko_FnB.UI.Printing
                 CancelButtonText = "Thoát",
                 UseComboBox = true,
                 DefaultTemplateName = PrintConstants.DefaultQuoteTemplateName,
+                SelectLastByDefault = false,
+                UseBookingOrder = false
+            };
+        }
+
+        public static PrintDialogOptions ForBarcodeDialog()
+        {
+            return new PrintDialogOptions
+            {
+                Title = PrintConstants.BarcodeTemplateDialogTitle,
+                Subtitle = "Chọn mẫu tem mã vạch để xem trước",
+                OkButtonText = "Chấp nhận",
+                CancelButtonText = "Thoát",
+                UseComboBox = false,
+                HideActionOptions = true,
                 SelectLastByDefault = false,
                 UseBookingOrder = false
             };

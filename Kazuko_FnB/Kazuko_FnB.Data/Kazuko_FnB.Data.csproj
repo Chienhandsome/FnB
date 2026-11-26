@@ -72,6 +72,7 @@
     <Compile Include="BookingCalendarRepository.cs" />
     <Compile Include="PhieuThuRepository.cs" />
     <Compile Include="PrintTemplateRepository.cs" />
+    <Compile Include="BarcodePrintRepository.cs" />
     <Compile Include="DocumentPrintRepository.cs" />
     <Compile Include="KazukoConnection.cs" />
     <Compile Include="MenuRepository.cs" />

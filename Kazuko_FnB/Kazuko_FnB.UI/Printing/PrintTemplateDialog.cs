@@ -44,6 +44,8 @@ namespace Kazuko_FnB.UI.Printing
         private readonly Font _headingFont;
         private readonly PrintDialogOptions _options;
         private readonly bool _useComboBox;
+        private readonly bool _hideActionOptions;
+        private bool _accepted;
 
         private ThemeTokens _theme = ThemeManager.Current;
 
@@ -76,10 +78,11 @@ namespace Kazuko_FnB.UI.Printing
                 ResolveDialogTitle(options),
                 ResolveDialogSubtitle(options),
                 480,
-                options != null && options.UseComboBox ? 378 : 460)
+                options != null && (options.UseComboBox || options.HideActionOptions) ? 378 : 460)
         {
             _options = options ?? PrintDialogOptions.ForFormSelectDialog();
             _useComboBox = _options.UseComboBox;
+            _hideActionOptions = _options.HideActionOptions;
 
             float s = Dpi;
             _bodyFont = new Font(ThemeManager.BodyFontName, ThemeManager.BodyFontSize);
@@ -101,7 +104,7 @@ namespace Kazuko_FnB.UI.Printing
             CancelButton = _btnCancel;
 
             Body.AutoScroll = false;
-            FitBody(480, _useComboBox ? 262 : 344);
+            FitBody(480, _useComboBox || _hideActionOptions ? 262 : 344);
 
             BuildLayout(s);
             PopulateTemplates(templates);
@@ -150,7 +153,8 @@ namespace Kazuko_FnB.UI.Printing
             {
                 _lstTemplates.Font = _bodyFont;
                 _lstTemplates.ItemHeight = (int)(32 * s);
-                _lstTemplates.SetBounds(padX, (int)(38 * s), fullW, (int)(116 * s));
+                int listH = _hideActionOptions ? (int)(208 * s) : (int)(116 * s);
+                _lstTemplates.SetBounds(padX, (int)(38 * s), fullW, listH);
                 _lstTemplates.DrawItem += DrawTemplateItem;
                 _lstTemplates.DoubleClick += delegate { AcceptSelection(); };
                 _lstTemplates.Visible = true;
@@ -160,6 +164,7 @@ namespace Kazuko_FnB.UI.Printing
             int optionsTop = _useComboBox ? (int)(84 * s) : (int)(166 * s);
             _optionsPanel.SetBounds(padX, optionsTop, fullW, (int)(166 * s));
             _optionsPanel.Paint += DrawOptionsPanelBorder;
+            _optionsPanel.Visible = !_hideActionOptions;
 
             int innerX = (int)(14 * s);
             int innerW = fullW - innerX * 2;
@@ -204,7 +209,8 @@ namespace Kazuko_FnB.UI.Printing
                 Body.Controls.Add(_templateFrame);
             else
                 Body.Controls.Add(_lstTemplates);
-            Body.Controls.Add(_optionsPanel);
+            if (!_hideActionOptions)
+                Body.Controls.Add(_optionsPanel);
         }
 
         private void PopulateTemplates(IList<PrintTemplateRecord> templates)
@@ -277,19 +283,27 @@ namespace Kazuko_FnB.UI.Printing
 
         private void AcceptSelection()
         {
+            if (_accepted)
+                return;
             PrintTemplateRecord selected = _useComboBox
                 ? (_cboTemplates.SelectedItem as PrintTemplateRecord)
                 : (_lstTemplates.SelectedItem as PrintTemplateRecord);
             if (selected == null)
                 return;
 
+            _accepted = true;
+            _btnOk.Enabled = false;
+
             PrintActionKind action = PrintActionKind.Preview;
-            if (_rbPrint.Checked)
-                action = PrintActionKind.Print;
-            else if (_rbExcel.Checked)
-                action = PrintActionKind.ExportExcel;
-            else if (_rbPdf.Checked)
-                action = PrintActionKind.ExportPdf;
+            if (!_hideActionOptions)
+            {
+                if (_rbPrint.Checked)
+                    action = PrintActionKind.Print;
+                else if (_rbExcel.Checked)
+                    action = PrintActionKind.ExportExcel;
+                else if (_rbPdf.Checked)
+                    action = PrintActionKind.ExportPdf;
+            }
 
             Selection = new PrintSelectionResult
             {

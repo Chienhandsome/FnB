@@ -73,6 +73,32 @@ namespace Kazuko_FnB.Data
             });
         }
 
+        /// <summary>
+        /// Đọc danh sách mẫu tem mã vạch đang dùng (STABLEDESCID, BARCODE = 30, STATUS = 30, có TEMPLATE),
+        /// sắp tăng dần theo NAME. Chỉ đọc, SQL tham số hóa.
+        /// </summary>
+        public List<PrintTemplateRecord> LoadBarcodeTemplatesForTable(string stableDescId)
+        {
+            if (string.IsNullOrEmpty(stableDescId))
+                return new List<PrintTemplateRecord>();
+
+            return DbHelper.Read(_databasePath, conn =>
+            {
+                const string sql =
+                    "SELECT ID, NAME, SFORMID, STABLEDESCID, TEMPLATE " +
+                    "FROM STEMPLATE " +
+                    "WHERE STABLEDESCID = @TableDescId AND BARCODE = @Barcode AND STATUS = @Status AND TEMPLATE IS NOT NULL " +
+                    "ORDER BY NAME";
+
+                DataTable dt = DbHelper.Table(conn, null, sql,
+                    "@TableDescId", stableDescId,
+                    "@Barcode", PrintConstants.BarcodeFlagValue,
+                    "@Status", PrintConstants.ActiveStatus);
+
+                return ReadTemplatesAndConfig(conn, dt);
+            });
+        }
+
         private static List<PrintTemplateRecord> ReadTemplatesAndConfig(FbConnection conn, DataTable dt)
         {
             var list = new List<PrintTemplateRecord>(dt.Rows.Count);

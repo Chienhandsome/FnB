@@ -246,6 +246,7 @@ namespace Kazuko_FnB.UI
                 CatalogData data = repo.Load(_def);
                 _productMode = string.Equals(_def.TableName, "DMATHANG", StringComparison.OrdinalIgnoreCase);
                 _roomMode = string.Equals(_def.TableName, "DBAN", StringComparison.OrdinalIgnoreCase);
+                _grid.MultiSelect = _productMode;
                 if (_productMode)
                 {
                     LoadProductData(data);
@@ -261,6 +262,8 @@ namespace Kazuko_FnB.UI
                     BuildTree(data);
                     BuildTable(data);
                 }
+                if (!_productMode)
+                    HideBarcodePanel();
                 _groupBar.Visible = _productMode || _roomMode;
                 _bottom.Visible = _productMode || _roomMode;
                 _paneSplitter.Visible = _bottom.Visible;
@@ -709,6 +712,7 @@ namespace Kazuko_FnB.UI
                     UpdateRoomAuditPanel();
                 }
             }
+            ApplyBarcodeTheme(t, page);
             Invalidate(true);
         }
 
@@ -728,13 +732,15 @@ namespace Kazuko_FnB.UI
             _btnExcelExport.Click += delegate { ExportGridToExcel(); };
             _btnExcelImport.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnPrint.Click += delegate { Msg.Info(this, UnsupportedText); };
-            _btnPrintBarcode.Click += delegate { Msg.Info(this, UnsupportedText); };
+            _btnPrintBarcode.Click += delegate { OpenBarcodePanel(); };
             FlatButton[] barButtons = { _btnAdd, _btnEdit, _btnRemove, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode };
             foreach (FlatButton b in barButtons)
             {
                 b.Visible = false;
                 _bar.Controls.Add(b);
             }
+
+            BuildBarcodeUi();
 
             _groupBar.Height = (int)(36 * s);
             _groupAdd.SetBounds((int)(6 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
@@ -2071,6 +2077,7 @@ namespace Kazuko_FnB.UI
                     _treeMenu.Dispose();
                 _roomGridMenu.Dispose();
                 _roomTreeMenu.Dispose();
+                DisposeBarcodeUi();
             }
             base.Dispose(disposing);
         }
