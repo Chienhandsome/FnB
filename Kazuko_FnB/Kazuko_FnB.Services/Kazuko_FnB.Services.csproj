@@ -83,10 +83,13 @@
     <Compile Include="SystemConfig.cs" />
     <Compile Include="TrialRules.cs" />
     <Compile Include="OrderCalculator.cs" />
+    <Compile Include="PaymentAllocationRules.cs" />
     <Compile Include="InvoiceNumberService.cs" />
     <Compile Include="TableService.cs" />
     <Compile Include="TableService.Lines.cs" />
     <Compile Include="TableService.Pricing.cs" />
+    <Compile Include="TableService.Payment.cs" />
+    <Compile Include="TableService.Payment.Execute.cs" />
     <Compile Include="TableService.Helpers.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

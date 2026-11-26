@@ -12,6 +12,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             ServiceOrderCalculatorTests();
             ServiceOrderValidationAndDateTests();
             ServiceOrderRepoAndUiTests(db);
+            ServiceOrderPaymentTests(db);
         }
 
         // ------------------------------------------------------------------ A. OrderCalculator (§3.6, §7: >= 15 ca)

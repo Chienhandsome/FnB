@@ -78,7 +78,7 @@ namespace Kazuko_FnB.Data
                     ReasonId = DbHelper.Str(r["DLYDOTHUCHIID"]),
                     Note = DbHelper.Str(r["DIENGIAI"]),
                     Amount = DbHelper.Dec(r["THU"]),
-                    Transfer = DbHelper.Int(r["CHUYENKHOAN"]) == CatalogRepository.ActiveStatus,
+                    Transfer = DbHelper.Int(r["CHUYENKHOAN"]) != 0,
                     BankAccountId = DbHelper.Str(r["DTAIKHOANNGANHANGID"]),
                     CustomerName = DbHelper.Str(r["TENDOITUONG"]),
                     Address = DbHelper.Str(r["DIACHI"])
@@ -168,6 +168,65 @@ namespace Kazuko_FnB.Data
             return savedId;
         }
 
+        /// <summary>Số phiếu chi tiếp theo theo mẫu của SFORM "Phiếu chi" (mặc định "PC(yy)/(*****)").</summary>
+        public string GenerateExpenseNumber()
+        {
+            return DbHelper.Read(_databasePath, conn => GenerateExpenseNumberInTx(conn, null));
+        }
+
+        /// <summary>
+        /// Ghi thật phiếu chi trả lại tiền đặt trước (LOAI = 1, KHONGTHAYDOICONGNO = 30, §3.7.2 &amp; quy-tien.md §4.2).
+        /// Trả ID đã lưu; null nếu số phiếu bị trùng.
+        /// </summary>
+        public string SaveExpenseVoucher(RefundVoucherInput input, string userId, out string savedNumber)
+        {
+            string savedId = null;
+            string number = input != null ? (input.Number ?? "").Trim() : "";
+            DbHelper.InTransaction(_databasePath, (conn, tx) =>
+            {
+                DateTime now = DbHelper.Now();
+                if (string.IsNullOrWhiteSpace(number))
+                    number = GenerateExpenseNumberInTx(conn, tx);
+
+                object dup = DbHelper.Scalar(conn, tx,
+                    "SELECT FIRST 1 \"ID\" FROM \"TTHUCHI\" WHERE \"NAME\" = @n", "@n", number);
+                if (dup != null)
+                    return;
+
+                string id = DbHelper.NewId();
+                int objType = string.IsNullOrEmpty(input.CustomerId) ? 0 : 2;
+                string storeId = ServiceOrderRepository.ResolveDefaultStoreIdIn(conn, tx, input.StoreId);
+
+                DbHelper.Exec(conn, tx,
+                    "INSERT INTO \"TTHUCHI\" (\"ID\", \"NAME\", \"NGAY\", \"LOAI\", \"LOAIDOITUONG\", " +
+                    "\"LAPHIEUTHUCONGNO\", \"KHONGTHAYDOICONGNO\", \"LATAMUNG\", \"TENDOITUONG\", \"DIACHI\", " +
+                    "\"DKHACHHANGID\", \"DNHANVIENID\", \"DCUAHANGID\", \"DLYDOTHUCHIID\", \"DIENGIAI\", " +
+                    "\"THU\", \"CHI\", \"CHUYENKHOAN\", \"DTAIKHOANNGANHANGID\", \"TDONHANGID\", " +
+                    "\"STATUS\", \"USERCREATEDID\", \"TIMECREATED\") " +
+                    "VALUES (@id, @name, @ngay, 1, @doituong, 0, 30, 0, @ten, @diachi, @cust, NULL, " +
+                    "@store, @reason, @note, 0, @chi, @ck, @bank, @bill, 30, @user, @now)",
+                    "@id", id,
+                    "@name", number,
+                    "@ngay", input.Date,
+                    "@doituong", objType,
+                    "@ten", string.IsNullOrEmpty(input.CustomerName) ? null : input.CustomerName,
+                    "@diachi", string.IsNullOrEmpty(input.Address) ? null : input.Address,
+                    "@cust", string.IsNullOrEmpty(input.CustomerId) ? null : input.CustomerId,
+                    "@store", string.IsNullOrEmpty(storeId) ? null : storeId,
+                    "@reason", string.IsNullOrEmpty(input.ReasonId) ? null : input.ReasonId,
+                    "@note", string.IsNullOrEmpty(input.Note) ? null : input.Note,
+                    "@chi", input.Amount,
+                    "@ck", input.Transfer ? 30 : 0,
+                    "@bank", input.Transfer && !string.IsNullOrEmpty(input.BankAccountId) ? input.BankAccountId : null,
+                    "@bill", string.IsNullOrEmpty(input.PrimaryBillId) ? null : input.PrimaryBillId,
+                    "@user", userId ?? "",
+                    "@now", now);
+                savedId = id;
+            });
+            savedNumber = number;
+            return savedId;
+        }
+
         private static string GenerateNumberInTx(FirebirdSql.Data.FirebirdClient.FbConnection conn, FirebirdSql.Data.FirebirdClient.FbTransaction tx)
         {
             // Sinh số trong transaction: đọc mẫu + số lớn nhất hiện có (chưa có phiếu nào khác chen vào
@@ -177,6 +236,23 @@ namespace Kazuko_FnB.Data
             string template = DbHelper.Str(tpl);
             if (string.IsNullOrWhiteSpace(template))
                 throw new InvalidDataException("SFORM \"Phiếu thu\" chưa có NOTEMPLATE.");
+            DateTime today = DateTime.Today;
+            string prefix = DocumentNumber.LiteralPrefix(template, today);
+            DataTable t = DbHelper.Table(conn, tx,
+                "SELECT \"NAME\" FROM \"TTHUCHI\" WHERE \"NAME\" STARTING WITH @p", "@p", prefix);
+            var names = new string[t.Rows.Count];
+            for (int i = 0; i < t.Rows.Count; i++)
+                names[i] = DbHelper.Str(t.Rows[i]["NAME"]);
+            return DocumentNumber.Format(template, today, DocumentNumber.NextSequence(names, prefix));
+        }
+
+        private static string GenerateExpenseNumberInTx(FirebirdSql.Data.FirebirdClient.FbConnection conn, FirebirdSql.Data.FirebirdClient.FbTransaction tx)
+        {
+            object tpl = DbHelper.Scalar(conn, tx,
+                "SELECT FIRST 1 \"NOTEMPLATE\" FROM \"SFORM\" WHERE \"NAME\" = 'Phiếu chi' AND \"STATUS\" = 30");
+            string template = DbHelper.Str(tpl);
+            if (string.IsNullOrWhiteSpace(template))
+                template = "PC(yy)/(*****)";
             DateTime today = DateTime.Today;
             string prefix = DocumentNumber.LiteralPrefix(template, today);
             DataTable t = DbHelper.Table(conn, tx,

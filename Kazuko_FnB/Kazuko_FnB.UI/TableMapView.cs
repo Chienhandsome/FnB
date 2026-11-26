@@ -43,6 +43,8 @@ namespace Kazuko_FnB.UI
         public event EventHandler<ServiceTableInfo> TableSelected;
         public event EventHandler<ServiceTableInfo> TableDoubleClicked;
         public event EventHandler<ServiceTableInfo> OpenTableRequested;
+        public event EventHandler<ServiceTableInfo> PayRequested;
+        public event EventHandler<ServiceTableInfo> GroupPayRequested;
         public event EventHandler<string> UnsupportedActionRequested;
 
         internal ThemedTabControl TopTabsForTest { get { return _topTabs; } }
@@ -188,7 +190,16 @@ namespace Kazuko_FnB.UI
                 if (_contextTable != null && OpenTableRequested != null)
                     OpenTableRequested(this, _contextTable);
             });
-            _busyMenu.AddItem("Thanh toán (F11)", delegate { RaiseUnsupported("Thanh toán"); });
+            _busyMenu.AddItem("Thanh toán (F11)", delegate
+            {
+                if (_contextTable != null && PayRequested != null)
+                    PayRequested(this, _contextTable);
+            });
+            _busyMenu.AddItem("Thanh toán chung", delegate
+            {
+                if (_contextTable != null && GroupPayRequested != null)
+                    GroupPayRequested(this, _contextTable);
+            });
             _busyMenu.AddItem("Chuyển bàn", delegate { RaiseUnsupported("Chuyển bàn"); });
             _busyMenu.AddItem("Gộp bàn", delegate { RaiseUnsupported("Gộp bàn"); });
             _busyMenu.AddSeparator();

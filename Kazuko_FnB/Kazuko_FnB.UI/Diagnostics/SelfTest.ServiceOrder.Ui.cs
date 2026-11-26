@@ -85,11 +85,11 @@ namespace Kazuko_FnB.UI.Diagnostics
                         Application.DoEvents();
                         view.KitchenPrintButtonForTest.PerformClick();
                         string infoKitchen = view.LastInfoForTest;
-                        view.PayButtonForTest.PerformClick();
-                        string infoPay = view.LastInfoForTest;
+                        view.MoveTableButtonForTest.PerformClick();
+                        string infoMove = view.LastInfoForTest;
                         Check("SDDV UI §7 Lưới nút cảm ứng >= 44px và các nút patch sau (In chế biến / Thanh toán) báo chưa hỗ trợ",
-                            touchOk && infoKitchen == ServiceOrderConstants.NotSupportedYet && infoPay == ServiceOrderConstants.NotSupportedYet,
-                            "touch=" + touchOk + ", msg=" + infoPay);
+                            touchOk && infoKitchen == ServiceOrderConstants.NotSupportedYet && infoMove == ServiceOrderConstants.NotSupportedYet,
+                            "touch=" + touchOk + ", msg=" + infoMove);
                         int beforeRows = view.DetailGridForTest.Rows.Count;
                         decimal beforeTotal = view.TongCongBoxForTest.Value;
                         view.MenuPickerForTest.SelectProductById(fx.ProdNormalId);

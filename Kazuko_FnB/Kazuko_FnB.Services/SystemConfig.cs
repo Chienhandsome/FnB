@@ -158,5 +158,18 @@ namespace Kazuko_FnB.Services
         public static bool BatBuocNhapNhanVienBanHang { get { return GetBool("BatBuocNhapNhanVienBanHang"); } }
         /// <summary>Cấu hình toàn hệ thống cho phép âm kho (§6.6). Mặc định tắt (chặn âm kho).</summary>
         public static bool ChoPhepAmKho { get { return GetBool("ChoPhepAmKho"); } }
+
+        // ---- Khóa phần Thanh toán (docs/specs/su-dung-dich-vu.md §3.7, §3.10) ----
+
+        public static bool CoThanhToanThe { get { return GetBool("CoThanhToanThe"); } }
+        public static bool CoThanhToanChuyenKhoan { get { return GetBool("CoThanhToanChuyenKhoan"); } }
+        public static bool CoThanhToanVoucher { get { return GetBool("CoThanhToanVoucher"); } }
+        public static bool LuaChonVoucherTuDanhSach { get { return GetBool("LuaChonVoucherTuDanhSach"); } }
+        public static bool SuDungDiemTichLuyDeThanhToan { get { return GetBool("SuDungDiemTichLuyDeThanhToan"); } }
+        public static decimal QuyDoi1DiemSangTien { get { return GetDecimal("QuyDoi1DiemSangTien", 0m); } }
+        public static bool BatBuocInKhiThanhToan { get { return GetBool("BatBuocInKhiThanhToan"); } }
+        public static bool ChoPhepInTamTinh { get { return GetBool("ChoPhepInTamTinh"); } }
+        public static bool SuDungChucNangTamUngTrongDonHang { get { return GetBool("SuDungChucNangTamUngTrongDonHang"); } }
+        public static bool BatChucNangKiemSoatOrder { get { return GetBool("BatChucNangKiemSoatOrder"); } }
     }
 }

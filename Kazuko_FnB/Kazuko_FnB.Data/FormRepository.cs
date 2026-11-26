@@ -80,6 +80,12 @@ namespace Kazuko_FnB.Data
             return Load("DLYDOTHUCHI", "LALYDOTHU = 30", null);
         }
 
+        /// <summary>Lý do CHI (DLYDOTHUCHI có LALYDOTHU = 0), đúng bộ lọc của form Phiếu chi gốc.</summary>
+        public List<LookupItem> LoadExpenseReasons()
+        {
+            return Load("DLYDOTHUCHI", "COALESCE(LALYDOTHU, 0) = 0", null);
+        }
+
         /// <summary>Cửa hàng mà người dùng được gán (TNGUOIDUNGTHEOCUAHANG), dùng cho người không phải admin.</summary>
         public List<LookupItem> LoadStoresOfUser(string userId)
         {

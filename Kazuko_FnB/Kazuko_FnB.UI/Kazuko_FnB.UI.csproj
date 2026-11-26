@@ -250,6 +250,9 @@
     <Compile Include="ServiceOrderView.Actions.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ServiceOrderView.Payment.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ServiceOrderView.Render.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -376,6 +379,10 @@
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.cs" />
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.ServiceOrder.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Payment.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Payment.Repo.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Payment.Repo2.cs" />
+    <Compile Include="Diagnostics\SelfTest.ServiceOrder.Payment.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -444,6 +451,18 @@
     <Compile Include="Dialogs\RolesPanel.cs" />
     <Compile Include="Dialogs\ScreenFactory.cs" />
     <Compile Include="Dialogs\ServiceOrderDialogs.cs" />
+    <Compile Include="Dialogs\PaymentDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\PaymentDialog.Actions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\PaymentSubDialogs.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\RefundDepositDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\ThemeChooserDialog.cs" />
     <Compile Include="Dialogs\ThemedDialog.cs" />
     <Compile Include="Dialogs\UserEditDialog.cs" />

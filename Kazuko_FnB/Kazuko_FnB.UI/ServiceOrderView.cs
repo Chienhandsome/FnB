@@ -73,8 +73,9 @@ namespace Kazuko_FnB.UI
         private readonly NumberBox _numTienThue = new NumberBox { ReadOnly = true, Maximum = 9999999999m, DecimalPlaces = 2 };
         private readonly NumberBox _numTongCong = new NumberBox { ReadOnly = true, Maximum = 9999999999m, DecimalPlaces = 2 };
 
-        private readonly FlowLayoutPanel _bottomButtons = new FlowLayoutPanel { Dock = DockStyle.Right, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        private readonly TableLayoutPanel _bottomButtons = new TableLayoutPanel { Dock = DockStyle.Right, ColumnCount = 2, RowCount = 2 };
         private readonly FlatButton _btnPay = new FlatButton { Text = "Thanh toán (F11)", Tag = "primary" };
+        private readonly FlatButton _btnGroupPay = new FlatButton { Text = "TT chung" };
         private readonly FlatButton _btnStats = new FlatButton { Text = "Thống kê (F9)" };
         private readonly FlatButton _btnReprint = new FlatButton { Text = "In lại bill (F8)" };
 
@@ -103,6 +104,7 @@ namespace Kazuko_FnB.UI
         internal FlatButton ReduceButtonForTest { get { return _btnReduce; } }
         internal FlatButton DeleteButtonForTest { get { return _btnDelete; } }
         internal FlatButton PayButtonForTest { get { return _btnPay; } }
+        internal FlatButton GroupPayButtonForTest { get { return _btnGroupPay; } }
         internal FlatButton KitchenPrintButtonForTest { get { return _btnKitchenPrint; } }
         internal FlatButton MoveTableButtonForTest { get { return _btnMoveTable; } }
         internal NumberBox AddQtyBoxForTest { get { return _numAddQty; } }
@@ -164,6 +166,7 @@ namespace Kazuko_FnB.UI
             _menuPicker.SetCanViewPrice(_canViewPrice);
             _totalsGrid.Visible = _canViewPrice;
             _btnPay.Visible = _canViewPrice;
+            _btnGroupPay.Visible = _canViewPrice;
 
             ReloadAll();
             _tableMap.StartAutoRefresh();
@@ -399,16 +402,30 @@ namespace Kazuko_FnB.UI
             _totalsGrid.Controls.Add(_numTongCong, 3, 2);
             _totalsGrid.SetColumnSpan(_numTongCong, 3);
 
-            int btnW = (int)(152 * s);
-            _bottomButtons.Width = btnW + (int)(8 * s);
+            int btnW = (int)(136 * s);
+            _bottomButtons.Width = btnW * 2 + (int)(18 * s);
             _bottomButtons.Padding = new Padding((int)(4 * s), 0, 0, 0);
-            AddActionBtn(_bottomButtons, _btnPay, btnW, btnH, s);
-            AddActionBtn(_bottomButtons, _btnStats, btnW, btnH, s);
-            AddActionBtn(_bottomButtons, _btnReprint, btnW, btnH, s);
+            _bottomButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+            _bottomButtons.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+            _bottomButtons.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+            _bottomButtons.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+            PlaceBottomBtn(_btnPay, 0, 0, btnH, s);
+            PlaceBottomBtn(_btnGroupPay, 1, 0, btnH, s);
+            PlaceBottomBtn(_btnStats, 0, 1, btnH, s);
+            PlaceBottomBtn(_btnReprint, 1, 1, btnH, s);
             _btnPay.Font = _headingFont;
 
             _bottomPanel.Controls.Add(_totalsGrid);
             _bottomPanel.Controls.Add(_bottomButtons);
+        }
+
+        private void PlaceBottomBtn(FlatButton btn, int col, int row, int minH, float s)
+        {
+            btn.Dock = DockStyle.Fill;
+            btn.MinimumSize = new Size(0, minH);
+            btn.Font = _bodyFont;
+            btn.Margin = new Padding((int)(3 * s));
+            _bottomButtons.Controls.Add(btn, col, row);
         }
 
         private Label MakeLabel(string text)

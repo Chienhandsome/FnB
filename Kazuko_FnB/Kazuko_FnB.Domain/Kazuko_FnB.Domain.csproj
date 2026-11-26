@@ -66,6 +66,7 @@
     <Compile Include="ScreenLayoutModels.cs" />
     <Compile Include="SecurityModels.cs" />
     <Compile Include="ServiceOrderModels.cs" />
+    <Compile Include="ServicePaymentModels.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

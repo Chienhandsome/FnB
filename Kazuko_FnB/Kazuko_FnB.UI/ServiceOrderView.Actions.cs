@@ -21,6 +21,16 @@ namespace Kazuko_FnB.UI
                 OnTableSelected(t);
                 DoOpenTable();
             };
+            _tableMap.PayRequested += delegate(object s, ServiceTableInfo t)
+            {
+                OnTableSelected(t);
+                DoPay();
+            };
+            _tableMap.GroupPayRequested += delegate(object s, ServiceTableInfo t)
+            {
+                OnTableSelected(t);
+                DoGroupPay();
+            };
             _tableMap.UnsupportedActionRequested += delegate(object s, string name) { ShowNotSupported(name); };
 
             _menuPicker.ItemActivated += delegate(object s, ServiceMenuItem item) { DoAddItem(item); };
@@ -37,11 +47,12 @@ namespace Kazuko_FnB.UI
             _btnDelete.Click += delegate { DoDeleteSelected(); };
             _btnGroupDiscount.Click += delegate { DoApplyGroupDiscount(); };
 
-            // Các chức năng thuộc patch b/c/d -> hiện nút nhưng báo "chưa hỗ trợ" (§7).
+            // Các chức năng thuộc patch c/d -> hiện nút nhưng báo "chưa hỗ trợ" (§7).
             _btnMoveTable.Click += delegate { ShowNotSupported("Chuyển bàn"); };
             _btnMergeTable.Click += delegate { ShowNotSupported("Gộp bàn"); };
             _btnKitchenPrint.Click += delegate { ShowNotSupported("In chế biến"); };
-            _btnPay.Click += delegate { ShowNotSupported("Thanh toán"); };
+            _btnPay.Click += delegate { DoPay(); };
+            _btnGroupPay.Click += delegate { DoGroupPay(); };
             _btnStats.Click += delegate { ShowNotSupported("Thống kê"); };
             _btnReprint.Click += delegate { ShowNotSupported("In lại bill"); };
 
@@ -80,7 +91,7 @@ namespace Kazuko_FnB.UI
                     return true;
                 case Keys.F11:
                     if (_canViewPrice)
-                        ShowNotSupported("Thanh toán");
+                        DoPay();
                     return true;
                 case Keys.F12:
                     _cboCustomer.Focus();
