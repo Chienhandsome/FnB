@@ -22,6 +22,7 @@ Trong repo:
 - Sửa code thì làm theo skill `kazuko-patch`: 1 patch/task, build trên đúng base, verify `git apply --check` trên main sạch, strip BOM, ghi rõ base commit.
 - Trước khi sửa `CLAUDE.md`, `.claude/`, `docs/workflow-agy.md` hoặc `tools/agy/`: trình bày diff, chờ Chiến bảo "go" mới sửa.
 - Xong mỗi task có sửa file trong repo: ghi `docs/briefs/<ten>.md`, tối đa khoảng 30 dòng (đã làm gì, commit nào, còn gì, điều chưa kiểm). Có sẵn thì cập nhật, không chép lại spec.
+- Xong mỗi chức năng (kể cả khi dừng giữa chừng): thống kê hiệu quả, báo trong chat và thêm một dòng vào `docs/hieu-qua.md` gồm số vòng và thời gian agy, nguyên nhân từng vòng thừa (do Claude, do agy, do đổi yêu cầu), số lần Claude tự sửa, selftest trước → sau, lỗi bắt được ở bước nào, hạn mức gói đầu và cuối, một bài học. Chỉ ghi số đo được; không đo được thì ghi "chưa đo".
 - Code mới: mỗi file `.cs` tối đa 500 dòng, tách module nhỏ, rõ trách nhiệm. File cũ đã quá 500 dòng chỉ tách khi có việc đụng tới, không tách đồng loạt.
 - Không commit, không push khi chưa được Chiến bảo. **Ngoại lệ (Chiến duyệt 25/11/2026), chỉ khi làm chức năng theo [`docs/workflow-agy.md`](docs/workflow-agy.md) (Antigravity CLI viết code, Claude kiểm):**
   - Được chạy `agy` trong worktree của chức năng; được tạo/xóa worktree trong `D:\Working\fnb-agy-work\`.
