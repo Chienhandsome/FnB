@@ -13,7 +13,7 @@ Mọi cửa sổ xem trước là trình xem của FastReport: Print, mở, Save
 ## A2. Chi tiết hoạt động ngày, Kết quả kinh doanh (App gốc, 5, 6)
 
 - **Cả màn là trình xem FastReport nhúng trong tab**: trên là bộ lọc (Từ ngày, Đến ngày, Thu ngân ở màn chi tiết, Cửa hàng, "Tải dữ liệu (F5)"), dưới là bản báo cáo cùng thanh công cụ. **Không có nút "In báo cáo", không có hộp chọn mẫu.**
-- Bản mới đang dựng hai màn này bằng lưới tự làm và có nút "In báo cáo". Cách ghép là câu **Q9**.
+- **Chiến chốt 26/11 (Q9): làm y hệt app gốc.** Phần lưới tự làm và nút "In báo cáo" hiện nay của hai màn này sẽ được thay; chỉ thay sau khi mẫu dựng được và số trên trang in khớp số đang hiện (thứ tự làm, đề xuất của Claude).
 
 ## B. Phiếu đặt hàng, Báo giá (App gốc, 9–11, 16)
 
