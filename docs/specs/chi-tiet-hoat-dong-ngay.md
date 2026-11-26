@@ -126,6 +126,7 @@ Quyền xem = `SFUNCTION` `5d90c04e-…` "Chi tiết hoạt động ngày". `SGR
 | Q7 | Thêm xuất Excel? | Không |
 | Q8 | Chụp app gốc để xác minh bố cục. Đã chụp bộ lọc, đầu trang, ô ký, khối tổng hợp (24/11). **Còn thiếu:** ảnh khi có dữ liệu (gồm tiêu đề cột các khối) | Có, sau |
 | Q9 | ~~Mẫu in mặc định~~ **Đã chốt 25/11: "Mẫu đầy đủ"** `75d5af0a` (khối Bán hàng 12 cột), dù `LASTTEMPLATEID` của dữ liệu gốc đang trỏ mẫu `765b861a`. v1 không đọc `LASTTEMPLATEID` để chọn mẫu | — |
+| Q9b | **Chiến chốt 26/11, thay Q9 cho trang in và màn xem nhúng:** "Theo app gốc": đọc `SREPORT.LASTTEMPLATEID` (hiện là `765b861a`). Đã thấy trên app gốc có dữ liệu, xem `in-xuat-excel/nghiep-vu.md` | — |
 | Q10 | ~~Ràng buộc cửa hàng khi để trống, chốt chung các báo cáo~~ **Đã chốt: áp** (P2) | — |
 | Q11 | ~~Bill có thêm `STATUS = 30`?~~ **Chốt 25/11 (issue #8, áp chung mọi báo cáo): thêm cho bill** (khối Bán hàng, Mặt hàng bán, `GiamGiaTongBill`); phiếu nhập giữ như gốc | — |
 | Q12 | ~~TIỀN MẶT trừ cả tiền nhập trả bằng chuyển khoản~~ **Đã chốt 25/11: sửa**, tiền nhập trừ đúng quỹ theo hình thức trả ([`quy-tien.md`](quy-tien.md)) | — |

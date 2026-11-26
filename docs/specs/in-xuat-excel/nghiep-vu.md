@@ -59,3 +59,16 @@ Nhãn: **ĐÃ KIỂM** là đã đọc nguồn hoặc chạy thử; **CHƯA KI�
 - **Bẫy:** script `_StartReport` chỉ tính % khi sự kiện nhận `FastReport.ReportStartEventArgs(DataSet ds, Hashtable hst)`. `Prepare()` thường **không** truyền kiểu này: trang in thiếu toàn bộ cột %, không báo lỗi. Cách đã thử chạy đúng: `Prepare()`, `report.OnStartReport(new ReportStartEventArgs(ds, new Hashtable()))`, rồi `Prepare()` lại. Ca 900.000 / 100.000 / giảm giá 100.000 ra 82% / 9% / 9%. **Chưa biết** app gốc gọi sự kiện theo cách nào.
 - Script chỉ ghi % cho một số dòng; "100%" ở DOANH THU và CHI PHÍ phải có sẵn trong dữ liệu như mã gốc (`AddRow`).
 - **CHƯA KIỂM:** số so với app gốc; xem trước trong app mới; Excel và PDF của ba mẫu này.
+
+## Đối chiếu app gốc bằng hóa đơn thử có giảm giá (ĐÃ KIỂM 26/11, bản chép)
+
+Dữ liệu: `fnb-agy-work/_tmp/in-p1/seeded.fdb`; ảnh `_tmp/_origin-shots/in-xuat-excel/` số 18–24. HD001: tiền hàng chưa giảm 110.000, giảm trên món 10.000, giảm bill 10.000, còn 90.000. HD002: 80.000, giảm bill 5.000, còn 75.000. Một phiếu nhập 300.000 trả 100.000, thu mặt 11.000, chi chuyển khoản 6.000.
+
+- **Thống kê doanh thu:** màn gốc: tiền hàng 190.000, giảm tiền hàng 25.000, doanh thu 165.000, thực thu 115.000. Hộp "CHỌN MẪU IN" chọn sẵn "Báo cáo tổng hợp thanh toán A4" (`a5182e61-…`).
+  - Thanh toán A4: dòng tổng 165.000 / mặt 50.000 / thẻ 20.000 / CK 40.000 / voucher 10.000 / đặt trước 10.000 / thẻ trả trước 7.000 / nợ 25.000. Không có cột trừ tích lũy.
+  - Bán hàng A4: cột "Giảm hàng" chỉ in `TIENGIAMGIA` từng dòng (10.000; 5.000) nhưng **dòng tổng là 25.000** vì mẫu cộng thêm `GIAMGIAMATHANG`. Giữ như gốc. Tổng tiền hàng 190.000, tổng cộng 165.000.
+  - 80mm, 58mm: hai dòng, tổng 165.000.
+  - Bốn mẫu không khai báo tham số; app truyền `TuNgay`, `DenNgay`; không có `Total` trùng tên tham số. `Table0` là lưới chính (tên cột theo `Dictionary` của mẫu).
+- **Chi tiết hoạt động ngày:** app gốc dùng mẫu `765b861a` (khối Bán hàng có "Đặt trước", không có "Chuyển khoản"). Mọi số trên trang gốc trùng bản dựng thử (tổng 165.000; mặt hàng 190.000 − 10.000 − 15.000 = 165.000; TIỀN MẶT −39.000; CHUYỂN KHOẢN 34.000; nợ NCC 200.000). **Chiến chốt 26/11:** "Theo app gốc": đọc `SREPORT.LASTTEMPLATEID` (thay Q9 ngày 25/11 "Mẫu đầy đủ").
+- **Kết quả kinh doanh:** trang gốc có cột % (ví dụ chi phí 70.000 / doanh thu 165.000 = 42%), có dòng "Tiền giờ", biểu tượng Wingdings. Bản mới vẫn ẩn "Tiền giờ" theo Q7 của spec KQKD.
+- **Lọc ngày:** app gốc để "Đến ngày" lúc 0 giờ nên xem 26/11–26/11 không thấy bill ngày 26/11. Bản mới giữ quyết định đã có (trọn ngày cuối).
