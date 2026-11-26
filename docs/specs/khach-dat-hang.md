@@ -1,6 +1,6 @@
 # Spec (delta): Khách đặt hàng (TDATHANG)
 
-- Trạng thái: **ĐÃ DUYỆT** chỉ cho mục "Thay đổi chốt sau khi đã code" ở cuối file (Chiến chốt 26/11/2026 và giao làm trong phiên 26/11). Phần còn lại: đã có code trên `main` (`BookingListView`, `BookingEditDialog`; theo `QUEUE.md`: patch 3 đã giao); đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí**, trước đó file chưa ghi việc duyệt spec.
+- Trạng thái: **ĐÃ DUYỆT** chỉ cho hai mục "Thay đổi chốt sau khi đã code" ở cuối file (Chiến chốt 26/11/2026 và giao làm trong phiên 26/11). Phần còn lại: đã có code trên `main` (`BookingListView`, `BookingEditDialog`; theo `QUEUE.md`: patch 3 đã giao); đối chiếu ngày 25/11: **chưa nghiệm thu lại từng tiêu chí**, trước đó file chưa ghi việc duyệt spec.
 - Ngày: 2026-11-21. Base: `main` @ `6a87224` (đã `git fetch origin main`, working tree sạch)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md) (6 phần + §7 nghiệm thu + §8 gợi ý implement). Spec này **chỉ ghi phần khác khuôn**; chỗ nào không nói = **như khuôn**.
 - Menu: **HOẠT ĐỘNG > Khách đặt hàng** (`SMENU` `3d3bb426-91f5-449a-8e84-1c3ca42cdb06`, `SORTORDER = ZZZ010`, `OPERATION = 0`, **không phím tắt**, `SMENU.SFUNCTIONID = NULL`). Nhóm [Khách đặt hàng, Theo dõi đặt phòng] cùng cha `a7424f09…` (HOẠT ĐỘNG); "Theo dõi đặt phòng" (`ZZZ011`, `SFORM` `11f4bf28…`) là chức năng riêng, **ngoài phạm vi** spec này.
@@ -259,3 +259,12 @@ Chụp trên bản sao POS TAP (DB chép, tài khoản Admin, màn 1536×864). C
 ## Thay đổi chốt sau khi đã code (Chiến chốt 26/11/2026: "Sửa giống Báo giá"). Đã code `cc928e9` (issue #23)
 
 Mặt hàng 2 đơn vị tính: số lượng dòng lẻ làm theo [`bao-gia-ban-hang.md`](bao-gia-ban-hang.md) §5.0.2 (lấy ô Số lượng ngoài hộp, như app gốc), thay cho việc lấy số lẻ nhập trong hộp. Phần khác của spec này không đổi. Làm thành một việc riêng.
+
+## Thay đổi chốt sau khi đã code, đợt 2 (Chiến chốt 26/11/2026). Chưa code. Thắng phần khác của spec nếu khác
+
+1. **Sửa số lượng trên lưới chi tiết (khác app gốc, Chiến chọn "Chặn như Báo giá"):** sửa ô Số lượng thành 0, số âm hoặc chữ không đọc được thì báo "Mời bạn nhập số lượng", dòng giữ số lượng cũ, không đánh dấu đã sửa. Chỉ kiểm khi **ô Số lượng** bị sửa; sửa đơn giá, % giảm giữ cách xử lý hiện tại, kể cả trên dòng cũ đang có số lượng 0. Không thêm kiểm tra lúc lưu hay mở phiếu. App gốc **nhận** số lượng 0 (bấm thử 26/11).
+   - Ví dụ: dòng SL 2, giá 15.000: nhập 0 thì vẫn SL 2, thành tiền 30.000.
+2. **Mặt hàng 1 đơn vị tính (hoặc `SuDung2DonViTinh` khác 30), giống app gốc:** thêm mặt hàng trùng mặt hàng + ĐVT thì **luôn gộp**, không phụ thuộc `NhapMotMatHangNhieuLanTrongPhieu`; cộng số lượng, giữ đơn giá và % giảm của dòng cũ. Dòng chẵn của hàng 2 đơn vị tính vẫn theo cờ như cũ. Thay dòng "gộp theo cờ" của nhánh 1 đơn vị ở §3.
+   - Bằng chứng: bấm thử app gốc 26/11 (bản chép, cờ = 30): thêm 2 rồi 3 ra **một dòng SL 5**; mã `grMatHang_OnAddSameItem` không đọc cờ.
+3. Áp cho cả hộp thoại dùng chung ở Theo dõi đặt phòng.
+4. **Selftest (Chiến chốt 26/11: "Gộp, giữ tên ca cũ"):** hai ca cũ `Đặt hàng 1 ĐVT [thuần 12]…` và `Đặt hàng 1 ĐVT UI [nhánh 1 ĐVT giữ nguyên]…` được sửa nội dung kiểm theo luật mới, **giữ nguyên tên** (script so ca theo tên), kèm chú thích trong code rằng tên đã lỗi thời; thêm ca mới có tên đúng.
