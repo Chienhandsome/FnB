@@ -40,14 +40,15 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Quản lý bán hàng + Điều chỉnh hóa đơn (`92f92de`, #38): sửa bill đã thanh toán và kiểm Tồn quỹ/kho/công nợ, trả đồ, hủy phiếu
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Bắt buộc xong trong 2 ngày (Chiến yêu cầu 26/11 "trong vòng 2 ngày phải xong toàn bộ"; Claude chốt danh sách ưu tiên theo lõi bán hàng, Chiến giao quyền chốt)
 Làm theo thứ tự; "chưa có spec" thì viết spec nháp và tự duyệt theo workflow-agy §10.1.1 (có `auto.on`), câu về tiền, kho, công nợ không đủ căn cứ thì mở issue `cho-chien` rồi làm mục kế tiếp.
 1. Danh mục khách hàng (**đã code** `018ba78`)
 2. Sử dụng dịch vụ: bán hàng và thanh toán (**đủ 4 patch đã code**: (a) `91a57c7`, (b) `56f2036`, (c) `35c0878`, (d) `ac6c750`)
-3. Quản lý bán hàng, Điều chỉnh hóa đơn (spec đã duyệt)
-4. Quỹ bước 3–5: Tạo phiếu thu, Tạo phiếu chi, Danh mục phiếu thu, phiếu chi, Tồn quỹ, Danh mục lý do thu chi, Danh mục tài khoản ngân hàng (chưa có spec riêng)
+3. Quản lý bán hàng, Điều chỉnh hóa đơn (**đã code** `92f92de`)
+4. Quỹ: Tạo phiếu thu/chi ghi thật, Danh mục phiếu thu/chi, Danh mục lý do thu chi, Danh mục tài khoản ngân hàng (spec `phieu-thu-chi.md`, Claude tự duyệt 26/11; chưa code)
 5. Kho: Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)
 6. Công nợ khách hàng, Công nợ nhà cung cấp (chưa có spec)
 **Ngoài 2 ngày (làm sau):** Kiểm kê kho, Tính lại giá vốn, Xuất lại định lượng, Tồn nhiều kho, Danh mục cửa hàng, khuyến mại, voucher, thẻ trả trước, khách hàng thân thiết, Kiểm soát order, mật khẩu wifi, toàn bộ Nhân sự, Dữ liệu ban đầu, cấu hình máy in theo khu vực, in P3b, nhập Excel P5, Ctrl+P P6.
@@ -56,6 +57,7 @@ Làm theo thứ tự; "chưa có spec" thì viết spec nháp và tự duyệt t
 - Âm kho: có cấu hình toàn hệ thống "cho phép âm kho", bản đầu mặc định **chặn** (bán hoặc xuất khi tồn không đủ thì không cho).
 - Nợ: chỉ khách **có hồ sơ** (`DKHACHHANG`) mới được ghi nợ; khách vãng lai không được mua nợ.
 - Nút "Lưu & In", "Lưu & Xem in" ở hộp sửa Đặt hàng, Báo giá **bật khi phiếu đã lưu** (có ID) dù chưa sửa; vẫn tắt khi chỉ có quyền Xem. (Chưa làm: patch nhỏ sau.)
+- Hủy bill (Sử dụng dịch vụ và Quản lý bán hàng) có phiếu thu cọc đặt trước (`TDATHANGID`) thì **chặn** (Chiến chốt 27/11, #36). Chưa làm: patch nhỏ.
 - Sử dụng dịch vụ gồm **cả in hóa đơn thanh toán (A4, 80mm) và in bếp**, cùng cách in của P2 (mẫu `STEMPLATE`, ra spec `su-dung-dich-vu.md` khi làm).
 
 ## Hàng đợi spec (thứ tự làm)
