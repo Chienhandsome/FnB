@@ -96,6 +96,7 @@
     <Compile Include="ServicePaymentRepository.cs" />
     <Compile Include="ServicePaymentRepository.Lookups.cs" />
     <Compile Include="ServicePaymentRepository.Write.cs" />
+    <Compile Include="ServiceTransferRepository.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

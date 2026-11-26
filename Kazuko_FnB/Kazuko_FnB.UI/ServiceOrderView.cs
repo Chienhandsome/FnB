@@ -132,6 +132,7 @@ namespace Kazuko_FnB.UI
             BuildLineToolbar(s);
             BuildDetailGrid(s);
             BuildActionColumn(s);
+            InitTransferControls(s);
             BuildBottomPanel(s);
 
             var centerRight = new Panel { Dock = DockStyle.Fill };

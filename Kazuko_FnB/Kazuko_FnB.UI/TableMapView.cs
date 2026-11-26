@@ -40,11 +40,16 @@ namespace Kazuko_FnB.UI
         private int _sizeMode;
         private ThemeTokens _theme = ThemeManager.Current;
 
+        public bool PickerMode { get; set; }
+
         public event EventHandler<ServiceTableInfo> TableSelected;
         public event EventHandler<ServiceTableInfo> TableDoubleClicked;
         public event EventHandler<ServiceTableInfo> OpenTableRequested;
         public event EventHandler<ServiceTableInfo> PayRequested;
         public event EventHandler<ServiceTableInfo> GroupPayRequested;
+        public event EventHandler<ServiceTableInfo> MoveTableRequested;
+        public event EventHandler<ServiceTableInfo> MergeTableRequested;
+        public event EventHandler<ServiceTableInfo> CancelBillRequested;
         public event EventHandler<string> UnsupportedActionRequested;
 
         internal ThemedTabControl TopTabsForTest { get { return _topTabs; } }
@@ -200,10 +205,22 @@ namespace Kazuko_FnB.UI
                 if (_contextTable != null && GroupPayRequested != null)
                     GroupPayRequested(this, _contextTable);
             });
-            _busyMenu.AddItem("Chuyển bàn", delegate { RaiseUnsupported("Chuyển bàn"); });
-            _busyMenu.AddItem("Gộp bàn", delegate { RaiseUnsupported("Gộp bàn"); });
+            _busyMenu.AddItem("Chuyển bàn", delegate
+            {
+                if (_contextTable != null && MoveTableRequested != null)
+                    MoveTableRequested(this, _contextTable);
+            });
+            _busyMenu.AddItem("Gộp bàn", delegate
+            {
+                if (_contextTable != null && MergeTableRequested != null)
+                    MergeTableRequested(this, _contextTable);
+            });
             _busyMenu.AddSeparator();
-            _busyMenu.AddItem("Hủy hóa đơn", delegate { RaiseUnsupported("Hủy hóa đơn"); });
+            _busyMenu.AddItem("Hủy hóa đơn", delegate
+            {
+                if (_contextTable != null && CancelBillRequested != null)
+                    CancelBillRequested(this, _contextTable);
+            });
         }
 
         private void RaiseUnsupported(string name)
@@ -262,7 +279,7 @@ namespace Kazuko_FnB.UI
                     };
                     tile.MouseUp += delegate(object sender, MouseEventArgs e)
                     {
-                        if (e.Button != MouseButtons.Right)
+                        if (e.Button != MouseButtons.Right || PickerMode)
                             return;
                         _contextTable = captured;
                         SelectTableVisual(captured.Id);

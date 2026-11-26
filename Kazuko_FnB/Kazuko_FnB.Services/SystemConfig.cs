@@ -171,5 +171,18 @@ namespace Kazuko_FnB.Services
         public static bool ChoPhepInTamTinh { get { return GetBool("ChoPhepInTamTinh"); } }
         public static bool SuDungChucNangTamUngTrongDonHang { get { return GetBool("SuDungChucNangTamUngTrongDonHang"); } }
         public static bool BatChucNangKiemSoatOrder { get { return GetBool("BatChucNangKiemSoatOrder"); } }
+
+        // ---- Khóa phần Chuyển/Gộp bàn, Chuyển mặt hàng & Hủy bill (docs/specs/su-dung-dich-vu.md §3.8, §3.10) ----
+
+        /// <summary>0 = chỉ nâng giá, 1 = luôn cập nhật theo giá khu vực mới, 2 = không cập nhật (ban-khu-vuc.md §2).</summary>
+        public static int GiaMatHangKhiChuyenBan { get { return GetInt("GiaMatHangKhiChuyenBan", 0); } }
+        /// <summary>Thời gian tối đa (phút) tính từ BATDAU cho phép hủy bill trên bàn (§3.8, DB mặc định 50).</summary>
+        public static int ThoiGianChoPhepHuyBill { get { return GetInt("ThoiGianChoPhepHuyBill", 50); } }
+        public static bool NhapLyDoKhiHuyHoaDon { get { return GetBool("NhapLyDoKhiHuyHoaDon"); } }
+        public static bool SuDungChucNangInXuongBep { get { return GetBool("SuDungChucNangInXuongBep"); } }
+        public static bool InDoAn { get { return GetBool("InDoAn"); } }
+        public static bool InDoUong { get { return GetBool("InDoUong"); } }
+        public static bool InDichVu { get { return GetBool("InDichVu"); } }
+        public static bool InDoKhac { get { return GetBool("InDoKhac"); } }
     }
 }

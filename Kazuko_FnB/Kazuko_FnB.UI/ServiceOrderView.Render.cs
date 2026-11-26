@@ -119,6 +119,8 @@ namespace Kazuko_FnB.UI
             _btnGroupDiscount.Enabled = hasBill && _canViewPrice && _service.CanEditLineDiscount();
             _btnMoveTable.Enabled = hasBill;
             _btnMergeTable.Enabled = hasBill;
+            _btnTransferItem.Enabled = hasLine;
+            _btnCancelBill.Enabled = hasBill;
             _btnKitchenPrint.Enabled = hasBill;
             _btnPay.Enabled = hasBill && _canViewPrice;
             _btnGroupPay.Enabled = hasBill && _canViewPrice;

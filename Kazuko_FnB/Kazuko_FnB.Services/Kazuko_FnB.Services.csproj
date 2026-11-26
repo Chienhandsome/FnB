@@ -91,6 +91,10 @@
     <Compile Include="TableService.Payment.cs" />
     <Compile Include="TableService.Payment.Execute.cs" />
     <Compile Include="TableService.Helpers.cs" />
+    <Compile Include="TableTransferRules.cs" />
+    <Compile Include="TableService.Transfer.cs" />
+    <Compile Include="TableService.TransferItem.cs" />
+    <Compile Include="TableService.Cancel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

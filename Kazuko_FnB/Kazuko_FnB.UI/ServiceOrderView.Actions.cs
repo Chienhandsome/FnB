@@ -31,6 +31,21 @@ namespace Kazuko_FnB.UI
                 OnTableSelected(t);
                 DoGroupPay();
             };
+            _tableMap.MoveTableRequested += delegate(object s, ServiceTableInfo t)
+            {
+                OnTableSelected(t);
+                DoMoveTable();
+            };
+            _tableMap.MergeTableRequested += delegate(object s, ServiceTableInfo t)
+            {
+                OnTableSelected(t);
+                DoMergeTable();
+            };
+            _tableMap.CancelBillRequested += delegate(object s, ServiceTableInfo t)
+            {
+                OnTableSelected(t);
+                DoCancelBill();
+            };
             _tableMap.UnsupportedActionRequested += delegate(object s, string name) { ShowNotSupported(name); };
 
             _menuPicker.ItemActivated += delegate(object s, ServiceMenuItem item) { DoAddItem(item); };
@@ -47,9 +62,12 @@ namespace Kazuko_FnB.UI
             _btnDelete.Click += delegate { DoDeleteSelected(); };
             _btnGroupDiscount.Click += delegate { DoApplyGroupDiscount(); };
 
-            // Các chức năng thuộc patch c/d -> hiện nút nhưng báo "chưa hỗ trợ" (§7).
-            _btnMoveTable.Click += delegate { ShowNotSupported("Chuyển bàn"); };
-            _btnMergeTable.Click += delegate { ShowNotSupported("Gộp bàn"); };
+            // Các chức năng patch (c): Chuyển bàn, Gộp bàn, Chuyển mặt hàng, Hủy bill (§3.8).
+            _btnMoveTable.Click += delegate { DoMoveTable(); };
+            _btnMergeTable.Click += delegate { DoMergeTable(); };
+            _btnTransferItem.Click += delegate { DoTransferItem(); };
+            _btnCancelBill.Click += delegate { DoCancelBill(); };
+            // Các chức năng thuộc patch (d) / thống kê -> hiện nút nhưng báo "chưa hỗ trợ" (§7).
             _btnKitchenPrint.Click += delegate { ShowNotSupported("In chế biến"); };
             _btnPay.Click += delegate { DoPay(); };
             _btnGroupPay.Click += delegate { DoGroupPay(); };
