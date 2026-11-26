@@ -94,4 +94,6 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **`Publish-AgyFeature.ps1` tự thêm `feat: ` vào `-Title`:** không ghi tiền tố trong tiêu đề (26/11 ra `feat: feat:`, không sửa được lịch sử `main`).
 - **Chi tiết ca selftest có xuống dòng thì `Test-AgyBuild.ps1` đọc sai tên ca**, báo "mất ca" dù ca vẫn đạt (26/11). Dặn agy bỏ xuống dòng trong chuỗi chi tiết.
 - **Bỏ ca selftest đã đạt (Chiến đồng ý):** bớt đúng các tên đó khỏi `passNames` và giảm `pass` trong `_tmp/<feature>/baseline.json`, giữ bản gốc cạnh đó, liệt kê trên issue. Không sửa script.
+- **Mẫu in gắn theo bảng:** `STEMPLATE.SFORMID` của mẫu phiếu (Đặt hàng, Báo giá) rỗng, liên kết bằng `STABLEDESCID` (bảng `TDATHANG`, `TBAOGIA` trong `STABLEDESC`). Hàm trong biểu thức ô chữ (`ToVndWords`) phải đăng ký bằng `FastReport.Utils.RegisteredObjects.AddFunction`.
+- **Dữ liệu thử của test:** `DLYDOTHUCHI` dùng cột `LOAILYDO` (không có `LOAI`). Một câu SQL sai trong chỗ dựng dữ liệu của ca test làm selftest dừng giữa chừng, nên mọi ca sau bị báo "mất ca".
 - GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.
