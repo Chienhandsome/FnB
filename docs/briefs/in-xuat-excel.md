@@ -20,3 +20,6 @@
 - **P3a đã code, đã push `f9874e2`** (#31): `GridExcelExporter` xuất lưới đang hiện ra `.xls` (Aspose.Cells), các cột Visible theo DisplayIndex, các dòng đang hiện; nối vào nút Excel của danh sách đặt hàng, báo giá, Danh mục, và "Xuất excel" ở hộp sửa hai phiếu. agy 1 vòng, Claude không sửa.
 - **Chưa kiểm P3a:** bấm thật và mở file bằng Excel; Aspose bản dùng thử có thêm trang "Evaluation Warning" hay không; Danh mục có nhiều tab (mặt hàng, bàn) đều xuất đúng `_grid`.
 - **P3b (In danh sách, hộp "Cấu hình trang in") chưa làm:** 3 mẫu lưới không có băng dữ liệu, phải tự dựng bảng theo cột đã tích; cách app gốc xếp độ rộng chưa biết.
+- **P4 đã code, đã push `bdbf7b0`** (#32): nút "In mã vạch" ở Danh mục mở khung "IN MÃ VẠCH" (Thêm, Xóa, Xuất excel, In; lưới Mã, Tên, Số lượng; Tổng sl), hộp "MẪU IN MÃ VẠCH" (6 mẫu, Chấp nhận, Thoát) rồi xem trước. Một mặt hàng số lượng q chiếm q tem liên tiếp; hàng cuối thiếu tem thì tem trống không có vạch. GIANHAP, GIAVON, HOAHONG chỉ đọc khi có quyền Xem giá nhập. Claude sửa 4 ca test.
+- **Chưa kiểm P4:** bấm thật, in thật ra máy in tem; nguồn các cột TONTOITHIEU, TONTOIDA, hãng sản xuất, đối tác ký gửi lấy theo `DMATHANG`; không có Bartender; vị trí và kích thước khung có thể khác app gốc.
+- **Còn lại của spec in-xuat-excel:** P3b (In danh sách), P5 (nhập Excel, spec riêng), P6 (Ctrl+P).
