@@ -20,6 +20,7 @@ Trong repo:
 - Chạy app bằng F5 trong Visual Studio. Trước khi build/run phải tắt hẳn app đang chạy (đóng cửa sổ + Shift+F5 nếu đang debug), nếu không DLL bị lock (MSB3021/MSB3027). Nếu luồng bị chặn vì app đang chạy thì tự tắt đúng tiến trình của workspace này, không chờ Chiến tắt tay.
 - Kiểm tra biên dịch bằng **MSBuild hoặc Visual Studio** ở cấu hình **x86** (`Kazuko_FnB` là .NET Framework classic, không phải SDK-style).
 - Sửa code thì làm theo skill `kazuko-patch`: 1 patch/task, build trên đúng base, verify `git apply --check` trên main sạch, strip BOM, ghi rõ base commit.
+- Trước khi giao việc cho `agy`: đọc [`docs/model-agy.md`](docs/model-agy.md) và truyền `-Model` theo bảng ở đó.
 - Trước khi sửa `CLAUDE.md`, `.claude/`, `docs/workflow-agy.md` hoặc `tools/agy/`: trình bày diff, chờ Chiến bảo "go" mới sửa.
 - Xong mỗi task có sửa file trong repo: ghi `docs/briefs/<ten>.md`, tối đa khoảng 30 dòng (đã làm gì, commit nào, còn gì, điều chưa kiểm). Có sẵn thì cập nhật, không chép lại spec.
 - Xong mỗi chức năng (kể cả khi dừng giữa chừng): thống kê hiệu quả, báo trong chat và thêm một dòng vào `docs/hieu-qua.md` gồm số vòng và thời gian agy, nguyên nhân từng vòng thừa (do Claude, do agy, do đổi yêu cầu), số lần Claude tự sửa, selftest trước → sau, lỗi bắt được ở bước nào, hạn mức gói đầu và cuối, một bài học. Chỉ ghi số đo được; không đo được thì ghi "chưa đo".
