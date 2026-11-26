@@ -261,6 +261,8 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Diagnostics\SelfTest.cs" />
+    <Compile Include="Diagnostics\SelfTest.Booking.TwoUnit.cs" />
+    <Compile Include="Diagnostics\SelfTest.Booking.TwoUnit.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Ui.cs" />

@@ -60,6 +60,7 @@
     <Compile Include="DatabaseService.cs" />
     <Compile Include="FundRules.cs" />
     <Compile Include="FundLedgerRules.cs" />
+    <Compile Include="BookingItemRules.cs" />
     <Compile Include="BookingRules.cs" />
     <Compile Include="BookingCalendarRules.cs" />
     <Compile Include="ItemSalesCalculator.cs" />

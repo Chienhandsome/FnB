@@ -126,6 +126,17 @@ namespace Kazuko_FnB.UI.Dialogs
         /// <summary>Bản ghi đang sửa đã bị xóa (dialog đóng sau khi xóa).</summary>
         public bool Deleted { get; private set; }
 
+        internal bool SuppressPopup { get; set; }
+        internal string LastWarningForTest { get; private set; }
+        internal Func<BookingSaleItem, decimal, BookingQuantityPromptResult> QuantityPromptOverrideForTest { get; set; }
+        internal NumericUpDown QtyBoxForTest { get { return _numQty; } }
+        internal FlatButton AddProductButtonForTest { get { return _btnAddProduct; } }
+        internal DataGridView ProductGridForTest { get { return _productGrid; } }
+        internal DataGridView DetailGridForTest { get { return _detailGrid; } }
+        internal NumericUpDown TongCongBoxForTest { get { return _numTongCong; } }
+        internal bool DirtyForTest { get { return Dirty; } }
+        internal FlatButton SaveButtonForTest { get { return _btnSave; } }
+
         /// <param name="bookingId">null = thêm mới.</param>
         /// <param name="rowIds">ID các dòng trên lưới theo thứ tự hiện tại (để F10/F11 chuyển dòng).</param>
         public BookingEditDialog(UserSession session, string bookingId, List<string> rowIds)
@@ -201,7 +212,8 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 if (_loadFailed)
                 {
-                    Msg.Error(this, BookingText.NotFound);
+                    if (!SuppressPopup)
+                        Msg.Error(this, BookingText.NotFound);
                     Close();
                     return;
                 }
@@ -804,58 +816,54 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void AddProduct()
         {
+            LastWarningForTest = null;
             if (_readOnly)
                 return;
             BookingSaleItem item = SelectedSaleItem();
             if (item == null)
                 return;
-            decimal qty = _numQty.Value;
+            decimal outerQty = _numQty.Value;
+            BookingAddItemOutcome outcome;
             if (_useTwoUnits && item.HasBigUnit)
             {
-                using (var dlg = new QuantityDialog(item, qty))
-                {
-                    if (dlg.ShowDialog(this) != DialogResult.OK)
-                        return;
-                    if (dlg.OddQuantity == 0m && dlg.EvenQuantity == 0m)
-                    {
-                        Msg.Warning(this, BookingText.EnterQuantity);
-                        return;
-                    }
-                    if (dlg.OddQuantity > 0m)
-                        AddLine(item, item.UnitId, item.UnitName, dlg.OddQuantity, item.PriceForCustomer(_customerPriceType));
-                    if (dlg.EvenQuantity > 0m)
-                        AddLine(item, item.BigUnitId, item.BigUnitName, dlg.EvenQuantity, item.BigSellPrice);
-                }
+                BookingQuantityPromptResult prompt = PromptTwoUnitQuantity(item, outerQty);
+                outcome = BookingItemRules.AddTwoUnitItem(_lines, item, _customerPriceType, outerQty,
+                    prompt.OddQuantity, prompt.EvenQuantity, prompt.Confirmed, _mergeAllowed);
             }
             else
             {
-                if (qty == 0m)
-                {
-                    Msg.Warning(this, BookingText.EnterQuantity);
-                    return;
-                }
-                AddLine(item, item.UnitId, item.UnitName, qty, item.PriceForCustomer(_customerPriceType));
+                outcome = BookingItemRules.AddSingleUnitItem(_lines, item, _customerPriceType, outerQty, _mergeAllowed);
             }
-            RebuildDetailGrid();
-            RecalcTotals();
-            OnDirtyChanged();
+            if (outcome.Changed)
+            {
+                RebuildDetailGrid();
+                RecalcTotals();
+                OnDirtyChanged();
+            }
+            if (!string.IsNullOrEmpty(outcome.WarningMessage))
+            {
+                ShowWarning(outcome.WarningMessage);
+                _numQty.Focus();
+            }
         }
 
-        private void AddLine(BookingSaleItem item, string unitId, string unitName, decimal qty, decimal price)
+        private BookingQuantityPromptResult PromptTwoUnitQuantity(BookingSaleItem item, decimal outerQty)
         {
-            var line = new BookingLine
+            if (QuantityPromptOverrideForTest != null)
+                return QuantityPromptOverrideForTest(item, outerQty) ?? new BookingQuantityPromptResult();
+            using (var dlg = new QuantityDialog(item, outerQty))
             {
-                ProductId = item.Id,
-                ProductName = item.Name,
-                UnitId = unitId,
-                UnitName = unitName,
-                Quantity = qty,
-                Price = price,
-                DiscountPct = 0m
-            };
-            line.Amount = BookingRules.CalcLineAmount(line.Quantity, line.Price, line.DiscountPct);
-            if (!BookingRules.TryMergeLine(_lines, line, _mergeAllowed))
-                _lines.Add(line);
+                if (dlg.ShowDialog(this) != DialogResult.OK)
+                    return new BookingQuantityPromptResult { Confirmed = false };
+                return new BookingQuantityPromptResult { Confirmed = true, OddQuantity = dlg.OddQuantity, EvenQuantity = dlg.EvenQuantity };
+            }
+        }
+
+        private void ShowWarning(string message)
+        {
+            LastWarningForTest = message;
+            if (!SuppressPopup)
+                Msg.Warning(this, message);
         }
 
         private void DetailCellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -1196,7 +1204,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
-            if (DialogResult == DialogResult.OK || _loadFailed || !Dirty)
+            if (DialogResult == DialogResult.OK || _loadFailed || !Dirty || SuppressPopup)
                 return;
             DialogResult answer = MessageBox.Show(this, "Dữ liệu đã thay đổi. Bạn có muốn lưu lại không?",
                 "Xác nhận", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
