@@ -38,12 +38,13 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Danh mục khách hàng (`018ba78`, #33): thêm/sửa/xóa khách và nhóm, trùng Mã/Tên, xóa nhóm có nhóm con, Ctrl+K, xuất Excel
 - [ ] Sử dụng dịch vụ patch (a) (`91a57c7`, #34): mở bàn, gọi món, giảm/xóa/sửa dòng, tổng tiền, combo, chặn âm kho; thanh toán chưa có
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
+- [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Bắt buộc xong trong 2 ngày (Chiến yêu cầu 26/11 "trong vòng 2 ngày phải xong toàn bộ"; Claude chốt danh sách ưu tiên theo lõi bán hàng, Chiến giao quyền chốt)
 Làm theo thứ tự; "chưa có spec" thì viết spec nháp và tự duyệt theo workflow-agy §10.1.1 (có `auto.on`), câu về tiền, kho, công nợ không đủ căn cứ thì mở issue `cho-chien` rồi làm mục kế tiếp.
 1. Danh mục khách hàng (**đã code** `018ba78`)
-2. Sử dụng dịch vụ: bán hàng và thanh toán (patch (a) `91a57c7` và (b) thanh toán `56f2036` **đã code**; còn (c) chuyển/gộp bàn, hủy, (d) in hóa đơn và in bếp)
+2. Sử dụng dịch vụ: bán hàng và thanh toán (patch (a) `91a57c7`, (b) thanh toán `56f2036`, (c) chuyển/gộp/hủy `35c0878` **đã code**; còn (d) in hóa đơn và in bếp)
 3. Quản lý bán hàng, Điều chỉnh hóa đơn (spec đã duyệt)
 4. Quỹ bước 3–5: Tạo phiếu thu, Tạo phiếu chi, Danh mục phiếu thu, phiếu chi, Tồn quỹ, Danh mục lý do thu chi, Danh mục tài khoản ngân hàng (chưa có spec riêng)
 5. Kho: Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)

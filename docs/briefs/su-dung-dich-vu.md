@@ -6,3 +6,5 @@
 - Còn: patch (b), (c), (d).
 - **Patch (b) đã code, push `56f2036`** (#35): hộp thanh toán thật (tiền mặt, thẻ, chuyển khoản, voucher, thẻ trả trước, trừ điểm, đặt trước), thanh toán chung nhóm bàn, nợ chỉ cho khách có hồ sơ, trừ kho và xuất vật tư, chặn âm kho mặc định, phiếu chi trả cọc dư, tự nâng nhóm khách, ghi trong một transaction. Chưa in (patch d): nút "Thanh toán & In" vẫn đóng bill, chưa gọi máy in.
 - **Chưa kiểm (b):** bấm thật, nhiều hình thức thanh toán cùng lúc, thanh toán chung 3 bàn, trừ điểm, voucher, 125% DPI. Còn (c) chuyển/gộp bàn, hủy bill; (d) in.
+- **Patch (c) đã code, push `35c0878`** (#36): chuyển bàn, gộp bàn, chuyển mặt hàng (tách một phần, combo), hủy bill (ghi `TDONHANGHUY` và chi tiết, lưu vết, xóa cứng). Hướng an toàn: không gộp bill nguồn mở từ phiếu đặt hoặc có phiếu thu gắn bill; không hủy bill có tạm ứng trực tiếp còn hiệu lực. Chưa có kéo-thả chuột trên ô bàn.
+- **Chưa kiểm (c):** bấm thật; hủy bill đã có cọc từ phiếu đặt (agy không chặn, chờ Chiến chốt); gộp bàn có NHOMGUID. Còn (d) in hóa đơn và in bếp.
