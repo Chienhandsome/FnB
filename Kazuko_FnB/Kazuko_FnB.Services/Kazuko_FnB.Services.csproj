@@ -57,6 +57,7 @@
     <Compile Include="ActivityLogger.cs" />
     <Compile Include="AppSession.cs" />
     <Compile Include="ConfigViewModel.cs" />
+    <Compile Include="CustomerRules.cs" />
     <Compile Include="DatabaseService.cs" />
     <Compile Include="FundRules.cs" />
     <Compile Include="FundLedgerRules.cs" />

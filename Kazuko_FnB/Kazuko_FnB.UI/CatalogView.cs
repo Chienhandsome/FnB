@@ -162,6 +162,11 @@ namespace Kazuko_FnB.UI
                         UpdateRoomAuditPanel();
                         UpdateRoomButtons();
                     }
+                    else if (_customerMode)
+                    {
+                        UpdateCustomerAuditPanel();
+                        UpdateCustomerButtons();
+                    }
                 }
             };
             _grid.CellDoubleClick += delegate(object sender, DataGridViewCellEventArgs e)
@@ -172,9 +177,12 @@ namespace Kazuko_FnB.UI
                     EditProduct();
                 else if (_roomMode)
                     EditRoom();
+                else if (_customerMode)
+                    OpenCustomerFromGrid();
             };
             _grid.MouseDown += GridMouseDown;
             _tree.MouseDown += TreeMouseDown;
+            _tree.NodeMouseDoubleClick += TreeNodeMouseDoubleClick;
             _tree.AfterLabelEdit += TreeAfterLabelEdit;
 
             _tree.HideSelection = false;
@@ -192,6 +200,8 @@ namespace Kazuko_FnB.UI
                     UpdateProductButtons();
                 else if (_roomMode)
                     UpdateRoomButtons();
+                else if (_customerMode)
+                    UpdateCustomerButtons();
             };
 
             _split.FixedPanel = FixedPanel.Panel1;
@@ -206,6 +216,7 @@ namespace Kazuko_FnB.UI
 
             BuildProductUi();
             BuildRoomUi();
+            BuildCustomerUi();
             Reload();
             ApplyTheme(_theme, _page);
         }
@@ -246,6 +257,7 @@ namespace Kazuko_FnB.UI
                 CatalogData data = repo.Load(_def);
                 _productMode = string.Equals(_def.TableName, "DMATHANG", StringComparison.OrdinalIgnoreCase);
                 _roomMode = string.Equals(_def.TableName, "DBAN", StringComparison.OrdinalIgnoreCase);
+                _customerMode = string.Equals(_def.TableName, "DKHACHHANG", StringComparison.OrdinalIgnoreCase);
                 _grid.MultiSelect = _productMode;
                 if (_productMode)
                 {
@@ -254,6 +266,10 @@ namespace Kazuko_FnB.UI
                 else if (_roomMode)
                 {
                     LoadRoomData(data);
+                }
+                else if (_customerMode)
+                {
+                    LoadCustomerData(data);
                 }
                 else
                 {
@@ -264,20 +280,27 @@ namespace Kazuko_FnB.UI
                 }
                 if (!_productMode)
                     HideBarcodePanel();
-                _groupBar.Visible = _productMode || _roomMode;
-                _bottom.Visible = _productMode || _roomMode;
-                _paneSplitter.Visible = _bottom.Visible;
-                _btnAdd.Visible = _productMode || _roomMode;
-                _btnEdit.Visible = _productMode || _roomMode;
-                _btnRemove.Visible = _productMode || _roomMode;
-                _btnExcelAdd.Visible = _productMode || _roomMode;
-                _btnExcelExport.Visible = _productMode || _roomMode;
-                _btnExcelImport.Visible = _productMode;
-                _btnPrint.Visible = _productMode || _roomMode;
-                _btnPrintBarcode.Visible = _productMode;
-                // Q16: Thêm excel / Xuất excel / In / Tổng có hiện trên toolbar ở chế độ bàn nhưng chưa implement.
-                _btnQuickAdd.Visible = _roomMode;
-                _btnTotal.Visible = _roomMode;
+                if (_customerMode)
+                {
+                    ApplyCustomerBarVisibility();
+                }
+                else
+                {
+                    _groupBar.Visible = _productMode || _roomMode;
+                    _bottom.Visible = _productMode || _roomMode;
+                    _paneSplitter.Visible = _bottom.Visible;
+                    _btnAdd.Visible = _productMode || _roomMode;
+                    _btnEdit.Visible = _productMode || _roomMode;
+                    _btnRemove.Visible = _productMode || _roomMode;
+                    _btnExcelAdd.Visible = _productMode || _roomMode;
+                    _btnExcelExport.Visible = _productMode || _roomMode;
+                    _btnExcelImport.Visible = _productMode;
+                    _btnPrint.Visible = _productMode || _roomMode;
+                    _btnPrintBarcode.Visible = _productMode;
+                    // Q16: Thêm excel / Xuất excel / In / Tổng có hiện trên toolbar ở chế độ bàn nhưng chưa implement.
+                    _btnQuickAdd.Visible = _roomMode;
+                    _btnTotal.Visible = _roomMode;
+                }
             }
             catch (Exception ex)
             {
@@ -375,7 +398,7 @@ namespace Kazuko_FnB.UI
             var root = new TreeNode("Tất cả") { Tag = null };
             _tree.Nodes.Add(root);
             // Cây có "Chưa thiết lập" ở cả hai chế độ (Q2: app gốc CÓ "Chưa thiết lập" cho bàn khu vực).
-            if (_productMode || _roomMode)
+            if (_productMode || _roomMode || _customerMode)
                 root.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = UnsetTag });
 
             var byParent = new Dictionary<string, List<CatalogNode>>(StringComparer.Ordinal);
@@ -553,7 +576,13 @@ namespace Kazuko_FnB.UI
                 var parts = new List<string>();
                 string term = CatalogRepository.Fold(_search.Text.Trim());
                 if (term.Length > 0)
-                    parts.Add("[" + ColSearch + "] LIKE '%" + CatalogRepository.EscapeLike(term) + "%'");
+                {
+                    string escaped = CatalogRepository.EscapeLike(term);
+                    if (_customerMode && IsCustomerNoteVisible())
+                        parts.Add("([" + ColSearch + "] LIKE '%" + escaped + "%' OR [" + ColSearchNote + "] LIKE '%" + escaped + "%')");
+                    else
+                        parts.Add("[" + ColSearch + "] LIKE '%" + escaped + "%'");
+                }
                 string catId = _tree.SelectedNode == null ? null : _tree.SelectedNode.Tag as string;
                 if (!string.IsNullOrEmpty(catId))
                 {
@@ -604,7 +633,7 @@ namespace Kazuko_FnB.UI
             float s = DeviceDpi / 96f;
             int pad = (int)(10 * s);
             int h = _bar.ClientSize.Height - 2 * pad;
-            if (!_productMode && !_roomMode)
+            if (!_productMode && !_roomMode && !_customerMode)
             {
                 int btnW = (int)(100 * s);
                 _search.SetBounds(pad, pad + (h - _search.Height) / 2, (int)(340 * s), _search.Height);
@@ -617,11 +646,15 @@ namespace Kazuko_FnB.UI
             FlatButton[] buttons = _roomMode
                 // Q16: Thêm excel / Xuất excel / In / Tổng hiện ở chế độ bàn nhưng chưa implement.
                 ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnQuickAdd, _btnExcelAdd, _btnExcelExport, _btnPrint, _btnTotal }
-                : new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode };
+                : (_customerMode
+                    ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnPrint }
+                    : new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode });
             using (Graphics g = CreateGraphics())
             {
                 foreach (FlatButton b in buttons)
                 {
+                    if (_customerMode && !b.Visible)
+                        continue;
                     int w = TextRenderer.MeasureText(g, b.Text, b.Font).Width + (int)(28 * s);
                     b.SetBounds(x, pad, w, h);
                     x = b.Right + pad;
@@ -645,21 +678,21 @@ namespace Kazuko_FnB.UI
                 return true;
             }
             // Chỉ khi focus đang ở lưới/cây (không phải ô tìm): Insert thêm, F4 sửa, Del xóa.
-            if ((_productMode || _roomMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
+            if ((_productMode || _roomMode || _customerMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
             {
                 if (keyData == Keys.Insert)
                 {
-                    if (_productMode) AddProduct(); else AddRoom();
+                    if (_productMode) AddProduct(); else if (_roomMode) AddRoom(); else AddCustomer();
                     return true;
                 }
                 if (keyData == Keys.F4)
                 {
-                    if (_productMode) EditProduct(); else EditRoom();
+                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else OpenCustomerFromGrid();
                     return true;
                 }
                 if (keyData == Keys.Delete)
                 {
-                    if (_productMode) DeleteProduct(); else DeleteRoom();
+                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else DeleteCustomer();
                     return true;
                 }
             }
@@ -686,7 +719,7 @@ namespace Kazuko_FnB.UI
             _refresh.TextColor = t.Text;
             _refresh.BorderColor = Draw.StrongBorder(t);
             _refresh.Invalidate();
-            if (_productMode || _roomMode)
+            if (_productMode || _roomMode || _customerMode)
             {
                 _groupBar.BackColor = page;
                 _bottom.BackColor = page;
@@ -706,10 +739,15 @@ namespace Kazuko_FnB.UI
                     UpdateProductButtons();
                     UpdateAuditPanel();
                 }
-                else
+                else if (_roomMode)
                 {
                     UpdateRoomButtons();
                     UpdateRoomAuditPanel();
+                }
+                else
+                {
+                    UpdateCustomerButtons();
+                    UpdateCustomerAuditPanel();
                 }
             }
             ApplyBarcodeTheme(t, page);
@@ -725,9 +763,9 @@ namespace Kazuko_FnB.UI
             _btnRemove.Tag = "danger";
             _removeFont = new Font("Segoe UI Semibold", 10f);
             _btnRemove.Font = _removeFont;
-            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else AddProduct(); };
-            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else EditProduct(); };
-            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else DeleteProduct(); };
+            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else AddProduct(); };
+            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else if (_customerMode) EditCustomer(); else EditProduct(); };
+            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else DeleteProduct(); };
             _btnExcelAdd.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnExcelExport.Click += delegate { ExportGridToExcel(); };
             _btnExcelImport.Click += delegate { Msg.Info(this, UnsupportedText); };
@@ -745,8 +783,8 @@ namespace Kazuko_FnB.UI
             _groupBar.Height = (int)(36 * s);
             _groupAdd.SetBounds((int)(6 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
             _groupEdit.SetBounds((int)(40 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
-            _groupAdd.Click += delegate { if (_roomMode) AddArea(null); else AddGroup(null); };
-            _groupEdit.Click += delegate { if (_roomMode) EditArea(); else EditGroup(); };
+            _groupAdd.Click += delegate { if (_roomMode) AddArea(null); else if (_customerMode) AddCustomerGroup(null); else AddGroup(null); };
+            _groupEdit.Click += delegate { if (_roomMode) EditArea(); else if (_customerMode) EditCustomerGroup(); else EditGroup(); };
             _groupBar.Controls.Add(_groupAdd);
             _groupBar.Controls.Add(_groupEdit);
             _split.Panel1.Controls.Add(_groupBar);
@@ -1490,7 +1528,7 @@ namespace Kazuko_FnB.UI
         /// <summary>Vẽ số thứ tự (STT) lên row header, theo thứ tự đang hiện trên lưới.</summary>
         private void DrawRowNumber(object sender, DataGridViewRowPostPaintEventArgs e)
         {
-            if ((!_productMode && !_roomMode) || !_grid.RowHeadersVisible)
+            if ((!_productMode && !_roomMode && !_customerMode) || !_grid.RowHeadersVisible)
                 return;
             string text = (e.RowIndex + 1).ToString(CultureInfo.InvariantCulture);
             var bounds = new Rectangle(0, e.RowBounds.Top, _grid.RowHeadersWidth, e.RowBounds.Height);
@@ -1763,6 +1801,11 @@ namespace Kazuko_FnB.UI
                 RenameAreaLabel(e);
                 return;
             }
+            if (_customerMode)
+            {
+                RenameCustomerGroupLabel(e);
+                return;
+            }
             if (!_productMode || e.Label == null)
                 return;
             string id = e.Node.Tag as string;
@@ -1961,7 +2004,7 @@ namespace Kazuko_FnB.UI
 
         private void GridMouseDown(object sender, MouseEventArgs e)
         {
-            if ((!_productMode && !_roomMode) || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode && !_customerMode) || e.Button != MouseButtons.Right)
                 return;
             DataGridView.HitTestInfo hit = _grid.HitTest(e.X, e.Y);
             if (hit.RowIndex >= 0)
@@ -1976,19 +2019,23 @@ namespace Kazuko_FnB.UI
             }
             if (_roomMode)
                 _roomGridMenu.Show(_grid, e.Location);
+            else if (_customerMode)
+                _customerGridMenu.Show(_grid, e.Location);
             else
                 _gridMenu.Show(_grid, e.Location);
         }
 
         private void TreeMouseDown(object sender, MouseEventArgs e)
         {
-            if ((!_productMode && !_roomMode) || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode && !_customerMode) || e.Button != MouseButtons.Right)
                 return;
             TreeNode node = _tree.GetNodeAt(e.X, e.Y);
             if (node != null)
                 _tree.SelectedNode = node;
             if (_roomMode)
                 _roomTreeMenu.Show(_tree, e.Location);
+            else if (_customerMode)
+                _customerTreeMenu.Show(_tree, e.Location);
             else
                 _treeMenu.Show(_tree, e.Location);
         }
@@ -2009,7 +2056,10 @@ namespace Kazuko_FnB.UI
                 return;
             var cells = new List<DataGridViewCell>();
             foreach (DataGridViewCell c in _grid.SelectedCells)
-                cells.Add(c);
+                if (c.OwningColumn != null && c.OwningColumn.Visible)
+                    cells.Add(c);
+            if (cells.Count == 0)
+                return;
             cells.Sort(delegate(DataGridViewCell a, DataGridViewCell b)
             {
                 int r = a.RowIndex.CompareTo(b.RowIndex);
@@ -2077,6 +2127,8 @@ namespace Kazuko_FnB.UI
                     _treeMenu.Dispose();
                 _roomGridMenu.Dispose();
                 _roomTreeMenu.Dispose();
+                _customerGridMenu.Dispose();
+                _customerTreeMenu.Dispose();
                 DisposeBarcodeUi();
             }
             base.Dispose(disposing);

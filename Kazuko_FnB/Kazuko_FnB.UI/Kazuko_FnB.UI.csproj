@@ -190,6 +190,15 @@
     <Compile Include="CatalogView.Barcode.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.Customer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.Customer.Groups.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.Customer.Menus.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -346,6 +355,9 @@
     <Compile Include="Diagnostics\SelfTest.Print.Barcode.Helpers.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Barcode.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Barcode.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Customer.cs" />
+    <Compile Include="Diagnostics\SelfTest.Customer.Group.cs" />
+    <Compile Include="Diagnostics\SelfTest.Customer.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -389,6 +401,10 @@
     </Compile>
     <Compile Include="Dialogs\ChangePasswordDialog.cs" />
     <Compile Include="Dialogs\ConfigDialog.cs" />
+    <Compile Include="Dialogs\CustomerEditDialog.cs" />
+    <Compile Include="Dialogs\CustomerEditDialog.Layout.cs" />
+    <Compile Include="Dialogs\CustomerGroupEditDialog.cs" />
+    <Compile Include="Dialogs\CustomerGroupEditDialog.Layout.cs" />
     <Compile Include="Dialogs\GroupEditDialog.cs" />
     <Compile Include="Dialogs\IScreenPreview.cs" />
     <Compile Include="Dialogs\ImageLibraryDialog.cs" />

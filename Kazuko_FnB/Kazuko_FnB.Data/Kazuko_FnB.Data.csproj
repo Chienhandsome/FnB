@@ -57,6 +57,8 @@
     <Compile Include="CatalogRepository.cs" />
     <Compile Include="DataAccessException.cs" />
     <Compile Include="ConfigRepository.cs" />
+    <Compile Include="CustomerGroupRepository.cs" />
+    <Compile Include="CustomerRepository.cs" />
     <Compile Include="DbHelper.cs" />
     <Compile Include="DbSmokeTest.cs" />
     <Compile Include="FormRepository.cs" />
