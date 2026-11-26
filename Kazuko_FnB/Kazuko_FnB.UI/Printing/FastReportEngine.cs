@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -117,6 +118,18 @@ namespace Kazuko_FnB.UI.Printing
                     report.Dispose();
                     errorMessage = "Mẫu in '" + templateName + "' không dựng được trang nào.";
                     return false;
+                }
+
+                if (job != null && job.RaiseStartReportWithData && job.DataSet != null)
+                {
+                    report.OnStartReport(new ReportStartEventArgs(job.DataSet, new Hashtable()));
+                    prepared = report.Prepare();
+                    if (!prepared || report.PreparedPages == null || report.PreparedPages.Count == 0)
+                    {
+                        report.Dispose();
+                        errorMessage = "Mẫu in '" + templateName + "' không dựng được trang nào.";
+                        return false;
+                    }
                 }
 
                 preparedReport = report;

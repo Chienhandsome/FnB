@@ -63,7 +63,6 @@ namespace Kazuko_FnB.UI.Diagnostics
                 SeedDailyActivityFixture(db, fx);
                 DailyActivityRepositoryTests(db, fx);
                 DailyActivityUiTests(db, fx);
-                DailyActivityLayoutAndScrollTests(db, fx);
             }
             finally
             {

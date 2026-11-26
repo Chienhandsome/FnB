@@ -208,15 +208,10 @@
     <Compile Include="RevenueReportView.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="DailyActivitySections.cs" />
-    <Compile Include="DailyActivitySections.Layout.cs" />
     <Compile Include="DailyActivityView.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="BusinessResultView.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="BusinessResultView.Grid.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Dialogs\ActivityLogPreviewForm.cs">
@@ -309,7 +304,6 @@
     <Compile Include="Diagnostics\SelfTest.DailyActivity.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Ui.cs" />
-    <Compile Include="Diagnostics\SelfTest.DailyActivity.Layout.cs" />
     <Compile Include="Diagnostics\SelfTest.BusinessResult.cs" />
     <Compile Include="Diagnostics\SelfTest.BusinessResult.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.BusinessResult.Ui.cs" />
@@ -323,6 +317,9 @@
     <Compile Include="Diagnostics\SelfTest.Print.Revenue.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Revenue.Helpers.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Revenue.Config.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Embedded.Helpers.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Embedded.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Embedded.Kqkd.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\IPrintOutputHandler.cs" />
     <Compile Include="Printing\PrintWorkflowService.cs" />
@@ -337,6 +334,9 @@
     <Compile Include="Printing\ItemSalesPrintCoordinator.cs" />
     <Compile Include="Printing\RevenueReportPrintDataBuilder.cs" />
     <Compile Include="Printing\RevenueReportPrintCoordinator.cs" />
+    <Compile Include="Printing\DailyActivityReportDataBuilder.cs" />
+    <Compile Include="Printing\BusinessResultReportDataBuilder.cs" />
+    <Compile Include="Printing\EmbeddedReportPreviewController.cs" />
     <Compile Include="Dialogs\BookingEditDialog.cs" />
     <Compile Include="Dialogs\NumericEditGridCell.cs" />
     <Compile Include="Dialogs\QuoteEditDialog.cs" />

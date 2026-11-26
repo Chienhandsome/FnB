@@ -78,6 +78,102 @@ namespace Kazuko_FnB.Data
         }
 
         /// <summary>
+        /// Đọc mẫu in mặc định của báo cáo từ SREPORT.LASTTEMPLATEID → SREPORTTEMPLATE.ID (chỉ đọc, SQL tham số hóa).
+        /// Thiếu bản ghi SREPORT, thiếu LASTTEMPLATEID hoặc thiếu bản ghi SREPORTTEMPLATE đều trả null kèm câu lỗi nêu tên báo cáo,
+        /// KHÔNG đoán mẫu khác.
+        /// </summary>
+        public PrintTemplateRecord LoadReportTemplate(string reportId, string reportDisplayName, out string errorMessage)
+        {
+            string fallbackName = string.IsNullOrWhiteSpace(reportDisplayName)
+                ? (reportId ?? "(không tên)")
+                : reportDisplayName.Trim();
+
+            if (string.IsNullOrWhiteSpace(reportId))
+            {
+                errorMessage = "Thiếu mã báo cáo '" + fallbackName + "' để đọc mẫu in.";
+                return null;
+            }
+
+            string localError = null;
+            PrintTemplateRecord record = DbHelper.Read(_databasePath, conn =>
+            {
+                DataTable dtReport = DbHelper.Table(conn, null,
+                    "SELECT NAME, LASTTEMPLATEID FROM SREPORT WHERE ID = @ReportId",
+                    "@ReportId", reportId.Trim());
+
+                if (dtReport.Rows.Count == 0)
+                {
+                    localError = FormatMissingReportError(fallbackName);
+                    return null;
+                }
+
+                string dbReportName = (DbHelper.Str(dtReport.Rows[0]["NAME"]) ?? "").Trim();
+                string effectiveName = string.IsNullOrWhiteSpace(reportDisplayName)
+                    ? (dbReportName.Length > 0 ? dbReportName : fallbackName)
+                    : reportDisplayName.Trim();
+                string lastTemplateId = (DbHelper.Str(dtReport.Rows[0]["LASTTEMPLATEID"]) ?? "").Trim();
+
+                if (lastTemplateId.Length == 0)
+                {
+                    localError = FormatMissingLastTemplateIdError(effectiveName);
+                    return null;
+                }
+
+                DataTable dtTpl = DbHelper.Table(conn, null,
+                    "SELECT ID, NAME, SREPORTID, TEMPLATE FROM SREPORTTEMPLATE WHERE ID = @TemplateId",
+                    "@TemplateId", lastTemplateId);
+
+                if (dtTpl.Rows.Count == 0)
+                {
+                    localError = FormatMissingReportTemplateRecordError(effectiveName, lastTemplateId);
+                    return null;
+                }
+
+                DataRow row = dtTpl.Rows[0];
+                byte[] rawBytes;
+                string xmlText;
+                ReadTemplateContent(row["TEMPLATE"], out rawBytes, out xmlText);
+
+                string tplName = (DbHelper.Str(row["NAME"]) ?? "").Trim();
+                var tpl = new PrintTemplateRecord
+                {
+                    Id = DbHelper.Str(row["ID"]) ?? "",
+                    Name = tplName.Length > 0 ? tplName : effectiveName,
+                    FormId = DbHelper.Str(row["SREPORTID"]) ?? "",
+                    TemplateBytes = rawBytes,
+                    TemplateXml = xmlText
+                };
+
+                List<string> configIds = PrintTemplateVisibilityParser.ExtractDistinctConfigIds(new[] { tpl });
+                tpl.ConfigVisibilityById = LoadConfigVisibilityByIds(conn, configIds);
+                return tpl;
+            });
+
+            errorMessage = localError;
+            return record;
+        }
+
+        public static string FormatMissingReportError(string reportName)
+        {
+            return "Không tìm thấy báo cáo '" + SafeReportName(reportName) + "' trong bảng SREPORT.";
+        }
+
+        public static string FormatMissingLastTemplateIdError(string reportName)
+        {
+            return "Báo cáo '" + SafeReportName(reportName) + "' chưa có mẫu in mặc định (thiếu LASTTEMPLATEID).";
+        }
+
+        public static string FormatMissingReportTemplateRecordError(string reportName, string templateId)
+        {
+            return "Không tìm thấy mẫu in '" + (templateId ?? "") + "' của báo cáo '" + SafeReportName(reportName) + "' trong bảng SREPORTTEMPLATE.";
+        }
+
+        private static string SafeReportName(string reportName)
+        {
+            return string.IsNullOrWhiteSpace(reportName) ? "(không tên)" : reportName.Trim();
+        }
+
+        /// <summary>
         /// Đọc trạng thái bật/tắt (INTVALUE = 30) của các bản ghi SCONFIG theo danh sách ID (SQL tham số hóa).
         /// ID không tồn tại trong SCONFIG sẽ không có trong từ điển trả về (engine giữ cột hiện, không đoán).
         /// </summary>

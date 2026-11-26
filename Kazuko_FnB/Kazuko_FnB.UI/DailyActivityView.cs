@@ -2,19 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using FastReport;
+using FastReport.Preview;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Domain;
 using Kazuko_FnB.Services;
 using Kazuko_FnB.Theme;
 using Kazuko_FnB.UI.Controls;
+using Kazuko_FnB.UI.Printing;
 
 namespace Kazuko_FnB.UI
 {
     /// <summary>
-    /// Màn báo cáo chỉ xem "Chi tiết hoạt động ngày" (docs/specs/chi-tiet-hoat-dong-ngay.md):
-    /// thanh lọc trên (Từ ngày, Đến ngày bắt buộc; Thu ngân và Cửa hàng tùy chọn; Tải dữ liệu (F5); In báo cáo),
-    /// dòng ghi chú quy tắc lọc thu ngân (P4), và một vùng cuộn dọc chứa đầu báo cáo, 4 khối dữ liệu, khối tổng hợp 8 dòng ở cuối.
-    /// Không chứa SQL; mọi màu và cỡ chữ từ ThemeTokens / ThemeManager.
+    /// Màn báo cáo chỉ xem "Chi tiết hoạt động ngày" (docs/specs/chi-tiet-hoat-dong-ngay.md &amp; in-xuat-excel Q9):
+    /// thanh lọc trên (Từ ngày, Đến ngày bắt buộc; Thu ngân và Cửa hàng tùy chọn; Tải dữ liệu (F5))
+    /// và trình xem FastReport nhúng trực tiếp phía dưới dùng mẫu SREPORT.LASTTEMPLATEID.
+    /// Không chứa SQL; phần khung theo ThemeTokens / ThemeManager, vùng giấy FastReport giữ nguyên.
     /// </summary>
     internal sealed class DailyActivityView : Panel
     {
@@ -22,6 +25,7 @@ namespace Kazuko_FnB.UI
 
         private readonly UserSession _session;
         private readonly DailyActivityRepository _repository;
+        private readonly EmbeddedReportPreviewController _reportController = new EmbeddedReportPreviewController();
 
         private readonly FlowLayoutPanel _topBar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true };
         private readonly DateBox _fromDate = new DateBox(false);
@@ -31,32 +35,18 @@ namespace Kazuko_FnB.UI
         private readonly ComboBox _cboStore = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
         private readonly FieldFrame _storeFrame;
         private readonly FlatButton _btnLoad = new FlatButton { Text = "Tải dữ liệu (F5)", Tag = "primary" };
-        private readonly FlatButton _btnPrint = new FlatButton { Text = "In báo cáo" };
 
-        private readonly Panel _noteBar = new Panel { Dock = DockStyle.Top };
-        private readonly Label _lblCashierNote = new Label
-        {
-            Text = DailyActivityConstants.CashierNote,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            UseMnemonic = false
-        };
-
-        private readonly DailyActivitySections _body;
         private readonly Font _bodyFont;
-        private readonly Font _headingFont;
-        private readonly Font _titleFont;
-        private readonly Font _smallFont;
-
         private ThemeTokens _theme = ThemeManager.Current;
         private DailyActivityReportData _loadedData = new DailyActivityReportData();
         private DailyActivitySummaryResult _loadedSummary = new DailyActivitySummaryResult();
+        private string _lastDataErrorMessage;
 
         /// <summary>Tắt hộp thoại modal khi chụp màn hình (--render-screen) hoặc selftest.</summary>
         internal bool SuppressErrorPopup { get; set; }
 
-        /// <summary>Ghi nhận thông báo gần nhất (ví dụ bấm nút In báo cáo) để selftest kiểm tra.</summary>
-        internal string LastInfoMessageForTest { get; private set; }
+        /// <summary>Số lượt tải dữ liệu báo cáo thành công.</summary>
+        internal int LoadCountForTest { get; private set; }
 
         public DailyActivityView(UserSession session)
         {
@@ -68,21 +58,15 @@ namespace Kazuko_FnB.UI
             DoubleBuffered = true;
             float s = DeviceDpi / 96f;
             _bodyFont = new Font(ThemeManager.BodyFontName, ThemeManager.BodyFontSize);
-            _headingFont = new Font(ThemeManager.HeadingFontName, ThemeManager.BodyFontSize);
-            _titleFont = new Font(ThemeManager.HeadingFontName, ThemeManager.BodyFontSize + 3f, FontStyle.Bold);
-            _smallFont = new Font(ThemeManager.BodyFontName, ThemeManager.SmallFontSize);
 
             _cashierFrame = new FieldFrame(_cboCashier, 0);
             _storeFrame = new FieldFrame(_cboStore, 0);
-            _body = new DailyActivitySections(this, ReloadAll, _bodyFont, _headingFont, _titleFont, _smallFont, s);
 
             BuildTopBar(s);
-            BuildNoteBar(s);
 
-            Controls.Add(_body.ScrollHost);
-            Controls.Add(_noteBar);
+            Controls.Add(_reportController.PreviewControl);
             Controls.Add(_topBar);
-            _body.ScrollHost.BringToFront();
+            _reportController.PreviewControl.BringToFront();
 
             ThemeManager.ThemeChanged += OnThemeChanged;
             ApplyTheme(ThemeManager.Current);
@@ -92,7 +76,12 @@ namespace Kazuko_FnB.UI
 
         private void BuildTopBar(float s)
         {
-            _topBar.Padding = new Padding((int)(10 * s), (int)(6 * s), (int)(10 * s), (int)(4 * s));
+            _topBar.Padding = new Padding((int)(10 * s), (int)(6 * s), (int)(10 * s), (int)(6 * s));
+            _topBar.Paint += delegate (object sender, PaintEventArgs e)
+            {
+                using (var pen = new Pen(Draw.StrongBorder(_theme)))
+                    e.Graphics.DrawLine(pen, 0, _topBar.Height - 1, _topBar.Width, _topBar.Height - 1);
+            };
 
             _fromDate.Inner.Font = _bodyFont;
             _fromDate.Size = new Size((int)(134 * s), (int)(32 * s));
@@ -113,19 +102,8 @@ namespace Kazuko_FnB.UI
             _btnLoad.Font = _bodyFont;
             int loadW = Math.Max((int)(124 * s), TextRenderer.MeasureText(_btnLoad.Text, _bodyFont).Width + (int)(26 * s));
             _btnLoad.Size = new Size(loadW, (int)(32 * s));
-            _btnLoad.Margin = new Padding((int)(2 * s), (int)(3 * s), (int)(8 * s), (int)(3 * s));
+            _btnLoad.Margin = new Padding((int)(2 * s), (int)(3 * s), 0, (int)(3 * s));
             _btnLoad.Click += delegate { ReloadAll(); };
-
-            _btnPrint.Font = _bodyFont;
-            int printW = Math.Max((int)(104 * s), TextRenderer.MeasureText(_btnPrint.Text, _bodyFont).Width + (int)(26 * s));
-            _btnPrint.Size = new Size(printW, (int)(32 * s));
-            _btnPrint.Margin = new Padding(0, (int)(3 * s), 0, (int)(3 * s));
-            _btnPrint.Click += delegate
-            {
-                LastInfoMessageForTest = DailyActivityConstants.PrintUnsupportedMessage;
-                if (!SuppressErrorPopup)
-                    Msg.Info(this, DailyActivityConstants.PrintUnsupportedMessage);
-            };
 
             _topBar.Controls.Add(MakeFlowLabel("Từ ngày", s));
             _topBar.Controls.Add(_fromDate);
@@ -136,20 +114,6 @@ namespace Kazuko_FnB.UI
             _topBar.Controls.Add(MakeFlowLabel("Cửa hàng", s));
             _topBar.Controls.Add(_storeFrame);
             _topBar.Controls.Add(_btnLoad);
-            _topBar.Controls.Add(_btnPrint);
-        }
-
-        private void BuildNoteBar(float s)
-        {
-            _noteBar.Height = (int)(24 * s);
-            _noteBar.Padding = new Padding((int)(14 * s), 0, (int)(14 * s), (int)(2 * s));
-            _noteBar.Paint += delegate(object sender, PaintEventArgs e)
-            {
-                using (var pen = new Pen(Draw.StrongBorder(_theme)))
-                    e.Graphics.DrawLine(pen, 0, _noteBar.Height - 1, _noteBar.Width, _noteBar.Height - 1);
-            };
-            _lblCashierNote.Font = _smallFont;
-            _noteBar.Controls.Add(_lblCashierNote);
         }
 
         private Label MakeFlowLabel(string text, float s)
@@ -189,8 +153,9 @@ namespace Kazuko_FnB.UI
             }
             catch (DataAccessException ex)
             {
+                _lastDataErrorMessage = "Không khởi tạo được bộ lọc báo cáo hoạt động ngày: " + ex.Message;
                 if (!SuppressErrorPopup)
-                    Msg.Error(this, "Không khởi tạo được bộ lọc báo cáo hoạt động ngày: " + ex.Message);
+                    Msg.Error(this, _lastDataErrorMessage);
             }
             LoadReportData();
         }
@@ -198,6 +163,9 @@ namespace Kazuko_FnB.UI
         /// <summary>Làm mới danh mục lọc (giữ lựa chọn hiện tại) và tải lại báo cáo.</summary>
         public void ReloadAll()
         {
+            if (_reportController.IsBusy)
+                return;
+
             try
             {
                 LoadCashiers(true);
@@ -205,8 +173,9 @@ namespace Kazuko_FnB.UI
             }
             catch (DataAccessException ex)
             {
+                _lastDataErrorMessage = "Không làm mới được danh mục bộ lọc: " + ex.Message;
                 if (!SuppressErrorPopup)
-                    Msg.Error(this, "Không làm mới được danh mục bộ lọc: " + ex.Message);
+                    Msg.Error(this, _lastDataErrorMessage);
             }
             LoadReportData();
         }
@@ -271,7 +240,7 @@ namespace Kazuko_FnB.UI
             _cboStore.SelectedIndex = idx;
         }
 
-        private DailyActivityFilter BuildCurrentFilter(out string cashierDisplay, out string storeDisplay)
+        private DailyActivityFilter BuildCurrentFilter(out string cashierDisplay)
         {
             var cashier = _cboCashier.SelectedItem as CashierRecord;
             var store = _cboStore.SelectedItem as StoreRecord;
@@ -279,7 +248,6 @@ namespace Kazuko_FnB.UI
             string storeId = store == null ? "" : (store.Id ?? "");
 
             cashierDisplay = cashierId.Length == 0 ? DailyActivityConstants.AllLabel : cashier.ToString();
-            storeDisplay = storeId.Length == 0 ? DailyActivityConstants.AllLabel : (store.Name ?? "");
 
             return new DailyActivityFilter
             {
@@ -295,22 +263,35 @@ namespace Kazuko_FnB.UI
         private void LoadReportData()
         {
             string cashierDisplay;
-            string storeDisplay;
-            DailyActivityFilter filter = BuildCurrentFilter(out cashierDisplay, out storeDisplay);
-            try
-            {
-                _loadedData = _repository.LoadReport(filter);
-                _loadedSummary = DailyActivitySummary.Calculate(_loadedData);
-                _body.BindData(_loadedData, _loadedSummary, filter.FromDate, filter.ToDate, cashierDisplay, storeDisplay);
-            }
-            catch (DataAccessException ex)
-            {
-                _loadedData = new DailyActivityReportData();
-                _loadedSummary = new DailyActivitySummaryResult();
-                _body.BindData(_loadedData, _loadedSummary, filter.FromDate, filter.ToDate, cashierDisplay, storeDisplay);
-                if (!SuppressErrorPopup)
-                    Msg.Error(this, "Không đọc được dữ liệu hoạt động ngày: " + ex.Message);
-            }
+            DailyActivityFilter filter = BuildCurrentFilter(out cashierDisplay);
+            _lastDataErrorMessage = null;
+
+            _reportController.RunLoad(
+                this,
+                _btnLoad,
+                _session.DatabasePath,
+                PrintConstants.DailyActivityReportId,
+                DailyActivityConstants.FunctionName,
+                delegate
+                {
+                    try
+                    {
+                        _loadedData = _repository.LoadReport(filter);
+                        _loadedSummary = DailyActivitySummary.Calculate(_loadedData);
+                        LoadCountForTest++;
+                        return DailyActivityReportDataBuilder.Build(_loadedData, filter.FromDate, filter.ToDate, cashierDisplay, null);
+                    }
+                    catch (DataAccessException ex)
+                    {
+                        _loadedData = new DailyActivityReportData();
+                        _loadedSummary = new DailyActivitySummaryResult();
+                        _lastDataErrorMessage = "Không đọc được dữ liệu hoạt động ngày: " + ex.Message;
+                        if (!SuppressErrorPopup)
+                            Msg.Error(this, _lastDataErrorMessage);
+                        return null;
+                    }
+                },
+                SuppressErrorPopup);
         }
 
         // ------------------------------------------------------------------ Giao diện / Theme
@@ -323,37 +304,47 @@ namespace Kazuko_FnB.UI
         public void ApplyTheme(ThemeTokens t)
         {
             _theme = t;
-            ThemeApplier.Apply(this, t);
             BackColor = t.Background;
+            ForeColor = t.Text;
 
+            // Chỉ tô màu phần khung thanh lọc; giữ nguyên vùng giấy và thanh công cụ của FastReport PreviewControl.
+            ThemeApplier.Apply(_topBar, t);
             _topBar.BackColor = t.Background;
             _fromDate.ApplyTheme(t, t.Background);
             _toDate.ApplyTheme(t, t.Background);
             _cashierFrame.ApplyTheme(t, t.Background);
             _storeFrame.ApplyTheme(t, t.Background);
             ThemeApplier.ApplyButton(_btnLoad, t, "primary");
-            ThemeApplier.ApplyButton(_btnPrint, t, null);
-
-            _noteBar.BackColor = t.Background;
-            _lblCashierNote.BackColor = Color.Transparent;
-            _lblCashierNote.ForeColor = t.TextMuted;
-            _noteBar.Invalidate();
-
-            _body.ApplyTheme(t);
+            _topBar.Invalidate();
         }
 
         // ------------------------------------------------------------------ Hỗ trợ selftest & --render-screen
 
+        internal FlowLayoutPanel TopBarForTest { get { return _topBar; } }
         internal DateBox FromDateBoxForTest { get { return _fromDate; } }
         internal DateBox ToDateBoxForTest { get { return _toDate; } }
         internal ComboBox CashierComboForTest { get { return _cboCashier; } }
         internal ComboBox StoreComboForTest { get { return _cboStore; } }
         internal FlatButton LoadButtonForTest { get { return _btnLoad; } }
-        internal FlatButton PrintButtonForTest { get { return _btnPrint; } }
-        internal Label CashierNoteLabelForTest { get { return _lblCashierNote; } }
-        internal DailyActivitySections BodyForTest { get { return _body; } }
-        internal Font HeadingFontForTest { get { return _headingFont; } }
         internal DailyActivitySummaryResult LoadedSummaryForTest { get { return _loadedSummary; } }
+        internal DailyActivityReportData LoadedDataForTest { get { return _loadedData; } }
+        internal PreviewControl PreviewControlForTest { get { return _reportController.PreviewControl; } }
+        internal Report CurrentReportForTest { get { return _reportController.CurrentReport; } }
+        internal int DisposedReportCountForTest { get { return _reportController.DisposedReportCount; } }
+        internal bool IsLoadingForTest { get { return _reportController.IsBusy; } }
+        internal string LastErrorMessageForTest { get { return _reportController.LastErrorMessage ?? _lastDataErrorMessage; } }
+
+        internal EmbeddedReportTemplateLoader TemplateLoaderForTest
+        {
+            get { return _reportController.TemplateLoaderForTest; }
+            set { _reportController.TemplateLoaderForTest = value; }
+        }
+
+        internal Action OnBeforePrepareForTest
+        {
+            get { return _reportController.OnBeforePrepareForTest; }
+            set { _reportController.OnBeforePrepareForTest = value; }
+        }
 
         internal bool DispatchCmdKeyForTest(Keys keyData)
         {
@@ -367,14 +358,9 @@ namespace Kazuko_FnB.UI
             if (opt.Length == 0)
                 return;
 
-            if (string.Equals(opt, "bottom", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(opt, "bottom", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(opt, "top", StringComparison.OrdinalIgnoreCase))
             {
-                _body.ScrollToBottom();
-                return;
-            }
-            if (string.Equals(opt, "top", StringComparison.OrdinalIgnoreCase))
-            {
-                _body.ScrollToTop();
                 return;
             }
 
@@ -433,11 +419,8 @@ namespace Kazuko_FnB.UI
             if (disposing)
             {
                 ThemeManager.ThemeChanged -= OnThemeChanged;
-                _body.Dispose();
+                _reportController.Dispose();
                 _bodyFont.Dispose();
-                _headingFont.Dispose();
-                _titleFont.Dispose();
-                _smallFont.Dispose();
             }
             base.Dispose(disposing);
         }

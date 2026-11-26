@@ -562,6 +562,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             NumberGridTests(db);
             PrintP0Tests(db);
             PrintP1RevenueTests(db);
+            PrintP1EmbeddedTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

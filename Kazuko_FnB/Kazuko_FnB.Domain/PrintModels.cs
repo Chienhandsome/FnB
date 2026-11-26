@@ -15,6 +15,12 @@ namespace Kazuko_FnB.Domain
         /// <summary>SFORMID của màn "Thống kê doanh thu" trong bảng STEMPLATE.</summary>
         public const string RevenueReportFormId = "d913c8d9-4395-476c-9612-8ca7f35b6268";
 
+        /// <summary>SREPORT.ID của báo cáo "Chi tiết hoạt động ngày" trong bảng SREPORT / SREPORTTEMPLATE.</summary>
+        public const string DailyActivityReportId = "5b986bf4-406f-45ec-896d-81951fcde35b";
+
+        /// <summary>SREPORT.ID của báo cáo "Tổng hợp kết quả kinh doanh" trong bảng SREPORT / SREPORTTEMPLATE.</summary>
+        public const string BusinessResultReportId = "9c30f012-bec1-4d53-b8f9-7abf9d476d7d";
+
         public const int ActiveStatus = 30;
         /// <summary>Giá trị INTVALUE bật cấu hình trong bảng SCONFIG (cùng quy ước SystemConfig.On = 30).</summary>
         public const int ConfigEnabledValue = 30;
@@ -94,6 +100,12 @@ namespace Kazuko_FnB.Domain
         /// <see cref="PrintTemplateRecord.ConfigVisibilityById"/>).
         /// </summary>
         public Dictionary<string, bool> ConfigVisibilityById { get; set; }
+
+        /// <summary>
+        /// Khi true, FastReportEngine gọi thêm OnStartReport(new ReportStartEventArgs(DataSet, new Hashtable()))
+        /// rồi Prepare lần nữa để script _StartReport điền dữ liệu trực tiếp vào DataSet (dùng cho mẫu KQKD).
+        /// </summary>
+        public bool RaiseStartReportWithData { get; set; }
 
         public PrintJobData()
         {
