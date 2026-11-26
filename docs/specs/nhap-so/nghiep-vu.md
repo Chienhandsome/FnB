@@ -27,26 +27,35 @@ Không phụ thuộc cài đặt vùng của Windows.
 - Chiến chốt: ô tiền đang chỉ hiện số nguyên mà gõ `15,5` thì **hiện đúng 15,5**. Không có phần lẻ ẩn. Cách tính và làm tròn tiền không đổi.
 - Áp cho mọi ô: chỉ hiện số chữ số lẻ đang có (`15.000`, không phải `15.000,00`; `2,5`, không phải `2,50`).
 
-## N4. Gõ quá số chữ số lẻ CSDL lưu được (ĐỀ XUẤT)
+## N4. Quá số chữ số lẻ CSDL lưu được (CHỐT: "Y hệt app gốc")
 
-CSDL lưu 2 chữ số lẻ cho giá, tiền, %, số lượng trên phiếu, quy đổi, tồn; **4** cho định lượng (`DDINHLUONG.SOLUONG`).
+Số chữ số lẻ tối đa của ô = của cột CSDL: **2** cho giá, tiền, %, số lượng trên phiếu, quy đổi, tồn; **4** cho định lượng (`DDINHLUONG.SOLUONG`).
 
-- Đề xuất: làm tròn AwayFromZero **ngay khi rời ô**, tới đúng số chữ số CSDL lưu, rồi mới tính. Ví dụ số lượng `2,125` thành `2,13`, thành tiền tính theo 2,13.
-- Hiện nay: lưới hiện `2,13` nhưng tính tiền theo 2,125, còn CSDL lưu số lượng đã làm tròn, nên thành tiền có thể lệch số lượng đã lưu (suy từ định dạng cột và kiểu cột, chưa thử).
+| Loại ô | Cư xử | Ví dụ (ô 2 số lẻ) |
+|---|---|---|
+| Cột sửa trong lưới | **không gõ được** chữ số vượt mức | gõ `2.128` còn `2,12` |
+| Ô ngoài lưới | gõ được, **làm tròn khi rời ô** | `1.128` thành `1,13` |
 
-## N5. Ô chỉ nhận số nguyên (ĐỀ XUẤT)
+Số hiện, số tính và số lưu luôn trùng nhau.
 
-Số chữ số khi thêm nhanh bàn, các cấu hình kiểu số nguyên, ô nào của form động khai 0 chữ số lẻ **và không phải tiền**: gõ số lẻ (`2.5`) coi như không đọc được, giữ số cũ.
+- Bằng chứng: bấm thử app gốc 26/11, Khách đặt hàng (bản chép, chưa bấm Lưu): lưới gõ `2.125`, `2.128` đều còn `2.12`, giá 100.000 ra 212.000; ô Số lượng gõ `1.128` thành `1.13`. Ảnh: `_tmp/_origin-shots/nhap-so/`.
+- Chỉ thử cột và ô Số lượng. Ô khác, gồm lưới định lượng (4 số lẻ), áp theo cùng luật, **chưa thử trên app gốc**. Điểm giữa (`1.125`) chưa thử: bản mới làm tròn AwayFromZero theo quy ước dự án.
+- **ĐỀ XUẤT:** dán chuỗi thừa chữ số vào ô lưới thì cắt phần thừa, như khi gõ.
+- Lưới Đặt hàng đã push (`bf45f06`) chưa giới hạn số chữ số lẻ; sửa trong spec này.
+
+## N5. Ô chỉ nhận số nguyên (CHỐT: giữ số cũ)
+
+Số chữ số khi thêm nhanh bàn, cấu hình kiểu số nguyên, ô nào của form động khai 0 chữ số lẻ **và không phải tiền**: gõ số lẻ (`2.5`) coi như không đọc được, giữ số cũ. N4 không áp cho loại ô này.
 
 ## N6. Không đọc được, ngoài khoảng
 
 - Không đọc được: giữ số cũ. Chỉ chỗ đang có câu báo thì giữ câu báo (cột Số lượng của lưới Đặt hàng và Báo giá: "Mời bạn nhập số lượng"). Không thêm câu mới.
 - Ngoài khoảng cho phép của ô (âm, % quá 100): xử lý như hiện nay của từng ô. Spec này không đổi giới hạn nào.
 
-## N7. Nhập Excel (Báo giá)
+## N7. Nhập Excel (Báo giá) (CHỐT)
 
-Quy tắc N1 **không** áp cho file Excel. Giữ luật trong `QuoteExcelImporter` (ô định dạng số lấy đúng số), chỉ đổi:
+Quy tắc N1 **không** áp cho file Excel. Giữ luật trong `QuoteExcelImporter` (ô định dạng số lấy đúng số), chỉ đổi với ô chữ:
 
-- **CHỐT:** ô chữ `1.250` là **1250**, kể cả cột Số lượng (hiện báo lỗi vì mơ hồ).
-- **ĐỀ XUẤT:** áp cùng cách cho cột % giảm (1250% bị chặn bởi giới hạn 0–100 đã chốt). Nhóm đầu là `0` thì là thập phân: `0.125` là 0,125.
-- **ĐỀ XUẤT:** dấu phẩy giữ như hiện nay (cột Đơn giá: `15,000` là 15000; cột Số lượng, %: `1,250` báo lỗi), riêng `0,125` là 0,125 ở mọi cột (hiện cột Đơn giá đọc thành 125).
+- `1.250` là **1250** ở mọi cột, kể cả cột Số lượng (hiện báo lỗi vì mơ hồ). Cột % giảm ra 1250 thì bị giới hạn 0–100 chặn.
+- Bắt đầu bằng `0` rồi tới dấu thì dấu đó là thập phân ở mọi cột: `0.125`, `0,125` là **0,125** (hiện cột Đơn giá đọc `0,125` thành 125).
+- Dấu phẩy trong các trường hợp khác giữ như hiện nay (cột Đơn giá: `15,000` là 15000; cột Số lượng, %: `1,250` báo lỗi).

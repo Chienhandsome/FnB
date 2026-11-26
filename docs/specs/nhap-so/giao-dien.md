@@ -34,7 +34,7 @@ Lúc implement phải rà lại; thấy thêm chỗ gõ số thì ghi vào báo 
 3. Rời ô, Enter, hoặc bấm nút dùng giá trị: đọc theo N1, rồi hiện lại như bước 1. Nút phải nhận đúng số vừa gõ, kể cả khi chưa rời ô.
 4. Vào rồi ra, không đổi: giá trị không đổi, không đánh dấu phiếu đã sửa, không tính lại giảm giá theo tiền hay theo %.
 5. Nút mũi tên lên xuống giữ bước nhảy hiện tại.
-6. Gõ phím: ô cho gõ chữ số, `.`, `,`, `-` trên mọi cài đặt Windows.
+6. Gõ phím: ô cho gõ chữ số, `.`, `,`, `-` trên mọi cài đặt Windows. Cột sửa trong lưới chặn chữ số lẻ vượt mức (N4).
 7. Không hộp lỗi mặc định của Windows ở bất kỳ ô nào.
 
 Màu và cỡ chữ lấy theo `ThemeManager` như ô hiện tại.
