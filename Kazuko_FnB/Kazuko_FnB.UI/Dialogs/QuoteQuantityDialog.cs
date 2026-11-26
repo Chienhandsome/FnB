@@ -13,9 +13,9 @@ namespace Kazuko_FnB.UI.Dialogs
     /// </summary>
     internal sealed class QuoteQuantityDialog : ThemedDialog
     {
-        private readonly NumericUpDown _odd = new NumericUpDown();
-        private readonly NumericUpDown _even = new NumericUpDown();
-        private readonly NumericUpDown _discount = new NumericUpDown();
+        private readonly NumberBox _odd = new NumberBox();
+        private readonly NumberBox _even = new NumberBox();
+        private readonly NumberBox _discount = new NumberBox();
 
         public decimal OddQuantity { get { return _odd.Value; } }
         public decimal EvenQuantity { get { return _even.Value; } }

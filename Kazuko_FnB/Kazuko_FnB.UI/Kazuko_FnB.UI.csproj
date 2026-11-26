@@ -232,6 +232,7 @@
     <Compile Include="Dialogs\BookingMethodEditDialog.cs" />
     <Compile Include="Dialogs\BookingPreviewForm.cs" />
     <Compile Include="Controls\DateBox.cs" />
+    <Compile Include="Controls\NumberBox.cs" />
     <Compile Include="Controls\FieldFrame.cs" />
     <Compile Include="Controls\PlaceholderTextBox.cs" />
     <Compile Include="Controls\ThemedTabControl.cs" />
@@ -264,6 +265,8 @@
     <Compile Include="Diagnostics\SelfTest.Booking.TwoUnit.cs" />
     <Compile Include="Diagnostics\SelfTest.Booking.TwoUnit.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Booking.GridQty.cs" />
+    <Compile Include="Diagnostics\SelfTest.NumberBox.cs" />
+    <Compile Include="Diagnostics\SelfTest.NumberBox.Dialogs.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Ui.cs" />

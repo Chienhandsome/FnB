@@ -15,6 +15,17 @@ namespace Kazuko_FnB.Services
     {
         private const string EditFormat = "0.############################";
         private static readonly CultureInfo ViCulture = CultureInfo.GetCultureInfo("vi-VN");
+        private static readonly NumberFormatInfo ViNumberFormat = CreateViNumberFormat();
+
+        private static NumberFormatInfo CreateViNumberFormat()
+        {
+            var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
+            nfi.NumberDecimalSeparator = ",";
+            nfi.NumberGroupSeparator = ".";
+            nfi.NumberGroupSizes = new[] { 3 };
+            nfi.NegativeSign = "-";
+            return NumberFormatInfo.ReadOnly(nfi);
+        }
 
         public static bool TryParse(object rawValue, out decimal value)
         {
@@ -91,6 +102,71 @@ namespace Kazuko_FnB.Services
                 return FormatForEdit((decimal)rawValue);
             decimal parsed;
             return TryParse(rawValue, out parsed) ? FormatForEdit(parsed) : "";
+        }
+
+        /// <summary>
+        /// Đổi số sang chữ khi vào chế độ sửa cho ô nhập số ngoài lưới: không dấu ngăn nghìn,
+        /// thập phân ',', chỉ hiện chữ số lẻ đang có, tối đa <paramref name="maxDecimalPlaces"/> chữ số lẻ.
+        /// </summary>
+        public static string FormatForEdit(decimal value, int maxDecimalPlaces)
+        {
+            return FormatForDisplay(value, maxDecimalPlaces, false);
+        }
+
+        /// <summary>
+        /// Định dạng hiển thị kiểu vi-VN (ngăn nghìn '.', thập phân ',') độc lập CultureInfo.CurrentCulture:
+        /// chỉ hiện số chữ số lẻ đang có (15.000 không phải 15.000,00; 2,5 không phải 2,50), tối đa <paramref name="maxDecimalPlaces"/>.
+        /// </summary>
+        public static string FormatForDisplay(decimal value, int maxDecimalPlaces, bool thousandsSeparator)
+        {
+            int dp = maxDecimalPlaces < 0 ? 0 : (maxDecimalPlaces > 28 ? 28 : maxDecimalPlaces);
+            decimal rounded = Math.Round(value, dp, MidpointRounding.AwayFromZero);
+            if (rounded == 0m)
+                return "0";
+            string prefix = thousandsSeparator ? "#,##0" : "0";
+            string fmt = dp > 0 ? prefix + "." + new string('#', dp) : prefix;
+            return rounded.ToString(fmt, ViNumberFormat);
+        }
+
+        /// <summary>
+        /// Đọc chuỗi người dùng gõ vào ô ngoài lưới theo N1/N4/N5:
+        /// - Không đọc được theo N1 -> false.
+        /// - Ô chỉ nhận số nguyên (N5, <paramref name="integerOnly"/> = true): có phần lẻ khác 0 -> false (giữ số cũ, không làm tròn).
+        /// - Ô số thập phân (N4): làm tròn AwayFromZero về tối đa <paramref name="maxDecimalPlaces"/> chữ số lẻ.
+        /// </summary>
+        public static bool TryParseForBox(string text, int maxDecimalPlaces, bool integerOnly, out decimal value)
+        {
+            value = 0m;
+            decimal raw;
+            if (!TryParse(text, out raw))
+                return false;
+            if (integerOnly)
+            {
+                if (raw != Math.Truncate(raw))
+                    return false;
+                decimal truncated = Math.Truncate(raw);
+                value = truncated == 0m ? 0m : truncated;
+                return true;
+            }
+            int dp = maxDecimalPlaces < 0 ? 0 : (maxDecimalPlaces > 28 ? 28 : maxDecimalPlaces);
+            decimal rounded = Math.Round(raw, dp, MidpointRounding.AwayFromZero);
+            value = NormalizeZeroAndScale(rounded);
+            return true;
+        }
+
+        /// <summary>Đổi mọi dấu '.' sang ',' khi người dùng gõ hoặc dán vào ô đang sửa (không nuốt dấu phẩy thứ hai).</summary>
+        public static string NormalizeEditInput(string text)
+        {
+            if (string.IsNullOrEmpty(text) || text.IndexOf('.') < 0)
+                return text;
+            return text.Replace('.', ',');
+        }
+
+        private static decimal NormalizeZeroAndScale(decimal v)
+        {
+            if (v == 0m)
+                return 0m;
+            return v / 1.0000000000000000000000000000m;
         }
     }
 }

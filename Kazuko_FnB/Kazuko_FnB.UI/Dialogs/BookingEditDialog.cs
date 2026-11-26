@@ -103,17 +103,17 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly TextBox _txtNote = new TextBox { Multiline = true };
 
         // ---- Panel phải: tiền ----
-        private readonly NumericUpDown _numTienHang = new NumericUpDown();
-        private readonly NumericUpDown _numTileGiamGia = new NumericUpDown();
-        private readonly NumericUpDown _numTienGiamGia = new NumericUpDown();
-        private readonly NumericUpDown _numTileThue = new NumericUpDown();
-        private readonly NumericUpDown _numTienThue = new NumericUpDown();
-        private readonly NumericUpDown _numPhiVanChuyen = new NumericUpDown();
-        private readonly NumericUpDown _numTongCong = new NumericUpDown();
+        private readonly NumberBox _numTienHang = new NumberBox();
+        private readonly NumberBox _numTileGiamGia = new NumberBox();
+        private readonly NumberBox _numTienGiamGia = new NumberBox();
+        private readonly NumberBox _numTileThue = new NumberBox();
+        private readonly NumberBox _numTienThue = new NumberBox();
+        private readonly NumberBox _numPhiVanChuyen = new NumberBox();
+        private readonly NumberBox _numTongCong = new NumberBox();
 
         // ---- Dải dưới: 2 lưới ----
         private readonly TextBox _txtSearch = new TextBox();
-        private readonly NumericUpDown _numQty = new NumericUpDown();
+        private readonly NumberBox _numQty = new NumberBox();
         private readonly FlatButton _btnAddProduct = new FlatButton { Text = "Thêm" };
         private readonly DataGridView _productGrid = new DataGridView();
         private readonly FlatButton _btnDeleteLine = new FlatButton { Text = "Xóa dòng (F8)" };
@@ -136,6 +136,10 @@ namespace Kazuko_FnB.UI.Dialogs
         internal DataGridView ProductGridForTest { get { return _productGrid; } }
         internal DataGridView DetailGridForTest { get { return _detailGrid; } }
         internal NumericUpDown TongCongBoxForTest { get { return _numTongCong; } }
+        internal NumberBox TienGiamGiaBoxForTest { get { return _numTienGiamGia; } }
+        internal NumberBox TileGiamGiaBoxForTest { get { return _numTileGiamGia; } }
+        internal NumberBox TienHangBoxForTest { get { return _numTienHang; } }
+        internal bool DiscountByMoneyForTest { get { return _discountByMoney; } }
         internal bool DirtyForTest { get { return Dirty; } }
         internal FlatButton SaveButtonForTest { get { return _btnSave; } }
 
@@ -416,17 +420,15 @@ namespace Kazuko_FnB.UI.Dialogs
             SetupMoneyBox(_numTongCong, true);
             _numTongCong.Font = new Font("Segoe UI", 10f, FontStyle.Bold);
 
-            _numTileGiamGia.Enter += delegate { _discountByMoney = false; };
-            _numTienGiamGia.Enter += delegate { _discountByMoney = true; };
-            _numTileGiamGia.ValueChanged += delegate { if (!_loading && !_recalc) { RecalcTotals(); OnDirtyChanged(); } };
-            _numTienGiamGia.ValueChanged += delegate { if (!_loading && !_recalc) { RecalcTotals(); OnDirtyChanged(); } };
+            _numTileGiamGia.ValueChanged += delegate { if (!_loading && !_recalc) { _discountByMoney = false; RecalcTotals(); OnDirtyChanged(); } };
+            _numTienGiamGia.ValueChanged += delegate { if (!_loading && !_recalc) { _discountByMoney = true; RecalcTotals(); OnDirtyChanged(); } };
             _numTileThue.ValueChanged += delegate { if (!_loading && !_recalc) { RecalcTotals(); OnDirtyChanged(); } };
             _numPhiVanChuyen.ValueChanged += delegate { if (!_loading && !_recalc) { RecalcTotals(); OnDirtyChanged(); } };
         }
 
         private static void SetupMoneyBox(NumericUpDown num, bool readOnly)
         {
-            num.DecimalPlaces = 0;
+            num.DecimalPlaces = 2;
             num.ThousandsSeparator = true;
             num.Minimum = 0m;
             num.Maximum = 999999999999m;

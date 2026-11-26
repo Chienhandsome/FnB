@@ -13,8 +13,8 @@ namespace Kazuko_FnB.UI.Dialogs
     /// </summary>
     internal sealed class QuantityDialog : ThemedDialog
     {
-        private readonly NumericUpDown _odd = new NumericUpDown();
-        private readonly NumericUpDown _even = new NumericUpDown();
+        private readonly NumberBox _odd = new NumberBox();
+        private readonly NumberBox _even = new NumberBox();
 
         /// <summary>Số lượng lẻ (ĐVT bán).</summary>
         public decimal OddQuantity { get { return _odd.Value; } }

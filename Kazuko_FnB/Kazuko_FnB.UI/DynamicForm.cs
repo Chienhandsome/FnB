@@ -8,6 +8,7 @@ using Kazuko_FnB.Theme;
 using Kazuko_FnB.Domain;
 using Kazuko_FnB.Infrastructure;
 using Kazuko_FnB.Services;
+using Kazuko_FnB.UI.Controls;
 
 namespace Kazuko_FnB.UI
 {
@@ -274,7 +275,7 @@ namespace Kazuko_FnB.UI
 
             foreach (Item it in all)
             {
-                Control ctl = CreateEditor(it.Edit);
+                Control ctl = CreateEditor(it.Edit, it.Map);
                 ctl.Name = it.Edit.Name;
                 ctl.Enabled = it.Edit.Enabled;
                 ctl.TabIndex = order++;
@@ -303,17 +304,19 @@ namespace Kazuko_FnB.UI
             }
         }
 
-        private Control CreateEditor(LayoutControl c)
+        private Control CreateEditor(LayoutControl c, FieldMap map)
         {
             switch (c.Kind)
             {
                 case LayoutKind.Number:
                 {
-                    var n = new NumericUpDown { Font = _font, TextAlign = HorizontalAlignment.Right };
-                    int dp;
+                    var n = new NumberBox { Font = _font, TextAlign = HorizontalAlignment.Right };
+                    int dp = 0;
                     if (int.TryParse(c.Prop("DecimalPlaces"), NumberStyles.Integer, CultureInfo.InvariantCulture, out dp))
-                        n.DecimalPlaces = Math.Max(0, Math.Min(6, dp));
-                    n.ThousandsSeparator = string.Equals(c.Prop("ThousandsSeparator"), "True", StringComparison.OrdinalIgnoreCase);
+                        dp = Math.Max(0, Math.Min(6, dp));
+                    if (dp == 0 && IsMoneyLayoutField(c, map))
+                        dp = 2;
+                    n.DecimalPlaces = dp;
                     decimal min, max;
                     n.Minimum = decimal.TryParse(c.Prop("Minimum"), NumberStyles.Any, CultureInfo.InvariantCulture, out min) ? min : 0m;
                     n.Maximum = decimal.TryParse(c.Prop("Maximum"), NumberStyles.Any, CultureInfo.InvariantCulture, out max) ? max : 1000000000m;
@@ -336,6 +339,18 @@ namespace Kazuko_FnB.UI
                 default:
                     return new TextBox { Font = _font };
             }
+        }
+
+        private static bool IsMoneyLayoutField(LayoutControl c, FieldMap map)
+        {
+            string key = map != null && !string.IsNullOrEmpty(map.DataField) ? map.DataField : (c.Name ?? "");
+            key = key.Trim().ToUpperInvariant();
+            if (key.StartsWith("NUM", StringComparison.Ordinal))
+                key = key.Substring(3);
+            if (key.Length == 0 || key.Contains("THOIGIAN"))
+                return false;
+            return key == "THU" || key == "CHI" || key.Contains("TIEN") || key.Contains("GIA")
+                || key.Contains("TONG") || key.Contains("THUE") || key.Contains("PHI");
         }
 
         // ------------------------------------------------------------------ Xếp hàng

@@ -73,8 +73,8 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly RadioButton _rByHour = new RadioButton { Text = "Theo giờ" };
         private readonly RadioButton _rByPriceList = new RadioButton { Text = "Theo bảng giá" };
         private readonly Label _lblLegacyCalc = new Label { AutoSize = false, Visible = false };
-        private readonly NumericUpDown _unitPrice = new NumericUpDown();
-        private readonly NumericUpDown _openAmount = new NumericUpDown();
+        private readonly NumberBox _unitPrice = new NumberBox();
+        private readonly NumberBox _openAmount = new NumberBox();
         private readonly LookupCombo _priceList = new LookupCombo();
         private readonly LookupCombo _hourlyPrice = new LookupCombo();
         private readonly DateTimePicker _fromHour = new DateTimePicker();

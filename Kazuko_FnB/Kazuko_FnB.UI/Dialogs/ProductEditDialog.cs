@@ -57,15 +57,15 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly TextBox _code = new TextBox();
         private readonly TextBox _name = new TextBox();
         private readonly TextBox _english = new TextBox();
-        private readonly NumericUpDown _sell = new NumericUpDown();
-        private readonly NumericUpDown _sell2 = new NumericUpDown();
-        private readonly NumericUpDown _sell3 = new NumericUpDown();
-        private readonly NumericUpDown _sell4 = new NumericUpDown();
+        private readonly NumberBox _sell = new NumberBox();
+        private readonly NumberBox _sell2 = new NumberBox();
+        private readonly NumberBox _sell3 = new NumberBox();
+        private readonly NumberBox _sell4 = new NumberBox();
         private readonly LookupCombo _unit = new LookupCombo();
         private readonly LookupCombo _bigUnit = new LookupCombo();
-        private readonly NumericUpDown _quyDoi = new NumericUpDown();
-        private readonly NumericUpDown _buy = new NumericUpDown();
-        private readonly NumericUpDown _cost = new NumericUpDown();
+        private readonly NumberBox _quyDoi = new NumberBox();
+        private readonly NumberBox _buy = new NumberBox();
+        private readonly NumberBox _cost = new NumberBox();
         private readonly LookupCombo _group = new LookupCombo();
         private readonly RadioButton _rBrew = new RadioButton { Text = "Mặt hàng pha chế" };
         private readonly RadioButton _rDual = new RadioButton { Text = "Mặt hàng kiêm vật tư" };
@@ -110,7 +110,7 @@ namespace Kazuko_FnB.UI.Dialogs
         // ---- Tab 3: Khác ----
         private readonly CheckBox _chkTempLocked = new CheckBox { Text = "Tạm khóa" };
         private readonly CheckBox _chkByWeight = new CheckBox { Text = "Khối lượng theo cân" };
-        private readonly NumericUpDown _numMinStock = new NumericUpDown();
+        private readonly NumberBox _numMinStock = new NumberBox();
         private readonly Label _lblMinStock = new Label { Text = "Tồn tối thiểu", AutoSize = false };
 
         // ---- Thanh công cụ + chân dialog ----
@@ -133,6 +133,10 @@ namespace Kazuko_FnB.UI.Dialogs
 
         /// <summary>Bản ghi đang sửa đã bị xóa (dialog đóng sau khi xóa).</summary>
         public bool Deleted { get; private set; }
+
+        internal bool SuppressPopup { get; set; }
+        internal NumberBox SellPriceBoxForTest { get { return _sell; } }
+        internal FlatButton SaveButtonForTest { get { return _btnSave; } }
 
         /// <param name="productId">null = thêm mới.</param>
         /// <param name="presetGroupId">Nhóm chọn sẵn cho mặt hàng mới (null = chưa chọn — người gọi mở hộp chọn nhóm trước).</param>
@@ -1447,7 +1451,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
-            if (DialogResult == DialogResult.OK || _loadFailed || !Dirty)
+            if (DialogResult == DialogResult.OK || _loadFailed || !Dirty || SuppressPopup)
                 return;
             DialogResult answer = MessageBox.Show(this, "Dữ liệu đã thay đổi. Bạn có muốn lưu lại không?",
                 "Xác nhận", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);

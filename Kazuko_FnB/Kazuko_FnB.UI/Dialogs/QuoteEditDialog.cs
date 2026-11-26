@@ -65,16 +65,16 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly TextBox _txtEmail = new TextBox();
         private readonly TextBox _txtNote = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical };
 
-        private readonly NumericUpDown _numTienHang = new NumericUpDown();
-        private readonly NumericUpDown _numTileGiamGia = new NumericUpDown();
-        private readonly NumericUpDown _numTienGiamGia = new NumericUpDown();
-        private readonly NumericUpDown _numTileThue = new NumericUpDown();
-        private readonly NumericUpDown _numTienThue = new NumericUpDown();
-        private readonly NumericUpDown _numPhiVanChuyen = new NumericUpDown();
-        private readonly NumericUpDown _numTongCong = new NumericUpDown();
+        private readonly NumberBox _numTienHang = new NumberBox();
+        private readonly NumberBox _numTileGiamGia = new NumberBox();
+        private readonly NumberBox _numTienGiamGia = new NumberBox();
+        private readonly NumberBox _numTileThue = new NumberBox();
+        private readonly NumberBox _numTienThue = new NumberBox();
+        private readonly NumberBox _numPhiVanChuyen = new NumberBox();
+        private readonly NumberBox _numTongCong = new NumberBox();
 
         private readonly TextBox _txtSearch = new TextBox();
-        private readonly NumericUpDown _numQty = new NumericUpDown();
+        private readonly NumberBox _numQty = new NumberBox();
         private readonly FlatButton _btnAddProduct = new FlatButton { Text = "Thêm", Tag = "primary" };
         private readonly DataGridView _productGrid = new DataGridView();
         private readonly FlatButton _btnDeleteLine = new FlatButton { Text = "Xóa dòng (F8)", Tag = "danger" };
@@ -397,7 +397,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private static void SetupMoneyBox(NumericUpDown num, bool readOnly, bool allowNegative, Font font)
         {
-            num.DecimalPlaces = 0;
+            num.DecimalPlaces = 2;
             num.ThousandsSeparator = true;
             num.Minimum = allowNegative ? -999999999999m : 0m;
             num.Maximum = 999999999999m;

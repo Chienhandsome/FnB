@@ -24,8 +24,10 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly List<AreaRow> _areas = new List<AreaRow>();
 
         private readonly DataGridView _grid = new DataGridView();
-        private readonly NumericUpDown _digitLength = new NumericUpDown();
+        private readonly NumberBox _digitLength = new NumberBox();
         private readonly FlatButton _btnRun;
+
+        internal NumberBox DigitLengthBoxForTest { get { return _digitLength; } }
 
         /// <summary>Số bàn đã tạo (0 nếu hủy/lỗi).</summary>
         public int CreatedCount { get; private set; }

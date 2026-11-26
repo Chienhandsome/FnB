@@ -179,7 +179,7 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 case ConfigControl.Number:
                 {
-                    var n = new NumericUpDown
+                    var n = new NumberBox
                     {
                         Minimum = int.MinValue,
                         Maximum = int.MaxValue,
