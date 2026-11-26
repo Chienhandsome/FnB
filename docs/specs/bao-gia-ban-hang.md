@@ -1,6 +1,6 @@
 # Spec (delta): Báo giá bán hàng (TBAOGIA)
 
-- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; chưa code)
+- Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code); đã code `cca8711` ngày 26/11, chờ Chiến bấm thử (issue #18)
 - **Đọc trước:** §5.0 và §5.0.1 **thắng mọi chỗ khác** trong spec. Câu cũ trong thân spec (nhất là "nằm trong DLL") đã lỗi thời: mã dùng chung ở `SCONFIG` bản ghi `SharedCode`.
 - **Điểm còn chưa xác minh:** khi làm tới thì tự xác minh từ mã nguồn hoặc CSDL. Không chứng minh được: phần chỉ hiển thị thì theo mặc định tạm của spec; phần **tiền, giá, kho, công nợ, quyền, xóa dữ liệu** thì không đoán, mở issue `cho-chien` và xử lý theo `workflow-agy.md` §10.2.1. Q2 (số phiếu): áp mặc định tạm, quay vòng theo năm, nếu không tìm được bằng chứng khác.
 - Ngày: 2026-11-24. Base: `main` @ `9e48bc8` (đã `git fetch origin main`, working tree chỉ lệch file prompt không thuộc spec)

@@ -15,6 +15,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [x] Thống kê doanh thu — `thong-ke-doanh-thu.md` (duyệt 25/11, issue #10); code `7a2fc98` (Antigravity). **Chưa làm:** tự làm tươi khi dữ liệu đổi
 - [x] Chi tiết hoạt động ngày — `chi-tiet-hoat-dong-ngay.md` (duyệt 25/11, issue #11); code `ffc119b` (Antigravity), issue #13. **Chưa làm:** mẫu in (Q5)
 - [x] Tổng hợp kết quả kinh doanh — `tong-hop-ket-qua-kinh-doanh.md` (duyệt 25/11, issue #14); code `c6c6c42` (Antigravity), issue #15. **Chưa làm:** mẫu in (C10)
+- [x] Báo giá bán hàng: `bao-gia-ban-hang.md` (duyệt 25/11, issue #16); code `cca8711` (Antigravity), issue #18. **Chưa làm:** in, xuất Excel. Menu đang ẩn như app gốc
 
 ## Chờ Chiến bấm thử (gộp theo đợt, trước khi dùng ở quán)
 - [ ] Lưu vết hoạt động — xem issue #6 (điểm cần chốt: lọc tài khoản theo tên đăng nhập; cột rộng phải cuộn ngang)
@@ -24,6 +25,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Thống kê doanh thu — xem issue #12; số đã khớp app gốc (spec §6.1); chưa kiểm 125% DPI
 - [ ] Chi tiết hoạt động ngày — xem issue #13 (thử cuộn bằng chuột/chạm, chuyển tab rồi quay lại, đối chiếu số khi có phiếu nhập; chưa kiểm 125% DPI)
 - [ ] Tổng hợp kết quả kinh doanh — xem issue #15 (chưa đối chiếu số với app gốc; chưa kiểm 125% DPI)
+- [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
 | # | Spec | Trạng thái | Loại | Ghi chú |
@@ -33,7 +35,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 3 | `thong-ke-doanh-thu.md` | **Đã code** (`7a2fc98`) | nặng | Chờ bấm thử |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | **Đã code** (`c6c6c42`) | nặng | Chờ bấm thử |
-| 6 | `bao-gia-ban-hang.md` | **ĐÃ DUYỆT** 25/11; đã chốt đủ 26/11, đang sửa lượt cuối | nặng | Báo cáo ở issue #18 |
+| 6 | `bao-gia-ban-hang.md` | **Đã code** (`cca8711`) | nặng | Chờ bấm thử; menu đang ẩn như app gốc |
 | 7 | `danh-muc-khach-hang.md` | **ĐÃ DUYỆT** 25/11, hết chặn (chốt 26/11, §9.0.2), chưa code | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
 | 8 | `su-dung-dich-vu.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Thanh toán; Q2–Q20 đã chốt 25/11 (spec §6.3–§6.5) |
 | 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
