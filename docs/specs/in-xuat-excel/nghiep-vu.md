@@ -86,3 +86,11 @@ Dữ liệu: `fnb-agy-work/_tmp/in-p1/seeded.fdb`; ảnh `_tmp/_origin-shots/in-
 - **Số trang in = số trên phiếu đã lưu** (đọc lại từ CSDL sau khi lưu, không tính lại): TIENHANG, giảm giá, thuế, phí, TONGCONG lấy từ bản ghi đã lưu; CÒN LẠI = TONGCONG − DatTruoc do mẫu tự tính.
 - **Chưa đối chiếu app gốc** (không điều khiển được app gốc phiên 26/11): "Lưu & In" làm gì, "Gửi mail" làm gì, chữ "đồng chẵn" bị in hai lần ở Báo Giá A4 (hàm đã thêm "đồng chẵn", mẫu thêm lần nữa; app gốc nhiều khả năng cũng vậy vì cùng hàm).
 - **Quyết định tạm (Chiến "làm theo đề xuất" 26/11, chờ Chiến thử app gốc để sửa nếu lệch):** "Lưu & In" = lưu (cùng kiểm tra như "Lưu") rồi in thẳng ra máy in mặc định bằng mẫu chọn sẵn (Mẫu đặt hàng A4 / Báo Giá A4), không hiện hộp; "Lưu & Xem in" = lưu rồi mở hộp "IN BÁO CÁO". Hộp này ẩn "Gửi mail" và "Thiết kế mẫu in" (Q8). Không đổi chữ "đồng chẵn" của mẫu.
+
+## P3a: xuất Excel của lưới (quyết định 26/11, Chiến "tiếp tục" P3; chưa đối chiếu thêm app gốc)
+
+- **Đã kiểm trên app gốc (Danh mục mặt hàng):** "Xuất excel" mở thẳng hộp Lưu file loại `.xls`, tên trống; xong hỏi "Bạn có muốn mở file đã xuất không?"; file có đúng các cột đang hiện, đúng thứ tự, dòng đầu là tiêu đề cột, ô số là kiểu số, ô tích `TRUE/FALSE`.
+- **Quyết định (Q4 đề xuất, Chiến duyệt):** xuất đúng các dòng đang hiện trên lưới (đang lọc ra 3 dòng thì file có 3 dòng), theo thứ tự đang sắp. Cột ẩn hay bị chặn quyền (N3) không có trong file. Dùng `Aspose.Cells` có sẵn trong `lib/`, ghi `.xls`.
+- **Chưa biết / để sau:** "xuất định lượng" ở hộp sửa mặt hàng (chưa xem app gốc, giữ "chưa hỗ trợ"); "Thêm nhanh", "Cập nhật nhanh", "Nhập Excel" thuộc P5.
+- **Mẫu "In lưới" (P3b, chưa làm):** 3 mẫu `STEMPLATE` không gắn bảng nào ("Mẫu 80", "Mẫu A4 nằm ngang", "Mẫu A4 thẳng đứng") **không có băng dữ liệu**, chỉ có tiêu đề (`[CompanyName]`, `[TIÊU ĐỀ BÁO CÁO]`, `[Tham số báo cáo]`) và chữ ký ("Trưởng phòng", "Người lập"); app gốc thêm bảng theo các cột đã tích lúc chạy. Bản mới phải tự dựng bảng đó; cách app gốc xếp độ rộng cột chưa biết.
+- **Mã vạch (P4):** 6 mẫu `STEMPLATE` có `BARCODE = 30`, `STABLEDESCID = a4a16216-aee9-4dd3-9f92-c1e4d85c06a2`, mỗi mẫu một hàng là N tem; cột `NAME0..`, `CODE0..`, `GIABAN0..` (số cuối là vị trí tem trong hàng; 2, 3 hoặc 5 tem).
