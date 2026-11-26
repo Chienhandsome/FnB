@@ -260,7 +260,7 @@ Chụp trên bản sao POS TAP (DB chép, tài khoản Admin, màn 1536×864). C
 
 Mặt hàng 2 đơn vị tính: số lượng dòng lẻ làm theo [`bao-gia-ban-hang.md`](bao-gia-ban-hang.md) §5.0.2 (lấy ô Số lượng ngoài hộp, như app gốc), thay cho việc lấy số lẻ nhập trong hộp. Phần khác của spec này không đổi. Làm thành một việc riêng.
 
-## Thay đổi chốt sau khi đã code, đợt 2 (Chiến chốt 26/11/2026). Chưa code. Thắng phần khác của spec nếu khác
+## Thay đổi chốt sau khi đã code, đợt 2 (Chiến chốt 26/11/2026). Đã code `bf45f06` (issue #24). Thắng phần khác của spec nếu khác
 
 1. **Sửa số lượng trên lưới chi tiết (khác app gốc, Chiến chọn "Chặn như Báo giá"):** sửa ô Số lượng thành 0, số âm hoặc chữ không đọc được thì báo "Mời bạn nhập số lượng", dòng giữ số lượng cũ, không đánh dấu đã sửa. Chỉ kiểm khi **ô Số lượng** bị sửa; sửa đơn giá, % giảm giữ cách xử lý hiện tại, kể cả trên dòng cũ đang có số lượng 0. Không thêm kiểm tra lúc lưu hay mở phiếu. App gốc **nhận** số lượng 0 (bấm thử 26/11).
    - Ví dụ: dòng SL 2, giá 15.000: nhập 0 thì vẫn SL 2, thành tiền 30.000.

@@ -26,6 +26,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Chi tiết hoạt động ngày — xem issue #13 (thử cuộn bằng chuột/chạm, chuyển tab rồi quay lại, đối chiếu số khi có phiếu nhập; chưa kiểm 125% DPI)
 - [ ] Tổng hợp kết quả kinh doanh — xem issue #15 (chưa đối chiếu số với app gốc; chưa kiểm 125% DPI)
 - [ ] Khách đặt hàng, số lượng 2 đơn vị tính: xem issue #23 (thử cả ở Theo dõi đặt phòng)
+- [ ] Khách đặt hàng, chặn SL 0, gộp dòng, nhập số trên lưới: xem issue #24 (gõ bàn phím thật, thử cả Theo dõi đặt phòng)
 - [ ] Báo giá bán hàng — xem issue #18 (menu ẩn nên không mở được từ menu; thử số lượng 2 đơn vị tính, nhập Excel; chưa kiểm 125% DPI)
 
 ## Hàng đợi spec (thứ tự làm)
@@ -46,6 +47,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 12 | `danh-muc-nha-cung-cap/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Phụ thuộc #7 (dùng chung khung cây nhóm) |
 
 ## Ghi chú
+- 26/11: Chiến chốt quy tắc nhập số cho **mọi ô số** (`khach-dat-hang.md`, đợt 2, điểm 5): chấm hay phẩy đều là dấu thập phân, dấu ngăn nghìn chỉ để hiển thị. Mới áp cho lưới Khách đặt hàng (`bf45f06`); các ô còn lại cần spec riêng.
 - Đã làm 26/11: Khách đặt hàng theo `bao-gia-ban-hang.md` §5.0.2, code `cc928e9` (issue #23). Việc chờ làm (Chiến chốt 26/11): sau này thêm cấu hình toàn hệ thống cho phép âm kho.
 - 25/11 (vòng lặp): #8 và #9 tạm bỏ qua vì phụ thuộc #7 đang chờ (#7 tạo lớp truy vấn khách cho màn hóa đơn; #9 dùng bộ máy của #8). Bỏ qua "Danh mục bảng giá" vì là bảng giá tiền giờ, ngoài phạm vi.
 - 26/11: `danh-muc-loai-phong/index.md` tạm bỏ (menu chỉ hiện ở bản HOTEL); "Thông báo sửa chữa" bỏ cùng lý do.

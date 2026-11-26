@@ -23,6 +23,7 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 
 - **Chỗ vướng thì mở app gốc thao tác** (Chiến dặn 25/11). Báo cáo: tạo bill, phiếu thu/chi bằng chính app gốc trên bản chép ngoài repo, rồi chạy bản mới (`--render-screen`) trên đúng CSDL đó và so từng số. Trước khi chạy, ghi mã băm các CSDL trong `POS TAP/Database` và so lại sau; `Data/conn.dat` phải chỉ ghi tên `DATA.fdb` (không đường dẫn đầy đủ).
 - **Không dùng `open_application` để đưa app gốc lên trước:** nó mở thêm phiên chạy quyền quản trị, hộp thoại của phiên đó không bấm được, phải nhờ Chiến bấm "No".
+- **Báo Chiến TRƯỚC khi mở app gốc rồi xin quyền điều khiển:** app chiếm màn hình nên Chiến không thấy hộp xin quyền, kết quả về `user_denied` (26/11). Đừng coi đó là Chiến chủ ý từ chối; hỏi lại.
 - **Thao tác app gốc:** bấm chọn dòng mặt hàng rồi Enter mới thêm vào bill. Ô tiền không bôi chọn được (số mới nối vào số cũ): bấm vào ô, End, Backspace nhiều lần rồi mới gõ. Telex trong app đổi chữ gõ thử. Báo Chiến đừng dùng chuột phím trong lúc thao tác.
 - **Điều khiển bản chép app gốc:** chạy `Application.exe` của bản chép trước, rồi `request_access` bằng **đường dẫn đầy đủ** tới file exe đó (tên "Application" hay tiêu đề cửa sổ không khớp, hộp xin quyền không hiện).
 - **Menu trong spec có thể đang bị app gốc ẩn:** kiểm `SMENU.STATUS` (Báo giá bán hàng có `STATUS = 0`). Muốn thử thì bật lại **chỉ trên bản chép**.
@@ -70,4 +71,8 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **`Control.Visible` trả `false` khi control cha chưa hiện hoặc đang ẩn**, dù đã gán `true`. Bố cục tính tay phải dựa vào biến trạng thái dữ liệu, không đọc getter này (khối Thu-chi từng bị khối Nhập hàng che).
 - **Vùng `AutoScroll` tự cuộn về control đang focus** (`ScrollControlIntoView`), kể cả khi form chỉ `PerformLayout()`. Trang cuộn tự dựng thì override `ScrollToControl`. Ca test cuộn phải so đúng vị trí đích; "scrollY > 0" đã cho qua ảnh sai. Nghi lỗi bố cục mà ảnh không đủ kết luận: nạp bản build vào PowerShell 32-bit (`SysWOW64`), dựng view bằng reflection và in `Bounds`.
 - **agy đổi bản thì thử lại quyền bằng file mồi đặt cả trong và ngoài `%TEMP%`.** Bản 1.5.17 (25/11): đọc, ghi được `%TEMP%` dù ngoài workspace (rào chặn khác còn tác dụng); shell đứng ở `agy-in`, không ở worktree; MSBuild chỉ được phép đúng dạng `& '...\MSBuild.exe' <tham số>`.
+- **Trước khi dặn agy luật đọc số, thử trên lưới thật:** lưới hiện số kiểu vi-VN (`1.500`) nên dặn "gõ 2.5 không được thành 25" làm `1.600` thành 1,6. Ô `NumericUpDown` thì đọc theo Windows (máy en-US: `2,5` ra 25).
+- **`CellParsing` trả `DBNull` cho cột `decimal` không có tác dụng:** lưới tự phân tích lại, hiện hộp "DataGridView Default Error Dialog". Selftest treo vì hộp đó. Lưới sửa được phải có `DataError`, ca test đếm số lần.
+- **Selftest chạy lâu bất thường mà CPU gần như không tăng:** đang chờ một hộp thoại. Liệt kê cửa sổ của tiến trình bằng `EnumWindows` để đọc chữ, rồi tắt đúng tiến trình trong `_tmp`.
+- **Chụp hộp thoại chưa có `--render-screen`:** PowerShell 32-bit, `LoadFrom` exe và DLL của bản build, dựng bằng reflection trên bản chép DB. Ảnh kiểu này có thể thiếu vùng, không dùng để nghiệm thu bố cục.
 - GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.

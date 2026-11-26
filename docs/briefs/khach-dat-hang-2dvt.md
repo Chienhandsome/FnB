@@ -8,3 +8,4 @@
 - Chưa kiểm: bấm thử bản mới và app gốc (mới đọc mã `TDATHANG/code.cs`); đoạn mở hộp Nhập số lượng thật chỉ kiểm bằng đọc code.
 - Còn khác Báo giá, ngoài phạm vi việc này, chờ Chiến: sửa trên lưới chi tiết vẫn cho số lượng 0 (số âm bị đưa về 0).
 - Khác app gốc có từ trước: mặt hàng 1 đơn vị, khi `NhapMotMatHangNhieuLanTrongPhieu = 30` thì bản mới thêm dòng mới; `OnAddSameItem` gốc không đọc cờ này. Cấu hình hiện = 0 nên chưa thấy khác.
+- 26/11: hai điểm "còn khác" ở trên đã xử lý, xem `khach-dat-hang-sl-gop.md`.
