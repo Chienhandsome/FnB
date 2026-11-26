@@ -1,6 +1,7 @@
 # Spec (delta): Chi tiết hoạt động ngày
 
 - Trạng thái: **ĐÃ DUYỆT** (Chiến chốt 25/11, issue #11: "Theo đề xuất" cho Q1, Q2, Q5, Q13, Q15; Q3, Q6, Q14, Q16 đã xác minh/chốt trước). Loại nặng. Bill dùng `BillReportScope` có sẵn trên `main`.
+- **Thay đổi sắp tới (Chiến chốt 26/11, [`in-xuat-excel/`](in-xuat-excel/index.md) Q9):** màn này sẽ làm y hệt app gốc, cả màn là trình xem FastReport nhúng. Phần lưới và nút "In báo cáo" mô tả trong spec này giữ đến khi spec in được duyệt và code. Phần cách lấy và tính số vẫn là chuẩn.
 - Ngày: 2026-11-24; sửa theo review [issue #4](https://github.com/Chienhandsome/FnB/issues/4) ngày 25/11/2026 (đối chiếu lại tại `main` @ `954f133`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md); cùng họ báo cáo chỉ xem với [`tong-hop-ket-qua-kinh-doanh.md`](tong-hop-ket-qua-kinh-doanh.md) (cùng cơ chế `OPERATION = 5`, cùng bộ lọc ngày/cửa hàng, cùng lỗi ràng buộc cửa hàng). Spec này **chỉ ghi phần khác**; chỗ không nói = như hai spec trên.
 - Menu: **HOẠT ĐỘNG > Chi tiết hoạt động ngày** (`SMENU` `b2555738-5bc9-4f84-9e6a-80188bbfac99`, `SORTORDER = ZZZ023`, **`OPERATION = 5`**, `SFORMID = NULL`, `SREPORTID` `5b986bf4-406f-45ec-896d-81951fcde35b`, `SFUNCTIONID` `5d90c04e-ca76-4941-8f48-575a07e73e19` "Chi tiết hoạt động ngày", nhóm "Bán hàng", **`NOTE` rỗng** (khác các quyền `View`)).

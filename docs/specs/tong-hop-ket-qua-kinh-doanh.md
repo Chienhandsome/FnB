@@ -1,6 +1,7 @@
 # Spec (delta): Tổng hợp kết quả kinh doanh
 
 - Trạng thái: **ĐÃ DUYỆT** (Chiến duyệt 25/11/2026 trong phiên Claude Code; **đã code** `c6c6c42`, chờ bấm thử). Không còn câu mở: Chiến chốt C1–C11 ngày 25/11/2026 ([issue #14](https://github.com/Chienhandsome/FnB/issues/14)), đã ghi vào spec này.
+- **Thay đổi sắp tới (Chiến chốt 26/11, [`in-xuat-excel/`](in-xuat-excel/index.md) Q9):** màn này sẽ làm y hệt app gốc, cả màn là trình xem FastReport nhúng. Phần lưới và nút "In báo cáo" mô tả trong spec này giữ đến khi spec in được duyệt và code. Phần cách lấy và tính số vẫn là chuẩn.
 - Ngày: 2026-11-24, cập nhật 2026-11-25. Base: `main` @ `32dbf41` (đã `git fetch origin main`)
 - Khuôn: [`danh-muc-mat-hang.md`](danh-muc-mat-hang.md); cùng họ "báo cáo chỉ xem" với [`thong-ke-doanh-thu.md`](thong-ke-doanh-thu.md). Spec này **chỉ ghi phần khác**; chỗ không nói = như khuôn.
 - Menu: **HOẠT ĐỘNG > Tổng hợp kết quả kinh doanh** (`SMENU` `eb49f730-19d4-435e-b852-05b553600e88`, `SORTORDER = ZZZ022`, **`OPERATION = 5`** = chạy báo cáo, không có form riêng, `SFORMID = NULL`, `SREPORTID` `9c30f012-bec1-4d53-b8f9-7abf9d476d7d`, `SFUNCTIONID` `1866efc8-397a-45ad-9ef4-fc8640e3d7c0` "Tổng hợp kết quả kinh doanh", nhóm "Bán hàng", `NOTE = View`).

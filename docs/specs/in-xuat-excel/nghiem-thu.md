@@ -16,7 +16,7 @@
 | Patch | Nội dung | Phụ thuộc |
 |---|---|---|
 | P0 | Thêm thư viện, lớp dịch vụ in, cửa sổ xem trước, áp cho **Thống kê mặt hàng bán** (3 mẫu đều dựng được) | Q1 |
-| P1 | 3 báo cáo còn lại (Doanh thu; Chi tiết hoạt động ngày và Kết quả kinh doanh theo Q9) | P0, Q9; mẫu `SREPORTTEMPLATE` chưa dựng thử |
+| P1 | In Thống kê doanh thu; đổi Chi tiết hoạt động ngày và Kết quả kinh doanh thành trình xem nhúng (Q9) | P0; mẫu `SREPORTTEMPLATE` chưa dựng thử |
 | P2 | In Báo giá, Khách đặt hàng: thêm nút "Lưu & In", "Lưu & Xem in" và hộp "IN BÁO CÁO" | P0, cho script gọi được `ToVndWords` |
 | P3 | Xuất excel của lưới; "In" qua hộp "Cấu hình trang in" (3 mẫu) | Q4 |
 | P4 | Mã vạch | P0, Q5 |
@@ -44,6 +44,6 @@
 | Q6 | "Nhập Excel" có thuộc đợt này không? Nó ghi dữ liệu (giá, mặt hàng), không phải in. | Tách spec riêng vì sai thì hỏng giá |
 | Q7 | Ctrl+P ở hộp sửa mặt hàng, bàn, khu vực in gì? **Chưa xem** trên app gốc | Giữ "chưa hỗ trợ" đợt này |
 | Q8 | Hộp chọn mẫu của app gốc có "Thiết kế mẫu in" (sửa mẫu và lưu vào CSDL). Ví dụ quán muốn thêm số điện thoại vào chân bill. Bản mới có cần không? | Chưa làm đợt này: ẩn lựa chọn đó. Làm sau nếu quán cần sửa mẫu |
-| Q9 | App gốc: màn Chi tiết hoạt động ngày và Kết quả kinh doanh **chính là bản xem trước nhúng trong tab**. Bản mới đang là lưới tự làm có nút "In báo cáo". Ví dụ mở "Kết quả kinh doanh": thấy ngay trang giấy như app gốc, hay thấy lưới như hiện nay rồi bấm In mới ra trang giấy? | Giữ màn hiện nay, nút "In báo cáo" mở thẳng cửa sổ xem trước (không hộp chọn mẫu nếu chỉ có một mẫu). Làm y như app gốc thì phải bỏ phần lưới đã làm |
+| Q9 | **Chiến chốt 26/11:** "Chốt y hệt": màn Chi tiết hoạt động ngày và Kết quả kinh doanh làm như app gốc, **cả màn là trình xem FastReport nhúng trong tab**, bộ lọc ở trên, không nút "In báo cáo" | Thứ tự làm (đề xuất của Claude): giữ lưới hiện nay cho đến khi mẫu dựng được và số trên trang in khớp số đang hiện, rồi mới thay |
 
 Duyệt spec này chưa đủ để code P3 đến P6: các phần đó cần trả lời câu tương ứng và đối chiếu app gốc.
