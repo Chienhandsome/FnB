@@ -119,10 +119,12 @@ Luật cho bản mới:
 - Đã có dòng lẻ cùng mặt hàng: cộng **ô SL** vào dòng đó, không xét số lẻ trong hộp.
 - Chưa có dòng lẻ: lẻ trong hộp = 0 thì không tạo dòng; khác 0 thì tạo dòng với số lượng = **ô SL** (ca này theo mã gốc `code.cs:21`, `:38`).
 - P3: ô SL <= 0 thì không tạo và không cộng dòng lẻ. Khi lẻ trong hộp > 0 mà ô SL <= 0, báo "Mời bạn nhập số lượng" (câu của gốc; gốc không báo ở ca này).
-- Dòng chẵn lấy số **chẵn trong hộp** như §2.1, kể cả khi dòng lẻ không được tạo. Lẻ và chẵn trong hộp đều 0 thì không thêm gì, báo "Mời bạn nhập số lượng". Hộp bấm Thoát thì không thêm gì.
-- Khách đặt hàng bản mới giữ nguyên (đang lấy số trong hộp); chưa có quyết định đổi.
+- Dòng chẵn lấy số **chẵn trong hộp** như §2.1, kể cả khi dòng lẻ không được tạo; chẵn = 0 thì không thêm dòng chẵn.
+- **Lẻ và chẵn trong hộp đều 0 (Chiến chốt 26/11: "Cộng 2 ly như gốc"; đã bấm thử app gốc):** áp đúng hai luật dòng lẻ ở trên. Đã có dòng lẻ và ô SL > 0 thì **cộng ô SL**, không báo gì. Chưa có dòng lẻ thì không tạo dòng. Không có gì thay đổi thì báo "Mời bạn nhập số lượng". Hộp bấm Thoát thì không thêm gì.
+- **Excel (Chiến chốt 26/11):** đơn giá âm hoặc % giảm ngoài 0–100 thì báo lỗi dòng đó và **không nhập dòng nào** (khác app gốc).
+- **Khách đặt hàng (Chiến chốt 26/11: "Sửa giống Báo giá"):** sửa sau, thành một việc riêng; xem [`khach-dat-hang.md`](khach-dat-hang.md).
 
-Menu: app gốc đang ẩn "Báo giá bán hàng" (`SMENU.STATUS = 0`), bản mới chỉ hiện dòng `STATUS = 30`. Vẫn làm màn và route theo spec; **không** sửa CSDL và không ép hiện menu khi chưa có quyết định.
+Menu (Chiến chốt 26/11: "Giữ ẩn"): app gốc đang ẩn "Báo giá bán hàng" (`SMENU.STATUS = 0`), bản mới chỉ hiện dòng `STATUS = 30`. Vẫn làm màn và route; không sửa CSDL, **không ép hiện menu**.
 
 ### 5.0.1 Xác minh 25/11/2026
 

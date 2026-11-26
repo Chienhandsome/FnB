@@ -33,3 +33,9 @@
 | Q4 | Chỉ có quyền Xem: hộp thoại mở chỉ đọc không? | quyền | Cùng câu trả lời với câu 1 của issue #17 |
 
 **Phân loại 25/11:** nặng (Q1 về xóa dữ liệu, Q4 về quyền; không đủ bằng chứng để tự chốt theo §10.1.1). Hỏi Chiến ở issue #19. Q3 là phần hiển thị, dùng mặc định ở [`giao-dien.md`](giao-dien.md).
+
+## Chiến chốt 26/11/2026 (thắng bảng trên)
+
+- Q1: **chặn** xóa khi còn nơi đang dùng, và chặn xóa cửa hàng cuối cùng.
+- Q2: **so theo collation của cột** (`NAME` không phân biệt hoa thường, dấu; `CODE` có phân biệt).
+- Q4: theo #17: chỉ có quyền Xem thì mở hộp thoại **chỉ đọc**.

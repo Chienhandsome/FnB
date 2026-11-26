@@ -223,6 +223,13 @@ Chụp toàn cửa sổ, ghi chú dưới mỗi ảnh nếu có thao tác đặc
 - **Phạm vi (A1, Q11):** quản lý nhóm nằm trong spec này; Khách hàng thân thiết, Gửi tin nhắn, Nhập từ hệ thống cũ, Công nợ làm spec sau.
 - Còn phải xác minh trước khi duyệt: Q3, Q4, Q7, Q8, Q12 và phần chỉ đọc của Q10.
 
+### 9.0.2 Chốt 26/11/2026 (issue #17). Thắng phần khác của spec nếu khác
+
+- **Q10, chỉ có quyền Xem (Chiến chốt):** nhấp đôi mở hộp thoại **chỉ đọc** (mọi ô khóa, không có nút Lưu). Áp cho cả hộp thoại nhóm.
+- **Xóa nhóm còn nhóm con (Chiến chốt):** **chặn**, phải xóa nhóm con trước. (App gốc chuyển cả cha và con vào thùng rác.)
+- **Q4, so trùng: TẠM (Claude chốt 26/11, giống app gốc):** so theo collation của cột (`NAME`, `MAKHACH` là `UNICODE_CI_AI`: không phân biệt hoa thường và dấu), **không cắt khoảng trắng**. Bằng chứng: bấm thử app gốc 25/11 (`an`, `AN`, `ân` trùng; `  an  ` lưu được) và truy vấn collation. Câu báo: `Giá trị "x" ở trường "Tên khách hàng" đã tồn tại!`, `Giá trị "x" ở trường "Mã khách" đã tồn tại!`; hai lỗi hiện chung một hộp, Tên trước.
+- **Q3, mã tự sinh: TẠM (Claude chốt 26/11, giống app gốc):** số lớn nhất trong các mã dạng `KH` + số, cộng 1, đệm 5 chữ số; mã khác dạng bỏ qua; sửa tay được. Bằng chứng: bấm thử app gốc (trống: `KH00001`; sau `KH00005`: `KH00006`; thêm `001`: vẫn `KH00006`).
+
 ### 9.0.1 Xác minh 25/11/2026
 
 - **A2:** `Hóa đơn nhà hàng` chỉ dùng `DNHOMKHACHHANG.TILEGIAMGIA` khi `GopChungGiamGiaTienGioVaTienHangLamMot = 30` (đang 0; khi đó dùng `TILEGIAMGIATIENHANG`). Nhưng `Hóa đơn bán hàng` (bán lẻ), hàm `GetTiLeGiamTheoKhach`, lấy `TILEGIAMGIA` khi khách có nhóm tồn tại và thay cho `MacDinhGiamGia`. Vì vậy sửa ô này ảnh hưởng tiền ở bán lẻ.

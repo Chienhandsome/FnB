@@ -30,3 +30,10 @@
 | Q4 | Chỉ có quyền Xem: hộp thoại mở chỉ đọc không? | quyền | Cùng câu trả lời với câu 1 của issue #17 |
 
 **Phân loại 26/11:** nặng. Hỏi Chiến ở issue #20 (Q1, Q2, Q4). Thêm bằng chứng cho Q2: kho có sẵn trong bản chép đang lưu `CHOPHEPAMKHO = 30`; mặc định của kho mới chưa rõ.
+
+## Chiến chốt 26/11/2026 (thắng bảng trên và `giao-dien.md` nếu khác)
+
+- Q1: **chặn** xóa khi còn nơi đang dùng, và chặn xóa kho cuối cùng. App gốc không chặn (đã thử: kho mặc định của cửa hàng, cũng là kho cuối, vẫn chuyển vào thùng rác).
+- Q2: **như app gốc**: không có ô "Cho phép âm kho" trên hộp thoại; kho mới lưu `0`; sửa kho cũ giữ nguyên giá trị đang có. Chiến dặn: **sau này sẽ thêm** cấu hình bật/tắt cho phép âm trong "Cấu hình toàn hệ thống" (chưa thuộc spec này). Tiêu chí về ô âm kho ở trên đổi theo dòng này.
+- Q4: theo #17: chỉ có quyền Xem thì mở **chỉ đọc**.
+- **Quan sát app gốc 26/11:** màn này là hộp thoại dạng **cây** "Kho hàng" (Thêm mới, Xóa, Chỉnh sửa, Thùng rác, ô "Giá trị mặc định"), không phải tab lưới như `giao-dien.md` đang viết; cần rà lại giao diện trước khi code. Hộp thêm: Tên kho hàng, Ảnh, Cửa hàng (chọn sẵn), Ghi chú. Ảnh: `_tmp/_origin-shots/danh-muc-kho-hang/`.

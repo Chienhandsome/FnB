@@ -33,16 +33,17 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 | 3 | `thong-ke-doanh-thu.md` | **Đã code** (`7a2fc98`) | nặng | Chờ bấm thử |
 | 4 | `chi-tiet-hoat-dong-ngay.md` | **Đã code** (`ffc119b`) | nặng | Chờ bấm thử |
 | 5 | `tong-hop-ket-qua-kinh-doanh.md` | **Đã code** (`c6c6c42`) | nặng | Chờ bấm thử |
-| 6 | `bao-gia-ban-hang.md` | **ĐÃ DUYỆT** 25/11; code xong, **chờ Chiến** (issue #16), chưa push | nặng | Báo cáo ở issue #18 |
-| 7 | `danh-muc-khach-hang.md` | **ĐÃ DUYỆT** 25/11, chưa code; **chờ Chiến** (issue #17) | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
+| 6 | `bao-gia-ban-hang.md` | **ĐÃ DUYỆT** 25/11; đã chốt đủ 26/11, đang sửa lượt cuối | nặng | Báo cáo ở issue #18 |
+| 7 | `danh-muc-khach-hang.md` | **ĐÃ DUYỆT** 25/11, hết chặn (chốt 26/11, §9.0.2), chưa code | nặng | Điểm tích lũy, thẻ trả trước, luật xóa khách (Q2, Q5) |
 | 8 | `su-dung-dich-vu.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Thanh toán; Q2–Q20 đã chốt 25/11 (spec §6.3–§6.5) |
 | 9 | `quan-ly-ban-hang-dieu-chinh-hoa-don.md` | **ĐÃ DUYỆT** 25/11, chưa code | nặng | Sửa hóa đơn đã thanh toán; tách 2 patch |
 
-| 10 | `danh-muc-cua-hang/index.md` | **NHÁP**, **chờ Chiến** (issue #19) | nặng | Menu đang ẩn vì `NhieuCuaHang = 0` |
-| 11 | `danh-muc-kho-hang/index.md` | **NHÁP**, **chờ Chiến** (issue #20) | nặng | Cờ âm kho, xóa kho đang dùng |
-| 12 | `danh-muc-nha-cung-cap/index.md` | **NHÁP**, **chờ Chiến** (issue #21) | nặng | Phụ thuộc #7 (dùng chung khung cây nhóm) |
+| 10 | `danh-muc-cua-hang/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Menu đang ẩn vì `NhieuCuaHang = 0` |
+| 11 | `danh-muc-kho-hang/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Cần rà lại giao diện (app gốc là hộp thoại cây) |
+| 12 | `danh-muc-nha-cung-cap/index.md` | **NHÁP**, hết câu hỏi, chờ duyệt | nặng | Phụ thuộc #7 (dùng chung khung cây nhóm) |
 
 ## Ghi chú
+- Việc chờ làm (Chiến chốt 26/11): sửa Khách đặt hàng theo `bao-gia-ban-hang.md` §5.0.2; sau này thêm cấu hình toàn hệ thống cho phép âm kho.
 - 25/11 (vòng lặp): #8 và #9 tạm bỏ qua vì phụ thuộc #7 đang chờ (#7 tạo lớp truy vấn khách cho màn hóa đơn; #9 dùng bộ máy của #8). Bỏ qua "Danh mục bảng giá" vì là bảng giá tiền giờ, ngoài phạm vi.
 - 26/11: `danh-muc-loai-phong/index.md` tạm bỏ (menu chỉ hiện ở bản HOTEL); "Thông báo sửa chữa" bỏ cùng lý do.
 - Review cũ của Muse (issue #1–#5) đã đóng. Quyết định chốt áp cho mọi spec: xóa cứng cả app, LamTron 1000, tiền decimal, F&B thuần COFFEE + POS, bán lẻ tự phục vụ.

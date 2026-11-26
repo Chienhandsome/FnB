@@ -1,6 +1,6 @@
 # Spec: Danh mục nhà cung cấp (DNHACUNGCAP)
 
-- Trạng thái: **NHÁP** (Claude viết 26/11/2026). Phân loại **nặng** (workflow-agy §10.1); chưa duyệt, chờ Chiến ở issue #21; phụ thuộc Danh mục khách hàng.
+- Trạng thái: **NHÁP**, loại nặng; **hết câu hỏi mở** (Chiến chốt 26/11/2026, issue #21), chờ Chiến duyệt.
 - Base: `main` @ `6a6d713`
 - Menu: KHO HÀNG > Danh mục nhà cung cấp (`SMENU.SORTORDER = ZZZ002`, `STATUS = 30`, không có `VISIBLECONFIGID`; `STABLEDESC` `1a86ea05…`, `TABLETYPE = 2`: cây nhóm bên trái, lưới bên phải).
 - Khuôn: [`danh-muc-khach-hang.md`](../danh-muc-khach-hang.md) (cùng khung cây nhóm và lưới). Spec này chỉ ghi phần của nhà cung cấp.

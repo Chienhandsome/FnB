@@ -255,3 +255,7 @@ Chụp trên bản sao POS TAP (DB chép, tài khoản Admin, màn 1536×864). C
 | 03 | ![](img/khach-dat-hang/03-dialog-dat-hang-them-moi.png) | Dialog "ĐẶT HÀNG - THÊM MỚI" (bị cắt mép phải/dưới vì cửa sổ lớn hơn màn) |
 | 04 | ![](img/khach-dat-hang/04-canh-bao-chua-chon-phong.png) | Cảnh báo `Mời bạn chọn phòng trước` |
 | 05 | ![](img/khach-dat-hang/05-chon-phong.png) | Hộp "CHỌN PHÒNG" |
+
+## Thay đổi chốt sau khi đã code (Chiến chốt 26/11/2026: "Sửa giống Báo giá"). Chưa code
+
+Mặt hàng 2 đơn vị tính: số lượng dòng lẻ làm theo [`bao-gia-ban-hang.md`](bao-gia-ban-hang.md) §5.0.2 (lấy ô Số lượng ngoài hộp, như app gốc), thay cho việc lấy số lẻ nhập trong hộp. Phần khác của spec này không đổi. Làm thành một việc riêng.

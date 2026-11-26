@@ -30,3 +30,9 @@ Làm **sau** Danh mục khách hàng để dùng lại khung cây nhóm và lư�
 | Q5 | Tên nhóm có bắt buộc và không trùng? | dữ liệu | Bắt buộc, không trùng (như nhóm khách) |
 
 **Phụ thuộc:** dùng khung do Danh mục khách hàng tạo ra, nên theo `workflow-agy.md` §10.2.1 chưa code khi chức năng đó còn bị chặn.
+
+## Chiến chốt 26/11/2026 (thắng bảng trên): "Áp luôn" luật của Danh mục khách hàng
+
+- Xóa nhà cung cấp đã có phiếu nhập hoặc phiếu thu chi: chặn; chưa phát sinh: xóa cứng. Xóa nhóm còn nhà cung cấp hoặc còn nhóm con: chặn.
+- So trùng và sinh mã như [`danh-muc-khach-hang.md`](../danh-muc-khach-hang.md) §9.0.2 (tiền tố `NCC`).
+- Chỉ có quyền Xem: mở hộp thoại chỉ đọc.
