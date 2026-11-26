@@ -123,6 +123,9 @@ namespace Kazuko_FnB.UI
         private List<RevenueBillRow> _bills = new List<RevenueBillRow>();
         private List<RevenueBillLine> _lines = new List<RevenueBillLine>();
         private RevenueSummary _summary = new RevenueSummary();
+        private readonly Printing.RevenueReportPrintCoordinator _printCoordinator = new Printing.RevenueReportPrintCoordinator();
+        private DateTime _loadedFromDate;
+        private DateTime _loadedToDate;
         private string _loadedDetailBillId;
         private bool _loading = true;
         private bool _suppressSelectionEvents;
@@ -131,8 +134,11 @@ namespace Kazuko_FnB.UI
         /// <summary>Tắt hộp thoại báo lỗi/thông báo modal khi chụp màn hình (--render-screen) hoặc selftest.</summary>
         internal bool SuppressErrorPopup { get; set; }
 
-        /// <summary>Ghi nhận thông báo cuối cùng (ví dụ bấm nút In báo cáo) để selftest kiểm khi SuppressErrorPopup = true.</summary>
+        /// <summary>Ghi nhận thông báo cuối cùng để selftest kiểm khi SuppressErrorPopup = true.</summary>
         internal string LastInfoMessageForTest { get; private set; }
+
+        internal Printing.IPrintOutputHandler PrintOutputHandlerForTest { get; set; }
+        internal Func<IWin32Window, IList<PrintTemplateRecord>, PrintSelectionResult> PrintTemplatePickerForTest { get; set; }
 
         public RevenueReportView(UserSession session)
         {
@@ -203,12 +209,7 @@ namespace Kazuko_FnB.UI
             int printW = Math.Max((int)(108 * s), TextRenderer.MeasureText(_btnPrint.Text, _bodyFont).Width + (int)(26 * s));
             _btnPrint.Size = new Size(printW, (int)(32 * s));
             _btnPrint.Margin = new Padding(0, (int)(3 * s), 0, (int)(3 * s));
-            _btnPrint.Click += delegate
-            {
-                LastInfoMessageForTest = RevenueReportConstants.PrintUnsupportedMessage;
-                if (!SuppressErrorPopup)
-                    Msg.Info(this, RevenueReportConstants.PrintUnsupportedMessage);
-            };
+            _btnPrint.Click += delegate { PrintReport(); };
 
             _topBar.Controls.Add(MakeFlowLabel("Từ", s));
             _topBar.Controls.Add(_fromDate);
@@ -721,6 +722,8 @@ namespace Kazuko_FnB.UI
             try
             {
                 BillReportScope scope = BuildCurrentScope();
+                _loadedFromDate = scope.FromDate;
+                _loadedToDate = scope.ToDate;
                 _bills = _repository.LoadBills(scope);
                 RevenueCashFlowTotals cashFlow = _repository.LoadOtherCashFlow(scope);
                 _summary = RevenueSummaryCalculator.Calculate(_bills, cashFlow);
@@ -876,6 +879,43 @@ namespace Kazuko_FnB.UI
                 if (_billsGrid.Columns[i].Visible)
                     return i;
             return -1;
+        }
+
+        // ------------------------------------------------------------------ In báo cáo (logic ở Printing/RevenueReportPrintCoordinator)
+
+        internal bool PrintReport()
+        {
+            return _printCoordinator.Print(
+                this,
+                _btnPrint,
+                _session.DatabasePath,
+                CollectVisibleBillsForPrint(),
+                _loadedFromDate,
+                _loadedToDate,
+                PrintOutputHandlerForTest,
+                PrintTemplatePickerForTest,
+                delegate (string msg) { LastInfoMessageForTest = msg; });
+        }
+
+        internal PrintJobData BuildPrintJobDataForTest()
+        {
+            return _printCoordinator.BuildJobData(
+                _session.DatabasePath,
+                CollectVisibleBillsForPrint(),
+                _loadedFromDate,
+                _loadedToDate);
+        }
+
+        private List<RevenueBillRow> CollectVisibleBillsForPrint()
+        {
+            var rows = new List<RevenueBillRow>(_billsGrid.Rows.Count);
+            for (int i = 0; i < _billsGrid.Rows.Count; i++)
+            {
+                var row = _billsGrid.Rows[i].Tag as RevenueBillRow;
+                if (row != null)
+                    rows.Add(row);
+            }
+            return rows;
         }
 
         // ------------------------------------------------------------------ Hỗ trợ selftest & --render-screen

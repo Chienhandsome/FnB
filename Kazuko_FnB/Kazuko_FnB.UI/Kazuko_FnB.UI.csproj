@@ -320,6 +320,9 @@
     <Compile Include="Diagnostics\SelfTest.Print.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Helpers.cs" />
     <Compile Include="Diagnostics\SelfTest.Print.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Revenue.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Revenue.Helpers.cs" />
+    <Compile Include="Diagnostics\SelfTest.Print.Revenue.Config.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\IPrintOutputHandler.cs" />
     <Compile Include="Printing\PrintWorkflowService.cs" />
@@ -329,8 +332,11 @@
     <Compile Include="Printing\ReportPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Printing\FormPrintCoordinator.cs" />
     <Compile Include="Printing\ItemSalesPrintDataBuilder.cs" />
     <Compile Include="Printing\ItemSalesPrintCoordinator.cs" />
+    <Compile Include="Printing\RevenueReportPrintDataBuilder.cs" />
+    <Compile Include="Printing\RevenueReportPrintCoordinator.cs" />
     <Compile Include="Dialogs\BookingEditDialog.cs" />
     <Compile Include="Dialogs\NumericEditGridCell.cs" />
     <Compile Include="Dialogs\QuoteEditDialog.cs" />

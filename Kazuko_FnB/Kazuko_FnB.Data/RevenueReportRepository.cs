@@ -111,6 +111,7 @@ namespace Kazuko_FnB.Data
                     "COALESCE(H.CHUYENKHOAN, 0) AS CHUYENKHOAN, " +
                     "COALESCE(H.TRUTICHLUY, 0) AS TRUTICHLUY, " +
                     "COALESCE(H.THETRATRUOC, 0) AS THETRATRUOC, " +
+                    "COALESCE(H.DATTRUOC, 0) AS DATTRUOC, " +
                     "COALESCE(H.CONGNO, 0) AS CONGNO " +
                     "FROM TDONHANG H " +
                     "LEFT JOIN DBAN B ON B.ID = H.DBANID " +
@@ -151,6 +152,7 @@ namespace Kazuko_FnB.Data
                         ChuyenKhoan = DbHelper.Dec(r["CHUYENKHOAN"]),
                         TruTichLuy = DbHelper.Dec(r["TRUTICHLUY"]),
                         TheTraTruoc = DbHelper.Dec(r["THETRATRUOC"]),
+                        DatTruoc = DbHelper.Dec(r["DATTRUOC"]),
                         CongNo = DbHelper.Dec(r["CONGNO"])
                     });
                 }

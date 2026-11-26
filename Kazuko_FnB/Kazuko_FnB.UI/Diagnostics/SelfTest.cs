@@ -561,6 +561,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             NumberBoxTests(db);
             NumberGridTests(db);
             PrintP0Tests(db);
+            PrintP1RevenueTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)
@@ -5073,9 +5074,18 @@ namespace Kazuko_FnB.UI.Diagnostics
                             && view.GetSummaryValueText("otherExpense") == 25000m.ToString("n0", vi)
                             && view.GetSummaryValueText("netReceipt") == 215000m.ToString("n0", vi);
 
-                        // Bấm nút In báo cáo bằng PerformClick() → báo chưa hỗ trợ.
+                        // Bấm nút In báo cáo bằng PerformClick() → gọi picker giả trả null (người dùng hủy), kiểm picker nhận đủ 4 mẫu.
+                        int revPickerCalls = 0;
+                        int revTemplateCount = 0;
+                        view.PrintOutputHandlerForTest = new PrintOutputRecorder();
+                        view.PrintTemplatePickerForTest = delegate (System.Windows.Forms.IWin32Window owner, IList<PrintTemplateRecord> list)
+                        {
+                            revPickerCalls++;
+                            revTemplateCount = list == null ? 0 : list.Count;
+                            return null;
+                        };
                         view.PrintButtonForTest.PerformClick();
-                        bool printMsgOk = view.LastInfoMessageForTest == RevenueReportConstants.PrintUnsupportedMessage;
+                        bool printMsgOk = revPickerCalls == 1 && revTemplateCount == 4;
 
                         Check("Thống kê doanh thu UI (§6 phím F5/Refresh tải lại số mới & giữ bill, đổi cửa hàng tải ngay + đổi tổng Store A, nút In báo chưa hỗ trợ)",
                             f5ReloadedAndKeptA2 && refreshReloadedAndKeptA2 && storeASwitchOk && printMsgOk,

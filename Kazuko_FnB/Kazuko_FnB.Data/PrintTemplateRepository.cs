@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Domain;
 
 namespace Kazuko_FnB.Data
@@ -66,8 +67,85 @@ namespace Kazuko_FnB.Data
                         a == null ? "" : (a.Name ?? ""),
                         b == null ? "" : (b.Name ?? ""));
                 });
+
+                List<string> configIds = PrintTemplateVisibilityParser.ExtractDistinctConfigIds(list);
+                Dictionary<string, bool> configFlags = LoadConfigVisibilityByIds(conn, configIds);
+                for (int i = 0; i < list.Count; i++)
+                    list[i].ConfigVisibilityById = new Dictionary<string, bool>(configFlags, StringComparer.OrdinalIgnoreCase);
+
                 return list;
             });
+        }
+
+        /// <summary>
+        /// Đọc trạng thái bật/tắt (INTVALUE = 30) của các bản ghi SCONFIG theo danh sách ID (SQL tham số hóa).
+        /// ID không tồn tại trong SCONFIG sẽ không có trong từ điển trả về (engine giữ cột hiện, không đoán).
+        /// </summary>
+        public Dictionary<string, bool> LoadConfigVisibilityByIds(IEnumerable<string> configIds)
+        {
+            List<string> distinct = CollectDistinctIds(configIds);
+            if (distinct.Count == 0)
+                return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+            return DbHelper.Read(_databasePath, conn => LoadConfigVisibilityByIds(conn, distinct));
+        }
+
+        /// <summary>Đọc trạng thái bật/tắt của mọi SCONFIG.ID mà một mẫu in tham chiếu qua VisibleByConfigID.</summary>
+        public Dictionary<string, bool> LoadConfigVisibilityForTemplate(PrintTemplateRecord template)
+        {
+            if (template == null)
+                return new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            List<string> ids = PrintTemplateVisibilityParser.ExtractDistinctConfigIds(new[] { template });
+            return LoadConfigVisibilityByIds(ids);
+        }
+
+        private static Dictionary<string, bool> LoadConfigVisibilityByIds(FbConnection conn, List<string> distinctIds)
+        {
+            var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            if (distinctIds == null || distinctIds.Count == 0)
+                return map;
+
+            const int chunkSize = 200;
+            for (int start = 0; start < distinctIds.Count; start += chunkSize)
+            {
+                int len = Math.Min(chunkSize, distinctIds.Count - start);
+                var placeholders = new string[len];
+                var args = new object[len * 2];
+                for (int i = 0; i < len; i++)
+                {
+                    string paramName = "@Id" + i;
+                    placeholders[i] = paramName;
+                    args[i * 2] = paramName;
+                    args[i * 2 + 1] = distinctIds[start + i];
+                }
+
+                string sql = "SELECT ID, INTVALUE FROM SCONFIG WHERE ID IN (" + string.Join(", ", placeholders) + ")";
+                DataTable dt = DbHelper.Table(conn, null, sql, args);
+                foreach (DataRow r in dt.Rows)
+                {
+                    string id = DbHelper.Str(r["ID"]);
+                    if (!string.IsNullOrEmpty(id))
+                        map[id.Trim()] = DbHelper.Int(r["INTVALUE"]) == PrintConstants.ConfigEnabledValue;
+                }
+            }
+            return map;
+        }
+
+        private static List<string> CollectDistinctIds(IEnumerable<string> configIds)
+        {
+            var list = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (configIds == null)
+                return list;
+            foreach (string raw in configIds)
+            {
+                if (string.IsNullOrWhiteSpace(raw))
+                    continue;
+                string id = raw.Trim();
+                if (seen.Add(id))
+                    list.Add(id);
+            }
+            return list;
         }
 
         /// <summary>Đọc 4 thông tin công ty từ SCONFIG (TEXTVALUE): CompanyName, CompanyAddress, CompanyPhone, CompanyEmail.</summary>

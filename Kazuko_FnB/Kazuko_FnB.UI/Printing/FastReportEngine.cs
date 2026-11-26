@@ -85,6 +85,12 @@ namespace Kazuko_FnB.UI.Printing
                 report = new Report();
                 LoadTemplateIntoReport(report, template);
 
+                if (!TryApplyColumnVisibility(report, template, job, templateName, out errorMessage))
+                {
+                    report.Dispose();
+                    return false;
+                }
+
                 if (job != null && job.DataSet != null)
                 {
                     report.RegisterData(job.DataSet, "Data");
@@ -143,6 +149,88 @@ namespace Kazuko_FnB.UI.Printing
                 if (conflicting != null)
                     report.Dictionary.Totals.Remove(conflicting);
             }
+        }
+
+        private static bool TryApplyColumnVisibility(
+            Report report,
+            PrintTemplateRecord template,
+            PrintJobData job,
+            string templateName,
+            out string errorMessage)
+        {
+            errorMessage = null;
+            List<PrintColumnVisibilityRule> rules = PrintTemplateVisibilityParser.ParseColumnRules(
+                template.TemplateXml, template.TemplateBytes);
+            if (rules.Count == 0)
+                return true;
+
+            IDictionary<string, bool> configFlags = (job != null && job.ConfigVisibilityById != null)
+                ? job.ConfigVisibilityById
+                : template.ConfigVisibilityById;
+            if (configFlags == null)
+            {
+                errorMessage = "Không đọc được cấu hình hiển thị cột cho mẫu in '" + templateName + "'.";
+                return false;
+            }
+
+            foreach (Base obj in report.AllObjects)
+            {
+                var table = obj as TableObject;
+                if (table == null)
+                    continue;
+                for (int i = 0; i < rules.Count; i++)
+                {
+                    PrintColumnVisibilityRule rule = rules[i];
+                    if (!string.IsNullOrEmpty(rule.TableName)
+                        && !string.Equals(table.Name, rule.TableName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    TableColumn col = FindTableColumn(table, rule);
+                    if (col == null)
+                        continue;
+
+                    bool isEnabled;
+                    if (TryGetConfigFlag(configFlags, rule.ConfigId, out isEnabled) && !isEnabled)
+                        col.Visible = false;
+                }
+            }
+            return true;
+        }
+
+        private static bool TryGetConfigFlag(IDictionary<string, bool> configFlags, string configId, out bool isEnabled)
+        {
+            if (configFlags.TryGetValue(configId, out isEnabled))
+                return true;
+            foreach (KeyValuePair<string, bool> kv in configFlags)
+            {
+                if (string.Equals(kv.Key, configId, StringComparison.OrdinalIgnoreCase))
+                {
+                    isEnabled = kv.Value;
+                    return true;
+                }
+            }
+            isEnabled = true;
+            return false;
+        }
+
+        private static TableColumn FindTableColumn(TableObject table, PrintColumnVisibilityRule rule)
+        {
+            if (table == null || table.Columns == null || rule == null)
+                return null;
+            if (!string.IsNullOrEmpty(rule.ColumnName))
+            {
+                for (int c = 0; c < table.Columns.Count; c++)
+                {
+                    TableColumn col = table.Columns[c];
+                    if (col != null && string.Equals(col.Name, rule.ColumnName, StringComparison.OrdinalIgnoreCase))
+                        return col;
+                }
+            }
+            if (rule.ColumnIndex >= 0 && rule.ColumnIndex < table.Columns.Count)
+                return table.Columns[rule.ColumnIndex];
+            return null;
         }
 
         private static void LoadTemplateIntoReport(Report report, PrintTemplateRecord template)

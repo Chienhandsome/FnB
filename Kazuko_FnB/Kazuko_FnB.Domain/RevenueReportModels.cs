@@ -12,8 +12,6 @@ namespace Kazuko_FnB.Domain
         /// <summary>Mã loại mặt hàng nguyên liệu (DMATHANG.DLOAIMATHANGID = '2', bị loại khỏi lưới chi tiết).</summary>
         public const string MaterialProductTypeId = "2";
 
-        public const string PrintUnsupportedMessage = "Chức năng in báo cáo chưa hỗ trợ trong phiên bản này.";
-
         public const string NetActualReceiptCaption = "TỔNG THỰC THU (TIỀN MẶT + THẺ + CHUYỂN KHOẢN + THU - CHI)";
 
         /// <summary>Tooltip P2 trên dòng TỔNG THỰC THU: liệt kê khoản được cộng/trừ và khoản không cộng.</summary>
@@ -58,6 +56,7 @@ namespace Kazuko_FnB.Domain
         public decimal ChuyenKhoan { get; set; }
         public decimal TruTichLuy { get; set; }
         public decimal TheTraTruoc { get; set; }
+        public decimal DatTruoc { get; set; }
         public decimal CongNo { get; set; }
     }
 
