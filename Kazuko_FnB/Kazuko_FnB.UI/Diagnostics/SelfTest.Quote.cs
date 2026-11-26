@@ -289,8 +289,10 @@ namespace Kazuko_FnB.UI.Diagnostics
                 && det2.ItemCol == 0 && det2.DiscountPctCol == 1 && det2.QuantityCol == 2 && det2.PriceCol == -1,
                 "det1=" + det1.ItemCol + "/" + det1.DiscountPctCol + "/" + det1.QuantityCol + "/" + det1.PriceCol + ", det2P=" + det2.PriceCol);
 
-            // Luật phân tích số Excel (r2 #2): ô chữ nhóm nghìn cho Đơn giá, mơ hồ cho SL/% giảm, ô số invariant không mơ hồ.
-            decimal p1, p2, p3, p4, p5, p6, p7, pBad;
+            // Luật phân tích số Excel (cập nhật theo N7 của docs/specs/nhap-so/nghiep-vu.md):
+            // - Ô chữ "1.250" là 1250 ở mọi cột; "0.125"/"0,125" là 0,125 ở mọi cột;
+            // - "1,250" ở SL/% giảm vẫn báo lỗi; ô số 1.125 không mơ hồ.
+            decimal p1, p2, p3, p4, p5, p6, p7, pDot1250, pZeroDot, pZeroComma, pBad;
             bool parsePriceOk =
                 QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell(" 340.000 "), true, out p1) && p1 == 340000m
                 && QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("340,000"), true, out p2) && p2 == 340000m
@@ -303,26 +305,28 @@ namespace Kazuko_FnB.UI.Diagnostics
                 && !QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("abc"), true, out pBad);
             decimal qNum;
             bool ambigAndNumericOk =
-                !QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("1.250"), false, out pBad)
+                QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("1.250"), false, out pDot1250) && pDot1250 == 1250m
+                && QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("0.125"), false, out pZeroDot) && pZeroDot == 0.125m
+                && QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("0,125"), true, out pZeroComma) && pZeroComma == 0.125m
                 && !QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.TextCell("1,250"), false, out pBad)
                 && QuoteExcelImporter.TryParseExcelNumber(QuoteExcelCell.NumberCell(1.125m), false, out qNum) && qNum == 1.125m;
             Check("Báo giá §2.3 Excel ParseNumber: nhóm nghìn Đơn giá, mơ hồ SL/% giảm, ô số 1.125 không mơ hồ",
                 parsePriceOk && ambigAndNumericOk);
 
-            // Lỗi chuỗi không đọc được / mơ hồ / giá âm / % giảm ngoài 0..100 hủy toàn bộ nhập (r2 #2 & #3).
+            // Lỗi chuỗi không đọc được / mơ hồ / giá âm / % giảm ngoài 0..100 hủy toàn bộ nhập (cập nhật theo N7: 1,250 ở SL vẫn lỗi; 1.250 ở % giảm = 1250 bị chặn 0..100).
             var invalidNumRows = new List<string[]>
             {
-                new[] { "CF01", "1.250", "", "10000", "0" },      // SL mơ hồ
-                new[] { "CF01", "2", "", "abc", "1.250" },        // Đơn giá lỗi chữ + % giảm mơ hồ
+                new[] { "CF01", "1,250", "", "10000", "0" },      // SL mơ hồ (dấu phẩy)
+                new[] { "CF01", "2", "", "abc", "1.250" },        // Đơn giá lỗi chữ + % giảm = 1250 vượt 100
                 new[] { "CF01", "2", "", "-5000", "105" },        // Đơn giá âm + % giảm > 100
                 new[] { "TR01", "1", "", "10000", "-5" }          // % giảm < 0
             };
             QuoteExcelImportResult invRes = QuoteExcelImporter.Import(invalidNumRows, mapAll, true, true, items, units);
             Check("Báo giá §2.3 Excel không ép giá trị âm thầm: báo lỗi số mơ hồ/chữ/giá âm/% giảm ngoài 0..100 và hủy nhập",
                 !invRes.Ok && invRes.Lines.Count == 0 && invRes.Errors.Count == 6
-                && invRes.Errors[0] == "Giá trị '1.250' ở cột 'Số lượng' của mặt hàng 'CF01' không đọc được thành số"
+                && invRes.Errors[0] == "Giá trị '1,250' ở cột 'Số lượng' của mặt hàng 'CF01' không đọc được thành số"
                 && invRes.Errors[1] == "Giá trị 'abc' ở cột 'Đơn giá' của mặt hàng 'CF01' không đọc được thành số"
-                && invRes.Errors[2] == "Giá trị '1.250' ở cột '% giảm' của mặt hàng 'CF01' không đọc được thành số"
+                && invRes.Errors[2] == "Giá trị '1.250' ở cột '% giảm' của mặt hàng 'CF01' không hợp lệ"
                 && invRes.Errors[3] == "Giá trị '-5000' ở cột 'Đơn giá' của mặt hàng 'CF01' không hợp lệ"
                 && invRes.Errors[4] == "Giá trị '105' ở cột '% giảm' của mặt hàng 'CF01' không hợp lệ"
                 && invRes.Errors[5] == "Giá trị '-5' ở cột '% giảm' của mặt hàng 'TR01' không hợp lệ",

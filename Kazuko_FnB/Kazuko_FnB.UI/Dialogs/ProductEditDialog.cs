@@ -135,8 +135,16 @@ namespace Kazuko_FnB.UI.Dialogs
         public bool Deleted { get; private set; }
 
         internal bool SuppressPopup { get; set; }
+        internal int RecipeDataErrorCountForTest { get; private set; }
+        internal string RecipeDataErrorDetailForTest { get; private set; }
         internal NumberBox SellPriceBoxForTest { get { return _sell; } }
         internal FlatButton SaveButtonForTest { get { return _btnSave; } }
+        internal DataGridView RecipeGridForTest { get { return _recipeGrid; } }
+        internal TabControl TabsForTest { get { return _tabs; } }
+        internal TabPage RecipeTabForTest { get { return _tabRecipe; } }
+        internal FlatButton AddRecipeLineButtonForTest { get { return _btnAddLine; } }
+        internal FlatButton DeleteRecipeLineButtonForTest { get { return _btnDelLine; } }
+        internal bool DirtyForTest { get { return Dirty; } }
 
         /// <param name="productId">null = thêm mới.</param>
         /// <param name="presetGroupId">Nhóm chọn sẵn cho mặt hàng mới (null = chưa chọn — người gọi mở hộp chọn nhóm trước).</param>
@@ -450,13 +458,15 @@ namespace Kazuko_FnB.UI.Dialogs
             _recipeGrid.Font = new Font("Segoe UI", 10f);
             _recipeGrid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 10f);
             _recipeGrid.CellValueChanged += RecipeGrid_CellValueChanged;
-            _recipeGrid.CurrentCellDirtyStateChanged += delegate
+            _recipeGrid.CellEndEdit += delegate { OnDirtyChanged(); };
+            _recipeGrid.CurrentCellDirtyStateChanged += delegate { NumericEditGridCell.HandleDirtyStateChanged(_recipeGrid, OnDirtyChanged); };
+            _recipeGrid.DataError += delegate(object sender, DataGridViewDataErrorEventArgs e)
             {
-                if (_recipeGrid.IsCurrentCellDirty)
-                    _recipeGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                RecipeDataErrorCountForTest++;
+                RecipeDataErrorDetailForTest = NumericEditGridCell.AppendDataErrorDetail(RecipeDataErrorDetailForTest, _recipeGrid, e);
+                e.ThrowException = false;
             };
-            _recipeGrid.DataError += delegate(object sender, DataGridViewDataErrorEventArgs e) { e.ThrowException = false; };
-            _recipeGrid.CellParsing += RecipeGrid_CellParsing;
+            _recipeGrid.CellParsing += delegate(object sender, DataGridViewCellParsingEventArgs e) { NumericEditGridCell.ParseCell(_recipeGrid, e, 0m); };
             _recipeGrid.RowsRemoved += delegate { UpdateRecipeTotals(); OnDirtyChanged(); };
             _recipeGrid.SelectionChanged += delegate { UpdateRecipeButtons(); };
 
@@ -758,9 +768,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 Name = "colQty",
                 HeaderText = "Số lượng",
                 DataPropertyName = "Qty",
-                Width = (int)(65 * s),
-                DefaultCellStyle = { Format = "N4", FormatProvider = vi, Alignment = DataGridViewContentAlignment.MiddleRight }
+                Width = (int)(65 * s)
             };
+            NumericEditGridCell.ConfigureColumn(colQty, 4);
             var colUnit = new DataGridViewTextBoxColumn
             {
                 Name = "colUnit",
@@ -854,6 +864,10 @@ namespace Kazuko_FnB.UI.Dialogs
             dt.EndLoadData();
             _recipeTable = dt;
             _recipeView = new System.Data.DataView(dt);
+            _recipeGrid.DataSource = null;
+            var colMat = _recipeGrid.Columns["colMat"] as DataGridViewComboBoxColumn;
+            if (colMat != null)
+                colMat.DataSource = _materials;
             _recipeGrid.DataSource = _recipeView;
             MarkOrphanRows();
             ApplyRecipeFilter();
@@ -893,18 +907,20 @@ namespace Kazuko_FnB.UI.Dialogs
             return null;
         }
 
-        private void RecipeGrid_CellParsing(object sender, DataGridViewCellParsingEventArgs e)
+        private void CommitRecipeEdits()
         {
-            if (_recipeGrid.Columns[e.ColumnIndex].DataPropertyName != "Qty")
-                return;
-            string text = e.Value == null ? "" : e.Value.ToString().Trim();
-            decimal v;
-            var vi = new CultureInfo("vi-VN");
-            if (decimal.TryParse(text, NumberStyles.Number, vi, out v) ||
-                decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out v))
+            _recipeGrid.EndEdit();
+            if (_recipeView != null)
             {
-                e.Value = v;
-                e.ParsingApplied = true;
+                System.Windows.Forms.BindingManagerBase viewBinding = BindingContext[_recipeView];
+                if (viewBinding != null)
+                    viewBinding.EndCurrentEdit();
+            }
+            if (_recipeTable != null)
+            {
+                System.Windows.Forms.BindingManagerBase tableBinding = BindingContext[_recipeTable];
+                if (tableBinding != null)
+                    tableBinding.EndCurrentEdit();
             }
         }
 
@@ -964,6 +980,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly)
                 return;
+            CommitRecipeEdits();
             _tabs.SelectedTab = _tabRecipe;
             // Xóa lọc trước khi thêm để dòng mới hiện ra và được chọn đúng.
             _recipeFilter.Text = "";
@@ -1003,6 +1020,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly || _recipeGrid.CurrentRow == null)
                 return;
+            CommitRecipeEdits();
             var view = _recipeGrid.CurrentRow.DataBoundItem as System.Data.DataRowView;
             if (view == null)
                 return;
@@ -1132,7 +1150,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private bool Dirty
         {
-            get { return _original == null || Snapshot() != _original; }
+            get { return _original == null || Snapshot() != _original || _recipeGrid.IsCurrentCellDirty; }
         }
 
         private string Snapshot()
@@ -1209,13 +1227,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 return false;
             // Đẩy ô lưới đang sửa dở vào DataTable trước khi tính tổng/thu thập
             // (bấm Ctrl+L khi còn trong ô Số lượng/Vật tư: giá trị chưa commit thì CollectLines đọc thiếu).
-            _recipeGrid.EndEdit();
-            if (_recipeTable != null)
-            {
-                System.Windows.Forms.BindingManagerBase recipeBinding = BindingContext[_recipeTable];
-                if (recipeBinding != null)
-                    recipeBinding.EndCurrentEdit();
-            }
+            CommitRecipeEdits();
             // Chỉ cập nhật nhãn tổng ở bước này; ghi đè GIANHAP/GIAVON (Q15) làm SAU khi kiểm tra hợp lệ (M4).
             UpdateRecipeTotals(false);
             CollectRow();
@@ -1613,7 +1625,7 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 // Enter = Lưu & thoát, trừ khi focus đang ở nút, link, combo (chọn mục) hoặc lưới định lượng.
                 Control active = ActiveControl;
-                if (active is ButtonBase || active is LinkLabel || active is ComboBox || active == _recipeGrid)
+                if (active is ButtonBase || active is LinkLabel || active is ComboBox || active == _recipeGrid || _recipeGrid.ContainsFocus)
                     return;
                 SaveAndClose();
                 e.Handled = true;

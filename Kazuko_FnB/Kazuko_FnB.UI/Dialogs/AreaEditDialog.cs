@@ -130,6 +130,17 @@ namespace Kazuko_FnB.UI.Dialogs
             get { return _tabs.TabPages.Count; }
         }
 
+        internal bool SuppressPopup { get; set; }
+        internal int DefaultsDataErrorCountForTest { get; private set; }
+        internal string DefaultsDataErrorDetailForTest { get; private set; }
+        internal DataGridView DefaultsGridForTest { get { return _defaultsGrid; } }
+        internal TabControl TabsForTest { get { return _tabs; } }
+        internal TabPage DefaultsTabForTest { get { return _tabDefaults; } }
+        internal FlatButton SaveButtonForTest { get { return _btnSave; } }
+        internal FlatButton AddDefaultLineButtonForTest { get { return _btnAddLine; } }
+        internal FlatButton DeleteDefaultLineButtonForTest { get { return _btnDelLine; } }
+        internal bool DirtyForTest { get { return Dirty; } }
+
         /// <param name="areaId">null = thêm mới.</param>
         /// <param name="rowIds">ID các dòng trên cây theo thứ tự hiện tại (để F10/F11 chuyển dòng); null = không chuyển được.</param>
         public AreaEditDialog(UserSession session, string areaId, List<string> rowIds)
@@ -409,16 +420,18 @@ namespace Kazuko_FnB.UI.Dialogs
                 HeaderText = "Số lượng",
                 Width = (int)(120 * s)
             };
-            colQty.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-            colQty.DefaultCellStyle.Format = "#,##0.##";
+            NumericEditGridCell.ConfigureColumn(colQty, 2);
             _defaultsGrid.Columns.Add(colQty);
+            _defaultsGrid.CellParsing += delegate(object sender, DataGridViewCellParsingEventArgs e) { NumericEditGridCell.ParseCell(_defaultsGrid, e, 0m); };
             _defaultsGrid.CellValueChanged += delegate { OnDirtyChanged(); };
-            _defaultsGrid.CurrentCellDirtyStateChanged += delegate
+            _defaultsGrid.CellEndEdit += delegate { OnDirtyChanged(); };
+            _defaultsGrid.CurrentCellDirtyStateChanged += delegate { NumericEditGridCell.HandleDirtyStateChanged(_defaultsGrid, OnDirtyChanged); };
+            _defaultsGrid.DataError += delegate(object sender, DataGridViewDataErrorEventArgs e)
             {
-                if (_defaultsGrid.IsCurrentCellDirty)
-                    _defaultsGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                DefaultsDataErrorCountForTest++;
+                DefaultsDataErrorDetailForTest = NumericEditGridCell.AppendDataErrorDetail(DefaultsDataErrorDetailForTest, _defaultsGrid, e);
+                e.ThrowException = false;
             };
-            _defaultsGrid.DataError += delegate(object sender, DataGridViewDataErrorEventArgs e) { e.ThrowException = false; };
 
             _tabDefaults.Controls.Add(_defaultsGrid);
             _tabDefaults.Controls.Add(bar);
@@ -769,7 +782,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private bool Dirty
         {
-            get { return _original == null || Snapshot() != _original; }
+            get { return _original == null || Snapshot() != _original || _defaultsGrid.IsCurrentCellDirty; }
         }
 
         private string Snapshot()
@@ -955,12 +968,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 object p = r.Cells["colProduct"].Value;
                 if (p == null || string.IsNullOrEmpty(Convert.ToString(p)))
                     continue;
-                decimal qty = 0m;
-                object q = r.Cells["colQty"].Value;
-                if (q != null)
-                    decimal.TryParse(Convert.ToString(q), System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture, out qty);
-                if (qty <= 0m)
+                decimal qty;
+                if (!NumberInput.TryParse(r.Cells["colQty"].Value, out qty) || qty <= 0m)
                     continue;
                 list.Add(new AreaDefaultItem { ProductId = Convert.ToString(p), Quantity = qty });
             }
@@ -999,6 +1008,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly)
                 return;
+            _defaultsGrid.EndEdit();
             int i = _defaultsGrid.Rows.Add();
             _defaultsGrid.Rows[i].Cells["colQty"].Value = 1m;
             _defaultsGrid.ClearSelection();
@@ -1012,6 +1022,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly || _defaultsGrid.CurrentRow == null)
                 return;
+            _defaultsGrid.EndEdit();
             _defaultsGrid.Rows.Remove(_defaultsGrid.CurrentRow);
             OnDirtyChanged();
         }
@@ -1070,7 +1081,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void OnFormClosing(object sender, FormClosingEventArgs e)
         {
-            if (DialogResult == DialogResult.OK || _loadFailed || !Dirty)
+            if (DialogResult == DialogResult.OK || _loadFailed || !Dirty || SuppressPopup)
                 return;
             DialogResult answer = MessageBox.Show(this, "Dữ liệu đã thay đổi. Bạn có muốn lưu lại không?",
                 "Xác nhận", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
@@ -1144,7 +1155,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 // Enter = Lưu & thoát, trừ khi focus đang ở nút, link, combo (chọn mục) hoặc lưới.
                 Control active = ActiveControl;
                 if (active is ButtonBase || active is LinkLabel || active is ComboBox
-                    || active == _defaultsGrid || active == _priceGrid || active == _accessGrid)
+                    || active == _defaultsGrid || _defaultsGrid.ContainsFocus
+                    || active == _priceGrid || active == _accessGrid)
                     return;
                 SaveAndClose();
                 e.Handled = true;

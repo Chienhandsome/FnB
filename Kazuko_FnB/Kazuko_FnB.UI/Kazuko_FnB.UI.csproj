@@ -267,6 +267,9 @@
     <Compile Include="Diagnostics\SelfTest.Booking.GridQty.cs" />
     <Compile Include="Diagnostics\SelfTest.NumberBox.cs" />
     <Compile Include="Diagnostics\SelfTest.NumberBox.Dialogs.cs" />
+    <Compile Include="Diagnostics\SelfTest.NumberGrid.cs" />
+    <Compile Include="Diagnostics\SelfTest.NumberGrid.Orders.cs" />
+    <Compile Include="Diagnostics\SelfTest.NumberGrid.Catalog.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.DailyActivity.Ui.cs" />

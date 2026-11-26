@@ -130,6 +130,7 @@ namespace Kazuko_FnB.UI.Dialogs
         internal bool SuppressPopup { get; set; }
         internal string LastWarningForTest { get; private set; }
         internal int DetailDataErrorCountForTest { get; private set; }
+        internal string DetailDataErrorDetailForTest { get; private set; }
         internal Func<BookingSaleItem, decimal, BookingQuantityPromptResult> QuantityPromptOverrideForTest { get; set; }
         internal NumericUpDown QtyBoxForTest { get { return _numQty; } }
         internal FlatButton AddProductButtonForTest { get { return _btnAddProduct; } }
@@ -518,13 +519,14 @@ namespace Kazuko_FnB.UI.Dialogs
             SetupGrid(_detailGrid, false);
             _detailGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "d_name", HeaderText = "Mặt hàng", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, ReadOnly = true });
             _detailGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "d_unit", HeaderText = "ĐVT", Width = (int)(60 * s), ReadOnly = true });
-            AddMoneyColumn(_detailGrid, "d_qty", "Số lượng", 70, "#,##0.##");
-            AddMoneyColumn(_detailGrid, "d_price", "Đơn giá", 90);
-            AddMoneyColumn(_detailGrid, "d_disc", "Giảm giá %", 80, "#,##0.##");
+            AddMoneyColumn(_detailGrid, "d_qty", "Số lượng", 70, "#,##0.##", true);
+            AddMoneyColumn(_detailGrid, "d_price", "Đơn giá", 90, "#,##0.##", true);
+            AddMoneyColumn(_detailGrid, "d_disc", "Giảm giá %", 80, "#,##0.##", true);
             AddMoneyColumn(_detailGrid, "d_amount", "Thành tiền", 100);
             _detailGrid.Columns["d_amount"].ReadOnly = true;
             _detailGrid.CellParsing += DetailCellParsing;
             _detailGrid.CellEndEdit += DetailCellEndEdit;
+            _detailGrid.CurrentCellDirtyStateChanged += delegate { OnDirtyChanged(); };
             _detailGrid.DataError += DetailDataError;
             split.Panel2.Controls.Add(_detailGrid);
         }
@@ -550,10 +552,15 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private void AddMoneyColumn(DataGridView grid, string name, string header, int width96)
         {
-            AddMoneyColumn(grid, name, header, width96, "N0");
+            AddMoneyColumn(grid, name, header, width96, "N0", false);
         }
 
         private void AddMoneyColumn(DataGridView grid, string name, string header, int width96, string format)
+        {
+            AddMoneyColumn(grid, name, header, width96, format, false);
+        }
+
+        private void AddMoneyColumn(DataGridView grid, string name, string header, int width96, string format, bool editable)
         {
             float s = Dpi;
             var col = new DataGridViewTextBoxColumn
@@ -561,10 +568,11 @@ namespace Kazuko_FnB.UI.Dialogs
                 Name = name,
                 HeaderText = header,
                 Width = (int)(width96 * s),
-                CellTemplate = new NumericEditGridCell(),
                 ValueType = typeof(decimal),
-                DefaultCellStyle = { Format = format, FormatProvider = new CultureInfo("vi-VN"), Alignment = DataGridViewContentAlignment.MiddleRight }
+                DefaultCellStyle = { Format = format, FormatProvider = NumberInput.ViFormat, Alignment = DataGridViewContentAlignment.MiddleRight }
             };
+            if (editable)
+                NumericEditGridCell.ConfigureColumn(col, 2);
             grid.Columns.Add(col);
         }
 
@@ -826,6 +834,7 @@ namespace Kazuko_FnB.UI.Dialogs
             LastWarningForTest = null;
             if (_readOnly)
                 return;
+            _detailGrid.EndEdit();
             BookingSaleItem item = SelectedSaleItem();
             if (item == null)
                 return;
@@ -896,6 +905,7 @@ namespace Kazuko_FnB.UI.Dialogs
         private void DetailDataError(object sender, DataGridViewDataErrorEventArgs e)
         {
             DetailDataErrorCountForTest++;
+            DetailDataErrorDetailForTest = NumericEditGridCell.AppendDataErrorDetail(DetailDataErrorDetailForTest, _detailGrid, e);
             e.ThrowException = false;
             if (e.RowIndex < 0 || e.RowIndex >= _lines.Count) return;
             BookingLine line = _lines[e.RowIndex];
@@ -910,7 +920,7 @@ namespace Kazuko_FnB.UI.Dialogs
             LastWarningForTest = null;
             bool parseFailed = _cellParseFailed;
             _cellParseFailed = false;
-            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count || e.ColumnIndex < 0) return;
+            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count || e.ColumnIndex < 0) { OnDirtyChanged(); return; }
             BookingLine line = _lines[e.RowIndex];
             DataGridViewRow r = _detailGrid.Rows[e.RowIndex];
             string col = _detailGrid.Columns[e.ColumnIndex].Name;
@@ -919,8 +929,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 object raw = parseFailed ? null : r.Cells["d_qty"].Value;
                 BookingGridQtyEditResult res = BookingItemRules.EvaluateEditedQuantity(raw, line.Quantity);
                 r.Cells["d_qty"].Value = res.Quantity;
-                if (!res.Accepted) { ShowWarning(res.WarningMessage); return; }
-                if (!res.Changed) return;
+                if (!res.Accepted) { ShowWarning(res.WarningMessage); OnDirtyChanged(); return; }
+                if (!res.Changed) { OnDirtyChanged(); return; }
                 line.Quantity = res.Quantity;
             }
             else if (col == "d_price" || col == "d_disc")
@@ -931,14 +941,15 @@ namespace Kazuko_FnB.UI.Dialogs
                 if (parseFailed || !NumberInput.TryParse(r.Cells[col].Value, out v))
                 {
                     r.Cells[col].Value = oldVal;
+                    OnDirtyChanged();
                     return;
                 }
                 decimal clamped = isPrice ? Math.Max(0m, v) : Math.Min(100m, Math.Max(0m, v));
                 r.Cells[col].Value = clamped;
-                if (clamped == oldVal) return;
+                if (clamped == oldVal) { OnDirtyChanged(); return; }
                 if (isPrice) line.Price = clamped; else line.DiscountPct = clamped;
             }
-            else return;
+            else { OnDirtyChanged(); return; }
             line.Amount = BookingRules.CalcLineAmount(line.Quantity, line.Price, line.DiscountPct);
             r.Cells["d_amount"].Value = line.Amount;
             RecalcTotals();
@@ -949,6 +960,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly)
                 return;
+            _detailGrid.EndEdit();
             if (_detailGrid.CurrentRow == null || _detailGrid.CurrentRow.Index < 0
                 || _detailGrid.CurrentRow.Index >= _lines.Count)
                 return;
@@ -1377,7 +1389,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private bool Dirty
         {
-            get { return _original == null || Snapshot() != _original; }
+            get { return _original == null || Snapshot() != _original || _detailGrid.IsCurrentCellDirty; }
         }
 
         private string Snapshot()

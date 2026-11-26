@@ -296,12 +296,17 @@ namespace Kazuko_FnB.Services
         }
 
         /// <summary>
-        /// Phân tích giá trị số của một ô Excel không rỗng.
+        /// Phân tích giá trị số của một ô Excel không rỗng (theo luật N7 của docs/specs/nhap-so/nghiep-vu.md).
         /// - Ô số (IsNumeric = true): đọc trực tiếp theo CultureInfo.InvariantCulture (vd. 1.125 không bị coi là mơ hồ).
         /// - Ô chữ (IsNumeric = false):
-        ///   * Cột Đơn giá (allowThousandsGrouping = true): nhóm nghìn 1..3 + (.3)+ hoặc (,3)+ là số nguyên;
-        ///     có cả hai dấu . và , thì dấu sau cùng là thập phân, phần nhóm trước phải đúng 3 chữ số.
-        ///   * Cột Số lượng / % giảm (allowThousandsGrouping = false): nhóm nghìn một dấu như "1.250" là mơ hồ -> lỗi.
+        ///   * Đúng một dấu (. hoặc ,) và phần trước dấu là đúng chuỗi "0" (kể cả có dấu +/-, vd. 0.125, 0,125, -0.125):
+        ///     dấu đó luôn là dấu thập phân ở MỌI cột -> 0,125 / -0,125.
+        ///   * Đúng một dấu chấm '.', phần trước 1..3 chữ số (khác "0") và phần sau đúng 3 chữ số (vd. 1.250):
+        ///     luôn là dấu ngăn nghìn ở MỌI cột -> 1250 (cột % giảm sẽ bị giới hạn 0..100 chặn ở bước kiểm tra giá trị).
+        ///   * Đúng một dấu phẩy ',' với phần sau đúng 3 chữ số (khác "0"): cột Đơn giá (allowThousandsGrouping = true)
+        ///     và phần trước 1..3 chữ số là ngăn nghìn (15,000 -> 15000); cột Số lượng / % giảm (allowThousandsGrouping = false) báo lỗi.
+        ///   * Từ hai dấu trở lên cùng loại: chỉ cột Đơn giá (allowThousandsGrouping = true) nhận nhóm nghìn đúng 3 chữ số;
+        ///     cột Số lượng / % giảm báo lỗi. Có cả '.' và ',' thì dấu sau cùng là thập phân, phần nhóm trước đúng 3 chữ số.
         ///   * Còn lại: số nguyên, hoặc một dấu . hay , là thập phân khi phần sau KHÔNG đúng 3 chữ số.
         /// </summary>
         public static bool TryParseExcelNumber(QuoteExcelCell cell, bool allowThousandsGrouping, out decimal value)
@@ -375,11 +380,27 @@ namespace Kazuko_FnB.Services
                 else
                 {
                     // Đúng 1 dấu . hoặc , (parts.Length == 2).
-                    if (parts[1].Length == 3)
+                    if (parts[0] == "0")
                     {
-                        if (!allowThousandsGrouping || parts[0].Length > 3)
-                            return false;
-                        normalized = parts[0] + parts[1];
+                        // N7: phần trước dấu là đúng chuỗi "0" -> luôn là dấu thập phân ở mọi cột (0.125, 0,125).
+                        normalized = "0." + parts[1];
+                    }
+                    else if (parts[1].Length == 3)
+                    {
+                        if (sep == '.')
+                        {
+                            // N7: một dấu chấm, phần trước 1..3 chữ số, phần sau đúng 3 chữ số -> ngăn nghìn ở mọi cột.
+                            if (parts[0].Length > 3)
+                                return false;
+                            normalized = parts[0] + parts[1];
+                        }
+                        else
+                        {
+                            // Dấu phẩy giữ như cũ: chỉ cột Đơn giá cho phép nhóm nghìn (15,000); SL/% giảm báo lỗi (1,250).
+                            if (!allowThousandsGrouping || parts[0].Length > 3)
+                                return false;
+                            normalized = parts[0] + parts[1];
+                        }
                     }
                     else
                     {

@@ -309,7 +309,7 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private bool Dirty
         {
-            get { return _original == null || Snapshot() != _original; }
+            get { return _original == null || Snapshot() != _original || _detailGrid.IsCurrentCellDirty; }
         }
 
         private string Snapshot()

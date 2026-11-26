@@ -559,6 +559,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             QuoteTests(db);
             BookingTwoUnitTests(db);
             NumberBoxTests(db);
+            NumberGridTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

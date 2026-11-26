@@ -467,7 +467,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 DefaultCellStyle =
                 {
                     Format = format,
-                    FormatProvider = CultureInfo.GetCultureInfo("vi-VN"),
+                    FormatProvider = NumberInput.ViFormat,
                     Alignment = DataGridViewContentAlignment.MiddleRight
                 }
             };

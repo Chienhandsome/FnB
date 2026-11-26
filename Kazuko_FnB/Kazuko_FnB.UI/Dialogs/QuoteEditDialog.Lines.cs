@@ -14,6 +14,11 @@ namespace Kazuko_FnB.UI.Dialogs
     /// <summary>Phần lưới chọn mặt hàng, lưới chi tiết, thêm/sửa/xóa dòng và nhập Excel của QuoteEditDialog.</summary>
     internal sealed partial class QuoteEditDialog
     {
+        private bool _cellParseFailed;
+        internal int DetailDataErrorCountForTest { get; private set; }
+        internal string DetailDataErrorDetailForTest { get; private set; }
+        internal bool TotalsDirtyForTest { get { return _totalsDirty; } }
+
         private void BuildBottom()
         {
             float s = Dpi;
@@ -126,14 +131,21 @@ namespace Kazuko_FnB.UI.Dialogs
             AddTextColumn(_detailGrid, "d_name", "Mặt hàng", 160, "Bia lon Sài Gòn", true, true, s);
             AddTextColumn(_detailGrid, "d_unit", "ĐVT", 64, "Thùng", true, false, s);
             AddMoneyColumn(_detailGrid, "d_qty", "Số lượng", 80, "999,99", "#,##0.##", s);
-            AddMoneyColumn(_detailGrid, "d_price", "Đơn giá", 92, "999.999.999", "N0", s);
+            AddMoneyColumn(_detailGrid, "d_price", "Đơn giá", 92, "999.999.999", "#,##0.##", s);
             AddMoneyColumn(_detailGrid, "d_disc", "% giảm", 74, "100,00", "#,##0.##", s);
+            NumericEditGridCell.ConfigureColumn(_detailGrid.Columns["d_qty"] as DataGridViewTextBoxColumn, 2);
+            NumericEditGridCell.ConfigureColumn(_detailGrid.Columns["d_price"] as DataGridViewTextBoxColumn, 2);
+            NumericEditGridCell.ConfigureColumn(_detailGrid.Columns["d_disc"] as DataGridViewTextBoxColumn, 2);
             AddMoneyColumn(_detailGrid, "d_amount", "Thành tiền", 104, "999.999.999", "N0", s);
             _detailGrid.Columns["d_amount"].ReadOnly = true;
             AddTextColumn(_detailGrid, "d_note", "Ghi chú", 120, "Ghi chú dòng", false, false, s);
+            _detailGrid.CellParsing += DetailCellParsing;
             _detailGrid.CellEndEdit += DetailCellEndEdit;
+            _detailGrid.CurrentCellDirtyStateChanged += delegate { OnDirtyChanged(); };
             _detailGrid.DataError += delegate(object sender, DataGridViewDataErrorEventArgs e)
             {
+                DetailDataErrorCountForTest++;
+                DetailDataErrorDetailForTest = NumericEditGridCell.AppendDataErrorDetail(DetailDataErrorDetailForTest, _detailGrid, e);
                 e.ThrowException = false;
                 if (e.RowIndex >= 0 && e.RowIndex < _lines.Count)
                     SyncDetailRow(e.RowIndex);
@@ -306,6 +318,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly || _productGrid.CurrentRow == null)
                 return;
+            _detailGrid.EndEdit();
             var item = _productGrid.CurrentRow.Tag as QuoteSaleItem;
             if (item == null)
                 return;
@@ -354,61 +367,76 @@ namespace Kazuko_FnB.UI.Dialogs
             }
         }
 
+        private void DetailCellParsing(object sender, DataGridViewCellParsingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count || e.ColumnIndex < 0)
+                return;
+            if (!NumericEditGridCell.IsNumericCell(_detailGrid, e.RowIndex, e.ColumnIndex))
+                return;
+            _cellParseFailed = !NumericEditGridCell.ParseCell(_detailGrid, e, 0m);
+        }
+
         private void DetailCellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count)
-                return;
+            LastWarningMessageForTest = null;
+            bool parseFailed = _cellParseFailed;
+            _cellParseFailed = false;
+            if (e.RowIndex < 0 || e.RowIndex >= _lines.Count || e.ColumnIndex < 0) { OnDirtyChanged(); return; }
             QuoteLine line = _lines[e.RowIndex];
             DataGridViewRow r = _detailGrid.Rows[e.RowIndex];
+            string col = _detailGrid.Columns[e.ColumnIndex].Name;
 
-            decimal parsedQty;
-            bool qtyParsed = TryReadCellDecimal(r.Cells["d_qty"].Value, out parsedQty);
-            decimal effectiveQty;
-            string qtyWarning;
-            if (!qtyParsed || !QuoteItemRules.ValidateEditedQuantity(parsedQty, line.Quantity, out effectiveQty, out qtyWarning))
+            if (col == "d_qty")
             {
-                r.Cells["d_qty"].Value = line.Quantity;
-                ShowWarning(QuoteText.EnterQuantity);
+                decimal parsedQty;
+                if (parseFailed || !NumberInput.TryParse(r.Cells["d_qty"].Value, out parsedQty))
+                {
+                    r.Cells["d_qty"].Value = line.Quantity;
+                    ShowWarning(QuoteText.EnterQuantity);
+                    OnDirtyChanged();
+                    return;
+                }
+                if (parsedQty == line.Quantity) { r.Cells["d_qty"].Value = line.Quantity; OnDirtyChanged(); return; }
+                decimal effectiveQty;
+                string qtyWarning;
+                if (!QuoteItemRules.ValidateEditedQuantity(parsedQty, line.Quantity, out effectiveQty, out qtyWarning))
+                {
+                    r.Cells["d_qty"].Value = line.Quantity;
+                    ShowWarning(qtyWarning ?? QuoteText.EnterQuantity);
+                    OnDirtyChanged();
+                    return;
+                }
+                line.Quantity = effectiveQty;
+            }
+            else if (col == "d_price" || col == "d_disc")
+            {
+                bool isPrice = col == "d_price";
+                decimal oldVal = isPrice ? line.Price : line.DiscountPct;
+                decimal v;
+                if (parseFailed || !NumberInput.TryParse(r.Cells[col].Value, out v) || (isPrice && v < 0m))
+                {
+                    r.Cells[col].Value = oldVal;
+                    OnDirtyChanged();
+                    return;
+                }
+                decimal next = isPrice ? v : Math.Min(100m, Math.Max(0m, v));
+                r.Cells[col].Value = next;
+                if (next == oldVal) { OnDirtyChanged(); return; }
+                if (isPrice) line.Price = next; else line.DiscountPct = next;
+            }
+            else if (col == "d_note")
+            {
+                line.Note = Convert.ToString(r.Cells["d_note"].Value) ?? "";
+                r.Cells["d_note"].Value = line.Note;
+                OnDirtyChanged();
                 return;
             }
+            else { OnDirtyChanged(); return; }
 
-            decimal price;
-            if (!TryReadCellDecimal(r.Cells["d_price"].Value, out price) || price < 0m)
-                price = line.Price;
-            decimal disc;
-            if (!TryReadCellDecimal(r.Cells["d_disc"].Value, out disc))
-                disc = line.DiscountPct;
-            if (disc < 0m) disc = 0m;
-            if (disc > 100m) disc = 100m;
-
-            line.Quantity = effectiveQty;
-            line.Price = price;
-            line.DiscountPct = disc;
             line.Amount = QuoteCalculator.CalcLineAmount(line.Quantity, line.Price, line.DiscountPct);
-            line.Note = Convert.ToString(r.Cells["d_note"].Value) ?? "";
-
             SyncDetailRow(e.RowIndex);
             RecalcTotals();
             OnDirtyChanged();
-        }
-
-        private static bool TryReadCellDecimal(object v, out decimal value)
-        {
-            value = 0m;
-            if (v == null || v is DBNull)
-                return false;
-            if (v is decimal)
-            {
-                value = (decimal)v;
-                return true;
-            }
-            string s = (Convert.ToString(v) ?? "").Trim();
-            const NumberStyles plain = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
-            if (decimal.TryParse(s, plain, CultureInfo.InvariantCulture, out value))
-                return true;
-            if (decimal.TryParse(s, NumberStyles.Number, CultureInfo.GetCultureInfo("vi-VN"), out value))
-                return true;
-            return decimal.TryParse(s, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
         }
 
         internal void CommitDetailCellEditForTest(int rowIndex, string columnName, object newValue)
@@ -426,6 +454,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_readOnly || _detailGrid.CurrentRow == null)
                 return;
+            _detailGrid.EndEdit();
             int idx = _detailGrid.CurrentRow.Index;
             if (idx < 0 || idx >= _lines.Count)
                 return;

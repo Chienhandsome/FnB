@@ -14,8 +14,13 @@ namespace Kazuko_FnB.Services
     public static class NumberInput
     {
         private const string EditFormat = "0.############################";
-        private static readonly CultureInfo ViCulture = CultureInfo.GetCultureInfo("vi-VN");
         private static readonly NumberFormatInfo ViNumberFormat = CreateViNumberFormat();
+
+        /// <summary>Định dạng số kiểu vi-VN (ngăn nghìn '.', thập phân ',') độc lập CultureInfo của Windows.</summary>
+        public static NumberFormatInfo ViFormat
+        {
+            get { return ViNumberFormat; }
+        }
 
         private static NumberFormatInfo CreateViNumberFormat()
         {
@@ -91,7 +96,7 @@ namespace Kazuko_FnB.Services
         {
             if (value == 0m)
                 return "0";
-            return value.ToString(EditFormat, ViCulture);
+            return value.ToString(EditFormat, ViNumberFormat);
         }
 
         public static string FormatForEdit(object rawValue)
@@ -160,6 +165,88 @@ namespace Kazuko_FnB.Services
             if (string.IsNullOrEmpty(text) || text.IndexOf('.') < 0)
                 return text;
             return text.Replace('.', ',');
+        }
+
+        /// <summary>
+        /// Kiểm tra khi người dùng gõ thêm một chữ số vào ô lưới đang sửa (N4):
+        /// chỉ chặn khi chuỗi kết quả có ĐÚNG MỘT dấu thập phân, đọc được theo N1 và số chữ số lẻ vượt quá <paramref name="maxDecimalPlaces"/>.
+        /// Chuỗi có 0 hoặc từ 2 dấu trở lên KHÔNG bị chặn để "1.500.000" luôn giữ đủ hai dấu và rời ô bị coi là không đọc được.
+        /// </summary>
+        public static bool WouldExceedGridDecimalPlaces(
+            string currentText,
+            int selectionStart,
+            int selectionLength,
+            char digit,
+            int maxDecimalPlaces)
+        {
+            if (digit < '0' || digit > '9')
+                return false;
+            string s = currentText ?? "";
+            int start = selectionStart < 0 ? 0 : (selectionStart > s.Length ? s.Length : selectionStart);
+            int len = selectionLength < 0 ? 0 : (start + selectionLength > s.Length ? s.Length - start : selectionLength);
+            string next = NormalizeEditInput(s.Substring(0, start) + digit + s.Substring(start + len));
+            int commaIdx;
+            if (CountCommas(next, out commaIdx) != 1)
+                return false;
+            decimal ignored;
+            if (!TryParse(next, out ignored))
+                return false;
+            int end = TrimEndIndex(next);
+            int fracDigits = end - (commaIdx + 1);
+            int dp = maxDecimalPlaces < 0 ? 0 : maxDecimalPlaces;
+            return fracDigits > dp;
+        }
+
+        /// <summary>
+        /// Chuẩn hóa chuỗi đang sửa trên ô lưới (N1/N4):
+        /// - Đổi mọi '.' sang ','.
+        /// - Chỉ cắt (không làm tròn) phần chữ số lẻ vượt <paramref name="maxDecimalPlaces"/> khi chuỗi có ĐÚNG MỘT dấu
+        ///   và là chuỗi số hợp lệ theo N1.
+        /// - Chuỗi có từ hai dấu trở lên (vd. "1.500.000") hoặc chứa chữ cái giữ nguyên đủ dấu để rời ô báo không đọc được.
+        /// </summary>
+        public static string NormalizeGridEditText(string text, int maxDecimalPlaces)
+        {
+            string normalized = NormalizeEditInput(text);
+            if (string.IsNullOrEmpty(normalized))
+                return normalized;
+            int commaIdx;
+            if (CountCommas(normalized, out commaIdx) != 1)
+                return normalized;
+            decimal ignored;
+            if (!TryParse(normalized, out ignored))
+                return normalized;
+            int end = TrimEndIndex(normalized);
+            int fracDigits = end - (commaIdx + 1);
+            int dp = maxDecimalPlaces < 0 ? 0 : maxDecimalPlaces;
+            if (fracDigits <= dp)
+                return normalized;
+            if (dp == 0)
+                return normalized.Substring(0, commaIdx) + normalized.Substring(end);
+            return normalized.Substring(0, commaIdx + 1 + dp) + normalized.Substring(end);
+        }
+
+        private static int CountCommas(string s, out int firstIndex)
+        {
+            int count = 0;
+            firstIndex = -1;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == ',')
+                {
+                    if (count == 0)
+                        firstIndex = i;
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private static int TrimEndIndex(string s)
+        {
+            int end = s.Length;
+            while (end > 0 && char.IsWhiteSpace(s[end - 1]))
+                end--;
+            return end;
         }
 
         private static decimal NormalizeZeroAndScale(decimal v)
