@@ -362,9 +362,10 @@ namespace Kazuko_FnB.UI.Diagnostics
                 PayrollSaveResult blockedMoneyWrite = deniedPayrollSvc.SaveSheet(sheet);
                 PayrollSheetData attSheet = attSvc.LoadSheet(periodId);
                 PayrollEmployeeEntry attRowA = attSheet == null ? null : attSheet.Employees.Find(e => e.EmployeeId == empAId);
-                bool attHasZeroMoney = attRowA != null && attRowA.BaseSalary == 0m && attRowA.TotalSalary == 0m && attRowA.NetSalary == 0m;
+                // Chiến chốt 28/11: Chấm công nạp tiền đã lưu như chế độ Tính lương (lương ca 100.000, tổng 1.400.000, thực nhận 1.050.000).
+                bool attLoadsMoney = attRowA != null && attRowA.BaseSalary == 100000m && attRowA.TotalSalary == 1400000m && attRowA.NetSalary == 1050000m;
 
-                // Đổi chấm công ngày 15 của NV A ở chế độ Chấm công -> DB chi tiết tăng 1 dòng, TBANGLUONGTONGHOP không đổi (kể cả số dòng lẫn tiền).
+                // Đổi chấm công ngày 15 của NV A ở chế độ Chấm công -> DB chi tiết tăng 1 dòng và TBANGLUONGTONGHOP của NV A cập nhật như Tính lương.
                 int sumBeforeAtt = BookingCount(db, "SELECT COUNT(*) FROM TBANGLUONGTONGHOP WHERE TBANGLUONGID = @I", "@I", periodId);
                 decimal tongBeforeAtt = DbHelper.Read(db, conn => DbHelper.Dec(DbHelper.Scalar(conn, null,
                     "SELECT TONGLUONG FROM TBANGLUONGTONGHOP WHERE TBANGLUONGID = @I AND DNHANVIENID = @E", "@I", periodId, "@E", empAId)));
@@ -375,12 +376,15 @@ namespace Kazuko_FnB.UI.Diagnostics
                 decimal tongAfterAtt = DbHelper.Read(db, conn => DbHelper.Dec(DbHelper.Scalar(conn, null,
                     "SELECT TONGLUONG FROM TBANGLUONGTONGHOP WHERE TBANGLUONGID = @I AND DNHANVIENID = @E", "@I", periodId, "@E", empAId)));
                 int detAfterAtt = BookingCount(db, "SELECT COUNT(*) FROM TBANGLUONGCHITIET WHERE TBANGLUONGID = @I", "@I", periodId);
+                decimal netAfterAtt = DbHelper.Read(db, conn => DbHelper.Dec(DbHelper.Scalar(conn, null,
+                    "SELECT THUCNHAN FROM TBANGLUONGTONGHOP WHERE TBANGLUONGID = @I AND DNHANVIENID = @E", "@I", periodId, "@E", empAId)));
 
-                Check("Tính lương P3a §6 #7 (chế độ Chấm công & cô lập quyền): chặn đọc/ghi tiền, không nạp tiền, Cập nhật chỉ ghi TBANGLUONGCHITIET và giữ nguyên TBANGLUONGTONGHOP",
-                    blockedMoneyRead && !blockedMoneyWrite.Ok && attHasZeroMoney
-                    && attSave.Ok && sumAfterAtt == sumBeforeAtt && tongAfterAtt == tongBeforeAtt && detAfterAtt == 47,
-                    "blkR=" + blockedMoneyRead + ", blkW=" + !blockedMoneyWrite.Ok + ", zeroM=" + attHasZeroMoney
-                    + ", sum=" + sumBeforeAtt + "->" + sumAfterAtt + ", tong=" + tongBeforeAtt + "->" + tongAfterAtt + ", det=" + detAfterAtt);
+                // 15 ca x 100.000 = 1.500.000; thực nhận = 1.500.000 + 200.000 - 50.000 - 500.000 = 1.150.000.
+                Check("Tính lương P3a §6 #7 (chế độ Chấm công & phân quyền, Chiến chốt 28/11): không có quyền Tính lương thì chặn đọc/ghi ở chế độ Tính lương; Chấm công nạp và Cập nhật ghi cả TBANGLUONGCHITIET lẫn TBANGLUONGTONGHOP như gốc",
+                    blockedMoneyRead && !blockedMoneyWrite.Ok && attLoadsMoney
+                    && attSave.Ok && sumAfterAtt == sumBeforeAtt && tongBeforeAtt == 1400000m && tongAfterAtt == 1500000m && netAfterAtt == 1150000m && detAfterAtt == 47,
+                    "blkR=" + blockedMoneyRead + ", blkW=" + !blockedMoneyWrite.Ok + ", loadM=" + attLoadsMoney
+                    + ", sum=" + sumBeforeAtt + "->" + sumAfterAtt + ", tong=" + tongBeforeAtt + "->" + tongAfterAtt + ", net=" + netAfterAtt + ", det=" + detAfterAtt);
 
                 // §6 #8: Tải lại toàn bảng & tải lại 1 nhân viên: đổi LUONGCA NV A -> 150.000, thêm NV mới -> giữ chấm công (15 ca), đổi TONGLUONG = 2.250.000, NV mới xuất hiện.
                 PayrollSheetData reloadedSheet = payrollSvc.LoadSheet(periodId);

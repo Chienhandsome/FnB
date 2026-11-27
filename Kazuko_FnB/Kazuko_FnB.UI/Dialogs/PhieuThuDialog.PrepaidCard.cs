@@ -102,7 +102,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             if (_noDebtChange != null)
             {
-                _noDebtChange.Checked = true;
+                _noDebtChange.Checked = false; // Chiến chốt 28/11: phiếu thẻ có tính vào công nợ
                 _noDebtChange.Visible = false;
                 _noDebtChange.Enabled = false;
                 Label ndcLbl = _form.LabelOf(_noDebtChange.Name);
@@ -168,7 +168,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 SetOptionalText(_originalDoc, "");
                 SetOptionalText(_note, "");
                 if (_noDebtChange != null)
-                    _noDebtChange.Checked = true;
+                    _noDebtChange.Checked = false; // Chiến chốt 28/11: phiếu thẻ có tính vào công nợ
 
                 if (_session.CurrentStore != null)
                     _store.SelectId(_session.CurrentStore.Id);
@@ -222,7 +222,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 SetOptionalText(_originalDoc, row.OriginalDoc);
                 SetOptionalText(_note, row.Note);
                 if (_noDebtChange != null)
-                    _noDebtChange.Checked = true;
+                    _noDebtChange.Checked = false; // Chiến chốt 28/11: phiếu thẻ có tính vào công nợ
             }
             finally
             {
@@ -263,7 +263,7 @@ namespace Kazuko_FnB.UI.Dialogs
             row.IsAdvance = false;
             row.PayrollId = null;
             row.PrepaidCardId = _prepaidCardPreset.CardId;
-            row.NoDebtChange = true;
+            row.NoDebtChange = false;
 
             VoucherSaveResult res;
             try

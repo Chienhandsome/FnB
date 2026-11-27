@@ -41,12 +41,6 @@ namespace Kazuko_FnB.UI.Diagnostics
             bool note256Blocked = !PrepaidCardRules.ValidateCard(new PrepaidCardRow { Code = "OK", Note = new string('B', 256) }, false).Ok;
             bool clip255Ok = PrepaidCardRules.ClipLogText(new string('X', 300)).Length == 255;
 
-            string withdrawOk = PrepaidCardRules.CheckWithdrawAgainstBalance(200000m, 1200000m);
-            string withdrawOver = PrepaidCardRules.CheckWithdrawAgainstBalance(1300000m, 1200000m);
-            var incV = new VoucherRow { Kind = VoucherKind.Income, Amount = 1000000m };
-            string editNeg = PrepaidCardRules.CheckBalanceAfterEdit(incV, 200000m, 700000m);
-            string delNeg = PrepaidCardRules.CheckBalanceAfterDelete(incV, 700000m);
-
             string delMsg = PrepaidCardRules.FormatDeleteBlockedMessage(
                 new PrepaidCardReferenceCounts { VoucherCount = 3, OrderCount = 2, CustomerCount = 1 });
             string warnLocked = PrepaidCardRules.BuildLockedOrExpiredWarning(new PrepaidCardRow { Locked = true }, today);
@@ -57,16 +51,12 @@ namespace Kazuko_FnB.UI.Diagnostics
             bool fmtOk = PrepaidCardRules.FormatMoney(1200000m) == "1.200.000"
                 && PrepaidCardRules.FormatMoney(1234.5m) == "1.234,5";
 
-            Check("Thẻ trả trước §5 #1/#5/#6/#7 (luật thuần): mã bắt buộc/trùng/256, chi vượt còn lại, sửa/xóa gây âm, thông báo xóa 3 loại, cảnh báo khóa/hết hạn, hạn mức 9 chữ số, định dạng tiền độc lập culture",
+            Check("Thẻ trả trước §5 #1/#7 (luật thuần, Chiến chốt 28/11 không chặn số dư): mã bắt buộc/trùng/256, thông báo xóa 3 loại, cảnh báo khóa/hết hạn, hạn mức 9 chữ số, định dạng tiền độc lập culture",
                 validOk && emptyBlocked && dupBlocked && code256Blocked && note256Blocked && clip255Ok
-                && withdrawOk == null && withdrawOver == PrepaidCardText.WithdrawExceedsBalance("1.200.000")
-                && editNeg == PrepaidCardText.NegativeBalanceBlocked("-100.000")
-                && delNeg == PrepaidCardText.NegativeBalanceBlocked("-300.000")
                 && delMsg == "Thẻ đã có 3 phiếu thu chi, 2 hóa đơn, 1 khách đang giữ, không xóa được"
                 && warnLocked != null && warnExpired != null && warnNormal == null
                 && overMaxErr == PrepaidCardText.AmountTooLarge && fmtOk,
-                SingleLine("val=" + validOk + ", wOver=" + SingleLine(withdrawOver)
-                    + ", edNeg=" + SingleLine(editNeg) + ", delMsg=" + SingleLine(delMsg) + ", fmt=" + fmtOk));
+                SingleLine("val=" + validOk + ", delMsg=" + SingleLine(delMsg) + ", fmt=" + fmtOk));
         }
 
         private static void PrepaidCardCrudAndGroupDbTests(string db)
@@ -324,6 +314,11 @@ namespace Kazuko_FnB.UI.Diagnostics
                     SingleLine("dcash1=" + (cash1 - cash0) + ", dbank2=" + (bank2 - bank0)
                         + ", rem2=" + cardA2.Remaining + ", noBk=" + !rNoBank.Ok));
 
+                int noDebtFlag = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
+                    "SELECT COALESCE(KHONGTHAYDOICONGNO, 0) FROM TTHUCHI WHERE ID = @I", "@I", rTop1.SavedId)));
+                Check("Thẻ trả trước (Chiến chốt 28/11): phiếu nạp/chi thẻ không ép KHONGTHAYDOICONGNO (ghi 0, có tính vào công nợ như phiếu thường)",
+                    rTop1.Ok && noDebtFlag == 0, "flag=" + noDebtFlag);
+
                 // §5 #4: Hóa đơn dùng thẻ 300.000 (STATUS=30) + hóa đơn hủy 999.000 (STATUS=-30) -> Tổng sử dụng 300.000, Còn lại 1.200.000.
                 billUseId = DbHelper.NewId();
                 billCancelId = DbHelper.NewId();
@@ -357,25 +352,42 @@ namespace Kazuko_FnB.UI.Diagnostics
                 PrepaidCardRow cardA4 = cardSvc.LoadById(cardAId);
                 decimal cashAfterWd = ReadStoreCashBalance(db, storeId);
 
+                // Chiến chốt 28/11: chi trả 1.100.000 (Còn lại 1.000.000) vẫn được -> -100.000; nạp 2.000.000 TM vào thẻ khóa làm nguồn quỹ.
+                VoucherSaveResult rCashSrc = pcVoucherSvc.Save(new VoucherRow
+                {
+                    Name = "PT-CASHSRC-" + tag, Date = today, Kind = VoucherKind.Income, PrepaidCardId = cardLockId,
+                    StoreId = storeId, ReasonId = incReasonId, Amount = 2000000m, Transfer = false
+                });
+                if (rCashSrc.Ok) createdVoucherIds.Add(rCashSrc.SavedId);
+                decimal cashBeforeOver = ReadStoreCashBalance(db, storeId);
                 VoucherSaveResult rWdOverCard = pcVoucherSvc.Save(new VoucherRow
                 {
                     Name = "PC-OVER-CARD-" + tag, Date = today, Kind = VoucherKind.Expense, PrepaidCardId = cardAId,
                     StoreId = storeId, ReasonId = expReasonId, Amount = 1100000m, Transfer = false
                 });
+                if (rWdOverCard.Ok) createdVoucherIds.Add(rWdOverCard.SavedId);
+                PrepaidCardRow cardAOver = cardSvc.LoadById(cardAId);
+                decimal cashAfterOver = ReadStoreCashBalance(db, storeId);
+                VoucherDeleteResult rDelOver = rWdOverCard.Ok ? pcVoucherSvc.Delete(rWdOverCard.SavedId, cardAId) : null;
+                PrepaidCardRow cardABackFromOver = cardSvc.LoadById(cardAId);
                 VoucherSaveResult rWdOverFund = pcVoucherSvc.Save(new VoucherRow
                 {
                     Name = "PC-OVER-FUND-" + tag, Date = today, Kind = VoucherKind.Expense, PrepaidCardId = cardAId,
                     StoreId = emptyStoreId, ReasonId = expReasonId, Amount = 50000m, Transfer = false
                 });
 
-                Check("Thẻ trả trước §5 #5 (chi trả 200.000 TM, chặn vượt Còn lại & chặn chi vượt quỹ): quỹ TM -200.000, Tổng nạp 1.300.000, Còn lại 1.000.000",
+                Check("Thẻ trả trước §5 #5 (chi trả 200.000 TM; Chiến chốt 28/11: chi trả 1.100.000 vượt Còn lại 1.000.000 vẫn được, Còn lại -100.000, xóa phiếu thì trở lại; vẫn chặn chi vượt quỹ): quỹ TM -200.000, Tổng nạp 1.300.000, Còn lại 1.000.000",
                     rWd1.Ok && pc1No.StartsWith("PC", StringComparison.OrdinalIgnoreCase)
                     && cashAfterWd - cash1 == -200000m
                     && cardA4.TotalLoaded == 1300000m && cardA4.TotalUsed == 300000m && cardA4.Remaining == 1000000m
-                    && !rWdOverCard.Ok && rWdOverCard.ErrorMessage == PrepaidCardText.WithdrawExceedsBalance("1.000.000")
+                    && rCashSrc.Ok && rWdOverCard.Ok && cashAfterOver - cashBeforeOver == -1100000m
+                    && cardAOver.TotalLoaded == 200000m && cardAOver.Remaining == -100000m
+                    && rDelOver != null && rDelOver.Ok && cardABackFromOver.Remaining == 1000000m
                     && !rWdOverFund.Ok && rWdOverFund.ErrorMessage == VoucherConstants.CashOverdraftBlocked(0m, 50000m),
-                    SingleLine("dcash=" + (cashAfterWd - cash1) + ", rem=" + cardA4.Remaining
-                        + ", overCard=" + SingleLine(rWdOverCard.ErrorMessage) + ", overFund=" + SingleLine(rWdOverFund.ErrorMessage)));
+                    SingleLine("dcash=" + (cashAfterWd - cash1) + ", rem=" + cardA4.Remaining + ", cashSrc=" + rCashSrc.Ok
+                        + ", over=" + rWdOverCard.Ok + "/" + SingleLine(rWdOverCard.ErrorMessage) + ", remOver=" + cardAOver.Remaining
+                        + ", dcashOver=" + (cashAfterOver - cashBeforeOver) + ", back=" + cardABackFromOver.Remaining
+                        + ", overFund=" + SingleLine(rWdOverFund.ErrorMessage)));
 
                 // §5 #6: Sửa/xóa phiếu nạp gây số dư âm bị chặn; sửa hợp lệ cập nhật quỹ; xóa phiếu chi trả trả lại số dư & quỹ;
                 // Danh mục phiếu thu/chi (VoucherService) chặn sửa/xóa phiếu gắn DTHETRATRUOCID.
@@ -390,14 +402,17 @@ namespace Kazuko_FnB.UI.Diagnostics
 
                 decimal cashBeforeEditB = ReadStoreCashBalance(db, storeId);
                 VoucherRow editB = pcVoucherSvc.LoadById(rBTop.SavedId, cardBId);
-                editB.Amount = 200000m; // làm số dư âm -100.000 -> chặn
+                editB.Amount = 200000m; // sửa 1.000.000 -> 200.000: được; Còn lại = 200.000 - 300.000 = -100.000
                 VoucherSaveResult rEditNeg = pcVoucherSvc.Save(editB);
-                VoucherDeleteResult rDelNeg = pcVoucherSvc.Delete(rBTop.SavedId, cardBId); // làm số dư âm -300.000 -> chặn
-
-                editB.Amount = 800000m; // hợp lệ -> Còn lại 500.000, quỹ TM giảm 200.000
+                PrepaidCardRow cardBAfterEditNeg = cardSvc.LoadById(cardBId);
+                editB.Amount = 800000m; // -> Còn lại 500.000, quỹ TM so với ban đầu giảm 200.000
                 VoucherSaveResult rEditOk = pcVoucherSvc.Save(editB);
                 decimal cashAfterEditB = ReadStoreCashBalance(db, storeId);
                 PrepaidCardRow cardBAfterEdit = cardSvc.LoadById(cardBId);
+
+                VoucherDeleteResult rDelNeg = pcVoucherSvc.Delete(rBTop.SavedId, cardBId);
+                decimal cashAfterDelB = ReadStoreCashBalance(db, storeId);
+                PrepaidCardRow cardBAfterDel = cardSvc.LoadById(cardBId);
 
                 // Xóa phiếu chi trả 200.000 của thẻ A -> Còn lại 1.200.000, quỹ TM tăng lại +200.000.
                 decimal cashBeforeDelWd = ReadStoreCashBalance(db, storeId);
@@ -446,14 +461,14 @@ namespace Kazuko_FnB.UI.Diagnostics
                     && !roVoucherSvc.Save(new VoucherRow { Name = "PT-RO", Date = today, Kind = VoucherKind.Income, PrepaidCardId = cardAId, StoreId = storeId, Amount = 10000m }).Ok
                     && !roVoucherSvc.Delete(rTop1.SavedId, cardAId).Ok;
 
-                Check("Thẻ trả trước §5 #6/#10 (sửa/xóa phiếu nạp/chi, chặn âm, hoàn quỹ, chặn ở Danh mục phiếu thu/chi, rollback hook & quyền chỉ Xem): đạt",
-                    !rEditNeg.Ok && rEditNeg.ErrorMessage == PrepaidCardText.NegativeBalanceBlocked("-100.000")
-                    && !rDelNeg.Ok && rDelNeg.ErrorMessage == PrepaidCardText.NegativeBalanceBlocked("-300.000")
+                Check("Thẻ trả trước §5 #6/#10 (sửa/xóa phiếu nạp/chi, Chiến chốt 28/11 không chặn số dư âm, hoàn quỹ, chặn ở Danh mục phiếu thu/chi, rollback hook & quyền chỉ Xem): đạt",
+                    rEditNeg.Ok && cardBAfterEditNeg.Remaining == -100000m
+                    && rDelNeg.Ok && cardBAfterDel.Remaining == -300000m && cashAfterDelB - cashAfterEditB == -800000m
                     && rEditOk.Ok && cardBAfterEdit.Remaining == 500000m && cashAfterEditB - cashBeforeEditB == -200000m
                     && rDelWd.Ok && cardAAfterDelWd.Remaining == 1200000m && cashAfterDelWd - cashBeforeDelWd == 200000m
                     && !rVoucherEditBlocked.Ok && !rVoucherDelBlocked.Ok
                     && rbSaveV && rbDelV && roBlocked,
-                    SingleLine("edNeg=" + SingleLine(rEditNeg.ErrorMessage) + ", delNeg=" + SingleLine(rDelNeg.ErrorMessage)
+                    SingleLine("edNeg=" + rEditNeg.Ok + "/" + cardBAfterEditNeg.Remaining + ", delNeg=" + rDelNeg.Ok + "/" + cardBAfterDel.Remaining
                         + ", edCash=" + (cashAfterEditB - cashBeforeEditB) + ", delWdCash=" + (cashAfterDelWd - cashBeforeDelWd)
                         + ", vBlk=" + (!rVoucherEditBlocked.Ok && !rVoucherDelBlocked.Ok) + ", rb=" + rbSaveV + "/" + rbDelV + ", ro=" + roBlocked));
             }

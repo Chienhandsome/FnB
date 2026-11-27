@@ -116,41 +116,6 @@ namespace Kazuko_FnB.Services
             return null;
         }
 
-        /// <summary>Chặn tạo phiếu chi trả vượt quá số dư còn lại hiện tại của thẻ (spec §3, T3).</summary>
-        public static string CheckWithdrawAgainstBalance(decimal withdrawAmount, decimal currentRemaining)
-        {
-            decimal roundedAmount = Math.Round(withdrawAmount, 2, MidpointRounding.AwayFromZero);
-            if (roundedAmount > currentRemaining)
-                return PrepaidCardText.WithdrawExceedsBalance(FormatMoney(currentRemaining));
-            return null;
-        }
-
-        /// <summary>Chặn sửa phiếu nạp/chi trả nếu làm số dư thẻ sau sửa bị âm (spec §3, T3).</summary>
-        public static string CheckBalanceAfterEdit(VoucherRow existing, decimal newAmount, decimal currentRemaining)
-        {
-            if (existing == null)
-                return PrepaidCardText.VoucherNotFound;
-            decimal roundedNew = Math.Round(newAmount, 2, MidpointRounding.AwayFromZero);
-            decimal oldEffect = existing.Kind == VoucherKind.Income ? existing.Amount : -existing.Amount;
-            decimal newEffect = existing.Kind == VoucherKind.Income ? roundedNew : -roundedNew;
-            decimal projected = currentRemaining - oldEffect + newEffect;
-            if (projected < 0m)
-                return PrepaidCardText.NegativeBalanceBlocked(FormatMoney(projected));
-            return null;
-        }
-
-        /// <summary>Chặn xóa phiếu nạp/chi trả nếu làm số dư thẻ sau xóa bị âm (spec §3, T3).</summary>
-        public static string CheckBalanceAfterDelete(VoucherRow existing, decimal currentRemaining)
-        {
-            if (existing == null)
-                return PrepaidCardText.VoucherNotFound;
-            decimal oldEffect = existing.Kind == VoucherKind.Income ? existing.Amount : -existing.Amount;
-            decimal projected = currentRemaining - oldEffect;
-            if (projected < 0m)
-                return PrepaidCardText.NegativeBalanceBlocked(FormatMoney(projected));
-            return null;
-        }
-
         /// <summary>Chỉ cho phép sửa/xóa phiếu thu/chi gắn đúng thẻ trả trước (không gắn chứng từ liên kết khác).</summary>
         public static bool IsEditableCardVoucher(VoucherRow row, string expectedCardId = null)
         {

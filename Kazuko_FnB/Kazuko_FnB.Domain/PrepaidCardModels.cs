@@ -254,16 +254,6 @@ namespace Kazuko_FnB.Domain
             return "Chi trả tiền thẻ trả trước " + (cardCode ?? "");
         }
 
-        public static string WithdrawExceedsBalance(string formattedRemaining)
-        {
-            return string.Format("Số tiền chi trả không được lớn hơn số dư thẻ (còn {0})", formattedRemaining ?? "0");
-        }
-
-        public static string NegativeBalanceBlocked(string formattedProjected)
-        {
-            return string.Format("Không thể sửa/xóa: số dư thẻ sẽ âm (còn {0})", formattedProjected ?? "0");
-        }
-
         public static string GroupHasCards(string groupName, int count)
         {
             return string.Format("Không thể xóa nhóm thẻ '{0}' vì nhóm còn {1} thẻ trả trước.", groupName ?? "", count);

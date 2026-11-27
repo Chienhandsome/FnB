@@ -52,9 +52,8 @@ namespace Kazuko_FnB.Services
             if (!CanView || string.IsNullOrEmpty(payrollId))
                 return null;
 
-            PayrollSheetData sheet = _mode == PayrollMode.Payroll
-                ? _repo.LoadSheetForPayroll(payrollId)
-                : _repo.LoadSheetForAttendance(payrollId);
+            // Chiến chốt 28/11: chế độ Chấm công chỉ ẩn cột tiền trên lưới; dữ liệu nạp và lưu giống hệt chế độ Tính lương (như gốc).
+            PayrollSheetData sheet = _repo.LoadSheetForPayroll(payrollId);
             if (sheet == null)
                 return null;
 
@@ -64,7 +63,7 @@ namespace Kazuko_FnB.Services
             for (int i = 0; i < sheet.Employees.Count; i++)
             {
                 PayrollEmployeeEntry emp = sheet.Employees[i];
-                if (_mode == PayrollMode.Payroll && !emp.HasSavedSummary)
+                if (!emp.HasSavedSummary)
                     PayrollCalculator.RecalculateEmployee(sheet.Period.Year, sheet.Period.Month, emp, sheet.Shifts);
                 else
                     PayrollCalculator.RecalculateAttendanceCountsOnly(sheet.Period.Year, sheet.Period.Month, emp, sheet.Shifts);
@@ -211,7 +210,7 @@ namespace Kazuko_FnB.Services
         /// Lưu (Cập nhật) bảng lương hoặc chấm công trong MỘT transaction.
         /// - Chế độ Tính lương: upsert TBANGLUONGTONGHOP (bỏ qua NV chưa có dòng tổng hợp mà không có chấm công và không có tiền)
         ///   và đồng bộ TBANGLUONGCHITIET (thêm/sửa ô 1..3, xóa ô trống, dọn dòng trùng khóa).
-        /// - Chế độ Chấm công: CHỈ đồng bộ TBANGLUONGCHITIET, TUYỆT ĐỐI không chạm TBANGLUONGTONGHOP.
+        /// - Chế độ Chấm công: giống hệt chế độ Tính lương khi lưu (Chiến chốt 28/11: như gốc, Cập nhật vẫn ghi cả tiền); chỉ khác là lưới ẩn cột tiền.
         /// </summary>
         public PayrollSaveResult SaveSheet(PayrollSheetData sheet, Action testHookAfterWrite = null)
         {
@@ -235,7 +234,7 @@ namespace Kazuko_FnB.Services
                 int savedEmpCount = 0;
                 var committedSummaryIds = new Dictionary<PayrollEmployeeEntry, string>();
 
-                if (_mode == PayrollMode.Payroll)
+                // Chiến chốt 28/11: cả hai chế độ (Tính lương và Chấm công) đều ghi TBANGLUONGTONGHOP như gốc.
                 {
                     Dictionary<string, int> scales = PayrollRepository.ReadNumericScalesIn(conn, tx, PayrollText.SummaryTableName);
                     List<string> dupSummaryIds;
@@ -270,11 +269,6 @@ namespace Kazuko_FnB.Services
                             savedEmpCount++;
                         }
                     }
-                }
-                else
-                {
-                    // Chế độ Chấm công: đếm nhân viên có mặt trên lưới để ghi lưu vết; tuyệt đối không chạm TBANGLUONGTONGHOP.
-                    savedEmpCount = sheet.Employees.Count;
                 }
 
                 // Đồng bộ TBANGLUONGCHITIET (cả hai chế độ): khóa duy nhất (nhân viên, ca, ngày đủ 4 chữ số năm).

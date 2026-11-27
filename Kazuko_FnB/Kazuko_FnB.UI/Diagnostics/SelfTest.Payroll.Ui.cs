@@ -407,13 +407,17 @@ namespace Kazuko_FnB.UI.Diagnostics
                         "SELECT TONGLUONG FROM TBANGLUONGTONGHOP WHERE TBANGLUONGID = @I AND DNHANVIENID = @E", "@I", periodId, "@E", empAId)));
                     int detAfter = BookingCount(db, "SELECT COUNT(*) FROM TBANGLUONGCHITIET WHERE TBANGLUONGID = @I AND DNHANVIENID = @E", "@I", periodId, "@E", empAId);
 
-                    Check("Tính lương P3a §6 #7 (UI chế độ Chấm công): ẩn và không nạp 6 cột tiền, ẩn Tải lại, Cập nhật chỉ ghi TBANGLUONGCHITIET không đổi TBANGLUONGTONGHOP",
+                    // Chiến chốt 28/11: Cập nhật ở chế độ Chấm công ghi cả tiền như gốc.
+                    // NV A đã lưu 4,5 ca (450.000, lương ca 100.000); thêm Sáng ngày 5 -> 5,5 ca -> tổng và thực nhận 550.000.
+                    decimal netAfter = DbHelper.Read(db, conn => DbHelper.Dec(DbHelper.Scalar(conn, null,
+                        "SELECT THUCNHAN FROM TBANGLUONGTONGHOP WHERE TBANGLUONGID = @I AND DNHANVIENID = @E", "@I", periodId, "@E", empAId)));
+                    Check("Tính lương P3a §6 #7 (UI chế độ Chấm công, Chiến chốt 28/11): ẩn 6 cột tiền và nút Tải lại trên lưới, Cập nhật ghi cả TBANGLUONGCHITIET và TBANGLUONGTONGHOP như gốc",
                         moneyHiddenAndEmpty && reloadHidden && applied == 1
                         && view.LastSaveResultForTest != null && view.LastSaveResultForTest.Ok
-                        && sumAfter == sumBefore && tongAfter == tongBefore && detAfter == 6,
+                        && sumAfter == sumBefore && tongBefore == 450000m && tongAfter == 550000m && netAfter == 550000m && detAfter == 6,
                         SingleLine("hidM=" + moneyHiddenAndEmpty + ", hidRld=" + reloadHidden
                             + ", app=" + applied + ", sum=" + sumBefore + "->" + sumAfter
-                            + ", tong=" + tongBefore + "->" + tongAfter + ", det=" + detAfter));
+                            + ", tong=" + tongBefore + "->" + tongAfter + ", net=" + netAfter + ", det=" + detAfter));
                 }
                 finally { host.Close(); }
             }

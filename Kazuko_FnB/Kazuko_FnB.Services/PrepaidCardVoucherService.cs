@@ -75,7 +75,7 @@ namespace Kazuko_FnB.Services
 
             row.IsAdvance = false;
             row.PayrollId = null;
-            row.NoDebtChange = true; // Nạp/chi trả thẻ trả trước không làm biến động công nợ khách hàng.
+            // Chiến chốt 28/11: phiếu nạp/chi thẻ có tính vào công nợ như phiếu thu/chi thường gắn khách (không ép KHONGTHAYDOICONGNO).
             if (!row.Transfer)
                 row.BankAccountId = null;
 
@@ -132,27 +132,7 @@ namespace Kazuko_FnB.Services
                         return;
                     }
 
-                    // Kiểm tra số dư thẻ qua đúng hàm duy nhất ở ServicePaymentRepository.
-                    PrepaidCardBalanceSummary bal = ServicePaymentRepository.GetPrepaidCardBalanceSummaryIn(
-                        conn, tx, row.PrepaidCardId, null);
-                    if (isNew && row.Kind == VoucherKind.Expense)
-                    {
-                        string withdrawErr = PrepaidCardRules.CheckWithdrawAgainstBalance(row.Amount, bal.Remaining);
-                        if (withdrawErr != null)
-                        {
-                            outcome = VoucherSaveResult.Fail(withdrawErr);
-                            return;
-                        }
-                    }
-                    else if (!isNew)
-                    {
-                        string editBalErr = PrepaidCardRules.CheckBalanceAfterEdit(existing, row.Amount, bal.Remaining);
-                        if (editBalErr != null)
-                        {
-                            outcome = VoucherSaveResult.Fail(editBalErr);
-                            return;
-                        }
-                    }
+                    // Chiến chốt 28/11: KHÔNG chặn chi trả vượt số dư và KHÔNG chặn sửa phiếu làm số dư thẻ âm (như gốc).
 
                     // Kiểm chi tiền mặt vượt quỹ bằng đúng hàm chung của VoucherService.
                     string overdraftErr = VoucherService.CheckCashOverdraftIn(conn, tx, row, existing);
@@ -256,15 +236,7 @@ namespace Kazuko_FnB.Services
                     return;
                 }
 
-                PrepaidCardBalanceSummary bal = ServicePaymentRepository.GetPrepaidCardBalanceSummaryIn(
-                    conn, tx, existing.PrepaidCardId, null);
-                string delBalErr = PrepaidCardRules.CheckBalanceAfterDelete(existing, bal.Remaining);
-                if (delBalErr != null)
-                {
-                    outcome = VoucherDeleteResult.Fail(delBalErr);
-                    return;
-                }
-
+                // Chiến chốt 28/11: KHÔNG chặn xóa phiếu làm số dư thẻ âm (như gốc).
                 if (VoucherRepository.DeleteIn(conn, tx, voucherId) == 0)
                 {
                     outcome = VoucherDeleteResult.Fail(PrepaidCardText.VoucherNotFound);
