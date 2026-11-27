@@ -22,6 +22,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 Sửa 7 ca selftest (`9e7c6f1`) | 1, +1 −0 | 2, +163 −14 | 0 / 1 / 0 / 0 | 0 | 857 (7) → 864 (0) | không có lỗi sau vòng 1 | không áp dụng (chủ yếu sửa test) |
 | 26/11 Spec in, xuất Excel | không đổi code | – | – | – | – | thử ngoài app: thiếu `No1Lib*.dll` | – |
 | 26/11 In FastReport P0 (`30ced3e`, `8a9c0ee`, #27) | 14, +1570 −7 | 4, +1161 −4 | 0 / 0 / 0 / 1 | 1 (biên dịch, trong test) | 864 → 898 (0) | build 1, selftest 3, thử ngoài app + app gốc (lỗi tiền) | chưa bấm thử. Claude thấy khi làm P1a: lớp in chưa ẩn cột theo `VisibleByConfigID` (sửa ở `100513f`; chưa kiểm 3 mẫu mặt hàng bán có dùng thuộc tính này không) |
+| 27/11 Khuyến mại P2, áp dụng khi bán (`13d858e`, #53) | 18 sửa + 7 mới | 3 file selftest (12 ca) | 0 / 0 / 0 / 0 | 0 | 1338 → 1350 (0) | không có lỗi; đọc PromotionApplier và nối TableService: đúng spec | chưa bấm thử |
 | 27/11 Danh mục đợt khuyến mại P1 (`902060b`, #52) | 22 | 2 file selftest | 0 / 1 / 0 / 1 | 1 (thiếu `using System.Drawing`) | 1318 → 1338 (0) | build 1 (lỗi biên dịch); selftest 1 (ca menu tìm nút) | chưa bấm thử |
 | 27/11 Danh mục voucher (`fc50402`, #51) | 22 | 2 file selftest | 0 / 0 / 0 / 0 | 0 | 1289 → 1318 (0) | không có lỗi; đọc phần kiểm voucher khi thanh toán: đúng spec | chưa bấm thử |
 | 27/11 Tính lại giá vốn (`3f5c6ce`, #49) | Claude tự viết: 14 file | 1 file selftest (14 ca) | agy 0 vòng (hết hạn mức 429 sau 4 phút) | 1 (selftest cũ lỗi vì tự động tính lại giá vốn đang bật trong DB mẫu: tắt trên bản sao DB selftest) | 1275 → 1289 (0) | build 0 lần đầu; selftest 1 lần lỗi ca cũ (Xuất khác) do cấu hình mẫu | chưa bấm thử |
@@ -45,7 +46,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 27 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 28 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -68,6 +69,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | Sử dụng dịch vụ patch (b) | 1572 s; 697 / 144 (dừng: gọi Bash) · 2090 s; 157 / 49 | 3662 s (61 phút) | 1.046 (12.208) |
 | Sử dụng dịch vụ patch (c) | 1236 s; 498 / 113 | 1236 s (21 phút) | 611 (9.028) |
 | Sử dụng dịch vụ patch (d) | 1612 s; 689 / 135 (dừng: gọi Bash) · 1717 s; 146 / 4 (dừng: agy hết quota) | 3329 s (55 phút) | 974 (9.653) |
+| Khuyến mại P2 | 1319 s | 1319 s (22 phút) | chưa đo |
 | Danh mục đợt khuyến mại P1 | 1177 s · 1589 s | 2766 s (46 phút) | chưa đo |
 | Danh mục voucher | 979 s | 979 s (16 phút) | chưa đo |
 | Tính lại giá vốn | agy 243 s (ERROR 429: hết hạn mức) · Claude tự viết | chưa đo | chưa đo |
@@ -116,3 +118,4 @@ Các tổng ghi ở bản trước (khoảng 59, 67, 38 phút) đã cộng chồ
 | Tính lại giá vốn | chưa đo | có: viết spec, hỏi Chiến, loop | agy hết hạn mức 4 phút sau khi bắt đầu; Chiến không đụng được máy để đổi tài khoản nên cho phép Claude viết thay. Viết tay chức năng thuần tính toán (engine thuần bộ nhớ + selftest số cụ thể) nhanh hơn chờ reset. Bài học: tính năng đổi mặc định cấu hình (tự động tính giá vốn) làm hỏng ca cũ phụ thuộc giá vốn mẫu: tắt trong selftest
 | Danh mục voucher | chưa đo (agy đổi tài khoản mới) | có: viết spec, hỏi Chiến 4 câu nghiệp vụ trước khi viết | Hỏi trước các điểm nghiệp vụ còn mơ hồ (công thức, trùng đợt, loại gốc không chạy, kiểm voucher) rồi ghi vào spec cho agy chạy một mạch sạch; prompt chỉ rõ chức năng mẫu và danh sách bẫy cũ
 | Danh mục đợt khuyến mại P1 | chưa đo | có: viết spec, hỏi Chiến | Ca menu mới là chỗ agy hay sai (tìm nút trong cây menu): giao lại nguyên văn lỗi cùng cuộc hội thoại sửa được ở vòng 2. Thiếu using vẫn lặp lại (System.Drawing cho ContentAlignment): thêm vào danh sách bẫy của prompt
+| Khuyến mại P2 | chưa đo | có: viết spec, hỏi Chiến 4 câu nghiệp vụ | Việc tiền lớn vẫn xong 1 vòng sạch khi (1) hỏi Chiến các điểm mơ hồ trước, (2) prompt nêu sẵn cột có sẵn để dùng (KHUYENMAI) và yêu cầu lớp tính thuần kiểm bằng số cụ thể, (3) yêu cầu kết quả không đổi khi không có đợt nào. Điểm cần theo dõi: cột GIAMTONGTHEOTIEN dùng làm cờ KM tổng bill
