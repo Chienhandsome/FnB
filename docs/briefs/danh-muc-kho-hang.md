@@ -1,7 +1,4 @@
 # Brief: Danh mục kho hàng
-
-- Spec NHÁP `docs/specs/danh-muc-kho-hang/` (vòng lặp viết 26/11). Chưa có code.
-- Phân loại nặng 26/11; chờ Chiến ở issue #20 (xóa kho đang dùng, mặc định cờ âm kho, quyền chỉ Xem).
-- Chưa kiểm: màn này trên app gốc.
-
-- 26/11: Chiến chốt đủ (#20), đã thử app gốc (kho mới = 0, xóa không chặn, màn là hộp thoại cây). Chờ duyệt.
+- Spec: `docs/specs/danh-muc-kho-hang/` (Claude tự duyệt 27/11, câu hỏi đã chốt ở #20).
+- **27/11 đã code, push `b4bb293`** (#40): màn CatalogView, hộp Thêm/Sửa/Xóa, trùng Tên, Cửa hàng bắt buộc, cờ âm kho chỉ lưu, xóa chặn khi còn tham chiếu (6 cột), lưu vết, xuất Excel, menu. Claude sửa 1 lỗi (cắt chuỗi lưu vết 255).
+- **Chưa kiểm:** bấm thật, 125% DPI, quyền Thủ kho.
