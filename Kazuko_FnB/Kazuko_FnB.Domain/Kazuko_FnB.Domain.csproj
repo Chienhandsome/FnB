@@ -71,6 +71,7 @@
     <Compile Include="ServiceTransferModels.cs" />
     <Compile Include="SalesManageModels.cs" />
     <Compile Include="VoucherModels.cs" />
+    <Compile Include="WarehouseModels.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
