@@ -172,7 +172,7 @@ namespace Kazuko_FnB.UI
 
         private void TreeNodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if ((!_customerMode && !_supplierMode && !_giftVoucherMode && !_wifiPasswordMode) || e.Node == null)
+            if ((!_customerMode && !_supplierMode && !_giftVoucherMode && !_wifiPasswordMode && !_prepaidCardMode) || e.Node == null)
                 return;
             string id = e.Node.Tag as string;
             if (string.IsNullOrEmpty(id) || id == UnsetTag)
@@ -184,6 +184,8 @@ namespace Kazuko_FnB.UI
                 OpenGiftVoucherGroupFromTree();
             else if (_wifiPasswordMode)
                 OpenWifiGroupFromTree();
+            else if (_prepaidCardMode)
+                OpenPrepaidCardGroupFromTree();
             else
                 OpenCustomerGroupFromTree();
         }

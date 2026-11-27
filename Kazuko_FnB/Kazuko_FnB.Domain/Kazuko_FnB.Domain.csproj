@@ -96,6 +96,7 @@
     <Compile Include="RepairNoticeModels.cs" />
     <Compile Include="WifiPasswordModels.cs" />
     <Compile Include="OrderControlModels.cs" />
+    <Compile Include="PrepaidCardModels.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

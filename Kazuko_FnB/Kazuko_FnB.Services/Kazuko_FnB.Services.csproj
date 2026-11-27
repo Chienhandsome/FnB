@@ -160,6 +160,10 @@
     <Compile Include="WifiGroupService.cs" />
     <Compile Include="OrderControlAnalyzer.cs" />
     <Compile Include="OrderControlService.cs" />
+    <Compile Include="PrepaidCardRules.cs" />
+    <Compile Include="PrepaidCardService.cs" />
+    <Compile Include="PrepaidCardGroupService.cs" />
+    <Compile Include="PrepaidCardVoucherService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

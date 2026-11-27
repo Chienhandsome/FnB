@@ -23,6 +23,7 @@ namespace Kazuko_FnB.UI
             FunctionPermissions perms;
             List<MenuNode> dbRoots = new List<MenuNode>();
             Dictionary<string, int> configById = null;
+            int? prepaidCardConfigVal = null;
 
             if (!string.IsNullOrEmpty(session.DatabasePath))
             {
@@ -35,6 +36,9 @@ namespace Kazuko_FnB.UI
                     // Mục không có SMENU.SFUNCTIONID thì lấy quyền từ STABLEDESC (vd. "Khách đặt hàng").
                     menus.FillFunctionIds(dbRoots);
                     configById = menus.LoadConfigIntValuesById();
+                    ConfigValue pcCfg;
+                    if (new ConfigRepository(session.DatabasePath).LoadValues().TryGetValue(PrepaidCardText.ConfigKey, out pcCfg))
+                        prepaidCardConfigVal = pcCfg.IntValue;
                 }
                 catch (Kazuko_FnB.Data.DataAccessException)
                 {
@@ -50,7 +54,7 @@ namespace Kazuko_FnB.UI
             model.Roots.Add(BuildSystemMenu(perms));
             foreach (MenuNode root in dbRoots)
             {
-                MenuNode pruned = Prune(root, perms, configById);
+                MenuNode pruned = Prune(root, perms, configById, prepaidCardConfigVal);
                 if (pruned == null || pruned.IsSeparator)
                     continue;
                 // Chỉ lược khỏi menu thả xuống; thanh công cụ / Truy cập nhanh vẫn dùng dữ liệu đầy đủ.
@@ -67,11 +71,11 @@ namespace Kazuko_FnB.UI
             var dbPruned = new List<MenuNode>();
             foreach (MenuNode root in dbRoots)
             {
-                MenuNode p = Prune(root, perms, configById);
+                MenuNode p = Prune(root, perms, configById, prepaidCardConfigVal);
                 if (p != null)
                     dbPruned.Add(p);
             }
-            BuildToolbar(model, dbRoots, perms, configById);
+            BuildToolbar(model, dbRoots, perms, configById, prepaidCardConfigVal);
             BuildQuickGroups(model, dbPruned);
             return model;
         }
@@ -79,17 +83,31 @@ namespace Kazuko_FnB.UI
         // ------------------------------------------------------------------ lọc quyền
 
         /// <summary>
-        /// Kiểm tra cờ SMENU.VISIBLECONFIGID cho riêng menu Danh mục cửa hàng (NhieuCuaHang = 30 mới hiện).
-        /// Các menu khác giữ nguyên hành vi cũ (không lọc theo VISIBLECONFIGID).
+        /// Kiểm tra cờ cấu hình hiện menu cho riêng Danh mục cửa hàng (NhieuCuaHang = 30)
+        /// và Danh mục thẻ trả trước (SuDungTheTraTruoc = 30). Các menu khác giữ nguyên hành vi cũ.
         /// </summary>
-        private static bool IsVisibleByConfig(MenuNode n, Dictionary<string, int> configById)
+        private static bool IsVisibleByConfig(MenuNode n, Dictionary<string, int> configById, int? prepaidCardConfigVal)
         {
-            if (n == null || !IsStoreCatalogMenuNode(n))
+            if (n == null)
                 return true;
-            if (string.IsNullOrEmpty(n.VisibleConfigId) || configById == null)
-                return true;
-            int val;
-            return !configById.TryGetValue(n.VisibleConfigId, out val) || val == SystemConfig.On;
+            if (IsStoreCatalogMenuNode(n))
+            {
+                if (string.IsNullOrEmpty(n.VisibleConfigId) || configById == null)
+                    return true;
+                int val;
+                return !configById.TryGetValue(n.VisibleConfigId, out val) || val == SystemConfig.On;
+            }
+            if (IsPrepaidCardCatalogMenuNode(n))
+            {
+                if (!string.IsNullOrEmpty(n.VisibleConfigId) && configById != null)
+                {
+                    int val;
+                    if (configById.TryGetValue(n.VisibleConfigId, out val))
+                        return val == SystemConfig.On;
+                }
+                return !prepaidCardConfigVal.HasValue || prepaidCardConfigVal.Value == SystemConfig.On;
+            }
+            return true;
         }
 
         private static bool IsStoreCatalogMenuNode(MenuNode n)
@@ -99,6 +117,15 @@ namespace Kazuko_FnB.UI
             if (string.Equals(n.FunctionId, StoreText.FunctionId, StringComparison.OrdinalIgnoreCase))
                 return true;
             return Dialogs.ScreenFactory.IsStoreCatalogMenu(n, null);
+        }
+
+        private static bool IsPrepaidCardCatalogMenuNode(MenuNode n)
+        {
+            if (n == null)
+                return false;
+            if (string.Equals(n.FunctionId, PrepaidCardText.FunctionId, StringComparison.OrdinalIgnoreCase))
+                return true;
+            return Dialogs.ScreenFactory.IsPrepaidCardCatalogMenu(n, null);
         }
 
         private static bool AllowsLeafPermission(MenuNode n, FunctionPermissions perms)
@@ -122,6 +149,8 @@ namespace Kazuko_FnB.UI
                 return AllowsByIdOrName(perms, n.FunctionId, RepairNoticeText.FunctionName);
             if (Dialogs.ScreenFactory.IsWifiPasswordMenu(n, null))
                 return AllowsByIdOrName(perms, n.FunctionId, WifiPasswordText.FunctionName);
+            if (Dialogs.ScreenFactory.IsPrepaidCardCatalogMenu(n, null))
+                return AllowsByIdOrName(perms, string.IsNullOrEmpty(n.FunctionId) ? PrepaidCardText.FunctionId : n.FunctionId, PrepaidCardText.FunctionName);
             if (Dialogs.ScreenFactory.IsAllWarehousesInventoryMenu(n))
                 return AllowsByIdOrName(perms, n.FunctionId, InventoryConstants.FunctionName);
             if (Dialogs.ScreenFactory.IsOrderControlMenu(n))
@@ -139,11 +168,11 @@ namespace Kazuko_FnB.UI
         }
 
         /// <summary>Bỏ mục ẩn / ẩn theo VISIBLECONFIGID / không đủ quyền; nhóm rỗng cũng bị bỏ; dọn dòng kẻ thừa.</summary>
-        private static MenuNode Prune(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById)
+        private static MenuNode Prune(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById, int? prepaidCardConfigVal)
         {
             if (n.IsSeparator)
                 return n;
-            if (n.Hidden || !IsVisibleByConfig(n, configById))
+            if (n.Hidden || !IsVisibleByConfig(n, configById, prepaidCardConfigVal))
                 return null;
 
             if (n.IsLeaf)
@@ -152,7 +181,7 @@ namespace Kazuko_FnB.UI
             var copy = Clone(n);
             foreach (MenuNode c in n.Children)
             {
-                MenuNode pc = Prune(c, perms, configById);
+                MenuNode pc = Prune(c, perms, configById, prepaidCardConfigVal);
                 if (pc != null)
                     copy.Children.Add(pc);
             }
@@ -164,7 +193,6 @@ namespace Kazuko_FnB.UI
         private static readonly HashSet<string> MenuHiddenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Dịch vụ MTB",
-            "Danh mục thẻ trả trước",
             // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
             "Danh mục bảng giá",
             "Danh mục loại phòng"
@@ -383,11 +411,11 @@ namespace Kazuko_FnB.UI
 
         // ------------------------------------------------------------------ thanh công cụ
 
-        private static void BuildToolbar(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms, Dictionary<string, int> configById)
+        private static void BuildToolbar(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms, Dictionary<string, int> configById, int? prepaidCardConfigVal)
         {
             var found = new List<MenuNode>();
             foreach (MenuNode root in dbRoots)
-                CollectToolbar(root, perms, configById, found);
+                CollectToolbar(root, perms, configById, prepaidCardConfigVal, found);
             found.Sort(delegate (MenuNode a, MenuNode b) { return a.ToolbarIndex.CompareTo(b.ToolbarIndex); });
 
             foreach (MenuNode n in found)
@@ -413,7 +441,7 @@ namespace Kazuko_FnB.UI
                 };
                 model.Toolbar.Add(tb);
             }
-            AddExtraToolbarButtons(model, dbRoots, perms, configById);
+            AddExtraToolbarButtons(model, dbRoots, perms, configById, prepaidCardConfigVal);
             TrimSeparators(model.Toolbar);
         }
 
@@ -450,7 +478,7 @@ namespace Kazuko_FnB.UI
             "@note", "@report", "@exit"
         };
 
-        private static void AddExtraToolbarButtons(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms, Dictionary<string, int> configById)
+        private static void AddExtraToolbarButtons(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms, Dictionary<string, int> configById, int? prepaidCardConfigVal)
         {
             int sep = 0;
             foreach (string key in ExtraToolbar)
@@ -479,7 +507,7 @@ namespace Kazuko_FnB.UI
                 MenuNode n = null;
                 foreach (MenuNode root in dbRoots)
                 {
-                    n = FindLeafByTitle(root, key, perms, configById);
+                    n = FindLeafByTitle(root, key, perms, configById, prepaidCardConfigVal);
                     if (n != null)
                         break;
                 }
@@ -510,16 +538,16 @@ namespace Kazuko_FnB.UI
             }
         }
 
-        private static MenuNode FindLeafByTitle(MenuNode n, string title, FunctionPermissions perms, Dictionary<string, int> configById)
+        private static MenuNode FindLeafByTitle(MenuNode n, string title, FunctionPermissions perms, Dictionary<string, int> configById, int? prepaidCardConfigVal)
         {
-            if (n.Hidden || n.IsSeparator || !IsVisibleByConfig(n, configById))
+            if (n.Hidden || n.IsSeparator || !IsVisibleByConfig(n, configById, prepaidCardConfigVal))
                 return null;
             if (n.IsLeaf)
                 return string.Equals((n.Title ?? "").Trim(), title, StringComparison.OrdinalIgnoreCase) && AllowsLeafPermission(n, perms)
                     ? n : null;
             foreach (MenuNode c in n.Children)
             {
-                MenuNode f = FindLeafByTitle(c, title, perms, configById);
+                MenuNode f = FindLeafByTitle(c, title, perms, configById, prepaidCardConfigVal);
                 if (f != null)
                     return f;
             }
@@ -533,14 +561,14 @@ namespace Kazuko_FnB.UI
                 : MenuRepository.DisplayText(n.ToolbarTitle);
         }
 
-        private static void CollectToolbar(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById, List<MenuNode> into)
+        private static void CollectToolbar(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById, int? prepaidCardConfigVal, List<MenuNode> into)
         {
-            if (!IsVisibleByConfig(n, configById))
+            if (!IsVisibleByConfig(n, configById, prepaidCardConfigVal))
                 return;
             if (n.InToolbar && (n.IsSeparator || (n.IsLeaf && AllowsLeafPermission(n, perms))))
                 into.Add(n);
             foreach (MenuNode c in n.Children)
-                CollectToolbar(c, perms, configById, into);
+                CollectToolbar(c, perms, configById, prepaidCardConfigVal, into);
         }
 
         // ------------------------------------------------------------------ Truy cập nhanh

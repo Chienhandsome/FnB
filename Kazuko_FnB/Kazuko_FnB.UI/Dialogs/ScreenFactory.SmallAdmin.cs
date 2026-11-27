@@ -31,6 +31,15 @@ namespace Kazuko_FnB.UI.Dialogs
                     return new CatalogView(session.DatabasePath, stableId,
                         string.IsNullOrWhiteSpace(node.Title) ? WifiPasswordText.FunctionName : node.Title);
             }
+            if (IsPrepaidCardCatalogMenu(node, session))
+            {
+                string stableId = !string.IsNullOrEmpty(node.StableDescId)
+                    ? node.StableDescId
+                    : new CatalogRepository(session.DatabasePath).FindIdByTable(PrepaidCardText.TableName);
+                if (!string.IsNullOrEmpty(stableId))
+                    return new CatalogView(session.DatabasePath, stableId,
+                        string.IsNullOrWhiteSpace(node.Title) ? PrepaidCardText.FunctionName : node.Title);
+            }
             if (IsAllWarehousesInventoryMenu(node))
                 return new InventoryView(session, true);
             if (IsOrderControlMenu(node))
@@ -100,6 +109,32 @@ namespace Kazuko_FnB.UI.Dialogs
                 return string.Equals(
                     new FormRepository(session.DatabasePath).TableNameOf(node.StableDescId),
                     WifiPasswordText.TableName,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        /// <summary>Mục "KHÁCH HÀNG > Danh mục thẻ trả trước" (SMENU ZZZ007): nhận diện theo tên không dấu không phân biệt hoa thường hoặc bảng DTHETRATRUOC.</summary>
+        internal static bool IsPrepaidCardCatalogMenu(MenuNode node, UserSession session)
+        {
+            if (node == null)
+                return false;
+            if (string.Equals(CatalogRepository.Fold((node.Title ?? "").Trim()), "danh muc the tra truoc", StringComparison.Ordinal))
+                return true;
+            if (!string.IsNullOrEmpty(node.FunctionId)
+                && string.Equals(node.FunctionId, PrepaidCardText.FunctionId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            if (session == null || string.IsNullOrEmpty(node.StableDescId))
+                return false;
+            try
+            {
+                return string.Equals(
+                    new FormRepository(session.DatabasePath).TableNameOf(node.StableDescId),
+                    PrepaidCardText.TableName,
                     StringComparison.OrdinalIgnoreCase);
             }
             catch (Exception)

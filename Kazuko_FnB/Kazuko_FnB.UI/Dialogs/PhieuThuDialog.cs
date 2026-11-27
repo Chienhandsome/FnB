@@ -161,18 +161,20 @@ namespace Kazuko_FnB.UI.Dialogs
             bool depositMode,
             bool salaryAdvanceMode = false,
             RewardPenaltyMonthLimit advanceMonthLimit = null,
-            PayrollPayoutPreset salaryPayoutPreset = null)
+            PayrollPayoutPreset salaryPayoutPreset = null,
+            PrepaidCardVoucherPreset prepaidCardPreset = null)
             : base(
-                salaryPayoutPreset != null ? BuildSalaryPayoutTitle(string.IsNullOrEmpty(voucherId), readOnly || salaryPayoutPreset.ReadOnly)
-                    : (salaryAdvanceMode ? BuildAdvanceTitle(string.IsNullOrEmpty(voucherId), readOnly) : BuildTitle(kind, string.IsNullOrEmpty(voucherId), readOnly)),
-                salaryPayoutPreset != null ? BuildSalaryPayoutSubtitle(salaryPayoutPreset, readOnly || salaryPayoutPreset.ReadOnly)
-                    : (salaryAdvanceMode ? BuildAdvanceSubtitle(readOnly) : BuildSubtitle(kind, readOnly)),
+                ResolveDialogTitle(kind, voucherId, readOnly, salaryAdvanceMode, salaryPayoutPreset, prepaidCardPreset),
+                ResolveDialogSubtitle(kind, readOnly, salaryAdvanceMode, salaryPayoutPreset, prepaidCardPreset),
                 720, 640)
         {
             _session = session ?? AppSession.Current;
+            _isPrepaidCardMode = prepaidCardPreset != null;
+            _prepaidCardPreset = prepaidCardPreset;
             _isSalaryPayoutMode = salaryPayoutPreset != null;
             _salaryPayoutPreset = salaryPayoutPreset;
-            _kind = (_isSalaryPayoutMode || salaryAdvanceMode) ? VoucherKind.Expense : kind;
+            _kind = _isPrepaidCardMode ? prepaidCardPreset.Kind
+                : ((_isSalaryPayoutMode || salaryAdvanceMode) ? VoucherKind.Expense : kind);
             _isDepositMode = depositMode;
             _isSalaryAdvanceMode = salaryAdvanceMode;
             _advanceMonthLimit = advanceMonthLimit;
@@ -186,8 +188,12 @@ namespace Kazuko_FnB.UI.Dialogs
                 _salaryAdvanceService = new SalaryAdvanceService(_session);
             if (_isSalaryPayoutMode)
                 _salaryPayoutService = new PayrollPayoutService(_session);
+            if (_isPrepaidCardMode)
+                _prepaidCardVoucherService = new PrepaidCardVoucherService(_session);
 
-            if (_isSalaryPayoutMode)
+            if (_isPrepaidCardMode)
+                _readOnly = ResolvePrepaidCardReadOnly(readOnly);
+            else if (_isSalaryPayoutMode)
                 _readOnly = readOnly || salaryPayoutPreset.ReadOnly || !_salaryPayoutService.CanPayOut;
             else if (_isSalaryAdvanceMode)
                 _readOnly = readOnly || (_isNew ? !_salaryAdvanceService.CanAdd : !_salaryAdvanceService.CanEdit);
@@ -226,6 +232,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 ConfigureSalaryAdvanceLayout();
             else if (_isSalaryPayoutMode)
                 ConfigureSalaryPayoutLayout();
+            else if (_isPrepaidCardMode)
+                ConfigurePrepaidCardLayout();
 
             _btnClose = AddButton("Đóng", null, delegate { Close(); });
             _btnSaveNew = AddButton("Lưu & Mới", null, delegate { Save(true); });
@@ -237,13 +245,17 @@ namespace Kazuko_FnB.UI.Dialogs
 
             if (_isNew)
             {
-                if (_isSalaryPayoutMode)
+                if (_isPrepaidCardMode)
+                    InitNewPrepaidCardDocument();
+                else if (_isSalaryPayoutMode)
                     InitNewSalaryPayoutDocument();
                 else if (_isSalaryAdvanceMode)
                     InitNewSalaryAdvanceDocument();
                 else
                     InitNewDocument();
             }
+            else if (_isPrepaidCardMode)
+                LoadExistingPrepaidCard(_editingId);
             else if (_isSalaryPayoutMode)
                 LoadExistingSalaryPayout(_editingId);
             else if (_isSalaryAdvanceMode)

@@ -191,19 +191,22 @@ namespace Kazuko_FnB.Data
         }
 
         /// <summary>
-        /// Số dư thẻ trả trước (công thức desktop chuẩn, trừ cả CHI — khach-hang.md §2.1):
-        /// Σ(THU − CHI) trên TTHUCHI (STATUS &lt;&gt; -30) − Σ THETRATRUOC trên TDONHANG (STATUS &lt;&gt; -30, trừ bill hiện tại).
+        /// Tổng hợp Tổng nạp, Tổng sử dụng và Còn lại của một thẻ trả trước (công thức desktop chuẩn, trừ cả CHI — khach-hang.md §2.1):
+        /// Tổng nạp = Σ(THU − CHI) trên TTHUCHI (STATUS &lt;&gt; -30);
+        /// Tổng sử dụng = Σ THETRATRUOC trên TDONHANG (STATUS &lt;&gt; -30, trừ bill hiện tại);
+        /// Còn lại = Tổng nạp − Tổng sử dụng.
         /// </summary>
-        public static decimal GetPrepaidCardBalanceIn(
+        public static PrepaidCardBalanceSummary GetPrepaidCardBalanceSummaryIn(
             FbConnection conn,
             FbTransaction tx,
             string cardId,
             IList<string> excludeBillIds)
         {
+            var summary = new PrepaidCardBalanceSummary();
             if (string.IsNullOrEmpty(cardId))
-                return 0m;
+                return summary;
 
-            decimal loaded = DbHelper.Dec(DbHelper.Scalar(conn, tx,
+            summary.Loaded = DbHelper.Dec(DbHelper.Scalar(conn, tx,
                 "SELECT COALESCE(SUM(COALESCE(THU, 0) - COALESCE(CHI, 0)), 0) " +
                 "FROM TTHUCHI WHERE DTHETRATRUOCID = @ID AND COALESCE(STATUS, 0) <> @Del",
                 "@ID", cardId, "@Del", DeletedStatus));
@@ -211,12 +214,69 @@ namespace Kazuko_FnB.Data
             var billArgs = new List<object> { "@ID", cardId, "@Del", DeletedStatus };
             string excludeSql = BuildNotInClause("ID", excludeBillIds, billArgs, "@EX");
 
-            decimal spent = DbHelper.Dec(DbHelper.Scalar(conn, tx,
+            summary.Used = DbHelper.Dec(DbHelper.Scalar(conn, tx,
                 "SELECT COALESCE(SUM(COALESCE(THETRATRUOC, 0)), 0) " +
                 "FROM TDONHANG WHERE DTHETRATRUOCID = @ID AND COALESCE(STATUS, 0) <> @Del" + excludeSql,
                 billArgs.ToArray()));
 
-            return loaded - spent;
+            return summary;
+        }
+
+        /// <summary>
+        /// Số dư thẻ trả trước (dùng chung đúng công thức ở <see cref="GetPrepaidCardBalanceSummaryIn"/>).
+        /// </summary>
+        public static decimal GetPrepaidCardBalanceIn(
+            FbConnection conn,
+            FbTransaction tx,
+            string cardId,
+            IList<string> excludeBillIds)
+        {
+            return GetPrepaidCardBalanceSummaryIn(conn, tx, cardId, excludeBillIds).Remaining;
+        }
+
+        /// <summary>
+        /// Tổng hợp Tổng nạp / Tổng sử dụng / Còn lại cho mọi thẻ (cùng đúng công thức của <see cref="GetPrepaidCardBalanceSummaryIn"/>,
+        /// không loại bill nào) phục vụ lưới Danh mục thẻ trả trước.
+        /// </summary>
+        public static Dictionary<string, PrepaidCardBalanceSummary> LoadAllPrepaidCardBalancesIn(
+            FbConnection conn,
+            FbTransaction tx)
+        {
+            var map = new Dictionary<string, PrepaidCardBalanceSummary>(StringComparer.Ordinal);
+
+            DataTable loadDt = DbHelper.Table(conn, tx,
+                "SELECT DTHETRATRUOCID, COALESCE(SUM(COALESCE(THU, 0) - COALESCE(CHI, 0)), 0) AS LOADED " +
+                "FROM TTHUCHI WHERE DTHETRATRUOCID IS NOT NULL AND TRIM(DTHETRATRUOCID) <> '' " +
+                "AND COALESCE(STATUS, 0) <> @Del GROUP BY DTHETRATRUOCID",
+                "@Del", DeletedStatus);
+            foreach (DataRow r in loadDt.Rows)
+            {
+                string id = DbHelper.Str(r["DTHETRATRUOCID"]) ?? "";
+                if (id.Length == 0)
+                    continue;
+                PrepaidCardBalanceSummary item;
+                if (!map.TryGetValue(id, out item))
+                    map[id] = item = new PrepaidCardBalanceSummary();
+                item.Loaded = DbHelper.Dec(r["LOADED"]);
+            }
+
+            DataTable usedDt = DbHelper.Table(conn, tx,
+                "SELECT DTHETRATRUOCID, COALESCE(SUM(COALESCE(THETRATRUOC, 0)), 0) AS USED " +
+                "FROM TDONHANG WHERE DTHETRATRUOCID IS NOT NULL AND TRIM(DTHETRATRUOCID) <> '' " +
+                "AND COALESCE(STATUS, 0) <> @Del GROUP BY DTHETRATRUOCID",
+                "@Del", DeletedStatus);
+            foreach (DataRow r in usedDt.Rows)
+            {
+                string id = DbHelper.Str(r["DTHETRATRUOCID"]) ?? "";
+                if (id.Length == 0)
+                    continue;
+                PrepaidCardBalanceSummary item;
+                if (!map.TryGetValue(id, out item))
+                    map[id] = item = new PrepaidCardBalanceSummary();
+                item.Used = DbHelper.Dec(r["USED"]);
+            }
+
+            return map;
         }
 
         public static PrepaidCardInfo ValidatePrepaidCardByCodeIn(

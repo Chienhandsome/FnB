@@ -235,6 +235,15 @@
     <Compile Include="CatalogView.WifiPassword.Menus.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.PrepaidCard.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.PrepaidCard.Groups.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.PrepaidCard.Menus.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="SalaryAdvanceListView.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -650,6 +659,8 @@
     <Compile Include="Diagnostics\SelfTest.WifiPassword.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.OrderControl.cs" />
     <Compile Include="Diagnostics\SelfTest.OrderControl.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.PrepaidCard.cs" />
+    <Compile Include="Diagnostics\SelfTest.PrepaidCard.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -717,6 +728,9 @@
     <Compile Include="Dialogs\PhieuThuDialog.SalaryPayout.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Dialogs\PhieuThuDialog.PrepaidCard.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\CashReasonEditDialog.cs" />
     <Compile Include="Dialogs\BankAccountEditDialog.cs" />
     <Compile Include="Dialogs\WarehouseEditDialog.cs" />
@@ -746,6 +760,9 @@
     <Compile Include="Dialogs\SupplierGroupEditDialog.cs" />
     <Compile Include="Dialogs\GiftVoucherEditDialog.cs" />
     <Compile Include="Dialogs\GiftVoucherGroupEditDialog.cs" />
+    <Compile Include="Dialogs\PrepaidCardEditDialog.cs" />
+    <Compile Include="Dialogs\PrepaidCardEditDialog.Actions.cs" />
+    <Compile Include="Dialogs\PrepaidCardGroupEditDialog.cs" />
     <Compile Include="Dialogs\ProductGroupTreePickerDialog.cs" />
     <Compile Include="Dialogs\PromotionProductPickerDialog.cs" />
     <Compile Include="Dialogs\PromotionEditDialog.cs" />

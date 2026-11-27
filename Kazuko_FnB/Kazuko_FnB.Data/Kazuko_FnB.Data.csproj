@@ -137,6 +137,8 @@
     <Compile Include="WifiPasswordRepository.cs" />
     <Compile Include="WifiGroupRepository.cs" />
     <Compile Include="OrderControlRepository.cs" />
+    <Compile Include="PrepaidCardRepository.cs" />
+    <Compile Include="PrepaidCardGroupRepository.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
