@@ -56,6 +56,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.openingstock", session => new OpeningStockPreviewForm(session) },
                 { "preview.openingdebtcustomer", session => new OpeningDebtPreviewForm(session, DebtPartyKind.Customer) },
                 { "preview.openingdebtsupplier", session => new OpeningDebtPreviewForm(session, DebtPartyKind.Supplier) },
+                { "preview.materialregen", session => new MaterialRegenPreviewForm(session) },
                 { "preview.promotionedit", session => new PromotionEditDialog(session, null, false) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
@@ -129,6 +130,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Tính lại giá vốn" (KHO HÀNG > Tính lại giá vốn, docs/specs/tinh-lai-gia-von.md).
             if (IsCostRecalcMenu(node))
                 return new CostRecalcView(session);
+            // Màn "Xuất lại định lượng" (KHO HÀNG > Xuất lại định lượng, docs/specs/xuat-lai-dinh-luong.md).
+            if (IsMaterialRegenMenu(node))
+                return new MaterialRegenView(session);
             // Màn "Công nợ khách hàng" & "Công nợ nhà cung cấp" (CÔNG NỢ, docs/specs/cong-no.md).
             if (IsCustomerDebtMenu(node))
                 return new DebtListView(session, DebtPartyKind.Customer);
@@ -283,6 +287,18 @@ namespace Kazuko_FnB.UI.Dialogs
             if (node == null)
                 return false;
             return string.Equals((node.Title ?? "").Trim(), CostRecalcConstants.FunctionName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "KHO HÀNG > Xuất lại định lượng": mở màn xuất lại định lượng.</summary>
+        internal static bool IsMaterialRegenMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            if (string.Equals(title, MaterialRegenConstants.FunctionName, StringComparison.OrdinalIgnoreCase))
+                return true;
+            string folded = Data.CatalogRepository.Fold(title);
+            return string.Equals(folded, "xuat lai dinh luong", StringComparison.Ordinal);
         }
 
         /// <summary>Mục "CÔNG NỢ > Công nợ khách hàng": mở màn công nợ khách hàng.</summary>

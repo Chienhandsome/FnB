@@ -585,6 +585,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             LoyaltyTests(db);
             OpeningStockTests(db);
             OpeningDebtTests(db);
+            MaterialRegenTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

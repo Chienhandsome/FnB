@@ -55,6 +55,23 @@ namespace Kazuko_FnB.Services
             }
         }
 
+        /// <summary>
+        /// Tính lại giá vốn sau khi Xuất lại định lượng (chạy bất kể cấu hình TuDongTinhGiaVon).
+        /// Không ném lỗi: trả null khi xong, trả cảnh báo một câu khi lỗi (không làm hỏng kết quả đã ghi).
+        /// </summary>
+        public static string RunAfterRegenerate(UserSession session, Action testHookAfterWrite = null)
+        {
+            try
+            {
+                CostRecalcResult r = new CostRecalcService(session).RunCore(null, testHookAfterWrite, false);
+                return r.Ok ? null : MaterialRegenConstants.CostRecalcFailedWarning;
+            }
+            catch (Exception)
+            {
+                return MaterialRegenConstants.CostRecalcFailedWarning;
+            }
+        }
+
         private CostRecalcResult RunCore(Action<int, int> progress, Action testHookAfterWrite, bool writeLog)
         {
             CostRecalcResult outcome = null;
