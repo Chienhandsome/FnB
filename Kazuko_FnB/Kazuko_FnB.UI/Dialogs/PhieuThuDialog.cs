@@ -120,6 +120,39 @@ namespace Kazuko_FnB.UI.Dialogs
             _form.ApplyTheme(ThemeManager.Current);
         }
 
+        /// <summary>
+        /// Mở hộp Phiếu chi dùng chung để chi trả nợ nhà cung cấp (docs/specs/cong-no.md §4):
+        /// đặt sẵn đối tượng là NCC và số tiền mặc định bằng Còn nợ; ghi thật qua VoucherService (chặn chi TM vượt quỹ).
+        /// </summary>
+        public PhieuThuDialog(UserSession session, SupplierDebtPayPreset preset)
+            : this(session, VoucherKind.Expense, null, false, false)
+        {
+            if (preset == null)
+                throw new ArgumentNullException("preset");
+            ApplySupplierDebtPreset(preset);
+        }
+
+        private void ApplySupplierDebtPreset(SupplierDebtPayPreset preset)
+        {
+            _loading = true;
+            try
+            {
+                if (PhieuThuRules.Supplier < _objectType.Items.Count)
+                    _objectType.SelectedIndex = PhieuThuRules.Supplier;
+                _supplier.SelectId(preset.SupplierId);
+                _partyName.Text = preset.SupplierName ?? "";
+                _partyAddress.Text = preset.SupplierAddress ?? "";
+                SetAmount(preset.Amount > 0m ? preset.Amount : 0m);
+                SetOptionalText(_description, preset.Description ?? "");
+            }
+            finally
+            {
+                _loading = false;
+            }
+            ApplyObjectType();
+            ApplyModeState();
+        }
+
         private PhieuThuDialog(UserSession session, VoucherKind kind, string voucherId, bool readOnly, bool depositMode)
             : base(BuildTitle(kind, string.IsNullOrEmpty(voucherId), readOnly), BuildSubtitle(kind, readOnly), 720, 640)
         {

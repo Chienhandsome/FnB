@@ -116,6 +116,8 @@
     <Compile Include="StockDocumentService.StockCheck.cs" />
     <Compile Include="InventoryRules.cs" />
     <Compile Include="InventoryService.cs" />
+    <Compile Include="DebtRules.cs" />
+    <Compile Include="DebtService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -241,6 +241,15 @@
     <Compile Include="InventoryView.Render.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="DebtListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="DebtListView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="DebtListView.Render.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -479,6 +488,8 @@
     <Compile Include="Diagnostics\SelfTest.StockDocument.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Inventory.cs" />
     <Compile Include="Diagnostics\SelfTest.Inventory.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Debt.cs" />
+    <Compile Include="Diagnostics\SelfTest.Debt.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -560,6 +571,15 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\InventoryPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\CustomerDebtCollectDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\CustomerDebtCollectDialog.Actions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\DebtPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PickRoomDialog.cs" />

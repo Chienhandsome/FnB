@@ -576,6 +576,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             PurchaseTests(db);
             StockDocumentTests(db);
             InventoryTests(db);
+            DebtTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

@@ -48,6 +48,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.stocktransfer", session => new StockDocumentPreviewForm(session, StockDocumentKind.Transfer) },
                 { "preview.stocktransferedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Transfer) },
                 { "preview.inventory", session => new InventoryPreviewForm(session) },
+                { "preview.debtcustomer", session => new DebtPreviewForm(session, DebtPartyKind.Customer) },
+                { "preview.debtsupplier", session => new DebtPreviewForm(session, DebtPartyKind.Supplier) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -114,6 +116,11 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Tồn kho" (KHO HÀNG > Tồn kho, chỉ đọc, docs/specs/ton-kho.md).
             if (IsInventoryMenu(node))
                 return new InventoryView(session);
+            // Màn "Công nợ khách hàng" & "Công nợ nhà cung cấp" (CÔNG NỢ, docs/specs/cong-no.md).
+            if (IsCustomerDebtMenu(node))
+                return new DebtListView(session, DebtPartyKind.Customer);
+            if (IsSupplierDebtMenu(node))
+                return new DebtListView(session, DebtPartyKind.Supplier);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -219,6 +226,26 @@ namespace Kazuko_FnB.UI.Dialogs
             string title = (node.Title ?? "").Trim();
             return string.Equals(title, "Tồn kho", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(title, "Xem tồn kho", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "CÔNG NỢ > Công nợ khách hàng": mở màn công nợ khách hàng.</summary>
+        internal static bool IsCustomerDebtMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            return string.Equals(title, DebtConstants.CustomerDebtFunctionName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Công nợ khách", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "CÔNG NỢ > Công nợ nhà cung cấp": mở màn công nợ nhà cung cấp.</summary>
+        internal static bool IsSupplierDebtMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            return string.Equals(title, DebtConstants.SupplierDebtFunctionName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Công nợ NCC", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsStockOrderListMenuByType(MenuNode node, UserSession session, int orderType)
