@@ -1,6 +1,6 @@
 # Spec: Danh mục cửa hàng (DCUAHANG)
 
-- Trạng thái: **NHÁP**, loại nặng; **hết câu hỏi mở** (Chiến chốt 26/11/2026, issue #19), chờ Chiến duyệt.
+- Trạng thái: **ĐÃ DUYỆT** (Claude tự duyệt 27/11/2026 theo workflow-agy §10.1.1; Chiến chốt 26/11/2026, issue #19, hết câu hỏi mở), loại nặng.
 - Base: `main` @ `9d7f8d2`
 - Menu: HOẠT ĐỘNG > Danh mục cửa hàng (`SMENU.SORTORDER = ZZZ003`, `STABLEDESC` `71442d6c-3236-44af-b312-21042b8ea94f`).
 - Menu có `VISIBLECONFIGID` = cấu hình `NhieuCuaHang`; bản chép CSDL đang **0**, nên menu đang ẩn.
