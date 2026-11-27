@@ -52,6 +52,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.inventory", session => new InventoryPreviewForm(session) },
                 { "preview.debtcustomer", session => new DebtPreviewForm(session, DebtPartyKind.Customer) },
                 { "preview.debtsupplier", session => new DebtPreviewForm(session, DebtPartyKind.Supplier) },
+                { "preview.promotionedit", session => new PromotionEditDialog(session, null, false) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -129,6 +130,16 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new DebtListView(session, DebtPartyKind.Customer);
             if (IsSupplierDebtMenu(node))
                 return new DebtListView(session, DebtPartyKind.Supplier);
+            // Màn "Danh mục đợt khuyến mại" (KHÁCH HÀNG > Danh mục đợt khuyến mại, DDOTKHUYENMAI).
+            if (IsPromotionMenu(node, session))
+            {
+                string stableId = !string.IsNullOrEmpty(node.StableDescId)
+                    ? node.StableDescId
+                    : new Data.CatalogRepository(session.DatabasePath).FindIdByTable(PromotionText.TableName);
+                if (!string.IsNullOrEmpty(stableId))
+                    return new CatalogView(session.DatabasePath, stableId,
+                        string.IsNullOrWhiteSpace(node.Title) ? PromotionText.FunctionName : node.Title);
+            }
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -277,6 +288,31 @@ namespace Kazuko_FnB.UI.Dialogs
             string title = (node.Title ?? "").Trim();
             return string.Equals(title, DebtConstants.SupplierDebtFunctionName, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(title, "Công nợ NCC", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "KHÁCH HÀNG > Danh mục đợt khuyến mại": mở CatalogView chế độ đợt khuyến mại (DDOTKHUYENMAI).</summary>
+        internal static bool IsPromotionMenu(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            if (string.Equals(title, PromotionText.FunctionName, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (!string.IsNullOrEmpty(node.StableDescId))
+            {
+                try
+                {
+                    return string.Equals(
+                        new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId),
+                        PromotionText.TableName,
+                        StringComparison.OrdinalIgnoreCase);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+            return false;
         }
 
         private static bool IsStockOrderListMenuByType(MenuNode node, UserSession session, int orderType)

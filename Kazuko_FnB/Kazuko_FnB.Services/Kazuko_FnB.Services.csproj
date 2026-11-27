@@ -112,6 +112,8 @@
     <Compile Include="GiftVoucherRules.cs" />
     <Compile Include="GiftVoucherService.cs" />
     <Compile Include="GiftVoucherGroupService.cs" />
+    <Compile Include="PromotionRules.cs" />
+    <Compile Include="PromotionService.cs" />
     <Compile Include="PurchaseRules.cs" />
     <Compile Include="PurchaseService.cs" />
     <Compile Include="StockDocumentRules.cs" />

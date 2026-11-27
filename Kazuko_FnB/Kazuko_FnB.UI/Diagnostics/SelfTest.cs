@@ -581,6 +581,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             StockTakeTests(db);
             CostRecalcTests(db);
             GiftVoucherTests(db);
+            PromotionTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

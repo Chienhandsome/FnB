@@ -223,6 +223,12 @@
     <Compile Include="CatalogView.GiftVoucher.Menus.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.Promotion.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.Promotion.Menus.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="VoucherListView.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -514,6 +520,8 @@
     <Compile Include="Diagnostics\SelfTest.Debt.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.GiftVoucher.cs" />
     <Compile Include="Diagnostics\SelfTest.GiftVoucher.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Promotion.cs" />
+    <Compile Include="Diagnostics\SelfTest.Promotion.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -582,6 +590,12 @@
     <Compile Include="Dialogs\SupplierGroupEditDialog.cs" />
     <Compile Include="Dialogs\GiftVoucherEditDialog.cs" />
     <Compile Include="Dialogs\GiftVoucherGroupEditDialog.cs" />
+    <Compile Include="Dialogs\ProductGroupTreePickerDialog.cs" />
+    <Compile Include="Dialogs\PromotionProductPickerDialog.cs" />
+    <Compile Include="Dialogs\PromotionEditDialog.cs" />
+    <Compile Include="Dialogs\PromotionEditDialog.Details.cs" />
+    <Compile Include="Dialogs\PromotionEditDialog.Lines.cs" />
+    <Compile Include="Dialogs\PromotionEditDialog.Actions.cs" />
     <Compile Include="Dialogs\PurchaseEditDialog.cs" />
     <Compile Include="Dialogs\PurchaseEditDialog.Lines.cs" />
     <Compile Include="Dialogs\PurchaseEditDialog.Actions.cs" />
