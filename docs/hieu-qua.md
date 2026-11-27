@@ -22,6 +22,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 Sửa 7 ca selftest (`9e7c6f1`) | 1, +1 −0 | 2, +163 −14 | 0 / 1 / 0 / 0 | 0 | 857 (7) → 864 (0) | không có lỗi sau vòng 1 | không áp dụng (chủ yếu sửa test) |
 | 26/11 Spec in, xuất Excel | không đổi code | – | – | – | – | thử ngoài app: thiếu `No1Lib*.dll` | – |
 | 26/11 In FastReport P0 (`30ced3e`, `8a9c0ee`, #27) | 14, +1570 −7 | 4, +1161 −4 | 0 / 0 / 0 / 1 | 1 (biên dịch, trong test) | 864 → 898 (0) | build 1, selftest 3, thử ngoài app + app gốc (lỗi tiền) | chưa bấm thử. Claude thấy khi làm P1a: lớp in chưa ẩn cột theo `VisibleByConfigID` (sửa ở `100513f`; chưa kiểm 3 mẫu mặt hàng bán có dùng thuộc tính này không) |
+| 27/11 Tính lại giá vốn (`3f5c6ce`, #49) | Claude tự viết: 14 file | 1 file selftest (14 ca) | agy 0 vòng (hết hạn mức 429 sau 4 phút) | 1 (selftest cũ lỗi vì tự động tính lại giá vốn đang bật trong DB mẫu: tắt trên bản sao DB selftest) | 1275 → 1289 (0) | build 0 lần đầu; selftest 1 lần lỗi ca cũ (Xuất khác) do cấu hình mẫu | chưa bấm thử |
 | 27/11 Kiểm kê kho (`dd98a2f`, #48) | 16 | 3 file selftest | 0 / 0 / 0 / 0 | 0 | 1263 → 1275 (0) | không có lỗi; đọc logic: tồn tính lại lúc lưu, SLNHAP/SLXUAT theo ĐVT cơ sở | chưa bấm thử |
 | 27/11 Công nợ KH, NCC, thu nợ theo đơn (`eafcc4e`, #46) | 22 | 3 file selftest | 0 / 0 / 0 / 1 | 1 (ca test gọi sai tên hàm) | 1254 → 1263 (0) | build 1 (lỗi biên dịch); selftest 2 lần chập chờn ở ca gõ phím thật do cửa sổ khác giành tiêu điểm, lần 3 đạt | chưa bấm thử |
 | 27/11 Tồn kho (`476c3ac`, #45) | 15 | 2 file selftest | 0 / 1 / 0 / 0 | 0 | 1246 → 1254 (0) | không có lỗi; đọc SQL tồn: cùng điều kiện với hàm tồn chung | chưa bấm thử |
@@ -42,7 +43,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 24 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 25 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -65,6 +66,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | Sử dụng dịch vụ patch (b) | 1572 s; 697 / 144 (dừng: gọi Bash) · 2090 s; 157 / 49 | 3662 s (61 phút) | 1.046 (12.208) |
 | Sử dụng dịch vụ patch (c) | 1236 s; 498 / 113 | 1236 s (21 phút) | 611 (9.028) |
 | Sử dụng dịch vụ patch (d) | 1612 s; 689 / 135 (dừng: gọi Bash) · 1717 s; 146 / 4 (dừng: agy hết quota) | 3329 s (55 phút) | 974 (9.653) |
+| Tính lại giá vốn | agy 243 s (ERROR 429: hết hạn mức) · Claude tự viết | chưa đo | chưa đo |
 | Kiểm kê kho | 1066 s | 1066 s (18 phút) | chưa đo |
 | Công nợ KH, NCC | 921 s | 921 s (15 phút) | chưa đo |
 | Tồn kho | 146 s (dừng: gọi Bash) · 795 s | 941 s (16 phút) | chưa đo |
@@ -107,3 +109,4 @@ Các tổng ghi ở bản trước (khoảng 59, 67, 38 phút) đã cộng chồ
 | Tồn kho | chưa đo | có: loop | Vòng 1 dừng sau 146 s vì Bash bị chặn; nhắc rõ "không chạy lệnh shell nào, chỉ dùng công cụ đọc file" ở vòng nối tiếp thì chạy hết một mạch |
 | Công nợ KH, NCC | chưa đo | có: viết spec, hỏi Chiến, loop | Chốt chặn file ngoài worktree báo 136 lỗi vì một dự án khác của Chiến (ZombieCarPrototype) cùng nằm trong D:\Working: thu hẹp vùng quét hoặc loại thư mục đó nên là việc cho Chiến. Ca gõ phím thật lỗi chập chờn khi máy đang dùng: chạy lại 2 lần trước khi kết luận |
 | Kiểm kê kho | chưa đo | có: viết spec, trả lời Chiến | Vòng sạch khi prompt nhắc đọc chữ ký hàm trước khi gọi (tránh lỗi gọi sai tên như ở Công nợ), trỏ chức năng mẫu vừa xong, liệt kê ca selftest cần có theo mục nghiệm thu |
+| Tính lại giá vốn | chưa đo | có: viết spec, hỏi Chiến, loop | agy hết hạn mức 4 phút sau khi bắt đầu; Chiến không đụng được máy để đổi tài khoản nên cho phép Claude viết thay. Viết tay chức năng thuần tính toán (engine thuần bộ nhớ + selftest số cụ thể) nhanh hơn chờ reset. Bài học: tính năng đổi mặc định cấu hình (tự động tính giá vốn) làm hỏng ca cũ phụ thuộc giá vốn mẫu: tắt trong selftest
