@@ -43,6 +43,10 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.billadjust", session => new SalesManagePreviewForm(session, BillManageMode.Adjust) },
                 { "preview.purchase", session => new PurchasePreviewForm(session) },
                 { "preview.purchaseedit", session => PurchaseEditDialog.CreateForPreview(session) },
+                { "preview.stockexport", session => new StockDocumentPreviewForm(session, StockDocumentKind.Export) },
+                { "preview.stockexportedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Export) },
+                { "preview.stocktransfer", session => new StockDocumentPreviewForm(session, StockDocumentKind.Transfer) },
+                { "preview.stocktransferedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Transfer) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -101,6 +105,11 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Quản lý nhập kho" (KHO HÀNG > Nhập hàng vào kho, TDONHANG LOAI = 1, docs/specs/phieu-nhap-kho.md).
             if (IsPurchaseListMenu(node, session))
                 return new PurchaseListView(session);
+            // Màn "Quản lý xuất kho" (LOAI = 2) và "Quản lý chuyển kho" (LOAI = 3, docs/specs/phieu-xuat-chuyen-kho.md).
+            if (IsStockExportListMenu(node, session))
+                return new StockDocumentListView(session, StockDocumentKind.Export);
+            if (IsStockTransferListMenu(node, session))
+                return new StockDocumentListView(session, StockDocumentKind.Transfer);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -151,6 +160,56 @@ namespace Kazuko_FnB.UI.Dialogs
                 return true;
             }
             if (node.Operation == 0 && node.Loai == PurchaseConstants.OrderType && !string.IsNullOrEmpty(node.StableDescId))
+            {
+                try
+                {
+                    return string.Equals(
+                        new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId),
+                        "TDONHANG",
+                        StringComparison.OrdinalIgnoreCase);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>Mục "KHO HÀNG > Xuất khác": mở lưới Quản lý xuất kho (TDONHANG LOAI = 2).</summary>
+        internal static bool IsStockExportListMenu(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            if (string.Equals(title, "Xuất khác", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Xuất kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Quản lý xuất kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Xuất hàng khác", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return IsStockOrderListMenuByType(node, session, StockDocumentConstants.ExportOrderType);
+        }
+
+        /// <summary>Mục "KHO HÀNG > Chuyển kho": mở lưới Quản lý chuyển kho (TDONHANG LOAI = 3).</summary>
+        internal static bool IsStockTransferListMenu(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            if (string.Equals(title, "Chuyển kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Quản lý chuyển kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Chuyển kho nội bộ", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return IsStockOrderListMenuByType(node, session, StockDocumentConstants.TransferOrderType);
+        }
+
+        private static bool IsStockOrderListMenuByType(MenuNode node, UserSession session, int orderType)
+        {
+            if (node.Operation == 0 && node.Loai == orderType && !string.IsNullOrEmpty(node.StableDescId))
             {
                 try
                 {

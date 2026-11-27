@@ -226,6 +226,12 @@
     <Compile Include="PurchaseListView.Actions.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="StockDocumentListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="StockDocumentListView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -459,6 +465,9 @@
     <Compile Include="Diagnostics\SelfTest.Supplier.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Purchase.cs" />
     <Compile Include="Diagnostics\SelfTest.Purchase.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.StockDocument.cs" />
+    <Compile Include="Diagnostics\SelfTest.StockDocument.Transfer.cs" />
+    <Compile Include="Diagnostics\SelfTest.StockDocument.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -530,6 +539,13 @@
     <Compile Include="Dialogs\PurchaseEditDialog.Actions.cs" />
     <Compile Include="Dialogs\PurchaseEditDialog.Helpers.cs" />
     <Compile Include="Dialogs\PurchasePreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\StockDocumentEditDialog.cs" />
+    <Compile Include="Dialogs\StockDocumentEditDialog.Lines.cs" />
+    <Compile Include="Dialogs\StockDocumentEditDialog.Actions.cs" />
+    <Compile Include="Dialogs\StockDocumentEditDialog.Helpers.cs" />
+    <Compile Include="Dialogs\StockDocumentPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PickRoomDialog.cs" />
