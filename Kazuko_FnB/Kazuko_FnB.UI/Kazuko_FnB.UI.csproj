@@ -220,6 +220,12 @@
     <Compile Include="VoucherListView.Actions.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="PurchaseListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PurchaseListView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -451,6 +457,8 @@
     <Compile Include="Diagnostics\SelfTest.Warehouse.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Purchase.cs" />
+    <Compile Include="Diagnostics\SelfTest.Purchase.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -517,6 +525,13 @@
     <Compile Include="Dialogs\WarehouseEditDialog.cs" />
     <Compile Include="Dialogs\SupplierEditDialog.cs" />
     <Compile Include="Dialogs\SupplierGroupEditDialog.cs" />
+    <Compile Include="Dialogs\PurchaseEditDialog.cs" />
+    <Compile Include="Dialogs\PurchaseEditDialog.Lines.cs" />
+    <Compile Include="Dialogs\PurchaseEditDialog.Actions.cs" />
+    <Compile Include="Dialogs\PurchaseEditDialog.Helpers.cs" />
+    <Compile Include="Dialogs\PurchasePreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\PickRoomDialog.cs" />
     <Compile Include="Dialogs\PromptDialog.cs" />
     <Compile Include="Dialogs\ProductEditDialog.cs" />

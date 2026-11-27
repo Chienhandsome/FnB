@@ -41,6 +41,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.service", session => new ServicePreviewForm(session) },
                 { "preview.salesmanage", session => new SalesManagePreviewForm(session, BillManageMode.Manage) },
                 { "preview.billadjust", session => new SalesManagePreviewForm(session, BillManageMode.Adjust) },
+                { "preview.purchase", session => new PurchasePreviewForm(session) },
+                { "preview.purchaseedit", session => PurchaseEditDialog.CreateForPreview(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -96,6 +98,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new VoucherListView(session, VoucherKind.Income);
             if (string.Equals(node.FormId, VoucherConstants.ExpenseListFormId, StringComparison.OrdinalIgnoreCase))
                 return new VoucherListView(session, VoucherKind.Expense);
+            // Màn "Quản lý nhập kho" (KHO HÀNG > Nhập hàng vào kho, TDONHANG LOAI = 1, docs/specs/phieu-nhap-kho.md).
+            if (IsPurchaseListMenu(node, session))
+                return new PurchaseListView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -132,6 +137,34 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new CatalogPreviewForm(session, id.Substring(8));
             Func<UserSession, Form> f;
             return id != null && Map.TryGetValue(id, out f) ? f(session) : null;
+        }
+
+        /// <summary>Mục "KHO HÀNG > Nhập hàng vào kho": mở lưới Quản lý nhập kho (TDONHANG LOAI = 1).</summary>
+        internal static bool IsPurchaseListMenu(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            if (string.Equals(title, "Nhập hàng vào kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Quản lý nhập kho", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            if (node.Operation == 0 && node.Loai == PurchaseConstants.OrderType && !string.IsNullOrEmpty(node.StableDescId))
+            {
+                try
+                {
+                    return string.Equals(
+                        new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId),
+                        "TDONHANG",
+                        StringComparison.OrdinalIgnoreCase);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+            return false;
         }
 
         /// <summary>Mục "Tạo phiếu thu": thao tác 1 trên bảng TTHUCHI với LOAI = 0.</summary>

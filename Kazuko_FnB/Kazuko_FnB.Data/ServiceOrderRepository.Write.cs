@@ -78,8 +78,8 @@ namespace Kazuko_FnB.Data
         // ------------------------------------------------------------------ Kiểm tồn kho (§6.6) & In bếp (§3.5)
 
         /// <summary>
-        /// Tồn kho theo TonKhoHandler.GetTonKho: SUM(SLNHAP - SLXUAT) của kho cho chứng từ LOAI &lt;&gt; 0
-        /// hoặc bill bán đã thanh toán (LOAI = 0 AND DATHANHTOAN = 30), loại trừ bill hiện tại.
+        /// Tồn kho dùng chung (phieu-xuat-chuyen-kho.md §4): SUM(SLNHAP - SLXUAT) của kho trên phiếu STATUS = 30
+        /// với chứng từ LOAI &lt;&gt; 0 hoặc bill bán đã thanh toán (LOAI = 0 AND DATHANHTOAN = 30), loại trừ phiếu hiện tại.
         /// </summary>
         public static decimal GetStockBalanceIn(
             FbConnection conn,
@@ -94,6 +94,7 @@ namespace Kazuko_FnB.Data
                 "SELECT COALESCE(SUM(COALESCE(C.SLNHAP, 0) - COALESCE(C.SLXUAT, 0)), 0) " +
                 "FROM TDONHANGCHITIET C INNER JOIN TDONHANG H ON H.ID = C.TDONHANGID " +
                 "WHERE C.DMATHANGID = @P AND C.DKHOHANGID = @W " +
+                "AND COALESCE(H.STATUS, 0) = 30 " +
                 "AND (COALESCE(H.LOAI, 0) <> 0 OR (COALESCE(H.LOAI, 0) = 0 AND COALESCE(H.DATHANHTOAN, 0) = 30)) " +
                 "AND H.ID <> @Ex",
                 "@P", productId, "@W", warehouseId, "@Ex", excludeOrderId ?? "");
