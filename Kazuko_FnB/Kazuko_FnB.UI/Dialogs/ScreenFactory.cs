@@ -12,7 +12,7 @@ namespace Kazuko_FnB.UI.Dialogs
     /// Bảng tra: id mục menu (MenuNode.Id) → hộp thoại chức năng thật.
     /// Mục chưa đăng ký vẫn mở tab tạm "sẽ được bổ sung". Mỗi chức năng đăng ký một dòng ở đây.
     /// </summary>
-    internal static class ScreenFactory
+    internal static partial class ScreenFactory
     {
         private static readonly Dictionary<string, Func<UserSession, Form>> Map =
             new Dictionary<string, Func<UserSession, Form>>(StringComparer.Ordinal)
@@ -169,6 +169,8 @@ namespace Kazuko_FnB.UI.Dialogs
                     return new CatalogView(session.DatabasePath, stableId,
                         string.IsNullOrWhiteSpace(node.Title) ? StoreText.FunctionName : node.Title);
             }
+            Control hrView = TryCreateHrCatalogView(node, session);
+            if (hrView != null) return hrView;
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

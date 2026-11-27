@@ -160,6 +160,8 @@ namespace Kazuko_FnB.Services
         public static bool ChoPhepAmKho { get { return GetBool("ChoPhepAmKho"); } }
         /// <summary>Tự động tính lại giá vốn sau khi lưu/sửa/xóa phiếu nhập kho (docs/specs/tinh-lai-gia-von.md §4). Mặc định tắt.</summary>
         public static bool TuDongTinhGiaVon { get { return GetBool("TuDongTinhGiaVon"); } }
+        /// <summary>Tính lương sử dụng máy chấm công (docs/specs/nhan-su-danh-muc.md §4): 30 = bật, rỗng hoặc khác = tắt.</summary>
+        public static bool TinhLuongSuDungMayChamCong { get { return GetBool("TinhLuongSuDungMayChamCong"); } }
 
         // ---- Khóa phần Thanh toán (docs/specs/su-dung-dich-vu.md §3.7, §3.10) ----
 

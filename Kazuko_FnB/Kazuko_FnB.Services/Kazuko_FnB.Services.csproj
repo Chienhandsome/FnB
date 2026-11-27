@@ -110,6 +110,10 @@
     <Compile Include="WarehouseService.cs" />
     <Compile Include="StoreRules.cs" />
     <Compile Include="StoreService.cs" />
+    <Compile Include="EmployeeRules.cs" />
+    <Compile Include="EmployeeService.cs" />
+    <Compile Include="ShiftRules.cs" />
+    <Compile Include="ShiftService.cs" />
     <Compile Include="SupplierRules.cs" />
     <Compile Include="SupplierService.cs" />
     <Compile Include="SupplierGroupService.cs" />

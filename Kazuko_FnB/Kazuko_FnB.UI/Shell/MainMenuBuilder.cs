@@ -101,6 +101,26 @@ namespace Kazuko_FnB.UI
             return Dialogs.ScreenFactory.IsStoreCatalogMenu(n, null);
         }
 
+        private static bool AllowsLeafPermission(MenuNode n, FunctionPermissions perms)
+        {
+            if (n == null || perms == null)
+                return false;
+            if (Dialogs.ScreenFactory.IsEmployeeCatalogMenu(n, null))
+                return AllowsByIdOrName(perms, n.FunctionId, EmployeeText.FunctionName);
+            if (Dialogs.ScreenFactory.IsShiftCatalogMenu(n, null))
+                return AllowsByIdOrName(perms, n.FunctionId, ShiftText.FunctionName);
+            return perms.AllowsId(n.FunctionId);
+        }
+
+        private static bool AllowsByIdOrName(FunctionPermissions perms, string functionId, string functionName)
+        {
+            if (perms.IsAdmin)
+                return true;
+            if (!string.IsNullOrEmpty(functionId) && perms.ModeById(functionId) != RoleModes.Locked)
+                return true;
+            return perms.ModeByName(functionName) != RoleModes.Locked;
+        }
+
         /// <summary>Bỏ mục ẩn / ẩn theo VISIBLECONFIGID / không đủ quyền; nhóm rỗng cũng bị bỏ; dọn dòng kẻ thừa.</summary>
         private static MenuNode Prune(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById)
         {
@@ -110,7 +130,7 @@ namespace Kazuko_FnB.UI
                 return null;
 
             if (n.IsLeaf)
-                return perms.AllowsId(n.FunctionId) ? n : null;
+                return AllowsLeafPermission(n, perms) ? n : null;
 
             var copy = Clone(n);
             foreach (MenuNode c in n.Children)
@@ -481,7 +501,7 @@ namespace Kazuko_FnB.UI
             if (n.Hidden || n.IsSeparator || !IsVisibleByConfig(n, configById))
                 return null;
             if (n.IsLeaf)
-                return string.Equals((n.Title ?? "").Trim(), title, StringComparison.OrdinalIgnoreCase) && perms.AllowsId(n.FunctionId)
+                return string.Equals((n.Title ?? "").Trim(), title, StringComparison.OrdinalIgnoreCase) && AllowsLeafPermission(n, perms)
                     ? n : null;
             foreach (MenuNode c in n.Children)
             {
@@ -503,7 +523,7 @@ namespace Kazuko_FnB.UI
         {
             if (!IsVisibleByConfig(n, configById))
                 return;
-            if (n.InToolbar && (n.IsSeparator || (n.IsLeaf && perms.AllowsId(n.FunctionId))))
+            if (n.InToolbar && (n.IsSeparator || (n.IsLeaf && AllowsLeafPermission(n, perms))))
                 into.Add(n);
             foreach (MenuNode c in n.Children)
                 CollectToolbar(c, perms, configById, into);
