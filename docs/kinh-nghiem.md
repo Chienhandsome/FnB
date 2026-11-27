@@ -112,7 +112,7 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 ## Bài học làm việc với agy (đêm 27–28/11/2026)
 - **Danh sách cột thật:** với bảng ít dùng (`TBANGLUONGTONGHOP`, `TBANGLUONGCHITIET`...) đọc cột bằng `isql` (`RDB$RELATION_FIELDS`) rồi **dán nguyên vào prompt vòng 1**; bảo agy "tự tra" thì agy ghi cột `NAME` vào bảng không có cột đó (Tính lương mất thêm 2 vòng).
 - **Hết hạn mức (429):** kết quả `status = ERROR`, `response` rỗng, log ghi "Resets in ...". Chờ qua mốc rồi chạy tiếp cùng `-Conversation`; không cần làm lại từ đầu.
-- **agy đọc file ngoài worktree bị chặn (`denied: read_file`)**: đừng chỉ đường dẫn `_tmp\...uild-rN.log` trong lời nhắn; dán nguyên văn lỗi vào tin nhắn.
+- **agy đọc file ngoài worktree bị chặn (`denied: read_file`)**: đừng chỉ đường dẫn `_tmp\...\build-rN.log` trong lời nhắn; dán nguyên văn lỗi vào tin nhắn.
 - **Cảnh báo biên dịch mới cũng tính là không đạt** (vd `CS0184`: `c is X` luôn sai khi `X` không phải `Control`); dặn agy tránh từ đầu hoặc Claude tự sửa một dòng.
 - **Lọc menu theo cấu hình dùng chung:** vòng 1 Danh mục cửa hàng agy lọc **mọi** menu theo `VISIBLECONFIGID`, làm ẩn Voucher và Khuyến mại trong DB demo. Luôn dặn "chỉ áp cho đúng menu mới, các menu khác giữ nguyên hành vi".
 - **Ca selftest gán lên bản ghi dùng để so sánh:** `afterLock.Locked = false` rồi mới `Check(... afterLock.Locked ...)` làm ca đỏ giả. Dặn dùng biến riêng cho từng bước.
