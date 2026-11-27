@@ -114,6 +114,10 @@ namespace Kazuko_FnB.UI
                     || AllowsByIdOrName(perms, n.FunctionId, RewardPenaltyText.AltFunctionName);
             if (Dialogs.ScreenFactory.IsSalaryAdvanceMenu(n))
                 return AllowsByIdOrName(perms, string.IsNullOrEmpty(n.FunctionId) ? SalaryAdvanceText.FunctionId : n.FunctionId, SalaryAdvanceText.FunctionName);
+            if (Dialogs.ScreenFactory.IsPayrollMenu(n))
+                return AllowsByIdOrName(perms, n.FunctionId, PayrollText.PayrollFunctionName);
+            if (Dialogs.ScreenFactory.IsAttendanceMenu(n))
+                return AllowsByIdOrName(perms, string.IsNullOrEmpty(n.FunctionId) ? PayrollText.AttendanceFunctionId : n.FunctionId, PayrollText.AttendanceFunctionName);
             return perms.AllowsId(n.FunctionId);
         }
 

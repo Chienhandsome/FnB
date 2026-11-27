@@ -226,6 +226,18 @@
     <Compile Include="SalaryAdvanceListView.Actions.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="PayrollView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PayrollView.Grid.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PayrollView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PayrollView.Save.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="CatalogView.Supplier.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -564,6 +576,8 @@
     <Compile Include="Diagnostics\SelfTest.RewardPenalty.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.SalaryAdvance.cs" />
     <Compile Include="Diagnostics\SelfTest.SalaryAdvance.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Payroll.cs" />
+    <Compile Include="Diagnostics\SelfTest.Payroll.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Purchase.cs" />
@@ -669,6 +683,12 @@
     <Compile Include="Dialogs\ShiftEditDialog.cs" />
     <Compile Include="Dialogs\RewardPenaltyEditDialog.cs" />
     <Compile Include="Dialogs\RewardPenaltyEditDialog.Layout.cs" />
+    <Compile Include="Dialogs\PayrollCreateDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\PayrollPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\SupplierEditDialog.cs" />
     <Compile Include="Dialogs\SupplierGroupEditDialog.cs" />
     <Compile Include="Dialogs\GiftVoucherEditDialog.cs" />

@@ -42,6 +42,19 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             if (IsSalaryAdvanceMenu(node))
                 return new SalaryAdvanceListView(session);
+            if (IsPayrollMenu(node))
+                return new PayrollView(session, PayrollMode.Payroll);
+            if (IsAttendanceMenu(node))
+                return new PayrollView(session, PayrollMode.Attendance);
+            return null;
+        }
+
+        private static Form TryCreateHrPreview(string id, UserSession session)
+        {
+            if (string.Equals(id, "preview.payroll", StringComparison.Ordinal))
+                return new PayrollPreviewForm(session, PayrollMode.Payroll);
+            if (string.Equals(id, "preview.attendance", StringComparison.Ordinal))
+                return new PayrollPreviewForm(session, PayrollMode.Attendance);
             return null;
         }
 
@@ -106,6 +119,23 @@ namespace Kazuko_FnB.UI.Dialogs
                 return true;
             return !string.IsNullOrEmpty(node.FunctionId)
                 && string.Equals(node.FunctionId, SalaryAdvanceText.FunctionId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "NHÂN SỰ > Tính lương": nhận diện theo tên không dấu không phân biệt hoa thường (SMENU ZZZb không có SFUNCTIONID).</summary>
+        internal static bool IsPayrollMenu(MenuNode node)
+        {
+            if (node == null) return false;
+            return string.Equals(CatalogRepository.Fold((node.Title ?? "").Trim()), "tinh luong", StringComparison.Ordinal);
+        }
+
+        /// <summary>Mục "NHÂN SỰ > Chấm công": nhận diện theo tên không dấu không phân biệt hoa thường hoặc SFUNCTIONID.</summary>
+        internal static bool IsAttendanceMenu(MenuNode node)
+        {
+            if (node == null) return false;
+            if (string.Equals(CatalogRepository.Fold((node.Title ?? "").Trim()), "cham cong", StringComparison.Ordinal))
+                return true;
+            return !string.IsNullOrEmpty(node.FunctionId)
+                && string.Equals(node.FunctionId, PayrollText.AttendanceFunctionId, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

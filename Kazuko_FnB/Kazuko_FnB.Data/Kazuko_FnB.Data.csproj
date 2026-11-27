@@ -109,6 +109,8 @@
     <Compile Include="ShiftRepository.cs" />
     <Compile Include="RewardPenaltyRepository.cs" />
     <Compile Include="SalaryAdvanceRepository.cs" />
+    <Compile Include="PayrollRepository.cs" />
+    <Compile Include="PayrollRepository.Write.cs" />
     <Compile Include="SupplierRepository.cs" />
     <Compile Include="SupplierGroupRepository.cs" />
     <Compile Include="GiftVoucherRepository.cs" />
