@@ -49,7 +49,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 31 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 32 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -73,6 +73,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | Sử dụng dịch vụ patch (c) | 1236 s; 498 / 113 | 1236 s (21 phút) | 611 (9.028) |
 | Sử dụng dịch vụ patch (d) | 1612 s; 689 / 135 (dừng: gọi Bash) · 1717 s; 146 / 4 (dừng: agy hết quota) | 3329 s (55 phút) | 974 (9.653) |
 | Công nợ ban đầu | 740 s | 740 s (12 phút) | chưa đo |
+| Xuất lại định lượng | chưa đo | có: viết spec | Vòng 1 build đạt nhưng một ca UI chạy nền (BackgroundWorker) đỏ do vòng chờ thoát trước khi sự kiện hoàn tất kịp tới: lỗi agy, vòng 2 tách cờ và sửa gốc. Dùng lại đúng hàm sinh dòng xuất vật tư của luồng thanh toán nên không có bản sao logic. Bài học: ca UI chạy nền phải ghi từng cờ vào chuỗi chi tiết ngay từ đầu |
 | Tồn kho ban đầu | 1065 s · 1615 s | 2680 s (45 phút) | chưa đo |
 | Khách hàng thân thiết | 873 s · vòng 2 chưa đo (máy tắt giữa chừng) | chưa đo | chưa đo |
 | Khuyến mại P2 | 1319 s | 1319 s (22 phút) | chưa đo |
