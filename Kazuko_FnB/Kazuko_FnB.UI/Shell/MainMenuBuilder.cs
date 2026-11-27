@@ -124,6 +124,8 @@ namespace Kazuko_FnB.UI
                 return AllowsByIdOrName(perms, n.FunctionId, WifiPasswordText.FunctionName);
             if (Dialogs.ScreenFactory.IsAllWarehousesInventoryMenu(n))
                 return AllowsByIdOrName(perms, n.FunctionId, InventoryConstants.FunctionName);
+            if (Dialogs.ScreenFactory.IsOrderControlMenu(n))
+                return AllowsByIdOrName(perms, string.IsNullOrEmpty(n.FunctionId) ? OrderControlConstants.FunctionId : n.FunctionId, OrderControlConstants.FunctionName);
             return perms.AllowsId(n.FunctionId);
         }
 
@@ -162,7 +164,6 @@ namespace Kazuko_FnB.UI
         private static readonly HashSet<string> MenuHiddenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Dịch vụ MTB",
-            "Kiểm soát order",
             "Danh mục thẻ trả trước",
             // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
             "Danh mục bảng giá",

@@ -206,7 +206,7 @@ namespace Kazuko_FnB.UI.Dialogs
             if (id != null && id.StartsWith("catalog:", StringComparison.Ordinal))
                 return new CatalogPreviewForm(session, id.Substring(8));
             Func<UserSession, Form> f;
-            return id != null && Map.TryGetValue(id, out f) ? f(session) : TryCreateHrPreview(id, session);
+            return id != null && Map.TryGetValue(id, out f) ? f(session) : (TryCreateHrPreview(id, session) ?? TryCreateSmallAdminPreview(id, session));
         }
 
         /// <summary>Mục "KHO HÀNG > Nhập hàng vào kho": mở lưới Quản lý nhập kho (TDONHANG LOAI = 1).</summary>

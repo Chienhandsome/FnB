@@ -136,6 +136,7 @@
     <Compile Include="RepairNoticeRepository.cs" />
     <Compile Include="WifiPasswordRepository.cs" />
     <Compile Include="WifiGroupRepository.cs" />
+    <Compile Include="OrderControlRepository.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

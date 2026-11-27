@@ -33,7 +33,27 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             if (IsAllWarehousesInventoryMenu(node))
                 return new InventoryView(session, true);
+            if (IsOrderControlMenu(node))
+                return new OrderControlView(session);
             return null;
+        }
+
+        private static Form TryCreateSmallAdminPreview(string id, UserSession session)
+        {
+            if (string.Equals(id, "preview.ordercontrol", StringComparison.Ordinal))
+                return new OrderControlPreviewForm(session);
+            return null;
+        }
+
+        /// <summary>Mục "HOẠT ĐỘNG > Kiểm soát order": nhận diện theo tên không dấu không phân biệt hoa thường hoặc SFUNCTIONID.</summary>
+        internal static bool IsOrderControlMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            if (string.Equals(CatalogRepository.Fold((node.Title ?? "").Trim()), "kiem soat order", StringComparison.Ordinal))
+                return true;
+            return !string.IsNullOrEmpty(node.FunctionId)
+                && string.Equals(node.FunctionId, OrderControlConstants.FunctionId, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Mục "KHO HÀNG > Tồn nhiều kho" (SMENU ZZZ012): mở màn Tồn kho ở chế độ tất cả các kho.</summary>
