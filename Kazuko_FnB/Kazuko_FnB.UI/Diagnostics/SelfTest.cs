@@ -593,6 +593,8 @@ namespace Kazuko_FnB.UI.Diagnostics
             SalaryAdvanceTests(db);
             PayrollTests(db);
             PayrollPayoutTests(db);
+            RepairNoticeTests(db);
+            WifiPasswordTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

@@ -118,6 +118,10 @@ namespace Kazuko_FnB.UI
                 return AllowsByIdOrName(perms, n.FunctionId, PayrollText.PayrollFunctionName);
             if (Dialogs.ScreenFactory.IsAttendanceMenu(n))
                 return AllowsByIdOrName(perms, string.IsNullOrEmpty(n.FunctionId) ? PayrollText.AttendanceFunctionId : n.FunctionId, PayrollText.AttendanceFunctionName);
+            if (Dialogs.ScreenFactory.IsRepairNoticeMenu(n, null))
+                return AllowsByIdOrName(perms, n.FunctionId, RepairNoticeText.FunctionName);
+            if (Dialogs.ScreenFactory.IsWifiPasswordMenu(n, null))
+                return AllowsByIdOrName(perms, n.FunctionId, WifiPasswordText.FunctionName);
             return perms.AllowsId(n.FunctionId);
         }
 
@@ -160,9 +164,7 @@ namespace Kazuko_FnB.UI
             "Danh mục thẻ trả trước",
             // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
             "Danh mục bảng giá",
-            "Danh mục loại phòng",
-            "Danh mục mật khẩu wifi",
-            "Thông báo sửa chữa"
+            "Danh mục loại phòng"
         };
 
         private static void HideFromMenu(MenuNode n)

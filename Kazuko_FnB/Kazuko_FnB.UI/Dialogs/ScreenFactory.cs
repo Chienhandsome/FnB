@@ -169,8 +169,8 @@ namespace Kazuko_FnB.UI.Dialogs
                     return new CatalogView(session.DatabasePath, stableId,
                         string.IsNullOrWhiteSpace(node.Title) ? StoreText.FunctionName : node.Title);
             }
-            Control hrView = TryCreateHrCatalogView(node, session);
-            if (hrView != null) return hrView;
+            Control extraView = TryCreateHrCatalogView(node, session) ?? TryCreateSmallAdminCatalogView(node, session);
+            if (extraView != null) return extraView;
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try

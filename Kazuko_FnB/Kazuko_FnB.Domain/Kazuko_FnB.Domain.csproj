@@ -93,6 +93,8 @@
     <Compile Include="OpeningStockModels.cs" />
     <Compile Include="OpeningDebtModels.cs" />
     <Compile Include="MaterialRegenModels.cs" />
+    <Compile Include="RepairNoticeModels.cs" />
+    <Compile Include="WifiPasswordModels.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

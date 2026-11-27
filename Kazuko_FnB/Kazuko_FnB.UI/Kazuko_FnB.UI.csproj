@@ -220,6 +220,21 @@
     <Compile Include="CatalogView.RewardPenalty.Filters.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.RepairNotice.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.RepairNotice.Filters.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.WifiPassword.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.WifiPassword.Groups.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.WifiPassword.Menus.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="SalaryAdvanceListView.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -615,6 +630,10 @@
     <Compile Include="Diagnostics\SelfTest.OpeningDebt.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.MaterialRegen.cs" />
     <Compile Include="Diagnostics\SelfTest.MaterialRegen.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.RepairNotice.cs" />
+    <Compile Include="Diagnostics\SelfTest.RepairNotice.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.WifiPassword.cs" />
+    <Compile Include="Diagnostics\SelfTest.WifiPassword.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -691,6 +710,10 @@
     <Compile Include="Dialogs\ShiftEditDialog.cs" />
     <Compile Include="Dialogs\RewardPenaltyEditDialog.cs" />
     <Compile Include="Dialogs\RewardPenaltyEditDialog.Layout.cs" />
+    <Compile Include="Dialogs\RepairNoticeEditDialog.cs" />
+    <Compile Include="Dialogs\RepairNoticeEditDialog.Layout.cs" />
+    <Compile Include="Dialogs\WifiPasswordEditDialog.cs" />
+    <Compile Include="Dialogs\WifiGroupEditDialog.cs" />
     <Compile Include="Dialogs\PayrollCreateDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -777,6 +800,7 @@
     <Compile Include="Dialogs\RolesPanel.cs" />
     <Compile Include="Dialogs\ScreenFactory.cs" />
     <Compile Include="Dialogs\ScreenFactory.Hr.cs" />
+    <Compile Include="Dialogs\ScreenFactory.SmallAdmin.cs" />
     <Compile Include="Dialogs\ServiceOrderDialogs.cs" />
     <Compile Include="Dialogs\MoveMergeTableDialog.cs">
       <SubType>Form</SubType>
