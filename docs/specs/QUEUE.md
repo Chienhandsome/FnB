@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Danh mục cửa hàng (`37211bd`, #58): thêm/sửa/xóa, trùng mã tên, chặn xóa khi còn tham chiếu và cửa hàng cuối, hiện menu theo NhieuCuaHang
 - [ ] Xuất lại định lượng (`bf9dd5a`, #57): bắt buộc khoảng ngày, Xem trước, gõ XACNHAN, xóa và sinh lại dòng xuất nguyên liệu của hóa đơn đã thanh toán, báo tồn âm, tính lại giá vốn
 - [ ] Công nợ ban đầu (`a66609e`, #56): nợ đầu khách và nhà cung cấp, hiện đúng ở Công nợ, thu nợ theo đơn vào nợ đầu, chặn giảm dưới số đã thu
 - [ ] Tồn kho ban đầu (`1b6998a`, #55): nhập tồn đầu và giá vốn, một phiếu mỗi kho, chặn âm, tự tính giá vốn
