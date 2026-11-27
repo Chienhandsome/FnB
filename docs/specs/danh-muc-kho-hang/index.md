@@ -1,6 +1,6 @@
 # Spec: Danh mục kho hàng (DKHOHANG)
 
-- Trạng thái: **NHÁP**, loại nặng; **hết câu hỏi mở** (Chiến chốt 26/11/2026, issue #20), chờ Chiến duyệt.
+- Trạng thái: **ĐÃ DUYỆT**, loại nặng; **hết câu hỏi mở** (Chiến chốt 26/11/2026, issue #20), **Claude tự duyệt 27/11/2026** theo workflow-agy §10.1.1 (mọi câu hỏi đã được Chiến trả lời).
 - Base: `main` @ `82d9f37`
 - Menu: KHO HÀNG > Danh mục kho hàng (`SMENU.SORTORDER = ZZZ001`, `STATUS = 30`, không có `VISIBLECONFIGID`; `STABLEDESC` `221299bf…`).
 
