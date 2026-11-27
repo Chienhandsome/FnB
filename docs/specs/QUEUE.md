@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Danh mục voucher (`fc50402`, #51): cây nhóm, thêm/sửa/xóa, đã dùng, thanh toán bằng voucher (chưa tới ngày phát hành, quá hạn, bill hủy, đã dùng)
 - [ ] Tính lại giá vốn (`3f5c6ce`, #49): bấm Tính lại, chạy hai lần liền, quyền, cấu hình tự động sau phiếu nhập, đối chiếu giá vốn với app gốc
 - [ ] Kiểm kê kho (`dd98a2f`, #48): chênh lệch, tồn khớp sau kiểm kê (cả 2 ĐVT), tồn đổi giữa chừng, sửa/xóa gây âm kho, chưa kiểm kê
 - [ ] Công nợ KH, NCC, thu nợ theo đơn (`eafcc4e`, #46): công thức nợ, thu nợ nhiều đơn, thu quá nợ một đơn, chi trả NCC, đối chiếu "Nợ cũ" ở Sử dụng dịch vụ
