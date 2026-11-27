@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Tồn kho (`476c3ac`, #45): lọc, tồn 2 ĐVT, tô màu, đối chiếu số tồn với các phiếu, ẩn giá, xuất Excel
 - [ ] Xuất khác và Chuyển kho (`477c605`, #44): xuất vượt tồn, chuyển ĐVT chẵn, dòng đối ứng, sửa/xóa gây âm kho
 - [ ] Nhập hàng vào kho (`cedccd2`, #43): thêm/sửa/xóa phiếu, ĐVT chẵn, công thức tổng, chặn âm kho, lưới
 - [ ] Danh mục nhà cung cấp (`0228433`, #41): cây nhóm, thêm/sửa/xóa NCC và nhóm, xóa còn tham chiếu, quyền Thủ kho
@@ -54,7 +55,7 @@ Làm theo thứ tự; "chưa có spec" thì viết spec nháp và tự duyệt t
 2. Sử dụng dịch vụ: bán hàng và thanh toán (**đủ 4 patch đã code**: (a) `91a57c7`, (b) `56f2036`, (c) `35c0878`, (d) `ac6c750`)
 3. Quản lý bán hàng, Điều chỉnh hóa đơn (**đã code** `92f92de`)
 4. Quỹ: Tạo phiếu thu/chi ghi thật, Danh mục phiếu thu/chi, Danh mục lý do thu chi, Danh mục tài khoản ngân hàng (spec `phieu-thu-chi.md`; **đã code** `66e5b4c`)
-5. Kho (Danh mục kho hàng **đã code** `b4bb293`, Danh mục nhà cung cấp **đã code** `0228433`; Nhập kho **đã code** `cedccd2`; Xuất/Chuyển **đã code** `477c605`; spec Tồn kho, Công nợ **đã viết, Claude tự duyệt 27/11**, issue #42; chưa code): Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)
+5. Kho (Danh mục kho hàng **đã code** `b4bb293`, Danh mục nhà cung cấp **đã code** `0228433`; Nhập kho **đã code** `cedccd2`; Xuất/Chuyển **đã code** `477c605`; Tồn kho **đã code** `476c3ac`; spec Công nợ **đã viết, Claude tự duyệt 27/11**, issue #42; chưa code): Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)
 6. Công nợ khách hàng, Công nợ nhà cung cấp (chưa có spec)
 **Ngoài 2 ngày (làm sau):** Kiểm kê kho, Tính lại giá vốn, Xuất lại định lượng, Tồn nhiều kho, Danh mục cửa hàng, khuyến mại, voucher, thẻ trả trước, khách hàng thân thiết, Kiểm soát order, mật khẩu wifi, toàn bộ Nhân sự, Dữ liệu ban đầu, cấu hình máy in theo khu vực, in P3b, nhập Excel P5, Ctrl+P P6.
 
