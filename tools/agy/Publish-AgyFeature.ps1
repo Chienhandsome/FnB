@@ -15,7 +15,9 @@ param(
     # Tên model Claude của phiên đã kiểm, ghi vào dòng Co-Authored-By.
     [Parameter(Mandatory)][string]$CoAuthor,
     [string]$Body = '',
-    [switch]$ReviewedFullDiff
+    [switch]$ReviewedFullDiff,
+    # Claude tự viết code khi Chiến cho phép (vd agy hết hạn mức): không cần agy-result-rN.json.
+    [switch]$ClaudeDirect
 )
 . (Join-Path $PSScriptRoot 'AgyCommon.ps1')
 $P = Get-FeaturePaths $Feature
@@ -25,7 +27,13 @@ if ($CoAuthor -notmatch '^Claude [A-Za-z0-9 .]+$') { throw "CoAuthor phải là 
 
 $baseInfo = Read-Json $P.BaseFile
 $build = Read-Json (Join-Path $P.Tmp "build-r$Round.json")
-$agy = Read-Json (Join-Path $P.Tmp "agy-result-r$Round.json")
+if ($ClaudeDirect) {
+    $agy = [pscustomobject]@{ agyVersion = 'không dùng'; model = 'Claude viết trực tiếp'; conversation = 'claude-direct' }
+    $generatedBy = "Claude $CoAuthor (viết trực tiếp theo Chiến cho phép, không qua agy)"
+} else {
+    $agy = Read-Json (Join-Path $P.Tmp "agy-result-r$Round.json")
+    $generatedBy = "Antigravity CLI $($agy.agyVersion) ($($agy.model))"
+}
 if (-not $build.ok) { throw "Test-AgyBuild vòng $Round chưa đạt." }
 
 # Ghi chú của agy: chép ra _tmp, không commit.
@@ -62,7 +70,7 @@ $Body
 
 Spec: $($baseInfo.spec)
 Base: $($head.Substring(0,7)); build: $($build.total) (mốc $($build.baseTotal)), ca mới $($build.newPass), ca lỗi mới 0
-Generated-By: Antigravity CLI $($agy.agyVersion) ($($agy.model))
+Generated-By: $generatedBy
 Agy-Conversation: $($agy.conversation)
 Reviewed-By: Claude (đọc diff, build, selftest theo docs/workflow-agy.md)
 
