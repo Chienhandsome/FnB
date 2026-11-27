@@ -351,6 +351,8 @@ namespace Kazuko_FnB.UI.Dialogs
             }
             _original = Snapshot();
             UpdateButtons();
+            if (!string.IsNullOrEmpty(res.Warning))
+                ShowWarning(res.Warning);
             return true;
         }
 
@@ -394,6 +396,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 ShowWarning(res.ErrorMessage);
                 return;
             }
+            if (!string.IsNullOrEmpty(res.Warning))
+                ShowWarning(res.Warning);
             Deleted = true;
             DialogResult = DialogResult.OK;
             Close();

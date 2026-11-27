@@ -43,6 +43,7 @@ namespace Kazuko_FnB.UI.Diagnostics
                     DatabasePath = databasePath,
                     Permissions = new FunctionPermissions(true)
                 };
+                DisableAutoCostForTests(databasePath);
                 string schemaBefore = Schema(databasePath);
 
                 ConfigTests(databasePath);
@@ -578,6 +579,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             InventoryTests(db);
             DebtTests(db);
             StockTakeTests(db);
+            CostRecalcTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

@@ -121,6 +121,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Tồn kho" (KHO HÀNG > Tồn kho, chỉ đọc, docs/specs/ton-kho.md).
             if (IsInventoryMenu(node))
                 return new InventoryView(session);
+            // Màn "Tính lại giá vốn" (KHO HÀNG > Tính lại giá vốn, docs/specs/tinh-lai-gia-von.md).
+            if (IsCostRecalcMenu(node))
+                return new CostRecalcView(session);
             // Màn "Công nợ khách hàng" & "Công nợ nhà cung cấp" (CÔNG NỢ, docs/specs/cong-no.md).
             if (IsCustomerDebtMenu(node))
                 return new DebtListView(session, DebtPartyKind.Customer);
@@ -246,6 +249,14 @@ namespace Kazuko_FnB.UI.Dialogs
             string title = (node.Title ?? "").Trim();
             return string.Equals(title, "Tồn kho", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(title, "Xem tồn kho", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "KHO HÀNG > Tính lại giá vốn": mở màn tính lại giá vốn.</summary>
+        internal static bool IsCostRecalcMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            return string.Equals((node.Title ?? "").Trim(), CostRecalcConstants.FunctionName, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Mục "CÔNG NỢ > Công nợ khách hàng": mở màn công nợ khách hàng.</summary>

@@ -329,6 +329,8 @@ namespace Kazuko_FnB.UI
             }
             if (!res.Ok) { ShowWarning(res.ErrorMessage); return; }
             LastWarningMessageForTest = null;
+            if (!string.IsNullOrEmpty(res.Warning))
+                ShowWarning(res.Warning);
             ReloadAndSelect(null);
         }
 

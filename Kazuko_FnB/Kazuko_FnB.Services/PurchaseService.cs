@@ -253,6 +253,9 @@ namespace Kazuko_FnB.Services
 
             if ((outcome == null || !outcome.Ok) && assignedNewId)
                 ResetNew(row);
+            // Tự động tính lại giá vốn sau khi commit (spec tinh-lai-gia-von §4): lỗi không làm hỏng phiếu đã lưu.
+            if (outcome != null && outcome.Ok)
+                outcome.Warning = CostRecalcService.RunAutoAfterPurchase(_session);
             return outcome ?? PurchaseSaveResult.Fail("Không thể lưu phiếu nhập kho.");
         }
 
@@ -310,6 +313,9 @@ namespace Kazuko_FnB.Services
                 outcome = new PurchaseDeleteResult { Ok = true };
             });
 
+            // Tự động tính lại giá vốn sau khi commit (spec tinh-lai-gia-von §4): lỗi không làm hỏng việc đã xóa.
+            if (outcome != null && outcome.Ok)
+                outcome.Warning = CostRecalcService.RunAutoAfterPurchase(_session);
             return outcome ?? PurchaseDeleteResult.Fail("Không thể xóa phiếu nhập kho.");
         }
 

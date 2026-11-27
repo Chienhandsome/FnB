@@ -228,6 +228,8 @@ namespace Kazuko_FnB.Domain
         public string SavedId { get; set; }
         public string SavedNumber { get; set; }
         public string ErrorMessage { get; set; }
+        /// <summary>Cảnh báo không chặn (đã lưu nhưng chưa tính lại được giá vốn tự động).</summary>
+        public string Warning { get; set; }
 
         public static PurchaseSaveResult Fail(string message)
         {
@@ -239,6 +241,8 @@ namespace Kazuko_FnB.Domain
     {
         public bool Ok { get; set; }
         public string ErrorMessage { get; set; }
+        /// <summary>Cảnh báo không chặn (đã xóa nhưng chưa tính lại được giá vốn tự động).</summary>
+        public string Warning { get; set; }
 
         public static PurchaseDeleteResult Fail(string message)
         {
