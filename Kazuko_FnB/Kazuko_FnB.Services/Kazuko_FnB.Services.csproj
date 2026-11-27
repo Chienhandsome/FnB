@@ -106,6 +106,9 @@
     <Compile Include="VoucherService.cs" />
     <Compile Include="WarehouseRules.cs" />
     <Compile Include="WarehouseService.cs" />
+    <Compile Include="SupplierRules.cs" />
+    <Compile Include="SupplierService.cs" />
+    <Compile Include="SupplierGroupService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

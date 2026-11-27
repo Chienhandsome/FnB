@@ -172,13 +172,16 @@ namespace Kazuko_FnB.UI
 
         private void TreeNodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if (!_customerMode || e.Node == null)
+            if ((!_customerMode && !_supplierMode) || e.Node == null)
                 return;
             string id = e.Node.Tag as string;
             if (string.IsNullOrEmpty(id) || id == UnsetTag)
                 return;
             _tree.SelectedNode = e.Node;
-            OpenCustomerGroupFromTree();
+            if (_supplierMode)
+                OpenSupplierGroupFromTree();
+            else
+                OpenCustomerGroupFromTree();
         }
 
         private void ShowCustomerWarning(string message)

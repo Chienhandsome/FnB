@@ -104,6 +104,8 @@
     <Compile Include="CashReasonRepository.cs" />
     <Compile Include="BankAccountRepository.cs" />
     <Compile Include="WarehouseRepository.cs" />
+    <Compile Include="SupplierRepository.cs" />
+    <Compile Include="SupplierGroupRepository.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -177,6 +177,11 @@ namespace Kazuko_FnB.UI
                         UpdateWarehouseAuditPanel();
                         UpdateWarehouseButtons();
                     }
+                    else if (_supplierMode)
+                    {
+                        UpdateSupplierAuditPanel();
+                        UpdateSupplierButtons();
+                    }
                 }
             };
             _grid.CellDoubleClick += delegate(object sender, DataGridViewCellEventArgs e)
@@ -193,6 +198,8 @@ namespace Kazuko_FnB.UI
                     OpenFundCatalogFromGrid();
                 else if (_warehouseMode)
                     OpenWarehouseFromGrid();
+                else if (_supplierMode)
+                    OpenSupplierFromGrid();
             };
             _grid.MouseDown += GridMouseDown;
             _tree.MouseDown += TreeMouseDown;
@@ -216,6 +223,8 @@ namespace Kazuko_FnB.UI
                     UpdateRoomButtons();
                 else if (_customerMode)
                     UpdateCustomerButtons();
+                else if (_supplierMode)
+                    UpdateSupplierButtons();
             };
 
             _split.FixedPanel = FixedPanel.Panel1;
@@ -233,6 +242,7 @@ namespace Kazuko_FnB.UI
             BuildCustomerUi();
             BuildFundCatalogUi();
             BuildWarehouseUi();
+            BuildSupplierUi();
             Reload();
             ApplyTheme(_theme, _page);
         }
@@ -277,6 +287,7 @@ namespace Kazuko_FnB.UI
                 _reasonMode = string.Equals(_def.TableName, "DLYDOTHUCHI", StringComparison.OrdinalIgnoreCase);
                 _bankAccountMode = string.Equals(_def.TableName, "DTAIKHOANNGANHANG", StringComparison.OrdinalIgnoreCase);
                 _warehouseMode = string.Equals(_def.TableName, "DKHOHANG", StringComparison.OrdinalIgnoreCase);
+                _supplierMode = string.Equals(_def.TableName, "DNHACUNGCAP", StringComparison.OrdinalIgnoreCase);
                 _grid.MultiSelect = _productMode;
                 if (_productMode)
                 {
@@ -298,6 +309,10 @@ namespace Kazuko_FnB.UI
                 {
                     LoadWarehouseData(data);
                 }
+                else if (_supplierMode)
+                {
+                    LoadSupplierData(data);
+                }
                 else
                 {
                     _total = data.Rows.Count;
@@ -318,6 +333,10 @@ namespace Kazuko_FnB.UI
                 else if (_warehouseMode)
                 {
                     ApplyWarehouseBarVisibility();
+                }
+                else if (_supplierMode)
+                {
+                    ApplySupplierBarVisibility();
                 }
                 else
                 {
@@ -432,8 +451,8 @@ namespace Kazuko_FnB.UI
 
             var root = new TreeNode("Tất cả") { Tag = null };
             _tree.Nodes.Add(root);
-            // Cây có "Chưa thiết lập" ở cả hai chế độ (Q2: app gốc CÓ "Chưa thiết lập" cho bàn khu vực).
-            if (_productMode || _roomMode || _customerMode)
+            // Cây có "Chưa thiết lập" ở các chế độ danh mục có cây nhóm.
+            if (_productMode || _roomMode || _customerMode || _supplierMode)
                 root.Nodes.Add(new TreeNode("Chưa thiết lập") { Tag = UnsetTag });
 
             var byParent = new Dictionary<string, List<CatalogNode>>(StringComparer.Ordinal);
@@ -668,7 +687,7 @@ namespace Kazuko_FnB.UI
             float s = DeviceDpi / 96f;
             int pad = (int)(10 * s);
             int h = _bar.ClientSize.Height - 2 * pad;
-            if (!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode)
+            if (!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_supplierMode)
             {
                 int btnW = (int)(100 * s);
                 _search.SetBounds(pad, pad + (h - _search.Height) / 2, (int)(340 * s), _search.Height);
@@ -683,14 +702,14 @@ namespace Kazuko_FnB.UI
                 ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnQuickAdd, _btnExcelAdd, _btnExcelExport, _btnPrint, _btnTotal }
                 : (_customerMode
                     ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnPrint }
-                    : ((IsFundCatalogMode || _warehouseMode)
+                    : ((IsFundCatalogMode || _warehouseMode || _supplierMode)
                         ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelExport }
                         : new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode }));
             using (Graphics g = CreateGraphics())
             {
                 foreach (FlatButton b in buttons)
                 {
-                    if ((_customerMode || IsFundCatalogMode || _warehouseMode) && !b.Visible)
+                    if ((_customerMode || IsFundCatalogMode || _warehouseMode || _supplierMode) && !b.Visible)
                         continue;
                     int w = TextRenderer.MeasureText(g, b.Text, b.Font).Width + (int)(28 * s);
                     b.SetBounds(x, pad, w, h);
@@ -715,21 +734,21 @@ namespace Kazuko_FnB.UI
                 return true;
             }
             // Chỉ khi focus đang ở lưới/cây (không phải ô tìm): Insert thêm, F4 sửa, Del xóa.
-            if ((_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
+            if ((_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode || _supplierMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
             {
                 if (keyData == Keys.Insert)
                 {
-                    if (_productMode) AddProduct(); else if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (_warehouseMode) AddWarehouse(); else AddFundCatalogItem();
+                    if (_productMode) AddProduct(); else if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (_warehouseMode) AddWarehouse(); else if (_supplierMode) AddSupplier(); else AddFundCatalogItem();
                     return true;
                 }
                 if (keyData == Keys.F4)
                 {
-                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else if (_customerMode) OpenCustomerFromGrid(); else if (_warehouseMode) OpenWarehouseFromGrid(); else OpenFundCatalogFromGrid();
+                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else if (_customerMode) OpenCustomerFromGrid(); else if (_warehouseMode) OpenWarehouseFromGrid(); else if (_supplierMode) OpenSupplierFromGrid(); else OpenFundCatalogFromGrid();
                     return true;
                 }
                 if (keyData == Keys.Delete)
                 {
-                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (_warehouseMode) DeleteWarehouse(); else DeleteFundCatalogItem();
+                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (_warehouseMode) DeleteWarehouse(); else if (_supplierMode) DeleteSupplier(); else DeleteFundCatalogItem();
                     return true;
                 }
             }
@@ -756,7 +775,7 @@ namespace Kazuko_FnB.UI
             _refresh.TextColor = t.Text;
             _refresh.BorderColor = Draw.StrongBorder(t);
             _refresh.Invalidate();
-            if (_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode)
+            if (_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode || _supplierMode)
             {
                 _groupBar.BackColor = page;
                 _bottom.BackColor = page;
@@ -791,6 +810,11 @@ namespace Kazuko_FnB.UI
                     UpdateWarehouseButtons();
                     UpdateWarehouseAuditPanel();
                 }
+                else if (_supplierMode)
+                {
+                    UpdateSupplierButtons();
+                    UpdateSupplierAuditPanel();
+                }
                 else
                 {
                     UpdateFundCatalogButtons();
@@ -810,9 +834,9 @@ namespace Kazuko_FnB.UI
             _btnRemove.Tag = "danger";
             _removeFont = new Font("Segoe UI Semibold", 10f);
             _btnRemove.Font = _removeFont;
-            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (IsFundCatalogMode) AddFundCatalogItem(); else if (_warehouseMode) AddWarehouse(); else AddProduct(); };
-            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else if (_customerMode) EditCustomer(); else if (IsFundCatalogMode) EditFundCatalogItem(); else if (_warehouseMode) EditWarehouse(); else EditProduct(); };
-            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (IsFundCatalogMode) DeleteFundCatalogItem(); else if (_warehouseMode) DeleteWarehouse(); else DeleteProduct(); };
+            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (IsFundCatalogMode) AddFundCatalogItem(); else if (_warehouseMode) AddWarehouse(); else if (_supplierMode) AddSupplier(); else AddProduct(); };
+            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else if (_customerMode) EditCustomer(); else if (IsFundCatalogMode) EditFundCatalogItem(); else if (_warehouseMode) EditWarehouse(); else if (_supplierMode) EditSupplier(); else EditProduct(); };
+            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (IsFundCatalogMode) DeleteFundCatalogItem(); else if (_warehouseMode) DeleteWarehouse(); else if (_supplierMode) DeleteSupplier(); else DeleteProduct(); };
             _btnExcelAdd.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnExcelExport.Click += delegate { ExportGridToExcel(); };
             _btnExcelImport.Click += delegate { Msg.Info(this, UnsupportedText); };
@@ -830,8 +854,8 @@ namespace Kazuko_FnB.UI
             _groupBar.Height = (int)(36 * s);
             _groupAdd.SetBounds((int)(6 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
             _groupEdit.SetBounds((int)(40 * s), (int)(4 * s), (int)(28 * s), (int)(28 * s));
-            _groupAdd.Click += delegate { if (_roomMode) AddArea(null); else if (_customerMode) AddCustomerGroup(null); else AddGroup(null); };
-            _groupEdit.Click += delegate { if (_roomMode) EditArea(); else if (_customerMode) EditCustomerGroup(); else EditGroup(); };
+            _groupAdd.Click += delegate { if (_roomMode) AddArea(null); else if (_customerMode) AddCustomerGroup(null); else if (_supplierMode) AddSupplierGroup(null); else AddGroup(null); };
+            _groupEdit.Click += delegate { if (_roomMode) EditArea(); else if (_customerMode) EditCustomerGroup(); else if (_supplierMode) EditSupplierGroup(); else EditGroup(); };
             _groupBar.Controls.Add(_groupAdd);
             _groupBar.Controls.Add(_groupEdit);
             _split.Panel1.Controls.Add(_groupBar);
@@ -1575,7 +1599,7 @@ namespace Kazuko_FnB.UI
         /// <summary>Vẽ số thứ tự (STT) lên row header, theo thứ tự đang hiện trên lưới.</summary>
         private void DrawRowNumber(object sender, DataGridViewRowPostPaintEventArgs e)
         {
-            if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode) || !_grid.RowHeadersVisible)
+            if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_supplierMode) || !_grid.RowHeadersVisible)
                 return;
             string text = (e.RowIndex + 1).ToString(CultureInfo.InvariantCulture);
             var bounds = new Rectangle(0, e.RowBounds.Top, _grid.RowHeadersWidth, e.RowBounds.Height);
@@ -1853,6 +1877,11 @@ namespace Kazuko_FnB.UI
                 RenameCustomerGroupLabel(e);
                 return;
             }
+            if (_supplierMode)
+            {
+                RenameSupplierGroupLabel(e);
+                return;
+            }
             if (!_productMode || e.Label == null)
                 return;
             string id = e.Node.Tag as string;
@@ -2051,7 +2080,7 @@ namespace Kazuko_FnB.UI
 
         private void GridMouseDown(object sender, MouseEventArgs e)
         {
-            if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode) || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_supplierMode) || e.Button != MouseButtons.Right)
                 return;
             DataGridView.HitTestInfo hit = _grid.HitTest(e.X, e.Y);
             if (hit.RowIndex >= 0)
@@ -2072,13 +2101,15 @@ namespace Kazuko_FnB.UI
                 _fundGridMenu.Show(_grid, e.Location);
             else if (_warehouseMode)
                 _warehouseGridMenu.Show(_grid, e.Location);
+            else if (_supplierMode)
+                _supplierGridMenu.Show(_grid, e.Location);
             else
                 _gridMenu.Show(_grid, e.Location);
         }
 
         private void TreeMouseDown(object sender, MouseEventArgs e)
         {
-            if ((!_productMode && !_roomMode && !_customerMode) || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode && !_customerMode && !_supplierMode) || e.Button != MouseButtons.Right)
                 return;
             TreeNode node = _tree.GetNodeAt(e.X, e.Y);
             if (node != null)
@@ -2087,6 +2118,8 @@ namespace Kazuko_FnB.UI
                 _roomTreeMenu.Show(_tree, e.Location);
             else if (_customerMode)
                 _customerTreeMenu.Show(_tree, e.Location);
+            else if (_supplierMode)
+                _supplierTreeMenu.Show(_tree, e.Location);
             else
                 _treeMenu.Show(_tree, e.Location);
         }
@@ -2182,6 +2215,8 @@ namespace Kazuko_FnB.UI
                 _customerTreeMenu.Dispose();
                 _fundGridMenu.Dispose();
                 _warehouseGridMenu.Dispose();
+                _supplierGridMenu.Dispose();
+                _supplierTreeMenu.Dispose();
                 DisposeBarcodeUi();
             }
             base.Dispose(disposing);
