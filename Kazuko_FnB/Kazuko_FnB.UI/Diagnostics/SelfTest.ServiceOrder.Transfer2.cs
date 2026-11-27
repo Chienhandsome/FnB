@@ -312,6 +312,23 @@ namespace Kazuko_FnB.UI.Diagnostics
 
             BookingExec(db, "UPDATE TTHUCHI SET STATUS = -30 WHERE ID = @I", "@I", advId);
 
+            // 2b. A1: Bill mở từ phiếu đặt có phiếu thu cọc đặt trước còn hiệu lực (STATUS = 30) -> CHẶN hủy, nêu số phiếu thu, DB không đổi.
+            string depNumber = "PT-COC-HUY-" + tag;
+            TableTransferResult rDepBlocked = svc.CancelBill(new CancelBillRequest { BillId = bill.Id, TableId = fx.TableA1Id, Reason = "Khách hủy khi còn cọc" });
+            int billAfterDepBlock = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TDONHANG WHERE ID = @I", "@I", bill.Id)));
+            int huyAfterDepBlock = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TDONHANGHUY WHERE TDONHANGID = @I", "@I", bill.Id)));
+            int logAfterDepBlock = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
+                "SELECT COUNT(*) FROM TLUUVET WHERE SODONHANG = @B AND PHANLOAI = @K", "@B", bill.Id, "@K", (int)ActivityKind.HuyBill)));
+            Check("SDDV HuyBill A1 Chặn hủy bill mở từ phiếu đặt còn phiếu thu cọc còn hiệu lực: báo rõ số phiếu thu và không ghi DB",
+                !rDepBlocked.Ok
+                && rDepBlocked.ErrorMessage == ServiceOrderConstants.CancelBlockedHasBookingDeposit(depNumber)
+                && rDepBlocked.ErrorMessage.Contains(depNumber)
+                && billAfterDepBlock == 1 && huyAfterDepBlock == 0 && logAfterDepBlock == 0,
+                "err=" + (rDepBlocked.ErrorMessage ?? "") + ", bill=" + billAfterDepBlock + ", huy=" + huyAfterDepBlock);
+
+            // Xóa mềm phiếu thu cọc đặt trước (STATUS = -30) -> hủy bill được bình thường.
+            BookingExec(db, "UPDATE TTHUCHI SET STATUS = -30 WHERE ID = @I", "@I", depVoucherId);
+
             // 3. Lỗi giữa chừng sau ghi TDONHANGHUY -> rollback sạch (bill vẫn còn, 0 TDONHANGHUY, 0 TLUUVET HuyBill).
             bool caughtCancelCrash = false;
             try
@@ -345,7 +362,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             int huyLogs = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
                 "SELECT COUNT(*) FROM TLUUVET WHERE SODONHANG = @B AND PHANLOAI = @K", "@B", bill.Id, "@K", (int)ActivityKind.HuyBill)));
             int depVoucherStillThere = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
-                "SELECT COUNT(*) FROM TTHUCHI WHERE ID = @I AND STATUS = 30", "@I", depVoucherId)));
+                "SELECT COUNT(*) FROM TTHUCHI WHERE ID = @I", "@I", depVoucherId)));
 
             // Kiểm thêm bản hủy bill nhóm có USERTHANHTOANID rỗng qua ArchiveAndDeleteBillIn -> THANHTOANBOI rỗng (§7).
             ServiceOrderHeader grpBill = OpenTransferBill(svc, fx, fx.TableA2Id, fx.ProdFoodId, 1m, null);

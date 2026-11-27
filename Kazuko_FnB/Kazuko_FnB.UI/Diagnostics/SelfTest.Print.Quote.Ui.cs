@@ -175,6 +175,56 @@ namespace Kazuko_FnB.UI.Diagnostics
                     && !dlgRo.SaveViewPrintButtonForTest.Enabled);
             }
 
+            // 3b. A2: Mở báo giá đã lưu chưa sửa (có quyền sửa) -> 2 nút Lưu & In / Lưu & Xem in BẬT (nút Lưu vẫn tắt), bấm in thẳng không gọi lưu.
+            using (var dlgSaved = new QuoteEditDialog(adminSession, sampleQuoteId, null))
+            {
+                dlgSaved.SuppressPopup = true;
+                dlgSaved.WindowState = FormWindowState.Normal;
+                dlgSaved.StartPosition = FormStartPosition.Manual;
+                dlgSaved.Location = new Point(-20000, -20000);
+                dlgSaved.Show();
+                Application.DoEvents();
+                try
+                {
+                    var recSaved = new CapturingPrintOutputRecorder();
+                    int savedPickerCalls = 0;
+                    dlgSaved.PrintOutputHandlerForTest = recSaved;
+                    dlgSaved.PrintTemplatePickerForTest = delegate (IWin32Window o, IList<PrintTemplateRecord> list)
+                    {
+                        savedPickerCalls++;
+                        return new PrintSelectionResult { Template = FindTemplateByName(list, PrintConstants.DefaultQuoteTemplateName), Action = PrintActionKind.Preview };
+                    };
+
+                    bool buttonsStateOk = !dlgSaved.DirtyForTest
+                        && !dlgSaved.SaveButtonForTest.Enabled
+                        && dlgSaved.SavePrintButtonForTest.Enabled
+                        && dlgSaved.SaveViewPrintButtonForTest.Enabled;
+
+                    object modBefore = DbHelper.Read(db, conn => DbHelper.Scalar(conn, null,
+                        "SELECT TIMEMODIFIED FROM TBAOGIA WHERE ID = @I", "@I", sampleQuoteId));
+
+                    dlgSaved.SavePrintButtonForTest.PerformClick();
+                    Application.DoEvents();
+                    dlgSaved.SaveViewPrintButtonForTest.PerformClick();
+                    Application.DoEvents();
+
+                    object modAfter = DbHelper.Read(db, conn => DbHelper.Scalar(conn, null,
+                        "SELECT TIMEMODIFIED FROM TBAOGIA WHERE ID = @I", "@I", sampleQuoteId));
+
+                    bool skippedSaveAndPrinted = string.IsNullOrEmpty(dlgSaved.SavedId)
+                        && object.Equals(modBefore, modAfter)
+                        && recSaved.PrintCount == 1
+                        && savedPickerCalls == 1
+                        && recSaved.PreviewCount == 1
+                        && PageTextsContain(recSaved.LastPageTexts, "BG26/P2001");
+
+                    Check("In P2 UI QuoteEditDialog A2 (phiếu đã lưu chưa sửa): 2 nút Lưu & In / Lưu & Xem in bật và in thẳng không lưu lại",
+                        buttonsStateOk && skippedSaveAndPrinted,
+                        "btn=" + buttonsStateOk + ", prt=" + recSaved.PrintCount + ", prev=" + recSaved.PreviewCount + ", savedId=" + (dlgSaved.SavedId ?? ""));
+                }
+                finally { dlgSaved.Close(); }
+            }
+
             // 4. QuoteListView nút In: không chọn dòng -> báo câu chuẩn; có chọn dòng -> mở hộp và in phiếu đang chọn.
             using (var host = MakeOffscreenHost())
             {

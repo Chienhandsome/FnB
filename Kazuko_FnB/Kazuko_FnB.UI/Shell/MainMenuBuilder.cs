@@ -189,6 +189,7 @@ namespace Kazuko_FnB.UI
                 ToolbarTitle = n.ToolbarTitle,
                 Action = n.Action,
                 StableDescId = n.StableDescId,
+                FormId = n.FormId,
                 Operation = n.Operation,
                 Loai = n.Loai
             };
@@ -348,6 +349,7 @@ namespace Kazuko_FnB.UI
                     Shortcut = n.Shortcut,
                     Action = n.Action,
                     StableDescId = n.StableDescId,
+                    FormId = n.FormId,
                     Operation = n.Operation,
                     Loai = n.Loai
                 };
@@ -442,6 +444,7 @@ namespace Kazuko_FnB.UI
                     Shortcut = n.Shortcut,
                     Action = n.Action,
                     StableDescId = n.StableDescId,
+                    FormId = n.FormId,
                     Operation = n.Operation,
                     Loai = n.Loai
                 });

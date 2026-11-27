@@ -47,11 +47,23 @@ namespace Kazuko_FnB.UI.Dialogs
 
         private bool SaveThenPrint(bool directDefault, FlatButton triggerButton)
         {
-            if (_printCoordinator.IsBusy)
+            if (_printCoordinator.IsBusy || _readOnly)
                 return false;
-            if (!DoSave())
-                return false;
-            if (string.IsNullOrEmpty(SavedId))
+
+            string targetId;
+            bool hasSavedId = !_isNew && _row != null && !string.IsNullOrEmpty(_row.Id);
+            if (Dirty || !hasSavedId)
+            {
+                if (!DoSave())
+                    return false;
+                targetId = SavedId;
+            }
+            else
+            {
+                targetId = _row.Id;
+            }
+
+            if (string.IsNullOrEmpty(targetId))
                 return false;
 
             return _printCoordinator.PrintQuote(
@@ -59,7 +71,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 triggerButton,
                 _session.DatabasePath,
                 _session,
-                SavedId,
+                targetId,
                 directDefault,
                 PrintOutputHandlerForTest,
                 PrintTemplatePickerForTest,

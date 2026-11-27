@@ -102,6 +102,8 @@
     <Compile Include="BillAdjustService.cs" />
     <Compile Include="BillAdjustService.Update.cs" />
     <Compile Include="BillAdjustService.Cancel.cs" />
+    <Compile Include="VoucherRules.cs" />
+    <Compile Include="VoucherService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

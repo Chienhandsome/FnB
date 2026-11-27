@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Domain;
 
@@ -56,7 +57,15 @@ namespace Kazuko_FnB.Services
                     return;
                 }
 
-                // §6.3: Hủy bill đã thanh toán có cọc/tạm ứng/phiếu thu chi -> cảnh báo nhắc kiểm tra, vẫn cho hủy, không xóa phiếu.
+                // A1: chặn hủy nếu bill mở từ phiếu đặt còn phiếu thu cọc đặt trước còn hiệu lực (STATUS <> -30).
+                List<string> activeDeposits = ServiceTransferRepository.GetActiveBookingDepositNumbersIn(conn, tx, bill.BookingId);
+                if (activeDeposits.Count > 0)
+                {
+                    outcome = BillCancelPaidResult.Fail(SalesManageConstants.CancelBlockedHasBookingDeposit(string.Join(", ", activeDeposits.ToArray())));
+                    return;
+                }
+
+                // §6.3: Hủy bill đã thanh toán có phiếu thu/chi liên quan khác -> cảnh báo nhắc kiểm tra, vẫn cho hủy, không xóa phiếu.
                 BillRelatedVouchersSummary vouchers = SalesManageRepository.GetRelatedVouchersSummaryIn(
                     conn, tx, bill.Id, bill.BookingId);
                 if (vouchers.Count > 0 && !req.ConfirmRelatedVouchers)

@@ -53,6 +53,12 @@ namespace Kazuko_FnB.Domain
             return string.Format("Bạn có muốn hủy hóa đơn số '{0}' không?", billNumber ?? "");
         }
 
+        /// <summary>Chặn hủy hóa đơn mở từ phiếu đặt còn phiếu thu cọc còn hiệu lực (A1).</summary>
+        public static string CancelBlockedHasBookingDeposit(string receiptNumbers)
+        {
+            return ServiceOrderConstants.CancelBlockedHasBookingDeposit(receiptNumbers);
+        }
+
         /// <summary>Cảnh báo khi hủy hóa đơn đã thanh toán có phiếu thu/chi liên quan (§6.3).</summary>
         public static string RelatedVouchersCancelWarning(int count, decimal totalIncome, decimal totalExpense)
         {

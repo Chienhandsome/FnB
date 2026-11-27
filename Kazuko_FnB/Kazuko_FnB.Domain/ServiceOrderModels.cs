@@ -114,6 +114,13 @@ namespace Kazuko_FnB.Domain
                 itemName ?? "", FormatPlainQty(available), FormatPlainQty(required));
         }
 
+        public static string CancelBlockedHasBookingDeposit(string receiptNumbers)
+        {
+            return string.Format(
+                "Không thể hủy hóa đơn vì phiếu đặt hàng đang có phiếu thu tiền cọc còn hiệu lực ({0}), vui lòng xử lý phiếu thu cọc trước khi hủy.",
+                string.IsNullOrEmpty(receiptNumbers) ? "" : receiptNumbers);
+        }
+
         public static string TableStatusLabel(TableStatus status)
         {
             switch (status)

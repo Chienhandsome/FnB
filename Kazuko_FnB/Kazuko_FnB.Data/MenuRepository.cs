@@ -30,7 +30,7 @@ namespace Kazuko_FnB.Data
             {
                 cmd.CommandText =
                     "SELECT ID, NAME, PARENTID, SORTORDER, ITEMTYPE, TOOLBAR, TOOLBARINDEX, " +
-                    "TOOLBARTITLTE, SHORTCUT, HIDEINMENU, SFUNCTIONID, STABLEDESCID, OPERATION, LOAI " +
+                    "TOOLBARTITLTE, SHORTCUT, HIDEINMENU, SFUNCTIONID, STABLEDESCID, OPERATION, LOAI, SFORMID " +
                     "FROM SMENU WHERE STATUS = 30 ORDER BY SORTORDER";
                 using (var r = cmd.ExecuteReader())
                 {
@@ -53,7 +53,8 @@ namespace Kazuko_FnB.Data
                             FunctionId = Str(r[10]),
                             StableDescId = Str(r[11]),
                             Operation = Int(r[12]),
-                            Loai = Int(r[13])
+                            Loai = Int(r[13]),
+                            FormId = Str(r[14])
                         };
                         all[n.Id] = n;
                         ordered.Add(n);
@@ -84,31 +85,52 @@ namespace Kazuko_FnB.Data
             if (roots == null)
                 return;
             var map = new Dictionary<string, string>(StringComparer.Ordinal);
+            var formMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             DbHelper.Guard(delegate
             {
                 using (var conn = KazukoConnection.Open(_databasePath))
-                using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT \"ID\", \"SFUNCTIONID\" FROM \"STABLEDESC\" " +
-                        "WHERE \"SFUNCTIONID\" IS NOT NULL AND \"SFUNCTIONID\" <> ''";
-                    using (var r = cmd.ExecuteReader())
+                    using (var cmd = conn.CreateCommand())
                     {
-                        while (r.Read())
+                        cmd.CommandText = "SELECT \"ID\", \"SFUNCTIONID\" FROM \"STABLEDESC\" " +
+                            "WHERE \"SFUNCTIONID\" IS NOT NULL AND \"SFUNCTIONID\" <> ''";
+                        using (var r = cmd.ExecuteReader())
                         {
-                            string id = Str(r[0]);
-                            string fn = Str(r[1]);
-                            if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(fn))
-                                map[id] = fn;
+                            while (r.Read())
+                            {
+                                string id = Str(r[0]);
+                                string fn = Str(r[1]);
+                                if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(fn))
+                                    map[id] = fn;
+                            }
+                        }
+                    }
+                    if (CatalogRepository.ReadTableColumns(conn, "SFORM").Contains("SFUNCTIONID"))
+                    {
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = "SELECT \"ID\", \"SFUNCTIONID\" FROM \"SFORM\" " +
+                                "WHERE \"SFUNCTIONID\" IS NOT NULL AND \"SFUNCTIONID\" <> ''";
+                            using (var r = cmd.ExecuteReader())
+                            {
+                                while (r.Read())
+                                {
+                                    string id = Str(r[0]);
+                                    string fn = Str(r[1]);
+                                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(fn))
+                                        formMap[id] = fn;
+                                }
+                            }
                         }
                     }
                 }
                 return 0;
             });
             foreach (MenuNode root in roots)
-                FillNode(root, map);
+                FillNode(root, map, formMap);
         }
 
-        private static void FillNode(MenuNode n, Dictionary<string, string> map)
+        private static void FillNode(MenuNode n, Dictionary<string, string> map, Dictionary<string, string> formMap)
         {
             if (string.IsNullOrEmpty(n.FunctionId) && !string.IsNullOrEmpty(n.StableDescId))
             {
@@ -116,8 +138,14 @@ namespace Kazuko_FnB.Data
                 if (map.TryGetValue(n.StableDescId, out fn))
                     n.FunctionId = fn;
             }
+            if (string.IsNullOrEmpty(n.FunctionId) && !string.IsNullOrEmpty(n.FormId))
+            {
+                string fn;
+                if (formMap.TryGetValue(n.FormId, out fn))
+                    n.FunctionId = fn;
+            }
             foreach (MenuNode c in n.Children)
-                FillNode(c, map);
+                FillNode(c, map, formMap);
         }
 
         /// <summary>

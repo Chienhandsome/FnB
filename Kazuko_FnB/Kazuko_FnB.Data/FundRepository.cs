@@ -26,39 +26,42 @@ namespace Kazuko_FnB.Data
 
         public FundData Load(DateTime to)
         {
+            return DbHelper.Read(_databasePath, conn => LoadIn(conn, null, to));
+        }
+
+        /// <summary>Đọc dữ liệu quỹ trong transaction hiện có (dùng chung cho màn Tồn quỹ và kiểm tra chi vượt quỹ).</summary>
+        public static FundData LoadIn(FbConnection conn, FbTransaction tx, DateTime to)
+        {
             DateTime end = to.Date.AddDays(1);
-            return DbHelper.Read(_databasePath, conn =>
+            var data = new FundData
             {
-                var data = new FundData
+                Sources = new List<FundSource>(),
+                Accounts = new List<FundAccount>(),
+                Stores = new List<StoreRecord>()
+            };
+            LoadOrders(conn, tx, end, data.Sources);
+            LoadVouchers(conn, tx, end, data.Sources);
+
+            foreach (DataRow r in DbHelper.Table(conn, tx,
+                         "SELECT ID, NAME, STATUS FROM DTAIKHOANNGANHANG ORDER BY NAME").Rows)
+                data.Accounts.Add(new FundAccount
                 {
-                    Sources = new List<FundSource>(),
-                    Accounts = new List<FundAccount>(),
-                    Stores = new List<StoreRecord>()
-                };
-                LoadOrders(conn, end, data.Sources);
-                LoadVouchers(conn, end, data.Sources);
+                    Id = DbHelper.Str(r["ID"]),
+                    Name = DbHelper.Str(r["NAME"]),
+                    Active = DbHelper.Int(r["STATUS"]) == CatalogRepository.ActiveStatus
+                });
 
-                foreach (DataRow r in DbHelper.Table(conn, null,
-                             "SELECT ID, NAME, STATUS FROM DTAIKHOANNGANHANG ORDER BY NAME").Rows)
-                    data.Accounts.Add(new FundAccount
-                    {
-                        Id = DbHelper.Str(r["ID"]),
-                        Name = DbHelper.Str(r["NAME"]),
-                        Active = DbHelper.Int(r["STATUS"]) == CatalogRepository.ActiveStatus
-                    });
-
-                foreach (DataRow r in DbHelper.Table(conn, null,
-                             "SELECT ID, NAME FROM DCUAHANG WHERE STATUS = @S ORDER BY NAME",
-                             "@S", CatalogRepository.ActiveStatus).Rows)
-                    data.Stores.Add(new StoreRecord { Id = DbHelper.Str(r["ID"]), Name = DbHelper.Str(r["NAME"]) });
-                return data;
-            });
+            foreach (DataRow r in DbHelper.Table(conn, tx,
+                         "SELECT ID, NAME FROM DCUAHANG WHERE STATUS = @S ORDER BY NAME",
+                         "@S", CatalogRepository.ActiveStatus).Rows)
+                data.Stores.Add(new StoreRecord { Id = DbHelper.Str(r["ID"]), Name = DbHelper.Str(r["NAME"]) });
+            return data;
         }
 
         /// <summary>Hóa đơn bán đã thanh toán, phiếu nhập và phiếu xuất trả (bỏ bản ghi đã xóa mềm).</summary>
-        private static void LoadOrders(FbConnection conn, DateTime end, List<FundSource> sources)
+        private static void LoadOrders(FbConnection conn, FbTransaction tx, DateTime end, List<FundSource> sources)
         {
-            DataTable table = DbHelper.Table(conn, null,
+            DataTable table = DbHelper.Table(conn, tx,
                 "SELECT H.NAME, H.NGAY, H.GIOTHANHTOAN, H.TIMECREATED, H.LOAI, H.STATUS, H.DATHANHTOAN, " +
                 "H.TIENMAT, H.CHUYENKHOAN, H.THE, H.TIENTHANHTOAN, H.DTAIKHOANNGANHANGID, H.DNHACUNGCAPID, " +
                 OrderStore + " AS CUAHANG FROM TDONHANG H " +
@@ -106,9 +109,9 @@ namespace Kazuko_FnB.Data
         }
 
         /// <summary>Phiếu thu/chi. Phiếu số dư đầu kỳ luôn được lấy, kể cả sau ngày "Đến", vì nó quyết định mốc.</summary>
-        private static void LoadVouchers(FbConnection conn, DateTime end, List<FundSource> sources)
+        private static void LoadVouchers(FbConnection conn, FbTransaction tx, DateTime end, List<FundSource> sources)
         {
-            DataTable table = DbHelper.Table(conn, null,
+            DataTable table = DbHelper.Table(conn, tx,
                 "SELECT NAME, NGAY, TIMECREATED, STATUS, THU, CHI, CHUYENKHOAN, DTAIKHOANNGANHANGID, " +
                 "DCUAHANGID, DLYDOTHUCHIID FROM TTHUCHI " +
                 "WHERE COALESCE(STATUS, 0) <> @Deleted " +

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using FirebirdSql.Data.FirebirdClient;
 using Kazuko_FnB.Domain;
@@ -74,6 +75,32 @@ namespace Kazuko_FnB.Data
                 "AND COALESCE(THU, 0) > 0 AND COALESCE(STATUS, 0) <> @Del",
                 "@B", billId, "@Del", DeletedStatus));
             return count > 0;
+        }
+
+        /// <summary>
+        /// Danh sách số phiếu thu tiền cọc đặt trước còn hiệu lực gắn với phiếu đặt hàng
+        /// (TTHUCHI.TDATHANGID = bookingId, LOAI = 0, THU &gt; 0, STATUS &lt;&gt; -30).
+        /// Dùng để chặn hủy hóa đơn mở từ phiếu đặt còn cọc (A1); phiếu đã xóa mềm (STATUS = -30) không tính.
+        /// </summary>
+        public static List<string> GetActiveBookingDepositNumbersIn(FbConnection conn, FbTransaction tx, string bookingId)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrWhiteSpace(bookingId))
+                return result;
+
+            DataTable dt = DbHelper.Table(conn, tx,
+                "SELECT NAME FROM TTHUCHI " +
+                "WHERE TDATHANGID = @BK AND COALESCE(LOAI, 0) = 0 " +
+                "AND COALESCE(THU, 0) > 0 AND COALESCE(STATUS, 0) <> @Del " +
+                "ORDER BY NGAY, TIMECREATED, NAME",
+                "@BK", bookingId.Trim(), "@Del", DeletedStatus);
+
+            foreach (DataRow r in dt.Rows)
+            {
+                string name = (DbHelper.Str(r["NAME"]) ?? "").Trim();
+                result.Add(name.Length > 0 ? name : "(không số)");
+            }
+            return result;
         }
 
         /// <summary>

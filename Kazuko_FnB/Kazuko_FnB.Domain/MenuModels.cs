@@ -41,6 +41,8 @@ namespace Kazuko_FnB.Domain
         public MenuAction Action { get; set; }
         /// <summary>SMENU.STABLEDESCID: bảng nhập liệu dựng màn danh mục chung; rỗng nếu mục này không dựa vào bảng.</summary>
         public string StableDescId { get; set; }
+        /// <summary>SMENU.SFORMID: form gắn với mục menu (vd. Danh mục phiếu thu / chi); rỗng nếu không gắn form.</summary>
+        public string FormId { get; set; }
         /// <summary>SMENU.OPERATION: 0 = mở danh mục thường; số khác = thao tác riêng (vd. 7 = gửi tin nhắn).</summary>
         public int Operation { get; set; }
         /// <summary>SMENU.LOAI: với phiếu thu/chi, 0 = phiếu thu, 1 = phiếu chi.</summary>

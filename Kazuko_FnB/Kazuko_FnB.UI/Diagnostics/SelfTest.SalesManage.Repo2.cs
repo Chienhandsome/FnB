@@ -304,6 +304,58 @@ namespace Kazuko_FnB.UI.Diagnostics
                 && canOk.Ok && bill3Left == 0 && lines3Left == 0 && kitchen3Left == 0
                 && voucher3Left == 1 && cancelDiscMoney == 20000m && cancelDetailCount == 1 && cancelLogCount >= 1,
                 "ok=" + canOk.Ok + ", left=" + bill3Left + ", vch=" + voucher3Left + ", discMoney=" + cancelDiscMoney + ", det=" + cancelDetailCount);
+
+            // 4. A1: Hủy bill đã thanh toán mở từ phiếu đặt có cọc còn hiệu lực -> CHẶN trước mọi ghi DB; cọc xóa mềm (STATUS=-30) -> hủy được.
+            string depBkId = DbHelper.NewId();
+            string depBillId = null;
+            string depVchId = null;
+            string depVchNo = "PT-COC-A1-" + fx.Tag;
+            DateTime now = new InvoiceNumberRepository(db).GetServerTimestamp();
+            try
+            {
+                DbHelper.InTransaction(db, (conn, tx) =>
+                {
+                    DbHelper.Exec(conn, tx,
+                        "INSERT INTO TDATHANG (ID, GUID, NAME, NGAY, TUNGAY, DENNGAY, GIODAT, DBANID, TENKHACH, STATUS, USERCREATEDID, TIMECREATED) " +
+                        "VALUES (@I, @G, @N, @D, @D, @D, @T, @TB, 'Khach A1', 30, 'selftest', @T)",
+                        "@I", depBkId, "@G", DbHelper.NewId(), "@N", "DH-A1-" + fx.Tag, "@D", fx.BusinessDate, "@T", now, "@TB", fx.Table3Id);
+                    depBillId = InsertSeedPaidBill(conn, tx, fx, "QLBH-A1-" + fx.Tag, fx.Table3Id, now.AddMinutes(-2), 100000m, 0m, 100000m, 0m, 0m, null, null, null, "", depBkId);
+                    InsertSeedBillLine(conn, tx, depBillId, fx.ProdNormalId, "QLBH Bia " + fx.Tag, fx.UnitId, fx.WarehouseId, 2m, 50000m, 0m, 0, now);
+                    depVchId = InsertSeedVoucher(conn, tx, fx, depVchNo, 0, 50000m, 0m, null, depBkId, 30, now);
+                });
+
+                BillCancelPaidResult depBlocked = svc.CancelPaidBill(new BillCancelPaidRequest
+                {
+                    BillId = depBillId, Reason = "Hủy thử có cọc", ConfirmRelatedVouchers = true
+                }, admin);
+                int depBillAfterBlock = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TDONHANG WHERE ID = @I", "@I", depBillId)));
+                int depHuyAfterBlock = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TDONHANGHUY WHERE TDONHANGID = @I", "@I", depBillId)));
+                int depLogAfterBlock = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null,
+                    "SELECT COUNT(*) FROM TLUUVET WHERE SODONHANG = @I AND PHANLOAI = @K", "@I", depBillId, "@K", (int)ActivityKind.HuyBill)));
+
+                // Xóa mềm phiếu thu cọc (STATUS = -30) -> hủy thành công.
+                BookingExec(db, "UPDATE TTHUCHI SET STATUS = -30 WHERE ID = @I", "@I", depVchId);
+                BillCancelPaidResult depAllowed = svc.CancelPaidBill(new BillCancelPaidRequest
+                {
+                    BillId = depBillId, Reason = "Hủy sau xóa mềm cọc", ConfirmRelatedVouchers = true
+                }, admin);
+                if (depAllowed.Ok && !string.IsNullOrEmpty(depAllowed.CancelledBillHuyId))
+                    fx.CreatedCancelIds.Add(depAllowed.CancelledBillHuyId);
+                int depBillAfterAllow = DbHelper.Read(db, conn => DbHelper.Int(DbHelper.Scalar(conn, null, "SELECT COUNT(*) FROM TDONHANG WHERE ID = @I", "@I", depBillId)));
+
+                Check("QLBH A1 Chặn hủy bill đã thanh toán mở từ phiếu đặt còn phiếu thu cọc (báo số phiếu thu, không đổi DB); cọc xóa mềm (STATUS=-30) hủy được",
+                    !depBlocked.Ok && !depBlocked.NeedsVoucherWarningConfirmation
+                    && depBlocked.ErrorMessage == SalesManageConstants.CancelBlockedHasBookingDeposit(depVchNo)
+                    && depBlocked.ErrorMessage.Contains(depVchNo)
+                    && depBillAfterBlock == 1 && depHuyAfterBlock == 0 && depLogAfterBlock == 0
+                    && depAllowed.Ok && depBillAfterAllow == 0,
+                    "blkErr=" + (depBlocked.ErrorMessage ?? "") + ", alw=" + depAllowed.Ok);
+            }
+            finally
+            {
+                BookingExec(db, "DELETE FROM TTHUCHI WHERE TDATHANGID = @I", "@I", depBkId);
+                BookingExec(db, "DELETE FROM TDATHANG WHERE ID = @I", "@I", depBkId);
+            }
         }
     }
 }

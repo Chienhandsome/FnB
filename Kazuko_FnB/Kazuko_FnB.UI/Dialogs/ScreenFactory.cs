@@ -21,8 +21,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "admin.images", session => new ImageLibraryDialog(session) },
                 { "admin.users", session => new UserManagerDialog(session) },
                 { "admin.themes", session => new ThemeChooserDialog(session) },
-                // Bản thử "Phiếu thu" dựng từ layout gốc (docs/specs/pilot-phieu-thu.md); cũng mở được từ menu Quỹ ▸ Tạo phiếu thu.
+                // Phiếu thu / Phiếu chi dựng từ layout gốc (docs/specs/phieu-thu-chi.md).
                 { "preview.phieuthu", session => new PhieuThuDialog(session) },
+                { "preview.phieuchi", session => new PhieuThuDialog(session, VoucherKind.Expense) },
                 { "sys.password", session => new ChangePasswordDialog(session) },
                 // Chỉ để chụp thử bằng --render-screen (không có mục menu):
                 { "preview.booking", session => new BookingPreviewForm(session) },
@@ -90,6 +91,11 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new SalesManageView(session, BillManageMode.Manage);
             if (string.Equals(node.Id, SalesManageView.AdjustMenuId, StringComparison.Ordinal))
                 return new SalesManageView(session, BillManageMode.Adjust);
+            // Màn "Danh mục phiếu thu" / "Danh mục phiếu chi" (docs/specs/phieu-thu-chi.md §1).
+            if (string.Equals(node.FormId, VoucherConstants.IncomeListFormId, StringComparison.OrdinalIgnoreCase))
+                return new VoucherListView(session, VoucherKind.Income);
+            if (string.Equals(node.FormId, VoucherConstants.ExpenseListFormId, StringComparison.OrdinalIgnoreCase))
+                return new VoucherListView(session, VoucherKind.Expense);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -102,6 +108,13 @@ namespace Kazuko_FnB.UI.Dialogs
                         return new BookingListView(session.DatabasePath);
                     if (string.Equals(table, "TBAOGIA", StringComparison.OrdinalIgnoreCase))
                         return new QuoteListView(session);
+                    if (string.Equals(table, "TTHUCHI", StringComparison.OrdinalIgnoreCase))
+                    {
+                        bool isExpense = node.Loai == 1
+                            || ((node.Title ?? "").IndexOf("chi", StringComparison.OrdinalIgnoreCase) >= 0
+                                && (node.Title ?? "").IndexOf("thu", StringComparison.OrdinalIgnoreCase) < 0);
+                        return new VoucherListView(session, isExpense ? VoucherKind.Expense : VoucherKind.Income);
+                    }
                     return null;
                 }
             }
@@ -121,10 +134,25 @@ namespace Kazuko_FnB.UI.Dialogs
             return id != null && Map.TryGetValue(id, out f) ? f(session) : null;
         }
 
-        /// <summary>Mục "Tạo phiếu thu": thao tác 1 trên bảng TTHUCHI với LOAI = 0 (LOAI = 1 là phiếu chi, chưa làm).</summary>
+        /// <summary>Mục "Tạo phiếu thu": thao tác 1 trên bảng TTHUCHI với LOAI = 0.</summary>
         internal static bool IsNewIncomeVoucher(MenuNode node, UserSession session)
         {
             if (node == null || session == null || node.Operation != 1 || node.Loai != 0 || string.IsNullOrEmpty(node.StableDescId))
+                return false;
+            try
+            {
+                return new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId) == "TTHUCHI";
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>Mục "Tạo phiếu chi": thao tác 1 trên bảng TTHUCHI với LOAI = 1.</summary>
+        internal static bool IsNewExpenseVoucher(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null || node.Operation != 1 || node.Loai != 1 || string.IsNullOrEmpty(node.StableDescId))
                 return false;
             try
             {
@@ -143,12 +171,25 @@ namespace Kazuko_FnB.UI.Dialogs
             {
                 try
                 {
-                    using (var dlg = new PhieuThuDialog(session))
+                    using (var dlg = new PhieuThuDialog(session, VoucherKind.Income))
                         dlg.ShowDialog(owner);
                 }
                 catch (Exception ex)
                 {
                     Msg.Error(owner, "Không mở được phiếu thu: " + ex.Message);
+                }
+                return true;
+            }
+            if (IsNewExpenseVoucher(node, session))
+            {
+                try
+                {
+                    using (var dlg = new PhieuThuDialog(session, VoucherKind.Expense))
+                        dlg.ShowDialog(owner);
+                }
+                catch (Exception ex)
+                {
+                    Msg.Error(owner, "Không mở được phiếu chi: " + ex.Message);
                 }
                 return true;
             }

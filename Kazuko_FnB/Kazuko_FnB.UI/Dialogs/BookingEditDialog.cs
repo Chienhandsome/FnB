@@ -1378,11 +1378,13 @@ namespace Kazuko_FnB.UI.Dialogs
         private void UpdateSaveButtons()
         {
             bool dirty = Dirty;
+            bool canPrintSaved = !_isNew && _row != null && !string.IsNullOrEmpty(_row.Id);
+            bool canSavePrint = !_readOnly && (dirty || canPrintSaved);
             _btnSave.Enabled = dirty && !_readOnly;
             _btnSaveNew.Enabled = dirty && !_readOnly;
             _btnSaveClose.Enabled = dirty && !_readOnly;
-            _btnSavePrint.Enabled = dirty && !_readOnly;
-            _btnSaveViewPrint.Enabled = dirty && !_readOnly;
+            _btnSavePrint.Enabled = canSavePrint;
+            _btnSaveViewPrint.Enabled = canSavePrint;
             _btnDelete.Enabled = !_isNew && _canRemove && !_readOnly;
         }
 

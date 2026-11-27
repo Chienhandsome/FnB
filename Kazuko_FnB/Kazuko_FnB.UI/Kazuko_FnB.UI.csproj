@@ -199,6 +199,15 @@
     <Compile Include="CatalogView.Customer.Menus.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.FundCatalog.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="VoucherListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="VoucherListView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -424,6 +433,8 @@
     <Compile Include="Diagnostics\SelfTest.SalesManage.Repo.cs" />
     <Compile Include="Diagnostics\SelfTest.SalesManage.Repo2.cs" />
     <Compile Include="Diagnostics\SelfTest.SalesManage.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Voucher.cs" />
+    <Compile Include="Diagnostics\SelfTest.Voucher.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -482,6 +493,11 @@
     <Compile Include="Dialogs\PhieuThuDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Dialogs\PhieuThuDialog.Actions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\CashReasonEditDialog.cs" />
+    <Compile Include="Dialogs\BankAccountEditDialog.cs" />
     <Compile Include="Dialogs\PickRoomDialog.cs" />
     <Compile Include="Dialogs\PromptDialog.cs" />
     <Compile Include="Dialogs\ProductEditDialog.cs" />

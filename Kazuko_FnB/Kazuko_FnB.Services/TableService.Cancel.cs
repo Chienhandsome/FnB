@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Kazuko_FnB.Data;
 using Kazuko_FnB.Domain;
 
@@ -98,6 +99,14 @@ namespace Kazuko_FnB.Services
                 if (ServiceTransferRepository.HasActiveAdvanceVoucherIn(conn, tx, bill.Id))
                 {
                     outcome = TableTransferResult.Fail(ServiceTransferConstants.CancelBlockedHasAdvance(tableName));
+                    return;
+                }
+
+                // A1: chặn hủy nếu bill mở từ phiếu đặt còn phiếu thu cọc đặt trước còn hiệu lực (STATUS <> -30).
+                List<string> activeDeposits = ServiceTransferRepository.GetActiveBookingDepositNumbersIn(conn, tx, bill.BookingId);
+                if (activeDeposits.Count > 0)
+                {
+                    outcome = TableTransferResult.Fail(ServiceOrderConstants.CancelBlockedHasBookingDeposit(string.Join(", ", activeDeposits.ToArray())));
                     return;
                 }
 
