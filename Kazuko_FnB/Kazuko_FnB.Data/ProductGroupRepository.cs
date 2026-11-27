@@ -39,6 +39,22 @@ namespace Kazuko_FnB.Data
             });
         }
 
+        /// <summary>Bản đồ ID nhóm -> PARENTID (DNHOMMATHANG STATUS = 30) để duyệt nhóm cha khi áp khuyến mại theo nhóm.</summary>
+        public static Dictionary<string, string> LoadParentMapIn(FbConnection conn, FbTransaction tx)
+        {
+            DataTable dt = DbHelper.Table(conn, tx,
+                "SELECT ID, COALESCE(PARENTID, '') AS PARENTID FROM DNHOMMATHANG WHERE STATUS = @S",
+                "@S", ActiveStatus);
+            var map = new Dictionary<string, string>(dt.Rows.Count, StringComparer.Ordinal);
+            foreach (DataRow r in dt.Rows)
+            {
+                string id = DbHelper.Str(r["ID"]) ?? "";
+                if (id.Length > 0)
+                    map[id] = (DbHelper.Str(r["PARENTID"]) ?? "").Trim();
+            }
+            return map;
+        }
+
         /// <summary>Một nhóm (mọi STATUS); null nếu không có.</summary>
         public ProductGroupRow Load(string id)
         {

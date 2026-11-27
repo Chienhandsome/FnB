@@ -125,7 +125,15 @@ namespace Kazuko_FnB.Services
 
         public ServiceOrderHeader LoadBill(string billId)
         {
-            return _repo.LoadBill(billId);
+            if (string.IsNullOrEmpty(billId))
+                return null;
+            decimal roundStep = SystemConfig.LamTronTien;
+            return DbHelper.Read(_databasePath, conn =>
+            {
+                ServiceOrderHeader bill = ServiceOrderRepository.LoadBillIn(conn, null, billId);
+                PopulatePromotionLabelsIn(conn, null, bill, roundStep);
+                return bill;
+            });
         }
 
         // ------------------------------------------------------------------ Chọn bàn & khóa bàn (§3.2, §6.5)
@@ -157,7 +165,7 @@ namespace Kazuko_FnB.Services
             if (bill != null && SystemConfig.HeThongChayNhieuMayTram)
                 _repo.LockTable(tableId, _session.UserName);
 
-            return ServiceOpResult.Success(bill);
+            return RefreshUnpaidBillOnSelect(bill, tableId);
         }
 
         public void RenewLock(string tableId)
@@ -269,6 +277,7 @@ namespace Kazuko_FnB.Services
 
                 ServiceOrderRepository.InsertBillHeaderIn(conn, tx, header, _session.UserId, serverNow);
 
+                string promoWarning = null;
                 // Thêm mặt hàng mặc định theo khu vực nếu bật cấu hình (§3.3).
                 if (addDefaults && !string.IsNullOrEmpty(table.AreaId))
                 {
@@ -287,7 +296,7 @@ namespace Kazuko_FnB.Services
                         decimal price = OrderCalculator.ResolveAreaPrice(prod, table.AreaPriceLevelId);
                         AddLineCoreIn(conn, tx, header, prod, def.Quantity, price, prod.Name, prod.UnitId, "", null, serverNow);
                     }
-                    RecalcAndSaveHeaderIn(conn, tx, header, roundStep, serverNow);
+                    promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, serverNow, allowNegativeStock);
                 }
 
                 _activityLogger.WriteBatch(conn, tx, new[]
@@ -304,7 +313,8 @@ namespace Kazuko_FnB.Services
                 });
 
                 ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, header.Id);
-                outcome = ServiceOpResult.Success(loaded);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             if (outcome != null && outcome.Ok && SystemConfig.HeThongChayNhieuMayTram)

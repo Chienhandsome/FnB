@@ -76,7 +76,7 @@ namespace Kazuko_FnB.Services
                 string unitId = string.IsNullOrEmpty(overrideUnitId) ? product.UnitId : overrideUnitId;
 
                 AddLineCoreIn(conn, tx, header, product, quantity, price, itemName, unitId, note ?? "", openComboComponents, now);
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, allowNegativeStock);
 
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -95,7 +95,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể thêm mặt hàng.");
@@ -147,7 +149,7 @@ namespace Kazuko_FnB.Services
                 OrderCalculator.RecalcLine(line);
                 ServiceOrderRepository.UpdateLineIn(conn, tx, line, _session.UserId, now);
                 ServiceOrderRepository.UpdateComboChildrenQtyIn(conn, tx, billId, line.ComboId, line.Quantity, _session.UserId, now);
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, allowNegativeStock);
 
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -166,7 +168,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể tăng số lượng.");
@@ -249,7 +253,7 @@ namespace Kazuko_FnB.Services
                 OrderCalculator.RecalcLine(line);
                 ServiceOrderRepository.UpdateLineIn(conn, tx, line, actor.UserId, now);
                 ServiceOrderRepository.UpdateComboChildrenQtyIn(conn, tx, billId, line.ComboId, line.Quantity, actor.UserId, now);
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -270,7 +274,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể giảm số lượng.");
@@ -357,7 +363,7 @@ namespace Kazuko_FnB.Services
                 OrderCalculator.RecalcLine(line);
                 ServiceOrderRepository.UpdateLineIn(conn, tx, line, actor.UserId, now);
                 ServiceOrderRepository.UpdateComboChildrenQtyIn(conn, tx, billId, line.ComboId, line.Quantity, actor.UserId, now);
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, allowNegativeStock, actor.UserId);
 
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -378,7 +384,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể đặt số lượng.");
@@ -437,7 +445,7 @@ namespace Kazuko_FnB.Services
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
                 ServiceOrderRepository.DeleteLineAndComboChildrenIn(conn, tx, billId, line.Id, line.ComboId);
                 header.Lines.RemoveAll(x => x.Id == line.Id || (!string.IsNullOrEmpty(line.ComboId) && x.ComboParentId == line.ComboId));
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 string note = string.IsNullOrWhiteSpace(reason)
                     ? "Xóa món " + line.ItemName
@@ -461,7 +469,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể xóa mặt hàng.");

@@ -1,13 +1,41 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using Kazuko_FnB.Domain;
 using Kazuko_FnB.Services;
+using Kazuko_FnB.Theme;
 using Kazuko_FnB.UI.Controls;
 
 namespace Kazuko_FnB.UI
 {
     internal sealed partial class ServiceOrderView
     {
+        private readonly Label _lblBillPromo = new Label
+        {
+            AutoSize = false,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            AutoEllipsis = true,
+            Padding = new Padding(4, 0, 4, 0)
+        };
+
+        internal Label BillPromoLabelForTest { get { return _lblBillPromo; } }
+
+        private void InitPromotionUi()
+        {
+            _lblBillPromo.Font = _bodyFont;
+            _totalsGrid.Controls.Add(_lblBillPromo, 0, 2);
+            _totalsGrid.SetColumnSpan(_lblBillPromo, 2);
+        }
+
+        private void ApplyPromotionTheme(ThemeTokens t)
+        {
+            _lblBillPromo.ForeColor = t.Success;
+            _lblBillPromo.BackColor = t.Surface;
+            for (int i = 0; i < _detailGrid.Rows.Count && i < _displayedLines.Count; i++)
+                ApplyLineRowStyle(_detailGrid.Rows[i], _displayedLines[i]);
+        }
+
         private void RenderCurrentBill(string selectLineId = null)
         {
             _updatingUi = true;
@@ -24,6 +52,7 @@ namespace Kazuko_FnB.UI
                     _numGuests.Value = 1m;
                     _cboCustomer.SelectId("");
                     _txtBillNote.Text = "";
+                    _lblBillPromo.Text = "";
                     SetMoneyValues(0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m);
                 }
                 else
@@ -34,19 +63,26 @@ namespace Kazuko_FnB.UI
                     _numGuests.Value = Math.Max(1, _currentBill.GuestCount);
                     _cboCustomer.SelectId(_currentBill.CustomerId ?? "");
                     _txtBillNote.Text = _currentBill.Note ?? "";
+                    _lblBillPromo.Text = (_canViewPrice && _currentBill.BillDiscountFromPromo)
+                        ? TableService.FormatPromotionTag(_currentBill.BillPromotionName)
+                        : "";
 
                     int selectIdx = -1;
                     foreach (ServiceOrderLine l in _currentBill.Lines)
                     {
                         _displayedLines.Add(l);
-                        string nameCell = l.IsComboChild ? "   ↳ " + l.ItemName : l.ItemName;
+                        string nameCell = l.IsComboChild
+                            ? "   ↳ " + l.ItemName
+                            : (l.IsPromoGift ? "[KM] " + l.ItemName : l.ItemName);
                         string qtyCell = NumberInput.FormatForDisplay(l.Quantity, 2, true);
                         // Không đổ dữ liệu giá/chiết khấu/thành tiền khi thiếu quyền XemDonGiaTrongHoaDonBanHang (§4).
                         string priceCell = _canViewPrice ? NumberInput.FormatForDisplay(l.UnitPrice, 2, true) : "";
                         string discCell = _canViewPrice ? NumberInput.FormatForDisplay(l.DiscountRate, 2, true) : "";
                         string amtCell = _canViewPrice ? NumberInput.FormatForDisplay(l.Amount, 2, true) : "";
-                        int idx = _detailGrid.Rows.Add(nameCell, l.UnitName ?? "", qtyCell, priceCell, discCell, amtCell, l.Note ?? "");
+                        string noteCell = FormatLineNoteForDisplay(l);
+                        int idx = _detailGrid.Rows.Add(nameCell, l.UnitName ?? "", qtyCell, priceCell, discCell, amtCell, noteCell);
                         _detailGrid.Rows[idx].Tag = l;
+                        ApplyLineRowStyle(_detailGrid.Rows[idx], l);
                         if (!string.IsNullOrEmpty(selectLineId) && string.Equals(l.Id, selectLineId, StringComparison.Ordinal))
                             selectIdx = idx;
                     }
@@ -143,9 +179,66 @@ namespace Kazuko_FnB.UI
                 || _detailGrid.CurrentRow.Index >= _displayedLines.Count)
                 return null;
             ServiceOrderLine line = _displayedLines[_detailGrid.CurrentRow.Index];
+            if (line.IsPromoGift)
+                return null;
             if (line.IsComboChild)
                 return _displayedLines.Find(l => string.Equals(l.ComboId, line.ComboParentId, StringComparison.Ordinal));
             return line;
+        }
+
+        private static string FormatLineNoteForDisplay(ServiceOrderLine l)
+        {
+            if (l == null)
+                return "";
+            if (l.IsPromoGift)
+                return !string.IsNullOrEmpty(l.Note) ? l.Note : (!string.IsNullOrEmpty(l.PromotionLabel) ? l.PromotionLabel : "KM");
+            if (l.IsPromoDiscounted)
+            {
+                string tag = !string.IsNullOrEmpty(l.PromotionLabel) ? l.PromotionLabel : "KM";
+                string userNote = (l.Note ?? "").Trim();
+                if (userNote.Length == 0)
+                    return tag;
+                if (userNote.IndexOf(tag, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return userNote;
+                return tag + " | " + userNote;
+            }
+            return l.Note ?? "";
+        }
+
+        private void ApplyLineRowStyle(DataGridViewRow row, ServiceOrderLine line)
+        {
+            if (row == null || line == null)
+                return;
+            if (line.IsComboChild)
+            {
+                row.DefaultCellStyle.ForeColor = _theme.TextMuted;
+                row.DefaultCellStyle.Font = _bodyFont;
+            }
+            else if (line.IsPromoGift)
+            {
+                row.DefaultCellStyle.ForeColor = _theme.Success;
+                row.DefaultCellStyle.Font = _headingFont;
+            }
+            else if (line.IsPromoDiscounted)
+            {
+                row.DefaultCellStyle.ForeColor = _theme.Primary;
+                row.DefaultCellStyle.Font = _bodyFont;
+            }
+            else if (line.ProductTypeId == ProductRules.TypeCombo)
+            {
+                row.DefaultCellStyle.ForeColor = _theme.Danger;
+                row.DefaultCellStyle.Font = _headingFont;
+            }
+            else if (line.ProductTypeId == ProductRules.TypeComboOpen)
+            {
+                row.DefaultCellStyle.ForeColor = _theme.Info;
+                row.DefaultCellStyle.Font = _headingFont;
+            }
+            else
+            {
+                row.DefaultCellStyle.ForeColor = _theme.Text;
+                row.DefaultCellStyle.Font = _bodyFont;
+            }
         }
 
         private void DetailGrid_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
@@ -156,6 +249,15 @@ namespace Kazuko_FnB.UI
             if (line.IsComboChild)
             {
                 e.CellStyle.ForeColor = _theme.TextMuted;
+            }
+            else if (line.IsPromoGift)
+            {
+                e.CellStyle.ForeColor = _theme.Success;
+                e.CellStyle.Font = _headingFont;
+            }
+            else if (line.IsPromoDiscounted)
+            {
+                e.CellStyle.ForeColor = _theme.Primary;
             }
             else if (line.ProductTypeId == ProductRules.TypeCombo)
             {

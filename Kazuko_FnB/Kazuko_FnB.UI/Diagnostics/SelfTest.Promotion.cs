@@ -15,6 +15,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             PromotionPureRuleTests();
             PromotionCrudOverlapEditDeleteDbTests(db);
             PromotionUiTests(db);
+            PromotionApplyTests(db);
         }
 
         private static void PromotionKeywordTableTests()

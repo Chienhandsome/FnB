@@ -399,6 +399,7 @@ namespace Kazuko_FnB.UI
 
             var lblTotal = MakeLabel("TỔNG CỘNG");
             lblTotal.Font = _headingFont;
+            InitPromotionUi();
             _totalsGrid.Controls.Add(lblTotal, 2, 2);
             _totalsGrid.Controls.Add(_numTongCong, 3, 2);
             _totalsGrid.SetColumnSpan(_numTongCong, 3);
@@ -467,6 +468,7 @@ namespace Kazuko_FnB.UI
             _headerPanel.BackColor = _theme.Surface;
             _bottomPanel.BackColor = _theme.Surface;
             _numTongCong.ForeColor = _theme.Primary;
+            ApplyPromotionTheme(_theme);
             Invalidate(true);
         }
 

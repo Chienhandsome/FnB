@@ -522,6 +522,9 @@
     <Compile Include="Diagnostics\SelfTest.GiftVoucher.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Promotion.cs" />
     <Compile Include="Diagnostics\SelfTest.Promotion.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Promotion.Apply.cs" />
+    <Compile Include="Diagnostics\SelfTest.Promotion.Apply.Db.cs" />
+    <Compile Include="Diagnostics\SelfTest.Promotion.Apply.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />

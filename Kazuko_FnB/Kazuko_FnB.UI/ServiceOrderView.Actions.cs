@@ -170,6 +170,8 @@ namespace Kazuko_FnB.UI
                 _lockRenewTimer.Stop();
 
             RenderCurrentBill();
+            if (!string.IsNullOrEmpty(res.PromotionWarning))
+                ShowWarning(res.PromotionWarning);
         }
 
         private void OnTableDoubleClicked(ServiceTableInfo table)
@@ -206,6 +208,8 @@ namespace Kazuko_FnB.UI
             _tableMap.ReloadAll();
             _tableMap.SelectTableVisual(_currentTable.Id);
             RenderCurrentBill();
+            if (!string.IsNullOrEmpty(res.PromotionWarning))
+                ShowWarning(res.PromotionWarning);
         }
 
         private void DoAddItem(ServiceMenuItem item)
@@ -267,6 +271,8 @@ namespace Kazuko_FnB.UI
 
             _currentBill = res.Bill;
             RenderCurrentBill();
+            if (!string.IsNullOrEmpty(res.PromotionWarning))
+                ShowWarning(res.PromotionWarning);
             _menuPicker.FocusSearch();
         }
 
@@ -458,6 +464,8 @@ namespace Kazuko_FnB.UI
             }
             _currentBill = res.Bill;
             RenderCurrentBill(keepSelectedLineId);
+            if (!string.IsNullOrEmpty(res.PromotionWarning))
+                ShowWarning(res.PromotionWarning);
         }
     }
 }

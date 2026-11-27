@@ -273,6 +273,10 @@ namespace Kazuko_FnB.Domain
         public decimal TileGiamGia { get; set; }
         public decimal TienGiamGia { get; set; }
         public bool GiamTheoTien { get; set; }
+        /// <summary>Cờ GIAMTONGTHEOTIEN = 30 trên TDONHANG: giảm giá tổng đang do khuyến mại tự áp (0 = giảm giá tay/mặc định).</summary>
+        public bool BillDiscountFromPromo { get; set; }
+        /// <summary>Tên đợt khuyến mại giảm tổng hóa đơn đang áp (dữ liệu hiển thị, không lưu DB).</summary>
+        public string BillPromotionName { get; set; }
         public decimal TilePhiDichVu { get; set; }
         public decimal PhiDichVu { get; set; }
         public bool PhiDichVuTheoTien { get; set; }
@@ -298,6 +302,7 @@ namespace Kazuko_FnB.Domain
         public string Id { get; set; }
         public string OrderId { get; set; }
         public string ProductId { get; set; }
+        public string ProductGroupId { get; set; }
         public string ProductTypeId { get; set; }
         public string DrinkTypeId { get; set; }
         public string ItemName { get; set; }
@@ -316,6 +321,10 @@ namespace Kazuko_FnB.Domain
         public string ComboParentId { get; set; }
         public decimal ComboQty { get; set; }
         public int XuatVatTu { get; set; }
+        /// <summary>Cột TDONHANGCHITIET.KHUYENMAI: 30 = dòng tặng 0 đồng hoặc dòng đang nhận giảm giá từ khuyến mại; 0 = bình thường/giảm tay.</summary>
+        public int KhuyenMai { get; set; }
+        /// <summary>Nhãn hiển thị nguồn khuyến mại trên lưới (vd "KM: Tên đợt", không ghi đè NOTE của dòng bán thường).</summary>
+        public string PromotionLabel { get; set; }
         public DateTime? TimeCreated { get; set; }
 
         public bool IsComboChild
@@ -326,6 +335,16 @@ namespace Kazuko_FnB.Domain
         public bool IsMaterialExport
         {
             get { return XuatVatTu == 30; }
+        }
+
+        public bool IsPromoGift
+        {
+            get { return KhuyenMai == 30 && UnitPrice == 0m && !IsComboChild && !IsMaterialExport; }
+        }
+
+        public bool IsPromoDiscounted
+        {
+            get { return KhuyenMai == 30 && UnitPrice > 0m && !IsComboChild && !IsMaterialExport; }
         }
     }
 
@@ -410,14 +429,15 @@ namespace Kazuko_FnB.Domain
     {
         public bool Ok { get; set; }
         public string ErrorMessage { get; set; }
+        public string PromotionWarning { get; set; }
         public bool NeedsConfirmation { get; set; }
         public bool NeedsReLogin { get; set; }
         public string RequiredFunctionId { get; set; }
         public ServiceOrderHeader Bill { get; set; }
 
-        public static ServiceOpResult Success(ServiceOrderHeader bill = null)
+        public static ServiceOpResult Success(ServiceOrderHeader bill = null, string promotionWarning = null)
         {
-            return new ServiceOpResult { Ok = true, Bill = bill };
+            return new ServiceOpResult { Ok = true, Bill = bill, PromotionWarning = promotionWarning };
         }
 
         public static ServiceOpResult Fail(string message)

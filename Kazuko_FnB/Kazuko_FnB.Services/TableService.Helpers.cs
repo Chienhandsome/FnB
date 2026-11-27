@@ -32,9 +32,9 @@ namespace Kazuko_FnB.Services
             if (allowMerge)
             {
                 ServiceOrderLine match = header.Lines.Find(l =>
-                    !l.IsComboChild && !l.IsMaterialExport
+                    !l.IsComboChild && !l.IsMaterialExport && !l.IsPromoGift
                     && string.Equals(l.ProductId, product.Id, StringComparison.Ordinal)
-                    && l.DiscountRate == 0m && !l.DiscountByMoney
+                    && (l.IsPromoDiscounted || (l.DiscountRate == 0m && !l.DiscountByMoney))
                     && string.Equals(l.Note ?? "", cleanNote, StringComparison.Ordinal)
                     && (product.PriceByTime || l.UnitPrice == unitPrice));
                 if (match != null)
@@ -57,6 +57,7 @@ namespace Kazuko_FnB.Services
                 Id = DbHelper.NewId(),
                 OrderId = header.Id,
                 ProductId = product.Id,
+                ProductGroupId = product.GroupId,
                 ProductTypeId = product.ProductTypeId,
                 DrinkTypeId = product.DrinkTypeId,
                 ItemName = itemName,
@@ -161,7 +162,7 @@ namespace Kazuko_FnB.Services
 
             foreach (ServiceOrderLine existing in header.Lines)
             {
-                if (existing == null || existing.IsMaterialExport || string.IsNullOrEmpty(existing.ProductId))
+                if (existing == null || existing.IsMaterialExport || existing.IsPromoGift || string.IsNullOrEmpty(existing.ProductId))
                     continue;
                 if (needed.ContainsKey(existing.ProductId))
                     needed[existing.ProductId] += existing.Quantity;
@@ -277,7 +278,7 @@ namespace Kazuko_FnB.Services
                 return null;
             return header.Lines.Find(l =>
                 string.Equals(l.Id, lineId, StringComparison.Ordinal)
-                && !l.IsComboChild && !l.IsMaterialExport);
+                && !l.IsComboChild && !l.IsMaterialExport && !l.IsPromoGift);
         }
 
         private static decimal RateForDrinkType(string drinkTypeId, GroupDiscountInput input)

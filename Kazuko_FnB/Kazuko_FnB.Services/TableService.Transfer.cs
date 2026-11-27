@@ -112,9 +112,9 @@ namespace Kazuko_FnB.Services
 
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
 
-                // Cập nhật giá theo khu vực đích (GiaMatHangKhiChuyenBan) và tính lại bằng OrderCalculator.
+                // Cập nhật giá theo khu vực đích (GiaMatHangKhiChuyenBan) và tính lại khuyến mại + tổng bằng OrderCalculator.
                 ApplyAreaPriceUpdateIn(conn, tx, bill, dstTable.AreaPriceLevelId, priceMode, actor.UserId, now);
-                RecalcAndSaveHeaderIn(conn, tx, bill, roundStep, now);
+                ApplyPromotionsAndRecalcIn(conn, tx, bill, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 int updated = ServiceTransferRepository.UpdateBillTableIn(conn, tx, bill.Id, dstTable.Id, actor.UserId, now);
                 if (updated != 1)
@@ -145,6 +145,7 @@ namespace Kazuko_FnB.Services
                     req.TestHookBeforeCommit();
 
                 ServiceOrderHeader reloaded = ServiceOrderRepository.LoadBillIn(conn, tx, bill.Id);
+                PopulatePromotionLabelsIn(conn, tx, reloaded, roundStep);
                 outcome = new TableTransferResult
                 {
                     Ok = true,
@@ -284,7 +285,7 @@ namespace Kazuko_FnB.Services
                 ServiceTransferRepository.HardDeleteBillIn(conn, tx, srcBill.Id);
 
                 ServiceOrderHeader mergedTarget = ServiceOrderRepository.LoadBillIn(conn, tx, dstBill.Id);
-                RecalcAndSaveHeaderIn(conn, tx, mergedTarget, roundStep, now);
+                ApplyPromotionsAndRecalcIn(conn, tx, mergedTarget, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 ServiceTransferRepository.TransferTableLockIn(conn, tx, srcTable.Id, dstTable.Id, actor.UserName, checkLock);
 
@@ -317,6 +318,7 @@ namespace Kazuko_FnB.Services
                 });
 
                 ServiceOrderHeader finalTarget = ServiceOrderRepository.LoadBillIn(conn, tx, dstBill.Id);
+                PopulatePromotionLabelsIn(conn, tx, finalTarget, roundStep);
                 outcome = new TableTransferResult
                 {
                     Ok = true,
@@ -345,7 +347,7 @@ namespace Kazuko_FnB.Services
 
             foreach (ServiceOrderLine line in bill.Lines)
             {
-                if (line == null || line.IsComboChild || line.IsMaterialExport || string.IsNullOrEmpty(line.ProductId))
+                if (line == null || line.IsComboChild || line.IsMaterialExport || line.IsPromoGift || string.IsNullOrEmpty(line.ProductId))
                     continue;
                 ServiceMenuItem product = ServiceOrderRepository.LoadProductIn(conn, tx, line.ProductId);
                 if (product == null)

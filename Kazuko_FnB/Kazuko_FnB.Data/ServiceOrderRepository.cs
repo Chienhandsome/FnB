@@ -222,7 +222,7 @@ namespace Kazuko_FnB.Data
                 "COALESCE(H.TIENHANG, 0) AS TIENHANG, COALESCE(H.TIENHANGCHUAGIAM, 0) AS TIENHANGCHUAGIAM, " +
                 "COALESCE(H.GIAMGIAMATHANG, 0) AS GIAMGIAMATHANG, " +
                 "COALESCE(H.TILEGIAMGIA, 0) AS TILEGIAMGIA, COALESCE(H.TIENGIAMGIA, 0) AS TIENGIAMGIA, " +
-                "COALESCE(H.GIAMTHEOTIEN, 0) AS GIAMTHEOTIEN, " +
+                "COALESCE(H.GIAMTHEOTIEN, 0) AS GIAMTHEOTIEN, COALESCE(H.GIAMTONGTHEOTIEN, 0) AS GIAMTONGTHEOTIEN, " +
                 "COALESCE(H.TILEPHIDICHVU, 0) AS TILEPHIDICHVU, COALESCE(H.PHIDICHVU, 0) AS PHIDICHVU, " +
                 "COALESCE(H.PHIDICHVUTHEOTIEN, 0) AS PHIDICHVUTHEOTIEN, " +
                 "COALESCE(H.TILETHUE, 0) AS TILETHUE, COALESCE(H.TIENTHUE, 0) AS TIENTHUE, " +
@@ -277,6 +277,7 @@ namespace Kazuko_FnB.Data
                 TileGiamGia = DbHelper.Dec(r["TILEGIAMGIA"]),
                 TienGiamGia = DbHelper.Dec(r["TIENGIAMGIA"]),
                 GiamTheoTien = DbHelper.Int(r["GIAMTHEOTIEN"]) == ActiveStatus,
+                BillDiscountFromPromo = DbHelper.Int(r["GIAMTONGTHEOTIEN"]) == ActiveStatus,
                 TilePhiDichVu = DbHelper.Dec(r["TILEPHIDICHVU"]),
                 PhiDichVu = DbHelper.Dec(r["PHIDICHVU"]),
                 PhiDichVuTheoTien = DbHelper.Int(r["PHIDICHVUTHEOTIEN"]) == ActiveStatus,
@@ -299,8 +300,8 @@ namespace Kazuko_FnB.Data
                 "COALESCE(D.TILEGIAMGIA, 0) AS TILEGIAMGIA, COALESCE(D.TIENGIAMGIA, 0) AS TIENGIAMGIA, " +
                 "COALESCE(D.GIAMTHEOTIEN, 0) AS GIAMTHEOTIEN, COALESCE(D.THANHTIEN, 0) AS THANHTIEN, " +
                 "D.NOTE, D.COMBOID, D.COMBOPARENTID, COALESCE(D.COMBOSL, 0) AS COMBOSL, " +
-                "COALESCE(D.XUATVATTU, 0) AS XUATVATTU, D.TIMECREATED, " +
-                "COALESCE(M.DLOAIMATHANGID, '0') AS PTYPE, COALESCE(G.DLOAIDOID, '1') AS DRINKTYPE " +
+                "COALESCE(D.XUATVATTU, 0) AS XUATVATTU, COALESCE(D.KHUYENMAI, 0) AS KHUYENMAI, D.TIMECREATED, " +
+                "COALESCE(M.DNHOMMATHANGID, '') AS PGROUPID, COALESCE(M.DLOAIMATHANGID, '0') AS PTYPE, COALESCE(G.DLOAIDOID, '1') AS DRINKTYPE " +
                 "FROM TDONHANGCHITIET D " +
                 "LEFT JOIN DMATHANG M ON M.ID = D.DMATHANGID " +
                 "LEFT JOIN DNHOMMATHANG G ON G.ID = M.DNHOMMATHANGID " +
@@ -317,6 +318,7 @@ namespace Kazuko_FnB.Data
                     Id = DbHelper.Str(r["ID"]) ?? "",
                     OrderId = DbHelper.Str(r["TDONHANGID"]) ?? "",
                     ProductId = DbHelper.Str(r["DMATHANGID"]) ?? "",
+                    ProductGroupId = DbHelper.Str(r["PGROUPID"]) ?? "",
                     ProductTypeId = DbHelper.Str(r["PTYPE"]) ?? "0",
                     DrinkTypeId = DbHelper.Str(r["DRINKTYPE"]) ?? "1",
                     ItemName = DbHelper.Str(r["TENHANG"]) ?? "",
@@ -335,6 +337,7 @@ namespace Kazuko_FnB.Data
                     ComboParentId = DbHelper.Str(r["COMBOPARENTID"]) ?? "",
                     ComboQty = DbHelper.Dec(r["COMBOSL"]),
                     XuatVatTu = DbHelper.Int(r["XUATVATTU"]),
+                    KhuyenMai = DbHelper.Int(r["KHUYENMAI"]),
                     TimeCreated = ReadDateTime(r["TIMECREATED"])
                 });
             }

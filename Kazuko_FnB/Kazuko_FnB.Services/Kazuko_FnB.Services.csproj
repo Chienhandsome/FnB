@@ -91,6 +91,8 @@
     <Compile Include="TableService.Payment.cs" />
     <Compile Include="TableService.Payment.Execute.cs" />
     <Compile Include="TableService.Helpers.cs" />
+    <Compile Include="TableService.Promotions.cs" />
+    <Compile Include="TableService.Promotions.Gifts.cs" />
     <Compile Include="TableTransferRules.cs" />
     <Compile Include="TableService.Transfer.cs" />
     <Compile Include="TableService.TransferItem.cs" />
@@ -114,6 +116,7 @@
     <Compile Include="GiftVoucherGroupService.cs" />
     <Compile Include="PromotionRules.cs" />
     <Compile Include="PromotionService.cs" />
+    <Compile Include="PromotionApplier.cs" />
     <Compile Include="PurchaseRules.cs" />
     <Compile Include="PurchaseService.cs" />
     <Compile Include="StockDocumentRules.cs" />

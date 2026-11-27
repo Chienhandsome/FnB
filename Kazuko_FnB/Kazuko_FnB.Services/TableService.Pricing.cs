@@ -37,9 +37,16 @@ namespace Kazuko_FnB.Services
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
                 decimal oldPrice = line.UnitPrice;
                 line.UnitPrice = newPrice;
+                if (newPrice == 0m)
+                {
+                    line.KhuyenMai = 0;
+                    line.DiscountByMoney = false;
+                    line.DiscountRate = 0m;
+                    line.DiscountAmount = 0m;
+                }
                 OrderCalculator.RecalcLine(line);
                 ServiceOrderRepository.UpdateLineIn(conn, tx, line, actor.UserId, now);
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -60,7 +67,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
             return outcome ?? ServiceOpResult.Fail("Không thể đổi đơn giá.");
         }
@@ -86,7 +95,9 @@ namespace Kazuko_FnB.Services
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
                 line.Note = (note ?? "").Trim();
                 ServiceOrderRepository.UpdateLineIn(conn, tx, line, _session.UserId, now);
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, SystemConfig.LamTronTien);
+                outcome = ServiceOpResult.Success(loaded);
             });
             return outcome ?? ServiceOpResult.Fail("Không thể cập nhật ghi chú.");
         }
@@ -125,12 +136,14 @@ namespace Kazuko_FnB.Services
                 }
 
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
+                // Người dùng sửa tay giảm giá dòng: bỏ cờ KM của dòng đó rồi so lớn hơn với khuyến mại.
+                line.KhuyenMai = 0;
                 line.DiscountByMoney = discountByMoney;
                 line.DiscountRate = discountRate;
                 line.DiscountAmount = discountAmount;
                 OrderCalculator.RecalcLine(line);
                 ServiceOrderRepository.UpdateLineIn(conn, tx, line, actor.UserId, now);
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -151,7 +164,9 @@ namespace Kazuko_FnB.Services
                     }
                 });
 
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
             return outcome ?? ServiceOpResult.Fail("Không thể đặt giảm giá dòng.");
         }
@@ -178,16 +193,19 @@ namespace Kazuko_FnB.Services
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
                 foreach (ServiceOrderLine line in header.Lines)
                 {
-                    if (line.IsComboChild || line.IsMaterialExport)
+                    if (line.IsComboChild || line.IsMaterialExport || line.IsPromoGift)
                         continue;
                     decimal rate = RateForDrinkType(line.DrinkTypeId, input);
+                    line.KhuyenMai = 0;
                     line.DiscountByMoney = false;
                     line.DiscountRate = rate;
                     OrderCalculator.RecalcLine(line);
                     ServiceOrderRepository.UpdateLineIn(conn, tx, line, actor.UserId, now);
                 }
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
             return outcome ?? ServiceOpResult.Fail("Không thể áp dụng giảm giá theo nhóm.");
         }
@@ -232,16 +250,23 @@ namespace Kazuko_FnB.Services
                 }
 
                 DateTime now = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
-                header.TileGiamGia = Math.Max(0m, tileGiamGia);
-                header.TienGiamGia = Math.Max(0m, tienGiamGia);
-                header.GiamTheoTien = giamTheoTien;
+                if (discountChanged)
+                {
+                    // Người dùng sửa tay giảm giá tổng: bỏ cờ giảm tổng KM rồi so lớn hơn với khuyến mại.
+                    header.BillDiscountFromPromo = false;
+                    header.TileGiamGia = Math.Max(0m, tileGiamGia);
+                    header.TienGiamGia = Math.Max(0m, tienGiamGia);
+                    header.GiamTheoTien = giamTheoTien;
+                }
                 header.TilePhiDichVu = Math.Max(0m, tilePhiDichVu);
                 header.PhiDichVu = Math.Max(0m, phiDichVu);
                 header.PhiDichVuTheoTien = phiDichVuTheoTien;
                 header.TileThue = Math.Max(0m, tileThue);
 
-                RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                string promoWarning = ApplyPromotionsAndRecalcIn(conn, tx, header, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded, promoWarning);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể cập nhật tổng hóa đơn.");
@@ -266,7 +291,9 @@ namespace Kazuko_FnB.Services
                 header.GuestCount = Math.Max(1, guestCount);
                 header.Note = (note ?? "").Trim();
                 RecalcAndSaveHeaderIn(conn, tx, header, roundStep, now);
-                outcome = ServiceOpResult.Success(ServiceOrderRepository.LoadBillIn(conn, tx, billId));
+                ServiceOrderHeader loaded = ServiceOrderRepository.LoadBillIn(conn, tx, billId);
+                PopulatePromotionLabelsIn(conn, tx, loaded, roundStep);
+                outcome = ServiceOpResult.Success(loaded);
             });
 
             return outcome ?? ServiceOpResult.Fail("Không thể cập nhật thông tin hóa đơn.");

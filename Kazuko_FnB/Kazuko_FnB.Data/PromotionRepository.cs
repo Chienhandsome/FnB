@@ -223,6 +223,36 @@ namespace Kazuko_FnB.Data
             return list;
         }
 
+        /// <summary>
+        /// Đọc các đợt khuyến mại đang hiệu lực tại ngày bán (STATUS = 30, NGUNGAPDUNG &lt;&gt; 30, ngày bán trong [TUNGAY, DENNGAY])
+        /// kèm chi tiết DDOTKHUYENMAICHITIET (spec §4). Bỏ qua TUGIO/DENGIO ở v1.
+        /// </summary>
+        public static List<ActivePromotionBundle> LoadActiveBundlesIn(FbConnection conn, FbTransaction tx, DateTime saleDate)
+        {
+            DateTime day = saleDate.Date;
+            DataTable dt = DbHelper.Table(conn, tx,
+                SelectHeaderSql + "WHERE P.STATUS = @S AND COALESCE(P.NGUNGAPDUNG, 0) <> @STOP ORDER BY P.TUNGAY DESC, P.NAME",
+                "@S", ActiveStatus, "@STOP", PromotionText.FlagOn);
+
+            var result = new List<ActivePromotionBundle>();
+            foreach (DataRow r in dt.Rows)
+            {
+                PromotionRow header = HeaderFrom(r);
+                if (header.IsStopped || header.Kind == PromotionKind.Unknown)
+                    continue;
+                if (header.FromDate.HasValue && day < header.FromDate.Value.Date)
+                    continue;
+                if (header.ToDate.HasValue && day > header.ToDate.Value.Date)
+                    continue;
+
+                var bundle = new ActivePromotionBundle { Header = header };
+                if (header.Kind != PromotionKind.TotalBillPercent)
+                    bundle.Details = LoadDetailsIn(conn, tx, header.Id);
+                result.Add(bundle);
+            }
+            return result;
+        }
+
         public static void InsertHeaderIn(FbConnection conn, FbTransaction tx, PromotionRow row)
         {
             DbHelper.Exec(conn, tx,

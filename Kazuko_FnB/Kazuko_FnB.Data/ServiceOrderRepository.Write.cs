@@ -199,7 +199,7 @@ namespace Kazuko_FnB.Data
                 "ID, NAME, SOHD, LOAI, STATUS, DATHANHTOAN, NGAY, BATDAU, BATDAUPHONGCUOI, " +
                 "DBANID, DKHACHHANGID, DCUAHANGID, SOKHACH, TDATHANGID, NHOMGUID, NOTE, " +
                 "TIENHANG, TIENHANGCHUAGIAM, GIAMGIAMATHANG, " +
-                "TILEGIAMGIA, TIENGIAMGIA, GIAMTHEOTIEN, TILEGIAMGIATONG, TIENGIAMGIATONG, " +
+                "TILEGIAMGIA, TIENGIAMGIA, GIAMTHEOTIEN, TILEGIAMGIATONG, TIENGIAMGIATONG, GIAMTONGTHEOTIEN, " +
                 "TILEGIAMGIAGIO, TIENGIAMGIAGIO, TIENGIO, " +
                 "TILEPHIDICHVU, PHIDICHVU, PHIDICHVUTHEOTIEN, " +
                 "TILETHUE, TIENTHUE, TONGCONG, SOLANINTAMTINH, " +
@@ -208,7 +208,7 @@ namespace Kazuko_FnB.Data
                 "@ID, @NAME, @SOHD, 0, @ST, 0, @NGAY, @BATDAU, @BATDAU, " +
                 "@DBANID, @DKHACHHANGID, @DCUAHANGID, @SOKHACH, @TDATHANGID, @NHOMGUID, @NOTE, " +
                 "@TIENHANG, @TIENHANGCHUAGIAM, @GIAMGIAMATHANG, " +
-                "@TILEGIAMGIA, @TIENGIAMGIA, @GIAMTHEOTIEN, @TILEGIAMGIA, @TIENGIAMGIA, " +
+                "@TILEGIAMGIA, @TIENGIAMGIA, @GIAMTHEOTIEN, @TILEGIAMGIA, @TIENGIAMGIA, @GIAMTONGTHEOTIEN, " +
                 "0, 0, 0, " +
                 "@TILEPHIDICHVU, @PHIDICHVU, @PHIDICHVUTHEOTIEN, " +
                 "@TILETHUE, @TIENTHUE, @TONGCONG, 0, " +
@@ -232,6 +232,7 @@ namespace Kazuko_FnB.Data
                 "@TILEGIAMGIA", h.TileGiamGia,
                 "@TIENGIAMGIA", h.TienGiamGia,
                 "@GIAMTHEOTIEN", h.GiamTheoTien ? ActiveStatus : 0,
+                "@GIAMTONGTHEOTIEN", h.BillDiscountFromPromo ? ActiveStatus : 0,
                 "@TILEPHIDICHVU", h.TilePhiDichVu,
                 "@PHIDICHVU", h.PhiDichVu,
                 "@PHIDICHVUTHEOTIEN", h.PhiDichVuTheoTien ? ActiveStatus : 0,
@@ -249,7 +250,7 @@ namespace Kazuko_FnB.Data
                 "DKHACHHANGID = @DKHACHHANGID, SOKHACH = @SOKHACH, NOTE = @NOTE, " +
                 "TIENHANG = @TIENHANG, TIENHANGCHUAGIAM = @TIENHANGCHUAGIAM, GIAMGIAMATHANG = @GIAMGIAMATHANG, " +
                 "TILEGIAMGIA = @TILEGIAMGIA, TIENGIAMGIA = @TIENGIAMGIA, GIAMTHEOTIEN = @GIAMTHEOTIEN, " +
-                "TILEGIAMGIATONG = @TILEGIAMGIA, TIENGIAMGIATONG = @TIENGIAMGIA, " +
+                "TILEGIAMGIATONG = @TILEGIAMGIA, TIENGIAMGIATONG = @TIENGIAMGIA, GIAMTONGTHEOTIEN = @GIAMTONGTHEOTIEN, " +
                 "TILEPHIDICHVU = @TILEPHIDICHVU, PHIDICHVU = @PHIDICHVU, PHIDICHVUTHEOTIEN = @PHIDICHVUTHEOTIEN, " +
                 "TILETHUE = @TILETHUE, TIENTHUE = @TIENTHUE, TONGCONG = @TONGCONG, " +
                 "USERMODIFIEDID = @U, TIMEMODIFIED = @T " +
@@ -263,6 +264,7 @@ namespace Kazuko_FnB.Data
                 "@TILEGIAMGIA", h.TileGiamGia,
                 "@TIENGIAMGIA", h.TienGiamGia,
                 "@GIAMTHEOTIEN", h.GiamTheoTien ? ActiveStatus : 0,
+                "@GIAMTONGTHEOTIEN", h.BillDiscountFromPromo ? ActiveStatus : 0,
                 "@TILEPHIDICHVU", h.TilePhiDichVu,
                 "@PHIDICHVU", h.PhiDichVu,
                 "@PHIDICHVUTHEOTIEN", h.PhiDichVuTheoTien ? ActiveStatus : 0,
@@ -281,13 +283,13 @@ namespace Kazuko_FnB.Data
                 "ID, TDONHANGID, DMATHANGID, TENHANG, DDONVITINHID, DKHOHANGID, " +
                 "SLXUAT, SLXUATCHUAQUYDOI, SLNHAP, SLNHAPCHUAQUYDOI, " +
                 "DONGIA, GIAVON, TILEGIAMGIA, TIENGIAMGIA, GIAMTHEOTIEN, THANHTIEN, " +
-                "NOTE, COMBOID, COMBOPARENTID, COMBOSL, XUATVATTU, STATUS, " +
+                "NOTE, COMBOID, COMBOPARENTID, COMBOSL, XUATVATTU, KHUYENMAI, STATUS, " +
                 "USERCREATEDID, TIMECREATED, USERMODIFIEDID, TIMEMODIFIED) " +
                 "VALUES (" +
                 "@ID, @OID, @PID, @NAME, @UID, @WID, " +
                 "@QTY, @QTY, 0, 0, " +
                 "@PRICE, @COST, @DRATE, @DAMT, @DMONEY, @AMT, " +
-                "@NOTE, @CID, @CPID, @CQTY, 0, @ST, " +
+                "@NOTE, @CID, @CPID, @CQTY, 0, @KM, @ST, " +
                 "@U, @T, NULL, NULL)",
                 "@ID", l.Id,
                 "@OID", l.OrderId,
@@ -302,10 +304,11 @@ namespace Kazuko_FnB.Data
                 "@DAMT", l.DiscountAmount,
                 "@DMONEY", l.DiscountByMoney ? ActiveStatus : 0,
                 "@AMT", l.Amount,
-                "@NOTE", string.IsNullOrEmpty(l.Note) ? null : l.Note,
+                "@NOTE", NullIfEmptyClipped(l.Note, 255),
                 "@CID", string.IsNullOrEmpty(l.ComboId) ? null : l.ComboId,
                 "@CPID", string.IsNullOrEmpty(l.ComboParentId) ? null : l.ComboParentId,
                 "@CQTY", l.ComboQty,
+                "@KM", l.KhuyenMai,
                 "@ST", ActiveStatus,
                 "@U", actorId ?? "",
                 "@T", now);
@@ -317,7 +320,7 @@ namespace Kazuko_FnB.Data
                 "UPDATE TDONHANGCHITIET SET " +
                 "SLXUAT = @QTY, SLXUATCHUAQUYDOI = @QTY, DONGIA = @PRICE, " +
                 "TILEGIAMGIA = @DRATE, TIENGIAMGIA = @DAMT, GIAMTHEOTIEN = @DMONEY, " +
-                "THANHTIEN = @AMT, NOTE = @NOTE, USERMODIFIEDID = @U, TIMEMODIFIED = @T " +
+                "THANHTIEN = @AMT, NOTE = @NOTE, KHUYENMAI = @KM, USERMODIFIEDID = @U, TIMEMODIFIED = @T " +
                 "WHERE ID = @ID",
                 "@QTY", l.Quantity,
                 "@PRICE", l.UnitPrice,
@@ -325,10 +328,18 @@ namespace Kazuko_FnB.Data
                 "@DAMT", l.DiscountAmount,
                 "@DMONEY", l.DiscountByMoney ? ActiveStatus : 0,
                 "@AMT", l.Amount,
-                "@NOTE", string.IsNullOrEmpty(l.Note) ? null : l.Note,
+                "@NOTE", NullIfEmptyClipped(l.Note, 255),
+                "@KM", l.KhuyenMai,
                 "@U", actorId ?? "",
                 "@T", now,
                 "@ID", l.Id);
+        }
+
+        private static string NullIfEmptyClipped(string value, int maxLen)
+        {
+            if (string.IsNullOrEmpty(value))
+                return null;
+            return value.Length <= maxLen ? value : value.Substring(0, maxLen);
         }
 
         public static void UpdateComboChildrenQtyIn(FbConnection conn, FbTransaction tx, string billId, string comboId, decimal parentQty, string actorId, DateTime now)

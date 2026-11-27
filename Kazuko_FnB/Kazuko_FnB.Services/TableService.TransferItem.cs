@@ -113,6 +113,11 @@ namespace Kazuko_FnB.Services
                     outcome = TableTransferResult.Fail(ServiceTransferConstants.TransferItemChildNotAllowed);
                     return;
                 }
+                if (rawLine.IsPromoGift)
+                {
+                    outcome = TableTransferResult.Fail("Không thể chuyển dòng hàng tặng khuyến mại.");
+                    return;
+                }
 
                 bool moveAll = !req.TransferQty.HasValue
                     || req.TransferQty.Value < 0m
@@ -147,8 +152,8 @@ namespace Kazuko_FnB.Services
 
                 ServiceOrderHeader freshSrc = ServiceOrderRepository.LoadBillIn(conn, tx, srcBill.Id);
                 ServiceOrderHeader freshDst = ServiceOrderRepository.LoadBillIn(conn, tx, dstBill.Id);
-                RecalcAndSaveHeaderIn(conn, tx, freshSrc, roundStep, now);
-                RecalcAndSaveHeaderIn(conn, tx, freshDst, roundStep, now);
+                ApplyPromotionsAndRecalcIn(conn, tx, freshSrc, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
+                ApplyPromotionsAndRecalcIn(conn, tx, freshDst, roundStep, now, SystemConfig.ChoPhepAmKho, actor.UserId);
 
                 decimal movedGross = moveQty * rawLine.UnitPrice;
                 _activityLogger.WriteBatch(conn, tx, new[]
@@ -188,14 +193,18 @@ namespace Kazuko_FnB.Services
                 if (req.TestHookBeforeCommit != null)
                     req.TestHookBeforeCommit();
 
+                ServiceOrderHeader outSrc = ServiceOrderRepository.LoadBillIn(conn, tx, srcBill.Id);
+                ServiceOrderHeader outDst = ServiceOrderRepository.LoadBillIn(conn, tx, dstBill.Id);
+                PopulatePromotionLabelsIn(conn, tx, outSrc, roundStep);
+                PopulatePromotionLabelsIn(conn, tx, outDst, roundStep);
                 outcome = new TableTransferResult
                 {
                     Ok = true,
                     SourceBillId = srcBill.Id,
                     TargetBillId = dstBill.Id,
                     TargetTableId = dstTable.Id,
-                    SourceBill = ServiceOrderRepository.LoadBillIn(conn, tx, srcBill.Id),
-                    TargetBill = ServiceOrderRepository.LoadBillIn(conn, tx, dstBill.Id)
+                    SourceBill = outSrc,
+                    TargetBill = outDst
                 };
             });
 
@@ -234,6 +243,7 @@ namespace Kazuko_FnB.Services
                 Id = DbHelper.NewId(),
                 OrderId = dstBillId,
                 ProductId = rawLine.ProductId,
+                ProductGroupId = rawLine.ProductGroupId,
                 ProductTypeId = rawLine.ProductTypeId,
                 DrinkTypeId = rawLine.DrinkTypeId,
                 ItemName = rawLine.ItemName,
@@ -245,6 +255,7 @@ namespace Kazuko_FnB.Services
                 DiscountRate = rawLine.DiscountRate,
                 DiscountAmount = movedDiscAmt,
                 DiscountByMoney = rawLine.DiscountByMoney,
+                KhuyenMai = rawLine.KhuyenMai,
                 Note = rawLine.Note,
                 ComboId = newComboId,
                 ComboParentId = "",
