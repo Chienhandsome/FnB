@@ -114,6 +114,10 @@
     <Compile Include="EmployeeService.cs" />
     <Compile Include="ShiftRules.cs" />
     <Compile Include="ShiftService.cs" />
+    <Compile Include="RewardPenaltyRules.cs" />
+    <Compile Include="RewardPenaltyService.cs" />
+    <Compile Include="SalaryAdvanceRules.cs" />
+    <Compile Include="SalaryAdvanceService.cs" />
     <Compile Include="SupplierRules.cs" />
     <Compile Include="SupplierService.cs" />
     <Compile Include="SupplierGroupService.cs" />

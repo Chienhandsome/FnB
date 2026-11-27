@@ -111,15 +111,11 @@ namespace Kazuko_FnB.Services
                     }
 
                     // §2 & §5 T3: Chi tiền mặt không được làm quỹ tiền mặt của cửa hàng bị âm (tính qua FundRepository + FundLedgerRules).
-                    if (row.Kind == VoucherKind.Expense && !row.Transfer)
+                    string overdraftErr = CheckCashOverdraftIn(conn, tx, row, existing);
+                    if (overdraftErr != null)
                     {
-                        decimal currentCash = GetCurrentStoreCashBalanceIn(conn, tx, row.StoreId);
-                        string overdraftErr = VoucherRules.CheckCashOverdraft(row, existing, currentCash);
-                        if (overdraftErr != null)
-                        {
-                            outcome = VoucherSaveResult.Fail(overdraftErr);
-                            return;
-                        }
+                        outcome = VoucherSaveResult.Fail(overdraftErr);
+                        return;
                     }
 
                     DateTime serverNow = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
@@ -228,8 +224,17 @@ namespace Kazuko_FnB.Services
             return outcome ?? VoucherDeleteResult.Fail("Không thể xóa phiếu.");
         }
 
+        /// <summary>Kiểm tra chi tiền mặt vượt quỹ trong transaction (dùng chung cho Phiếu chi và Tạm ứng lương).</summary>
+        public static string CheckCashOverdraftIn(FbConnection conn, FbTransaction tx, VoucherRow row, VoucherRow existing)
+        {
+            if (row == null || row.Kind != VoucherKind.Expense || row.Transfer)
+                return null;
+            decimal currentCash = GetCurrentStoreCashBalanceIn(conn, tx, row.StoreId);
+            return VoucherRules.CheckCashOverdraft(row, existing, currentCash);
+        }
+
         /// <summary>Tính số dư tiền mặt hiện có của một cửa hàng qua FundRepository + FundLedgerRules (không viết lại công thức quỹ).</summary>
-        private static decimal GetCurrentStoreCashBalanceIn(FbConnection conn, FbTransaction tx, string storeId)
+        public static decimal GetCurrentStoreCashBalanceIn(FbConnection conn, FbTransaction tx, string storeId)
         {
             DateTime horizon = new DateTime(2099, 12, 30);
             FundData data = FundRepository.LoadIn(conn, tx, horizon);

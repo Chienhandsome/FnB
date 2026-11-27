@@ -107,6 +107,8 @@
     <Compile Include="StoreRepository.cs" />
     <Compile Include="EmployeeRepository.cs" />
     <Compile Include="ShiftRepository.cs" />
+    <Compile Include="RewardPenaltyRepository.cs" />
+    <Compile Include="SalaryAdvanceRepository.cs" />
     <Compile Include="SupplierRepository.cs" />
     <Compile Include="SupplierGroupRepository.cs" />
     <Compile Include="GiftVoucherRepository.cs" />

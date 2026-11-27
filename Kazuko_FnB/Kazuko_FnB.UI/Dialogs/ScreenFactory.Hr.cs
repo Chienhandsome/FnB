@@ -31,6 +31,17 @@ namespace Kazuko_FnB.UI.Dialogs
                     return new CatalogView(session.DatabasePath, stableId,
                         string.IsNullOrWhiteSpace(node.Title) ? ShiftText.FunctionName : node.Title);
             }
+            if (IsRewardPenaltyMenu(node, session))
+            {
+                string stableId = !string.IsNullOrEmpty(node.StableDescId)
+                    ? node.StableDescId
+                    : new CatalogRepository(session.DatabasePath).FindIdByTable(RewardPenaltyText.TableName);
+                if (!string.IsNullOrEmpty(stableId))
+                    return new CatalogView(session.DatabasePath, stableId,
+                        string.IsNullOrWhiteSpace(node.Title) ? RewardPenaltyText.FunctionName : node.Title);
+            }
+            if (IsSalaryAdvanceMenu(node))
+                return new SalaryAdvanceListView(session);
             return null;
         }
 
@@ -66,6 +77,35 @@ namespace Kazuko_FnB.UI.Dialogs
                     StringComparison.OrdinalIgnoreCase);
             }
             catch (Exception) { return false; }
+        }
+
+        /// <summary>Mục "NHÂN SỰ > Thưởng phạt": nhận diện theo tên không dấu không phân biệt hoa thường hoặc bảng TTHUONGPHAT.</summary>
+        internal static bool IsRewardPenaltyMenu(MenuNode node, UserSession session)
+        {
+            if (node == null) return false;
+            string folded = CatalogRepository.Fold((node.Title ?? "").Trim());
+            if (string.Equals(folded, "thuong phat", StringComparison.Ordinal)
+                || string.Equals(folded, "quan ly thuong phat", StringComparison.Ordinal))
+                return true;
+            if (session == null || string.IsNullOrEmpty(node.StableDescId)) return false;
+            try
+            {
+                return string.Equals(
+                    new FormRepository(session.DatabasePath).TableNameOf(node.StableDescId),
+                    RewardPenaltyText.TableName,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception) { return false; }
+        }
+
+        /// <summary>Mục "NHÂN SỰ > Tạm ứng lương": nhận diện theo tên không dấu không phân biệt hoa thường hoặc SFUNCTIONID.</summary>
+        internal static bool IsSalaryAdvanceMenu(MenuNode node)
+        {
+            if (node == null) return false;
+            if (string.Equals(CatalogRepository.Fold((node.Title ?? "").Trim()), "tam ung luong", StringComparison.Ordinal))
+                return true;
+            return !string.IsNullOrEmpty(node.FunctionId)
+                && string.Equals(node.FunctionId, SalaryAdvanceText.FunctionId, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

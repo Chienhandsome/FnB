@@ -190,7 +190,7 @@ namespace Kazuko_FnB.Data
                 "TENDOITUONG, DIACHI, DNHANVIENID, DKHACHHANGID, DNHACUNGCAPID, DCUAHANGID, DLYDOTHUCHIID, " +
                 "DIENGIAI, CHUNGTUGOC, NOTE, THU, CHI, CHUYENKHOAN, DTAIKHOANNGANHANGID, " +
                 "STATUS, USERCREATEDID, TIMECREATED, USERMODIFIEDID, TIMEMODIFIED) " +
-                "VALUES (@ID, @NAME, @NGAY, @LOAI, @OBJ, 0, @NDC, 0, " +
+                "VALUES (@ID, @NAME, @NGAY, @LOAI, @OBJ, 0, @NDC, @TU, " +
                 "@TEN, @DC, @NV, @KH, @NCC, @CH, @LD, " +
                 "@DG, @CTG, @NOTE, @THU, @CHI, @CK, @TK, " +
                 "@ST, @UC, @TC, NULL, NULL)",
@@ -200,6 +200,7 @@ namespace Kazuko_FnB.Data
                 "@LOAI", (int)row.Kind,
                 "@OBJ", row.ObjectType,
                 "@NDC", row.NoDebtChange ? ActiveStatus : 0,
+                "@TU", row.IsAdvance ? ActiveStatus : 0,
                 "@TEN", NullIfEmpty(row.ObjectName),
                 "@DC", NullIfEmpty(row.Address),
                 "@NV", NullIfEmpty(row.EmployeeId),

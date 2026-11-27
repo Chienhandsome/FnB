@@ -78,6 +78,8 @@
     <Compile Include="StoreModels.cs" />
     <Compile Include="EmployeeModels.cs" />
     <Compile Include="ShiftModels.cs" />
+    <Compile Include="RewardPenaltyModels.cs" />
+    <Compile Include="SalaryAdvanceModels.cs" />
     <Compile Include="SupplierModels.cs" />
     <Compile Include="PurchaseModels.cs" />
     <Compile Include="CostRecalcModels.cs" />

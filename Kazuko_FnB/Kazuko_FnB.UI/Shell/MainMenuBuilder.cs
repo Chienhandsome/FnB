@@ -109,6 +109,11 @@ namespace Kazuko_FnB.UI
                 return AllowsByIdOrName(perms, n.FunctionId, EmployeeText.FunctionName);
             if (Dialogs.ScreenFactory.IsShiftCatalogMenu(n, null))
                 return AllowsByIdOrName(perms, n.FunctionId, ShiftText.FunctionName);
+            if (Dialogs.ScreenFactory.IsRewardPenaltyMenu(n, null))
+                return AllowsByIdOrName(perms, n.FunctionId, RewardPenaltyText.FunctionName)
+                    || AllowsByIdOrName(perms, n.FunctionId, RewardPenaltyText.AltFunctionName);
+            if (Dialogs.ScreenFactory.IsSalaryAdvanceMenu(n))
+                return AllowsByIdOrName(perms, string.IsNullOrEmpty(n.FunctionId) ? SalaryAdvanceText.FunctionId : n.FunctionId, SalaryAdvanceText.FunctionName);
             return perms.AllowsId(n.FunctionId);
         }
 

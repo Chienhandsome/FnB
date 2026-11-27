@@ -207,6 +207,11 @@ namespace Kazuko_FnB.UI
                         UpdateShiftAuditPanel();
                         UpdateShiftButtons();
                     }
+                    else if (_rewardPenaltyMode)
+                    {
+                        UpdateRewardPenaltyAuditPanel();
+                        UpdateRewardPenaltyButtons();
+                    }
                 }
             };
             _grid.CellDoubleClick += delegate(object sender, DataGridViewCellEventArgs e)
@@ -235,6 +240,8 @@ namespace Kazuko_FnB.UI
                     OpenEmployeeFromGrid();
                 else if (_shiftMode)
                     OpenShiftFromGrid();
+                else if (_rewardPenaltyMode)
+                    OpenRewardPenaltyFromGrid();
             };
             _grid.MouseDown += GridMouseDown;
             _tree.MouseDown += TreeMouseDown;
@@ -285,6 +292,7 @@ namespace Kazuko_FnB.UI
             BuildPromotionUi();
             BuildEmployeeUi();
             BuildShiftUi();
+            BuildRewardPenaltyUi();
             Reload();
             ApplyTheme(_theme, _page);
         }
@@ -335,6 +343,7 @@ namespace Kazuko_FnB.UI
                 _promotionMode = string.Equals(_def.TableName, "DDOTKHUYENMAI", StringComparison.OrdinalIgnoreCase);
                 _employeeMode = string.Equals(_def.TableName, "DNHANVIEN", StringComparison.OrdinalIgnoreCase);
                 _shiftMode = string.Equals(_def.TableName, "DCALAMVIEC", StringComparison.OrdinalIgnoreCase);
+                _rewardPenaltyMode = string.Equals(_def.TableName, RewardPenaltyText.TableName, StringComparison.OrdinalIgnoreCase);
                 _grid.MultiSelect = _productMode;
                 if (_productMode)
                 {
@@ -380,6 +389,10 @@ namespace Kazuko_FnB.UI
                 {
                     LoadShiftData(data);
                 }
+                else if (_rewardPenaltyMode)
+                {
+                    LoadRewardPenaltyData(data);
+                }
                 else
                 {
                     _total = data.Rows.Count;
@@ -396,6 +409,11 @@ namespace Kazuko_FnB.UI
                 }
                 if (!_promotionMode)
                     _promoFilterBar.Visible = false;
+                if (!_rewardPenaltyMode)
+                {
+                    _rpFilterBar.Visible = false;
+                    _rpTotalBar.Visible = false;
+                }
                 if (_customerMode)
                 {
                     ApplyCustomerBarVisibility();
@@ -431,6 +449,10 @@ namespace Kazuko_FnB.UI
                 else if (_shiftMode)
                 {
                     ApplyShiftBarVisibility();
+                }
+                else if (_rewardPenaltyMode)
+                {
+                    ApplyRewardPenaltyBarVisibility();
                 }
                 else
                 {
@@ -750,6 +772,7 @@ namespace Kazuko_FnB.UI
             }
             UpdateCount();
             UpdateGiftVoucherTotalBar();
+            UpdateRewardPenaltyTotalBar();
         }
 
         private void UpdateCount()
@@ -787,7 +810,7 @@ namespace Kazuko_FnB.UI
             float s = DeviceDpi / 96f;
             int pad = (int)(10 * s);
             int h = _bar.ClientSize.Height - 2 * pad;
-            if (!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_storeMode && !_supplierMode && !_giftVoucherMode && !_promotionMode && !_employeeMode && !_shiftMode)
+            if (!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_storeMode && !_supplierMode && !_giftVoucherMode && !_promotionMode && !_employeeMode && !_shiftMode && !_rewardPenaltyMode)
             {
                 int btnW = (int)(100 * s);
                 _search.SetBounds(pad, pad + (h - _search.Height) / 2, (int)(340 * s), _search.Height);
@@ -802,14 +825,14 @@ namespace Kazuko_FnB.UI
                 ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnQuickAdd, _btnExcelAdd, _btnExcelExport, _btnPrint, _btnTotal }
                 : (_customerMode
                     ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnPrint }
-                    : ((IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode)
+                    : ((IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode || _rewardPenaltyMode)
                         ? new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelExport }
                         : new[] { _btnAdd, _btnEdit, _btnRemove, _refresh, _btnExcelAdd, _btnExcelExport, _btnExcelImport, _btnPrint, _btnPrintBarcode }));
             using (Graphics g = CreateGraphics())
             {
                 foreach (FlatButton b in buttons)
                 {
-                    if ((_customerMode || IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode) && !b.Visible)
+                    if ((_customerMode || IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode || _rewardPenaltyMode) && !b.Visible)
                         continue;
                     int w = TextRenderer.MeasureText(g, b.Text, b.Font).Width + (int)(28 * s);
                     b.SetBounds(x, pad, w, h);
@@ -841,21 +864,21 @@ namespace Kazuko_FnB.UI
                 return true;
             }
             // Chỉ khi focus đang ở lưới/cây (không phải ô tìm): Insert thêm, F4 sửa, Del xóa.
-            if ((_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
+            if ((_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode || _rewardPenaltyMode) && !_search.Inner.Focused && (_grid.Focused || _tree.Focused))
             {
                 if (keyData == Keys.Insert)
                 {
-                    if (_productMode) AddProduct(); else if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (_warehouseMode) AddWarehouse(); else if (_storeMode) AddStore(); else if (_supplierMode) AddSupplier(); else if (_giftVoucherMode) AddGiftVoucher(); else if (_promotionMode) AddPromotion(); else if (_employeeMode) AddEmployee(); else if (_shiftMode) AddShift(); else AddFundCatalogItem();
+                    if (_productMode) AddProduct(); else if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (_warehouseMode) AddWarehouse(); else if (_storeMode) AddStore(); else if (_supplierMode) AddSupplier(); else if (_giftVoucherMode) AddGiftVoucher(); else if (_promotionMode) AddPromotion(); else if (_employeeMode) AddEmployee(); else if (_shiftMode) AddShift(); else if (_rewardPenaltyMode) AddRewardPenalty(); else AddFundCatalogItem();
                     return true;
                 }
                 if (keyData == Keys.F4)
                 {
-                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else if (_customerMode) OpenCustomerFromGrid(); else if (_warehouseMode) OpenWarehouseFromGrid(); else if (_storeMode) OpenStoreFromGrid(); else if (_supplierMode) OpenSupplierFromGrid(); else if (_giftVoucherMode) OpenGiftVoucherFromGrid(); else if (_promotionMode) OpenPromotionFromGrid(); else if (_employeeMode) OpenEmployeeFromGrid(); else if (_shiftMode) OpenShiftFromGrid(); else OpenFundCatalogFromGrid();
+                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else if (_customerMode) OpenCustomerFromGrid(); else if (_warehouseMode) OpenWarehouseFromGrid(); else if (_storeMode) OpenStoreFromGrid(); else if (_supplierMode) OpenSupplierFromGrid(); else if (_giftVoucherMode) OpenGiftVoucherFromGrid(); else if (_promotionMode) OpenPromotionFromGrid(); else if (_employeeMode) OpenEmployeeFromGrid(); else if (_shiftMode) OpenShiftFromGrid(); else if (_rewardPenaltyMode) OpenRewardPenaltyFromGrid(); else OpenFundCatalogFromGrid();
                     return true;
                 }
                 if (keyData == Keys.Delete)
                 {
-                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) DeleteEmployee(); else if (_shiftMode) DeleteShift(); else DeleteFundCatalogItem();
+                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) DeleteEmployee(); else if (_shiftMode) DeleteShift(); else if (_rewardPenaltyMode) DeleteRewardPenalty(); else DeleteFundCatalogItem();
                     return true;
                 }
             }
@@ -882,7 +905,7 @@ namespace Kazuko_FnB.UI
             _refresh.TextColor = t.Text;
             _refresh.BorderColor = Draw.StrongBorder(t);
             _refresh.Invalidate();
-            if (_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode)
+            if (_productMode || _roomMode || _customerMode || IsFundCatalogMode || _warehouseMode || _storeMode || _supplierMode || _giftVoucherMode || _promotionMode || _employeeMode || _shiftMode || _rewardPenaltyMode)
             {
                 _groupBar.BackColor = page;
                 _bottom.BackColor = page;
@@ -949,6 +972,12 @@ namespace Kazuko_FnB.UI
                     UpdateShiftButtons();
                     UpdateShiftAuditPanel();
                 }
+                else if (_rewardPenaltyMode)
+                {
+                    ApplyRewardPenaltyTheme(t, page);
+                    UpdateRewardPenaltyButtons();
+                    UpdateRewardPenaltyAuditPanel();
+                }
                 else
                 {
                     UpdateFundCatalogButtons();
@@ -968,9 +997,9 @@ namespace Kazuko_FnB.UI
             _btnRemove.Tag = "danger";
             _removeFont = new Font("Segoe UI Semibold", 10f);
             _btnRemove.Font = _removeFont;
-            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (IsFundCatalogMode) AddFundCatalogItem(); else if (_warehouseMode) AddWarehouse(); else if (_storeMode) AddStore(); else if (_supplierMode) AddSupplier(); else if (_giftVoucherMode) AddGiftVoucher(); else if (_promotionMode) AddPromotion(); else if (_employeeMode) AddEmployee(); else if (_shiftMode) AddShift(); else AddProduct(); };
-            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else if (_customerMode) EditCustomer(); else if (IsFundCatalogMode) EditFundCatalogItem(); else if (_warehouseMode) EditWarehouse(); else if (_storeMode) EditStore(); else if (_supplierMode) EditSupplier(); else if (_giftVoucherMode) EditGiftVoucher(); else if (_promotionMode) EditPromotion(); else if (_employeeMode) EditEmployee(); else if (_shiftMode) EditShift(); else EditProduct(); };
-            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (IsFundCatalogMode) DeleteFundCatalogItem(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) DeleteEmployee(); else if (_shiftMode) DeleteShift(); else DeleteProduct(); };
+            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (IsFundCatalogMode) AddFundCatalogItem(); else if (_warehouseMode) AddWarehouse(); else if (_storeMode) AddStore(); else if (_supplierMode) AddSupplier(); else if (_giftVoucherMode) AddGiftVoucher(); else if (_promotionMode) AddPromotion(); else if (_employeeMode) AddEmployee(); else if (_shiftMode) AddShift(); else if (_rewardPenaltyMode) AddRewardPenalty(); else AddProduct(); };
+            _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else if (_customerMode) EditCustomer(); else if (IsFundCatalogMode) EditFundCatalogItem(); else if (_warehouseMode) EditWarehouse(); else if (_storeMode) EditStore(); else if (_supplierMode) EditSupplier(); else if (_giftVoucherMode) EditGiftVoucher(); else if (_promotionMode) EditPromotion(); else if (_employeeMode) EditEmployee(); else if (_shiftMode) EditShift(); else if (_rewardPenaltyMode) EditRewardPenalty(); else EditProduct(); };
+            _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (IsFundCatalogMode) DeleteFundCatalogItem(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) DeleteEmployee(); else if (_shiftMode) DeleteShift(); else if (_rewardPenaltyMode) DeleteRewardPenalty(); else DeleteProduct(); };
             _btnExcelAdd.Click += delegate { Msg.Info(this, UnsupportedText); };
             _btnExcelExport.Click += delegate { ExportGridToExcel(); };
             _btnExcelImport.Click += delegate { Msg.Info(this, UnsupportedText); };
@@ -2219,7 +2248,7 @@ namespace Kazuko_FnB.UI
 
         private void GridMouseDown(object sender, MouseEventArgs e)
         {
-            if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_storeMode && !_supplierMode && !_giftVoucherMode && !_promotionMode && !_employeeMode && !_shiftMode) || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_storeMode && !_supplierMode && !_giftVoucherMode && !_promotionMode && !_employeeMode && !_shiftMode && !_rewardPenaltyMode) || e.Button != MouseButtons.Right)
                 return;
             DataGridView.HitTestInfo hit = _grid.HitTest(e.X, e.Y);
             if (hit.RowIndex >= 0)
@@ -2252,6 +2281,8 @@ namespace Kazuko_FnB.UI
                 _employeeGridMenu.Show(_grid, e.Location);
             else if (_shiftMode)
                 _shiftGridMenu.Show(_grid, e.Location);
+            else if (_rewardPenaltyMode)
+                _rpGridMenu.Show(_grid, e.Location);
             else
                 _gridMenu.Show(_grid, e.Location);
         }
@@ -2371,6 +2402,7 @@ namespace Kazuko_FnB.UI
                 _supplierTreeMenu.Dispose();
                 DisposeGiftVoucherUi();
                 DisposePromotionUi();
+                DisposeRewardPenaltyUi();
                 DisposeBarcodeUi();
             }
             base.Dispose(disposing);

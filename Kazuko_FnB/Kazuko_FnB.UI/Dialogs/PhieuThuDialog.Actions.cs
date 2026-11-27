@@ -202,7 +202,9 @@ namespace Kazuko_FnB.UI.Dialogs
 
             _btnSave.Visible = !_readOnly;
             _btnSaveNew.Visible = !_readOnly && !_isDepositMode;
-            if (!string.IsNullOrEmpty(_linkedWarning))
+            if (_isSalaryAdvanceMode)
+                ApplySalaryAdvanceModeState();
+            else if (!string.IsNullOrEmpty(_linkedWarning))
                 SubtitleText = _linkedWarning;
             else if (!_isDepositMode)
                 SubtitleText = BuildSubtitle(_kind, _readOnly);
@@ -244,6 +246,11 @@ namespace Kazuko_FnB.UI.Dialogs
             if (_isDepositMode)
             {
                 SaveDepositMode();
+                return;
+            }
+            if (_isSalaryAdvanceMode)
+            {
+                SaveSalaryAdvanceMode(saveAndNew);
                 return;
             }
 

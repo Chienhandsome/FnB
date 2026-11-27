@@ -153,20 +153,36 @@ namespace Kazuko_FnB.UI.Dialogs
             ApplyModeState();
         }
 
-        private PhieuThuDialog(UserSession session, VoucherKind kind, string voucherId, bool readOnly, bool depositMode)
-            : base(BuildTitle(kind, string.IsNullOrEmpty(voucherId), readOnly), BuildSubtitle(kind, readOnly), 720, 640)
+        private PhieuThuDialog(
+            UserSession session,
+            VoucherKind kind,
+            string voucherId,
+            bool readOnly,
+            bool depositMode,
+            bool salaryAdvanceMode = false,
+            RewardPenaltyMonthLimit advanceMonthLimit = null)
+            : base(
+                salaryAdvanceMode ? BuildAdvanceTitle(string.IsNullOrEmpty(voucherId), readOnly) : BuildTitle(kind, string.IsNullOrEmpty(voucherId), readOnly),
+                salaryAdvanceMode ? BuildAdvanceSubtitle(readOnly) : BuildSubtitle(kind, readOnly),
+                720, 640)
         {
             _session = session ?? AppSession.Current;
-            _kind = kind;
+            _kind = salaryAdvanceMode ? VoucherKind.Expense : kind;
             _isDepositMode = depositMode;
+            _isSalaryAdvanceMode = salaryAdvanceMode;
+            _advanceMonthLimit = advanceMonthLimit;
             _editingId = string.IsNullOrEmpty(voucherId) ? null : voucherId;
             _isNew = _editingId == null;
 
             _repo = new FormRepository(_session.DatabasePath);
             _voucherService = new VoucherService(_session);
             _phieuThuRepo = new PhieuThuRepository(_session.DatabasePath);
+            if (_isSalaryAdvanceMode)
+                _salaryAdvanceService = new SalaryAdvanceService(_session);
 
-            if (!depositMode)
+            if (_isSalaryAdvanceMode)
+                _readOnly = readOnly || (_isNew ? !_salaryAdvanceService.CanAdd : !_salaryAdvanceService.CanEdit);
+            else if (!depositMode)
                 _readOnly = readOnly || (_isNew ? !_voucherService.CanAdd : !_voucherService.CanEdit);
 
             _layout = LoadVoucherLayout(kind);
@@ -197,6 +213,8 @@ namespace Kazuko_FnB.UI.Dialogs
 
             if (_kind == VoucherKind.Expense)
                 AdjustExpenseLabels();
+            if (_isSalaryAdvanceMode)
+                ConfigureSalaryAdvanceLayout();
 
             _btnClose = AddButton("Đóng", null, delegate { Close(); });
             _btnSaveNew = AddButton("Lưu & Mới", null, delegate { Save(true); });
@@ -207,7 +225,14 @@ namespace Kazuko_FnB.UI.Dialogs
             WireRules();
 
             if (_isNew)
-                InitNewDocument();
+            {
+                if (_isSalaryAdvanceMode)
+                    InitNewSalaryAdvanceDocument();
+                else
+                    InitNewDocument();
+            }
+            else if (_isSalaryAdvanceMode)
+                LoadExistingSalaryAdvance(_editingId);
             else
                 LoadExistingVoucher(_editingId);
 
