@@ -105,7 +105,6 @@ namespace Kazuko_FnB.UI
             "Danh mục cửa hàng",
             "Kiểm soát order",
             "Danh mục đợt khuyến mại",
-            "Danh mục voucher",
             "Danh mục thẻ trả trước",
             // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
             "Danh mục bảng giá",

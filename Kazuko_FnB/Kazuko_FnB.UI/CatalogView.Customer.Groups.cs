@@ -172,7 +172,7 @@ namespace Kazuko_FnB.UI
 
         private void TreeNodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if ((!_customerMode && !_supplierMode) || e.Node == null)
+            if ((!_customerMode && !_supplierMode && !_giftVoucherMode) || e.Node == null)
                 return;
             string id = e.Node.Tag as string;
             if (string.IsNullOrEmpty(id) || id == UnsetTag)
@@ -180,6 +180,8 @@ namespace Kazuko_FnB.UI
             _tree.SelectedNode = e.Node;
             if (_supplierMode)
                 OpenSupplierGroupFromTree();
+            else if (_giftVoucherMode)
+                OpenGiftVoucherGroupFromTree();
             else
                 OpenCustomerGroupFromTree();
         }

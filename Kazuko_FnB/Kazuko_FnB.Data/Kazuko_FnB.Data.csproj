@@ -106,6 +106,8 @@
     <Compile Include="WarehouseRepository.cs" />
     <Compile Include="SupplierRepository.cs" />
     <Compile Include="SupplierGroupRepository.cs" />
+    <Compile Include="GiftVoucherRepository.cs" />
+    <Compile Include="GiftVoucherGroupRepository.cs" />
     <Compile Include="PurchaseRepository.cs" />
     <Compile Include="PurchaseRepository.Write.cs" />
     <Compile Include="StockDocumentRepository.cs" />

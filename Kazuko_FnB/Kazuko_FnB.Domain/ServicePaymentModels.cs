@@ -14,9 +14,9 @@ namespace Kazuko_FnB.Domain
         public const string DebtDisabled = "Chức năng này hiện tại chưa được kích hoạt. Bạn có thể kích hoạt trong menu 'Quản trị'|'Cấu hình toàn hệ thống'";
         public const string CustomerRequiredForDebt = "Bạn chưa chọn khách hàng, mời bạn chọn khách hàng trước!";
         public const string CustomerNotFound = "Khách hàng đã chọn không có hồ sơ trong hệ thống, không thể ghi nợ.";
-        public const string VoucherCodeEmpty = "Mời bạn nhập voucher trước";
-        public const string VoucherExpired = "Mã voucher này đã quá hạn sử dụng";
-        public const string VoucherAlreadyUsed = "Mã voucher này đã được sử dụng";
+        public const string VoucherCodeEmpty = "Mời bạn nhập mã voucher trước";
+        public const string VoucherExpired = "Mã voucher đã quá hạn sử dụng";
+        public const string VoucherAlreadyUsed = "Mã voucher đã được sử dụng";
         public const string VoucherRequiredFromList = "Mời bạn chọn voucher từ danh sách.";
         public const string PrepaidCodeEmpty = "Mời bạn nhập mã thẻ trả trước";
         public const string PrepaidExpired = "Mã thẻ này đã quá hạn sử dụng";
@@ -48,6 +48,13 @@ namespace Kazuko_FnB.Domain
         public static string VoucherNotFound(string code)
         {
             return string.Format("Mã voucher '{0}' không tồn tại trong hệ thống", code ?? "");
+        }
+
+        public static string VoucherNotYetIssued(string code, DateTime issueDate)
+        {
+            return string.Format(CultureInfo.InvariantCulture,
+                "Voucher '{0}' chưa đến ngày phát hành ({1:dd/MM/yyyy})",
+                code ?? "", issueDate.Date);
         }
 
         public static string PrepaidNotFound(string code)
@@ -198,6 +205,7 @@ namespace Kazuko_FnB.Domain
         public string Id { get; set; }
         public string Code { get; set; }
         public decimal Value { get; set; }
+        public DateTime? IssueDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public string Error { get; set; }
         public bool IsValid { get { return string.IsNullOrEmpty(Error); } }

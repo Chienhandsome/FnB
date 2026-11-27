@@ -304,13 +304,30 @@ namespace Kazuko_FnB.Data
                 return new VoucherInfo { Error = ServicePaymentConstants.VoucherCodeEmpty };
 
             DataTable dt = DbHelper.Table(conn, tx,
-                "SELECT FIRST 1 ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, HANSUDUNG " +
+                "SELECT FIRST 1 ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, NGAYPHATHANH, HANSUDUNG " +
                 "FROM DVOUCHER WHERE NAME = @N AND STATUS = @S",
                 "@N", trimmed, "@S", ActiveStatus);
-            if (dt.Rows.Count == 0)
+            DataRow matched = dt.Rows.Count > 0 ? dt.Rows[0] : null;
+            if (matched == null)
+            {
+                string folded = CustomerText.FoldNoTrim(trimmed);
+                DataTable all = DbHelper.Table(conn, tx,
+                    "SELECT ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, NGAYPHATHANH, HANSUDUNG " +
+                    "FROM DVOUCHER WHERE STATUS = @S",
+                    "@S", ActiveStatus);
+                foreach (DataRow row in all.Rows)
+                {
+                    if (string.Equals(CustomerText.FoldNoTrim(DbHelper.Str(row["NAME"]) ?? ""), folded, StringComparison.Ordinal))
+                    {
+                        matched = row;
+                        break;
+                    }
+                }
+            }
+            if (matched == null)
                 return new VoucherInfo { Code = trimmed, Error = ServicePaymentConstants.VoucherNotFound(trimmed) };
 
-            return BuildValidatedVoucherIn(conn, tx, dt.Rows[0], serverDate, excludeBillIds);
+            return BuildValidatedVoucherIn(conn, tx, matched, serverDate, excludeBillIds);
         }
 
         public static VoucherInfo ValidateVoucherByIdIn(
@@ -324,7 +341,7 @@ namespace Kazuko_FnB.Data
                 return new VoucherInfo { Error = ServicePaymentConstants.VoucherCodeEmpty };
 
             DataTable dt = DbHelper.Table(conn, tx,
-                "SELECT FIRST 1 ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, HANSUDUNG " +
+                "SELECT FIRST 1 ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, NGAYPHATHANH, HANSUDUNG " +
                 "FROM DVOUCHER WHERE ID = @I AND STATUS = @S",
                 "@I", voucherId, "@S", ActiveStatus);
             if (dt.Rows.Count == 0)
@@ -343,9 +360,15 @@ namespace Kazuko_FnB.Data
             string id = DbHelper.Str(r["ID"]) ?? "";
             string name = DbHelper.Str(r["NAME"]) ?? "";
             decimal val = DbHelper.Dec(r["GIATRI"]);
+            DateTime? issueDate = ReadDateTime(r["NGAYPHATHANH"]);
             DateTime? expiry = ReadDateTime(r["HANSUDUNG"]);
 
-            var info = new VoucherInfo { Id = id, Code = name, Value = val, ExpiryDate = expiry };
+            var info = new VoucherInfo { Id = id, Code = name, Value = val, IssueDate = issueDate, ExpiryDate = expiry };
+            if (issueDate.HasValue && issueDate.Value.Date > serverDate.Date)
+            {
+                info.Error = ServicePaymentConstants.VoucherNotYetIssued(name, issueDate.Value.Date);
+                return info;
+            }
             if (expiry.HasValue && expiry.Value.Date < serverDate.Date)
             {
                 info.Error = ServicePaymentConstants.VoucherExpired;

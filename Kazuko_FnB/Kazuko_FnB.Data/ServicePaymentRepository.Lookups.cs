@@ -15,7 +15,7 @@ namespace Kazuko_FnB.Data
             {
                 DateTime serverDate = InvoiceNumberRepository.GetServerTimestamp(conn, null).Date;
                 DataTable dt = DbHelper.Table(conn, null,
-                    "SELECT ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, HANSUDUNG " +
+                    "SELECT ID, NAME, COALESCE(GIATRI, 0) AS GIATRI, NGAYPHATHANH, HANSUDUNG " +
                     "FROM DVOUCHER WHERE STATUS = @S ORDER BY NAME",
                     "@S", ActiveStatus);
                 var list = new List<VoucherInfo>();

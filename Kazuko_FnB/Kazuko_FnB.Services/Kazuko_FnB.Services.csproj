@@ -109,6 +109,9 @@
     <Compile Include="SupplierRules.cs" />
     <Compile Include="SupplierService.cs" />
     <Compile Include="SupplierGroupService.cs" />
+    <Compile Include="GiftVoucherRules.cs" />
+    <Compile Include="GiftVoucherService.cs" />
+    <Compile Include="GiftVoucherGroupService.cs" />
     <Compile Include="PurchaseRules.cs" />
     <Compile Include="PurchaseService.cs" />
     <Compile Include="StockDocumentRules.cs" />

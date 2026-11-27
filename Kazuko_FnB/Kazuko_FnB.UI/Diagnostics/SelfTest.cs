@@ -580,6 +580,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             DebtTests(db);
             StockTakeTests(db);
             CostRecalcTests(db);
+            GiftVoucherTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

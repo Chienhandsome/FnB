@@ -71,6 +71,7 @@
     <Compile Include="ServiceTransferModels.cs" />
     <Compile Include="SalesManageModels.cs" />
     <Compile Include="VoucherModels.cs" />
+    <Compile Include="GiftVoucherModels.cs" />
     <Compile Include="WarehouseModels.cs" />
     <Compile Include="SupplierModels.cs" />
     <Compile Include="PurchaseModels.cs" />
