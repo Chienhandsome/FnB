@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Khách hàng thân thiết (`911b294`, #54): lưới điểm, tab hóa đơn, tặng/giảm điểm, chặn giảm vượt, tự nâng nhóm, xuất Excel
 - [ ] Khuyến mại P2 (`13d858e`, #53): áp dụng khi bán: các loại giảm, Mua x tặng y, tặng theo trị giá, giữ giảm tay lớn hơn, bill đã thanh toán không đổi, in hóa đơn có dòng tặng
 - [ ] Danh mục đợt khuyến mại P1 (`902060b`, #52): thêm/sửa/xóa đợt theo loại, chặn đợt trùng, trạng thái; P2 áp dụng khi bán chưa làm
 - [ ] Danh mục voucher (`fc50402`, #51): cây nhóm, thêm/sửa/xóa, đã dùng, thanh toán bằng voucher (chưa tới ngày phát hành, quá hạn, bill hủy, đã dùng)
