@@ -49,7 +49,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 33 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 34 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -75,6 +75,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | Công nợ ban đầu | 740 s | 740 s (12 phút) | chưa đo |
 | Xuất lại định lượng | chưa đo | có: viết spec | Vòng 1 build đạt nhưng một ca UI chạy nền (BackgroundWorker) đỏ do vòng chờ thoát trước khi sự kiện hoàn tất kịp tới: lỗi agy, vòng 2 tách cờ và sửa gốc. Dùng lại đúng hàm sinh dòng xuất vật tư của luồng thanh toán nên không có bản sao logic. Bài học: ca UI chạy nền phải ghi từng cờ vào chuỗi chi tiết ngay từ đầu |
 | Danh mục cửa hàng | chưa đo | có: spec có sẵn từ 25/11 | Vòng 1 agy lọc mọi menu theo VISIBLECONFIGID nên làm đỏ hai ca cũ (Voucher, Khuyến mại): lỗi agy, spec nói "ẩn/hiện menu" mà không giới hạn phạm vi. Bài học: ghi rõ trong prompt "chỉ áp cho menu này, menu khác giữ nguyên" khi đụng bộ nạp menu chung |
+| Nhân sự P1 (nhân viên, ca làm việc) | chưa đo | có: viết spec | Một vòng, selftest 1413 → 1446 không lỗi: prompt nêu sẵn mẫu cần bám, bẫy cũ và "chỉ áp cho menu mới" nên agy không lặp lại lỗi vòng trước. Bài học: prompt ghi đúng tên file mẫu và nơi dễ hỏng của lần trước rút được cả vòng sửa |
 | Tồn kho ban đầu | 1065 s · 1615 s | 2680 s (45 phút) | chưa đo |
 | Khách hàng thân thiết | 873 s · vòng 2 chưa đo (máy tắt giữa chừng) | chưa đo | chưa đo |
 | Khuyến mại P2 | 1319 s | 1319 s (22 phút) | chưa đo |
