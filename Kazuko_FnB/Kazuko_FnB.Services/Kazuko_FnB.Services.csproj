@@ -114,6 +114,8 @@
     <Compile Include="StockDocumentRules.cs" />
     <Compile Include="StockDocumentService.cs" />
     <Compile Include="StockDocumentService.StockCheck.cs" />
+    <Compile Include="StockTakeRules.cs" />
+    <Compile Include="StockTakeService.cs" />
     <Compile Include="InventoryRules.cs" />
     <Compile Include="InventoryService.cs" />
     <Compile Include="DebtRules.cs" />

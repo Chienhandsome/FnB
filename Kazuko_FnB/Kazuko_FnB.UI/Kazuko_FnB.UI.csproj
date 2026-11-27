@@ -232,6 +232,12 @@
     <Compile Include="StockDocumentListView.Actions.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="StockTakeListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="StockTakeListView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="InventoryView.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -486,6 +492,9 @@
     <Compile Include="Diagnostics\SelfTest.StockDocument.cs" />
     <Compile Include="Diagnostics\SelfTest.StockDocument.Transfer.cs" />
     <Compile Include="Diagnostics\SelfTest.StockDocument.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.StockTake.cs" />
+    <Compile Include="Diagnostics\SelfTest.StockTake.Helpers.cs" />
+    <Compile Include="Diagnostics\SelfTest.StockTake.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Inventory.cs" />
     <Compile Include="Diagnostics\SelfTest.Inventory.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Debt.cs" />
@@ -568,6 +577,14 @@
     <Compile Include="Dialogs\StockDocumentEditDialog.Actions.cs" />
     <Compile Include="Dialogs\StockDocumentEditDialog.Helpers.cs" />
     <Compile Include="Dialogs\StockDocumentPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\StockTakeEditDialog.cs" />
+    <Compile Include="Dialogs\StockTakeEditDialog.Lines.cs" />
+    <Compile Include="Dialogs\StockTakeEditDialog.Actions.cs" />
+    <Compile Include="Dialogs\StockTakeEditDialog.Helpers.cs" />
+    <Compile Include="Dialogs\UncountedStockDialog.cs" />
+    <Compile Include="Dialogs\StockTakePreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\InventoryPreviewForm.cs">

@@ -75,6 +75,7 @@
     <Compile Include="SupplierModels.cs" />
     <Compile Include="PurchaseModels.cs" />
     <Compile Include="StockDocumentModels.cs" />
+    <Compile Include="StockTakeModels.cs" />
     <Compile Include="InventoryModels.cs" />
     <Compile Include="DebtModels.cs" />
   </ItemGroup>

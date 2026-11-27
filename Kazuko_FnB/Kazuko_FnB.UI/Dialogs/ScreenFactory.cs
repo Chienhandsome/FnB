@@ -47,6 +47,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.stockexportedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Export) },
                 { "preview.stocktransfer", session => new StockDocumentPreviewForm(session, StockDocumentKind.Transfer) },
                 { "preview.stocktransferedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Transfer) },
+                { "preview.stocktake", session => new StockTakePreviewForm(session) },
+                { "preview.stocktakeedit", session => StockTakeEditDialog.CreateForPreview(session) },
                 { "preview.inventory", session => new InventoryPreviewForm(session) },
                 { "preview.debtcustomer", session => new DebtPreviewForm(session, DebtPartyKind.Customer) },
                 { "preview.debtsupplier", session => new DebtPreviewForm(session, DebtPartyKind.Supplier) },
@@ -113,6 +115,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new StockDocumentListView(session, StockDocumentKind.Export);
             if (IsStockTransferListMenu(node, session))
                 return new StockDocumentListView(session, StockDocumentKind.Transfer);
+            // Màn "Quản lý kiểm kê" (KHO HÀNG > Kiểm kê kho, TDONHANG LOAI = 4, docs/specs/kiem-ke-kho.md).
+            if (IsStockTakeListMenu(node, session))
+                return new StockTakeListView(session);
             // Màn "Tồn kho" (KHO HÀNG > Tồn kho, chỉ đọc, docs/specs/ton-kho.md).
             if (IsInventoryMenu(node))
                 return new InventoryView(session);
@@ -216,6 +221,21 @@ namespace Kazuko_FnB.UI.Dialogs
                 return true;
             }
             return IsStockOrderListMenuByType(node, session, StockDocumentConstants.TransferOrderType);
+        }
+
+        /// <summary>Mục "KHO HÀNG > Kiểm kê kho": mở lưới Quản lý kiểm kê (TDONHANG LOAI = 4).</summary>
+        internal static bool IsStockTakeListMenu(MenuNode node, UserSession session)
+        {
+            if (node == null || session == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            if (string.Equals(title, "Kiểm kê kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Quản lý kiểm kê", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Phiếu kiểm kê", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return IsStockOrderListMenuByType(node, session, StockTakeConstants.OrderType);
         }
 
         /// <summary>Mục "KHO HÀNG > Tồn kho": mở màn xem tồn theo kho (chỉ đọc).</summary>

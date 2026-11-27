@@ -110,6 +110,8 @@
     <Compile Include="PurchaseRepository.Write.cs" />
     <Compile Include="StockDocumentRepository.cs" />
     <Compile Include="StockDocumentRepository.Write.cs" />
+    <Compile Include="StockTakeRepository.cs" />
+    <Compile Include="StockTakeRepository.Write.cs" />
     <Compile Include="InventoryRepository.cs" />
     <Compile Include="DebtRepository.cs" />
     <Compile Include="DebtRepository.Detail.cs" />
