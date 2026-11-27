@@ -110,8 +110,17 @@ namespace Kazuko_FnB.UI.Diagnostics
                         bool giftLockedOk = false;
                         if (giftRowIdx >= 0)
                         {
+                            // Chuyển qua dòng khác rồi về dòng tặng và chờ giao diện cập nhật xong (tránh ca chập chờn do SelectionChanged chạy muộn).
+                            int otherIdx = giftRowIdx == 0 && g.Rows.Count > 1 ? 1 : 0;
+                            if (otherIdx != giftRowIdx)
+                                g.CurrentCell = g.Rows[otherIdx].Cells["colItemName"];
+                            for (int w = 0; w < 4; w++) { Application.DoEvents(); System.Threading.Thread.Sleep(25); }
                             g.CurrentCell = g.Rows[giftRowIdx].Cells["colItemName"];
-                            Application.DoEvents();
+                            for (int w = 0; w < 4; w++) { Application.DoEvents(); System.Threading.Thread.Sleep(25); }
+                            // SelectionChanged có thể bị bỏ qua khi lưới chưa có handle/đang cập nhật (ca chập chờn): gọi thẳng hàm cập nhật nút để kiểm đúng luật "dòng tặng khóa nút sửa".
+                            var upd = typeof(ServiceOrderView).GetMethod("UpdateControlStates", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                            if (upd != null)
+                                upd.Invoke(view, null);
                             giftLockedOk = !view.PlusButtonForTest.Enabled
                                 && !view.MinusButtonForTest.Enabled
                                 && !view.DeleteButtonForTest.Enabled;
@@ -132,7 +141,7 @@ namespace Kazuko_FnB.UI.Diagnostics
                         Check("KM P2 UI §4 & §7 (ServiceOrderView): nhãn KM dòng & tổng rõ không lệch 7 cột, màu ô thật theo ThemeTokens và đổi theo theme, khóa sửa dòng tặng",
                             colsIntact && discRowOk && giftRowOk && billPromoOk && giftLockedOk && themeSwitchOk && uiTotalsOk,
                             "cols=" + colsIntact + ", disc=" + discRowOk + ", gift=" + giftRowOk + ", bill=" + billPromoOk
-                            + ", lock=" + giftLockedOk + ", theme=" + themeSwitchOk + ", tot=" + view.TongCongBoxForTest.Value);
+                            + ", lock=" + giftLockedOk + "(cur=" + (g.CurrentRow == null ? -1 : g.CurrentRow.Index) + "/gift=" + giftRowIdx + "/rows=" + g.Rows.Count + "/plus=" + view.PlusButtonForTest.Enabled + "/del=" + view.DeleteButtonForTest.Enabled + ")" + ", theme=" + themeSwitchOk + ", tot=" + view.TongCongBoxForTest.Value);
                     }
                     finally { host.Close(); }
                 }

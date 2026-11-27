@@ -132,6 +132,8 @@
     <Compile Include="DebtService.cs" />
     <Compile Include="LoyaltyRules.cs" />
     <Compile Include="LoyaltyService.cs" />
+    <Compile Include="OpeningStockRules.cs" />
+    <Compile Include="OpeningStockService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

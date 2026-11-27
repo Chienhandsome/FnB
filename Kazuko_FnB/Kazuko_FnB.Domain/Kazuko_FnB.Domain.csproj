@@ -83,6 +83,7 @@
     <Compile Include="InventoryModels.cs" />
     <Compile Include="DebtModels.cs" />
     <Compile Include="LoyaltyModels.cs" />
+    <Compile Include="OpeningStockModels.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

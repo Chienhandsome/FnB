@@ -583,6 +583,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             GiftVoucherTests(db);
             PromotionTests(db);
             LoyaltyTests(db);
+            OpeningStockTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

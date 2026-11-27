@@ -53,6 +53,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.debtcustomer", session => new DebtPreviewForm(session, DebtPartyKind.Customer) },
                 { "preview.debtsupplier", session => new DebtPreviewForm(session, DebtPartyKind.Supplier) },
                 { "preview.loyalty", session => new LoyaltyPreviewForm(session) },
+                { "preview.openingstock", session => new OpeningStockPreviewForm(session) },
                 { "preview.promotionedit", session => new PromotionEditDialog(session, null, false) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
@@ -134,6 +135,9 @@ namespace Kazuko_FnB.UI.Dialogs
             // Màn "Khách hàng thân thiết" (KHÁCH HÀNG > Khách hàng thân thiết, docs/specs/khach-hang-than-thiet.md).
             if (IsLoyaltyMenu(node))
                 return new LoyaltyView(session);
+            // Màn "Tồn kho ban đầu" (QUẢN TRỊ > Dữ liệu ban đầu > Tồn kho ban đầu, docs/specs/so-du-dau-ky.md P1).
+            if (IsOpeningStockMenu(node))
+                return new OpeningStockView(session);
             // Màn "Danh mục đợt khuyến mại" (KHÁCH HÀNG > Danh mục đợt khuyến mại, DDOTKHUYENMAI).
             if (IsPromotionMenu(node, session))
             {
@@ -301,6 +305,15 @@ namespace Kazuko_FnB.UI.Dialogs
                 return false;
             string title = (node.Title ?? "").Trim();
             return string.Equals(title, LoyaltyConstants.FunctionName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "Tồn kho ban đầu" (nhận diện theo tên không dấu, không phân biệt hoa thường).</summary>
+        internal static bool IsOpeningStockMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            string folded = Data.CatalogRepository.Fold((node.Title ?? "").Trim());
+            return string.Equals(folded, "ton kho ban dau", StringComparison.Ordinal);
         }
 
         /// <summary>Mục "KHÁCH HÀNG > Danh mục đợt khuyến mại": mở CatalogView chế độ đợt khuyến mại (DDOTKHUYENMAI).</summary>

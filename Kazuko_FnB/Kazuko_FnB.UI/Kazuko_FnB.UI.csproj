@@ -283,6 +283,15 @@
     <Compile Include="LoyaltyView.Render.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="OpeningStockView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OpeningStockView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OpeningStockView.Render.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -536,6 +545,9 @@
     <Compile Include="Diagnostics\SelfTest.Promotion.Apply.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Loyalty.cs" />
     <Compile Include="Diagnostics\SelfTest.Loyalty.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.OpeningStock.cs" />
+    <Compile Include="Diagnostics\SelfTest.OpeningStock.Cost.cs" />
+    <Compile Include="Diagnostics\SelfTest.OpeningStock.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -648,6 +660,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\LoyaltyPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\OpeningStockPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PickRoomDialog.cs" />
