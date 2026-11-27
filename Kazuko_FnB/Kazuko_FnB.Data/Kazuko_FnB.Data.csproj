@@ -110,6 +110,7 @@
     <Compile Include="PurchaseRepository.Write.cs" />
     <Compile Include="StockDocumentRepository.cs" />
     <Compile Include="StockDocumentRepository.Write.cs" />
+    <Compile Include="InventoryRepository.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

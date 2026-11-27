@@ -47,6 +47,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.stockexportedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Export) },
                 { "preview.stocktransfer", session => new StockDocumentPreviewForm(session, StockDocumentKind.Transfer) },
                 { "preview.stocktransferedit", session => StockDocumentEditDialog.CreateForPreview(session, StockDocumentKind.Transfer) },
+                { "preview.inventory", session => new InventoryPreviewForm(session) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
             };
@@ -110,6 +111,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new StockDocumentListView(session, StockDocumentKind.Export);
             if (IsStockTransferListMenu(node, session))
                 return new StockDocumentListView(session, StockDocumentKind.Transfer);
+            // Màn "Tồn kho" (KHO HÀNG > Tồn kho, chỉ đọc, docs/specs/ton-kho.md).
+            if (IsInventoryMenu(node))
+                return new InventoryView(session);
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -205,6 +209,16 @@ namespace Kazuko_FnB.UI.Dialogs
                 return true;
             }
             return IsStockOrderListMenuByType(node, session, StockDocumentConstants.TransferOrderType);
+        }
+
+        /// <summary>Mục "KHO HÀNG > Tồn kho": mở màn xem tồn theo kho (chỉ đọc).</summary>
+        internal static bool IsInventoryMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            return string.Equals(title, "Tồn kho", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "Xem tồn kho", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsStockOrderListMenuByType(MenuNode node, UserSession session, int orderType)
