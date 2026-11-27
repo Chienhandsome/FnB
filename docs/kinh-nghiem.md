@@ -108,3 +108,14 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Ca selftest gõ phím thật** (`Nhập số P1`...) chập chờn khi cửa sổ khác giành tiêu điểm: chạy lại tối đa 2 lần trước khi kết luận là lỗi của chức năng đang làm.
 - **Chốt chặn phạm vi:** commit docs ở thư mục chính khi agy đang chạy làm hỏng kiểm phạm vi; file ngoài worktree (`.ssh\known_hosts`, dự án khác trong `D:\Working`) báo lỗi chặn nhưng `Publish-AgyFeature` không soi file ngoài; kiểm xem có phải việc khác của Chiến không. CRLF/LF: file mới agy ghi LF làm git cảnh báo "LF will be replaced by CRLF" bị tính là lỗi chặn: đổi file đó sang CRLF (dùng đường dẫn tuyệt đối khi ghi, .NET `File` không theo thư mục hiện tại của PowerShell).
 - **Prompt:** chỉ cần trỏ spec và chức năng mẫu vừa xong cộng danh sách bẫy trên thì agy xong một vòng sạch (Xuất/Chuyển kho, Kho hàng).
+
+## Bài học làm việc với agy (đêm 27–28/11/2026)
+- **Danh sách cột thật:** với bảng ít dùng (`TBANGLUONGTONGHOP`, `TBANGLUONGCHITIET`...) đọc cột bằng `isql` (`RDB$RELATION_FIELDS`) rồi **dán nguyên vào prompt vòng 1**; bảo agy "tự tra" thì agy ghi cột `NAME` vào bảng không có cột đó (Tính lương mất thêm 2 vòng).
+- **Hết hạn mức (429):** kết quả `status = ERROR`, `response` rỗng, log ghi "Resets in ...". Chờ qua mốc rồi chạy tiếp cùng `-Conversation`; không cần làm lại từ đầu.
+- **agy đọc file ngoài worktree bị chặn (`denied: read_file`)**: đừng chỉ đường dẫn `_tmp\...uild-rN.log` trong lời nhắn; dán nguyên văn lỗi vào tin nhắn.
+- **Cảnh báo biên dịch mới cũng tính là không đạt** (vd `CS0184`: `c is X` luôn sai khi `X` không phải `Control`); dặn agy tránh từ đầu hoặc Claude tự sửa một dòng.
+- **Lọc menu theo cấu hình dùng chung:** vòng 1 Danh mục cửa hàng agy lọc **mọi** menu theo `VISIBLECONFIGID`, làm ẩn Voucher và Khuyến mại trong DB demo. Luôn dặn "chỉ áp cho đúng menu mới, các menu khác giữ nguyên hành vi".
+- **Ca selftest gán lên bản ghi dùng để so sánh:** `afterLock.Locked = false` rồi mới `Check(... afterLock.Locked ...)` làm ca đỏ giả. Dặn dùng biến riêng cho từng bước.
+- **Hộp thoại 150% DPI ở 1366×768:** dặn làm gọn từ đầu (hai tab, ô tổng một hàng, gộp hàng); sửa sau tốn một vòng.
+- **Mẫu cần bám:** nêu đúng tên file mẫu vừa xong (EmployeeEditDialog, `PhieuThuDialog` chế độ tạm ứng/chi lương, Voucher cây nhóm) cùng danh sách bẫy thì agy xong ngay vòng 1 (Chi lương, Tồn nhiều kho, Kiểm soát order).
+- **Docs commit giữa lúc worktree đang mở:** nếu chỉ đổi `docs/`, `Publish-AgyFeature` đưa worktree lên base mới và bắt chạy lại `Test-AgyBuild` một lần rồi Publish.
