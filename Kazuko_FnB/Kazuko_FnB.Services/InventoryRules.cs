@@ -236,5 +236,58 @@ namespace Kazuko_FnB.Services
         {
             return AppSession.Can(session, InventoryConstants.ViewBuyPriceFunctionName, RoleModes.View);
         }
+
+        /// <summary>Kiểm tra mã kho đang chọn có phải mục tổng hợp "Tất cả các kho" hay không.</summary>
+        public static bool IsAllWarehousesSelection(string warehouseId)
+        {
+            return string.Equals(warehouseId, InventoryConstants.AllWarehousesId, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Dựng bảng tồn chi tiết theo từng kho cho một mặt hàng (màn Tồn nhiều kho, docs/specs/quan-tri-nho.md §4):
+        /// chỉ liệt kê các kho trong <paramref name="allowedWarehouses"/>; kho tồn 0 vẫn hiện khi
+        /// <paramref name="hideZeroStock"/> tắt, ngược lại ẩn; ẩn/xóa giá vốn và giá trị vốn khi không có quyền xem giá nhập.
+        /// </summary>
+        public static List<InventoryWarehouseDetailRow> BuildWarehouseDetails(
+            InventoryItemRow item,
+            IList<WarehouseRow> allowedWarehouses,
+            IDictionary<string, decimal> stockByWarehouseId,
+            bool hideZeroStock,
+            bool canViewBuyPrice)
+        {
+            var result = new List<InventoryWarehouseDetailRow>();
+            if (item == null || allowedWarehouses == null || allowedWarehouses.Count == 0)
+                return result;
+
+            foreach (WarehouseRow w in allowedWarehouses)
+            {
+                if (w == null || string.IsNullOrEmpty(w.Id))
+                    continue;
+
+                decimal stock = 0m;
+                if (stockByWarehouseId != null)
+                    stockByWarehouseId.TryGetValue(w.Id, out stock);
+
+                if (hideZeroStock && stock == 0m)
+                    continue;
+
+                decimal costPrice = canViewBuyPrice ? item.CostPrice : 0m;
+                decimal costValue = canViewBuyPrice ? stock * item.CostPrice : 0m;
+                string twoUnit = FormatTwoUnits(
+                    stock, item.HasTwoUnits, item.QuyDoi, item.BigUnitName, item.UnitName);
+
+                result.Add(new InventoryWarehouseDetailRow
+                {
+                    WarehouseId = w.Id,
+                    WarehouseName = w.Name ?? "",
+                    StoreName = w.StoreName ?? "",
+                    StockQuantity = stock,
+                    TwoUnitDisplay = twoUnit,
+                    CostPrice = costPrice,
+                    CostValue = costValue
+                });
+            }
+            return result;
+        }
     }
 }

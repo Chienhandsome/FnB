@@ -53,6 +53,8 @@ namespace Kazuko_FnB.UI
                 if (col != null)
                     col.Visible = _canViewBuyPrice;
             }
+            if (_allWarehousesMode)
+                ApplyDetailPricePermissionVisibility();
             // Spec §1: không có quyền xem giá nhập -> ẩn 4 cột giá và tắt xuất Excel.
             _btnExcel.Visible = _canViewBuyPrice;
             _btnExcel.Enabled = _canViewBuyPrice;
@@ -142,56 +144,67 @@ namespace Kazuko_FnB.UI
 
         private void FillGrid()
         {
-            _grid.Rows.Clear();
-            ThemeTokens t = ThemeManager.Current;
-
-            foreach (InventoryItemRow r in _visibleItems)
+            _suppressDetailRefresh = true;
+            try
             {
-                // Khi thiếu quyền Xem giá nhập, không đưa dữ liệu giá vào ô (kinh-nghiem.md: chống lộ qua sao chép).
-                int idx = _grid.Rows.Add(
-                    r.Code ?? "",
-                    r.Name ?? "",
-                    r.UnitName ?? "",
-                    r.StockQuantity,
-                    r.TwoUnitDisplay ?? "",
-                    r.MinStock,
-                    _canViewBuyPrice ? (object)r.BuyPrice : null,
-                    _canViewBuyPrice ? (object)r.CostPrice : null,
-                    _canViewBuyPrice ? (object)r.CostValue : null,
-                    _canViewBuyPrice ? (object)r.SellValue : null);
-                _grid.Rows[idx].Tag = r;
-                StyleDataRow(_grid.Rows[idx], r, t);
+                _grid.Rows.Clear();
+                ThemeTokens t = ThemeManager.Current;
+
+                foreach (InventoryItemRow r in _visibleItems)
+                {
+                    // Khi thiếu quyền Xem giá nhập, không đưa dữ liệu giá vào ô (kinh-nghiem.md: chống lộ qua sao chép).
+                    int idx = _grid.Rows.Add(
+                        r.Code ?? "",
+                        r.Name ?? "",
+                        r.UnitName ?? "",
+                        r.StockQuantity,
+                        r.TwoUnitDisplay ?? "",
+                        r.MinStock,
+                        _canViewBuyPrice ? (object)r.BuyPrice : null,
+                        _canViewBuyPrice ? (object)r.CostPrice : null,
+                        _canViewBuyPrice ? (object)r.CostValue : null,
+                        _canViewBuyPrice ? (object)r.SellValue : null);
+                    _grid.Rows[idx].Tag = r;
+                    StyleDataRow(_grid.Rows[idx], r, t);
+                }
+
+                InventoryTotals totals = InventoryRules.ComputeTotals(_visibleItems);
+                if (_visibleItems.Count > 0 && _canViewBuyPrice)
+                {
+                    int sumIdx = _grid.Rows.Add(
+                        "", "Tổng cộng", "", null, "", null, null, null,
+                        totals.TotalCostValue,
+                        totals.TotalSellValue);
+                    _grid.Rows[sumIdx].Tag = SummaryRowTag;
+                    StyleSummaryRow(_grid.Rows[sumIdx], t);
+                }
+
+                if (_grid.Rows.Count > 0)
+                {
+                    int firstCol = FirstVisibleColumnIndex(_grid);
+                    _grid.Rows[0].Selected = true;
+                    if (firstCol >= 0)
+                        _grid.CurrentCell = _grid.Rows[0].Cells[firstCol];
+                }
+
+                _empty.Visible = _visibleItems.Count == 0;
+                _empty.Text = !_service.CanView
+                    ? InventoryConstants.NoPermission
+                    : string.IsNullOrEmpty(SelectedWarehouseId())
+                        ? InventoryConstants.EmptyNoWarehouse
+                        : InventoryConstants.EmptyNoItems;
+
+                _summary.Text = _canViewBuyPrice
+                    ? totals.ItemCount + " mặt hàng — Giá trị vốn: " + PurchaseConstants.FormatMoneyVi(totals.TotalCostValue)
+                    : totals.ItemCount + " mặt hàng";
+            }
+            finally
+            {
+                _suppressDetailRefresh = false;
             }
 
-            InventoryTotals totals = InventoryRules.ComputeTotals(_visibleItems);
-            if (_visibleItems.Count > 0 && _canViewBuyPrice)
-            {
-                int sumIdx = _grid.Rows.Add(
-                    "", "Tổng cộng", "", null, "", null, null, null,
-                    totals.TotalCostValue,
-                    totals.TotalSellValue);
-                _grid.Rows[sumIdx].Tag = SummaryRowTag;
-                StyleSummaryRow(_grid.Rows[sumIdx], t);
-            }
-
-            if (_grid.Rows.Count > 0)
-            {
-                int firstCol = FirstVisibleColumnIndex(_grid);
-                _grid.Rows[0].Selected = true;
-                if (firstCol >= 0)
-                    _grid.CurrentCell = _grid.Rows[0].Cells[firstCol];
-            }
-
-            _empty.Visible = _visibleItems.Count == 0;
-            _empty.Text = !_service.CanView
-                ? InventoryConstants.NoPermission
-                : string.IsNullOrEmpty(SelectedWarehouseId())
-                    ? InventoryConstants.EmptyNoWarehouse
-                    : InventoryConstants.EmptyNoItems;
-
-            _summary.Text = _canViewBuyPrice
-                ? totals.ItemCount + " mặt hàng — Giá trị vốn: " + PurchaseConstants.FormatMoneyVi(totals.TotalCostValue)
-                : totals.ItemCount + " mặt hàng";
+            if (_allWarehousesMode)
+                RefreshWarehouseDetail();
         }
 
         private void StyleDataRow(DataGridViewRow row, InventoryItemRow item, ThemeTokens t)
@@ -286,6 +299,8 @@ namespace Kazuko_FnB.UI
                 if (item != null)
                     StyleDataRow(r, item, t);
             }
+            if (_allWarehousesMode)
+                ApplyAllWarehousesTheme(t);
             _tree.Invalidate();
         }
 
@@ -294,6 +309,7 @@ namespace Kazuko_FnB.UI
             if (disposing)
             {
                 ThemeManager.ThemeChanged -= OnThemeChanged;
+                DisposeAllWarehousesControls();
                 if (_gridMenu != null) _gridMenu.Dispose();
                 if (_bodyFont != null) _bodyFont.Dispose();
                 if (_headingFont != null) _headingFont.Dispose();

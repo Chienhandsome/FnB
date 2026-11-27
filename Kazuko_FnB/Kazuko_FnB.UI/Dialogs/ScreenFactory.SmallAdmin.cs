@@ -31,7 +31,17 @@ namespace Kazuko_FnB.UI.Dialogs
                     return new CatalogView(session.DatabasePath, stableId,
                         string.IsNullOrWhiteSpace(node.Title) ? WifiPasswordText.FunctionName : node.Title);
             }
+            if (IsAllWarehousesInventoryMenu(node))
+                return new InventoryView(session, true);
             return null;
+        }
+
+        /// <summary>Mục "KHO HÀNG > Tồn nhiều kho" (SMENU ZZZ012): mở màn Tồn kho ở chế độ tất cả các kho.</summary>
+        internal static bool IsAllWarehousesInventoryMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            return string.Equals(CatalogRepository.Fold((node.Title ?? "").Trim()), "ton nhieu kho", StringComparison.Ordinal);
         }
 
         /// <summary>Mục "Thông báo sửa chữa": nhận diện theo tên không dấu không phân biệt hoa thường hoặc bảng TSUACHUA.</summary>

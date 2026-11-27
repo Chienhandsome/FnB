@@ -122,6 +122,8 @@ namespace Kazuko_FnB.UI
                 return AllowsByIdOrName(perms, n.FunctionId, RepairNoticeText.FunctionName);
             if (Dialogs.ScreenFactory.IsWifiPasswordMenu(n, null))
                 return AllowsByIdOrName(perms, n.FunctionId, WifiPasswordText.FunctionName);
+            if (Dialogs.ScreenFactory.IsAllWarehousesInventoryMenu(n))
+                return AllowsByIdOrName(perms, n.FunctionId, InventoryConstants.FunctionName);
             return perms.AllowsId(n.FunctionId);
         }
 

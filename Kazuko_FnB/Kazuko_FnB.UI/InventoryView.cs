@@ -35,6 +35,7 @@ namespace Kazuko_FnB.UI
         private readonly UserSession _session;
         private readonly InventoryService _service;
         private readonly bool _canViewBuyPrice;
+        private readonly bool _allWarehousesMode;
 
         private readonly Font _bodyFont;
         private readonly Font _headingFont;
@@ -88,12 +89,18 @@ namespace Kazuko_FnB.UI
         internal FlatButton RefreshButtonForTest { get { return _btnRefresh; } }
         internal ThemedContextMenu GridMenuForTest { get { return _gridMenu; } }
         internal bool CanViewBuyPriceForTest { get { return _canViewBuyPrice; } }
+        internal bool IsAllWarehousesModeForTest { get { return _allWarehousesMode; } }
 
-        public InventoryView(UserSession session)
+        public InventoryView(UserSession session) : this(session, false)
+        {
+        }
+
+        public InventoryView(UserSession session, bool allWarehousesMode)
         {
             _session = session ?? AppSession.Current;
             _service = new InventoryService(_session);
             _canViewBuyPrice = _service.CanViewBuyPrice;
+            _allWarehousesMode = allWarehousesMode;
 
             DoubleBuffered = true;
             float s = DeviceDpi / 96f;
@@ -107,9 +114,19 @@ namespace Kazuko_FnB.UI
             BuildBar(s);
             BuildGrid(s);
 
-            _split.Panel2.Controls.Add(_grid);
-            _split.Panel2.Controls.Add(_bar);
-            _grid.BringToFront();
+            if (_allWarehousesMode)
+            {
+                BuildAllWarehousesDetailPanel(s);
+                _split.Panel2.Controls.Add(_rightSplit);
+                _split.Panel2.Controls.Add(_bar);
+                _rightSplit.BringToFront();
+            }
+            else
+            {
+                _split.Panel2.Controls.Add(_grid);
+                _split.Panel2.Controls.Add(_bar);
+                _grid.BringToFront();
+            }
 
             _split.FixedPanel = FixedPanel.Panel1;
             _split.SizeChanged += delegate { PlaceSplit(); };
@@ -117,6 +134,8 @@ namespace Kazuko_FnB.UI
             _loading = false;
 
             _grid.RowPostPaint += DrawRowNumber;
+            _grid.SelectionChanged += OnMainGridSelectionChanged;
+            _grid.CurrentCellChanged += OnMainGridSelectionChanged;
             BuildGridMenu();
             _grid.MouseDown += GridMouseDown;
             _grid.KeyDown += OnKeyDown;

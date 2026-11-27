@@ -595,6 +595,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             PayrollPayoutTests(db);
             RepairNoticeTests(db);
             WifiPasswordTests(db);
+            AllWarehousesInventoryTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

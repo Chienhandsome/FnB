@@ -12,6 +12,9 @@ namespace Kazuko_FnB.Domain
         public const int ActiveStatus = 30;
 
         public const string FunctionName = "Tồn kho";
+        public const string AllWarehousesMenuTitle = "Tồn nhiều kho";
+        public const string AllWarehousesId = "__ALL__";
+        public const string AllWarehousesDisplayName = "Tất cả các kho";
         public const string ViewBuyPriceFunctionName = ItemSalesConstants.ViewCostPermissionName;
 
         public const string TypeAll = "";
@@ -21,6 +24,8 @@ namespace Kazuko_FnB.Domain
         public const string NoPermission = "Bạn không có quyền thực hiện chức năng này.";
         public const string EmptyNoWarehouse = "Không có kho hàng nào thuộc phạm vi cửa hàng của bạn.";
         public const string EmptyNoItems = "Không có mặt hàng tồn kho khớp điều kiện lọc.";
+        public const string EmptyWarehouseDetail = "Chọn một mặt hàng để xem tồn chi tiết theo từng kho.";
+        public const string EmptyWarehouseDetailNoRows = "Không có kho nào khớp điều kiện hiển thị cho mặt hàng đang chọn.";
     }
 
     /// <summary>Trạng thái tô màu dòng tồn kho trên lưới (spec §1).</summary>
@@ -111,5 +116,17 @@ namespace Kazuko_FnB.Domain
         public decimal TotalStockQuantity { get; set; }
         public decimal TotalCostValue { get; set; }
         public decimal TotalSellValue { get; set; }
+    }
+
+    /// <summary>Một dòng tồn chi tiết theo từng kho cho mặt hàng đang chọn (màn Tồn nhiều kho, docs/specs/quan-tri-nho.md §4).</summary>
+    public sealed class InventoryWarehouseDetailRow
+    {
+        public string WarehouseId { get; set; }
+        public string WarehouseName { get; set; }
+        public string StoreName { get; set; }
+        public decimal StockQuantity { get; set; }
+        public string TwoUnitDisplay { get; set; }
+        public decimal CostPrice { get; set; }
+        public decimal CostValue { get; set; }
     }
 }

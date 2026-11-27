@@ -161,8 +161,96 @@ namespace Kazuko_FnB.Data
             return DbHelper.Read(_databasePath, conn =>
             {
                 Dictionary<string, decimal> balances = LoadStockBalancesByWarehouseIn(conn, null, warehouseId);
-                string orderBy = sortByCode ? "M.CODE, M.NAME" : "M.NAME, M.CODE";
+                return LoadStockItemsWithBalancesIn(conn, balances, sortByCode);
+            });
+        }
 
+        /// <summary>
+        /// Tải danh sách mặt hàng theo dõi tồn kho cho màn Tồn nhiều kho trong một kết nối đọc,
+        /// dùng lại đúng <see cref="LoadStockBalancesByWarehouseIn"/> (một công thức tồn duy nhất) cho từng kho được phép.
+        /// Nếu <paramref name="selectedWarehouseId"/> rỗng/null thì tổng hợp tồn trên mọi kho trong <paramref name="allowedWarehouseIds"/>;
+        /// ngược lại lưới chính lấy tồn của riêng kho <paramref name="selectedWarehouseId"/>, còn <paramref name="balancesByWarehouse"/>
+        /// vẫn chứa tồn chi tiết của mọi kho được phép.
+        /// </summary>
+        public List<InventoryItemRow> LoadStockItemsForWarehouses(
+            IList<string> allowedWarehouseIds,
+            bool sortByCode,
+            out Dictionary<string, Dictionary<string, decimal>> balancesByWarehouse,
+            string selectedWarehouseId = null)
+        {
+            var perWh = new Dictionary<string, Dictionary<string, decimal>>(StringComparer.Ordinal);
+            balancesByWarehouse = perWh;
+            if (allowedWarehouseIds == null || allowedWarehouseIds.Count == 0)
+                return new List<InventoryItemRow>();
+
+            List<InventoryItemRow> result = DbHelper.Read(_databasePath, conn =>
+            {
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (string whId in allowedWarehouseIds)
+                {
+                    if (string.IsNullOrEmpty(whId) || !seen.Add(whId))
+                        continue;
+                    perWh[whId] = LoadStockBalancesByWarehouseIn(conn, null, whId);
+                }
+
+                Dictionary<string, decimal> mainBalances;
+                if (!string.IsNullOrEmpty(selectedWarehouseId))
+                {
+                    if (!perWh.TryGetValue(selectedWarehouseId, out mainBalances))
+                        mainBalances = new Dictionary<string, decimal>(StringComparer.Ordinal);
+                }
+                else
+                {
+                    mainBalances = new Dictionary<string, decimal>(StringComparer.Ordinal);
+                    foreach (Dictionary<string, decimal> whMap in perWh.Values)
+                    {
+                        foreach (KeyValuePair<string, decimal> kv in whMap)
+                        {
+                            decimal acc;
+                            mainBalances.TryGetValue(kv.Key, out acc);
+                            mainBalances[kv.Key] = acc + kv.Value;
+                        }
+                    }
+                }
+
+                return LoadStockItemsWithBalancesIn(conn, mainBalances, sortByCode);
+            });
+
+            balancesByWarehouse = perWh;
+            return result;
+        }
+
+        /// <summary>
+        /// Đọc tồn kho một mặt hàng trên từng kho được phép bằng đúng hàm dùng chung
+        /// <see cref="ServiceOrderRepository.GetStockBalanceIn"/> trong một kết nối đọc.
+        /// </summary>
+        public Dictionary<string, decimal> LoadProductStockByWarehouses(string productId, IList<string> allowedWarehouseIds)
+        {
+            var result = new Dictionary<string, decimal>(StringComparer.Ordinal);
+            if (string.IsNullOrEmpty(productId) || allowedWarehouseIds == null || allowedWarehouseIds.Count == 0)
+                return result;
+
+            return DbHelper.Read(_databasePath, conn =>
+            {
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (string whId in allowedWarehouseIds)
+                {
+                    if (string.IsNullOrEmpty(whId) || !seen.Add(whId))
+                        continue;
+                    result[whId] = ServiceOrderRepository.GetStockBalanceIn(conn, null, productId, whId, "");
+                }
+                return result;
+            });
+        }
+
+        /// <summary>Đọc thông tin cơ bản (đơn vị, quy đổi, giá vốn) của một mặt hàng theo dõi tồn kho đang dùng.</summary>
+        public InventoryItemRow LoadStockItemById(string productId)
+        {
+            if (string.IsNullOrEmpty(productId))
+                return null;
+
+            return DbHelper.Read(_databasePath, conn =>
+            {
                 DataTable dt = DbHelper.Table(conn, null,
                     "SELECT M.ID, M.CODE, M.NAME, M.DLOAIMATHANGID, COALESCE(T.NAME, '') AS TYPENAME, " +
                     "M.DNHOMMATHANGID, COALESCE(G.NAME, '') AS GROUPNAME, " +
@@ -178,42 +266,77 @@ namespace Kazuko_FnB.Data
                     "LEFT JOIN DNHOMMATHANG G ON G.ID = M.DNHOMMATHANGID " +
                     "LEFT JOIN DDONVITINH U1 ON U1.ID = M.DDONVITINHID " +
                     "LEFT JOIN DDONVITINH U2 ON U2.ID = M.DDONVITINHCHANID " +
-                    "WHERE M.STATUS = @S AND M.ID <> @Sys " +
-                    "AND (M.DLOAIMATHANGID IS NULL OR M.DLOAIMATHANGID = '' OR M.DLOAIMATHANGID IN ('0', '2')) " +
-                    "ORDER BY " + orderBy,
-                    "@S", ActiveStatus, "@Sys", ProductRepository.SystemProductId);
+                    "WHERE M.ID = @I AND M.STATUS = @S AND M.ID <> @Sys " +
+                    "AND (M.DLOAIMATHANGID IS NULL OR M.DLOAIMATHANGID = '' OR M.DLOAIMATHANGID IN ('0', '2'))",
+                    "@I", productId, "@S", ActiveStatus, "@Sys", ProductRepository.SystemProductId);
 
-                var list = new List<InventoryItemRow>(dt.Rows.Count);
-                foreach (DataRow r in dt.Rows)
-                {
-                    string pid = DbHelper.Str(r["ID"]) ?? "";
-                    decimal stock;
-                    balances.TryGetValue(pid, out stock);
-
-                    string rawTypeId = DbHelper.Str(r["DLOAIMATHANGID"]) ?? "";
-                    list.Add(new InventoryItemRow
-                    {
-                        ProductId = pid,
-                        Code = DbHelper.Str(r["CODE"]) ?? "",
-                        Name = DbHelper.Str(r["NAME"]) ?? "",
-                        TypeId = string.IsNullOrEmpty(rawTypeId) ? InventoryConstants.TypeProductWithStock : rawTypeId,
-                        TypeName = DbHelper.Str(r["TYPENAME"]) ?? "",
-                        GroupId = DbHelper.Str(r["DNHOMMATHANGID"]) ?? "",
-                        GroupName = DbHelper.Str(r["GROUPNAME"]) ?? "",
-                        UnitId = DbHelper.Str(r["DDONVITINHID"]),
-                        UnitName = DbHelper.Str(r["UNITNAME"]) ?? "",
-                        BigUnitId = DbHelper.Str(r["DDONVITINHCHANID"]),
-                        BigUnitName = DbHelper.Str(r["BIGUNITNAME"]) ?? "",
-                        QuyDoi = DbHelper.Dec(r["QUYDOI"]),
-                        StockQuantity = stock,
-                        MinStock = DbHelper.Dec(r["TONTOITHIEU"]),
-                        BuyPrice = DbHelper.Dec(r["GIANHAP"]),
-                        CostPrice = DbHelper.Dec(r["GIAVON"]),
-                        SellPrice = DbHelper.Dec(r["GIABAN"])
-                    });
-                }
-                return list;
+                if (dt.Rows.Count == 0)
+                    return null;
+                return MapStockItemRow(dt.Rows[0], 0m);
             });
+        }
+
+        private static List<InventoryItemRow> LoadStockItemsWithBalancesIn(
+            FbConnection conn,
+            Dictionary<string, decimal> balances,
+            bool sortByCode)
+        {
+            string orderBy = sortByCode ? "M.CODE, M.NAME" : "M.NAME, M.CODE";
+
+            DataTable dt = DbHelper.Table(conn, null,
+                "SELECT M.ID, M.CODE, M.NAME, M.DLOAIMATHANGID, COALESCE(T.NAME, '') AS TYPENAME, " +
+                "M.DNHOMMATHANGID, COALESCE(G.NAME, '') AS GROUPNAME, " +
+                "M.DDONVITINHID, COALESCE(U1.NAME, '') AS UNITNAME, " +
+                "M.DDONVITINHCHANID, COALESCE(U2.NAME, '') AS BIGUNITNAME, " +
+                "COALESCE(M.QUYDOI, 0) AS QUYDOI, " +
+                "COALESCE(M.TONTOITHIEU, 0) AS TONTOITHIEU, " +
+                "COALESCE(M.GIANHAP, 0) AS GIANHAP, " +
+                "COALESCE(M.GIAVON, 0) AS GIAVON, " +
+                "COALESCE(M.GIABAN, 0) AS GIABAN " +
+                "FROM DMATHANG M " +
+                "LEFT JOIN DLOAIMATHANG T ON T.ID = M.DLOAIMATHANGID " +
+                "LEFT JOIN DNHOMMATHANG G ON G.ID = M.DNHOMMATHANGID " +
+                "LEFT JOIN DDONVITINH U1 ON U1.ID = M.DDONVITINHID " +
+                "LEFT JOIN DDONVITINH U2 ON U2.ID = M.DDONVITINHCHANID " +
+                "WHERE M.STATUS = @S AND M.ID <> @Sys " +
+                "AND (M.DLOAIMATHANGID IS NULL OR M.DLOAIMATHANGID = '' OR M.DLOAIMATHANGID IN ('0', '2')) " +
+                "ORDER BY " + orderBy,
+                "@S", ActiveStatus, "@Sys", ProductRepository.SystemProductId);
+
+            var list = new List<InventoryItemRow>(dt.Rows.Count);
+            foreach (DataRow r in dt.Rows)
+            {
+                string pid = DbHelper.Str(r["ID"]) ?? "";
+                decimal stock;
+                balances.TryGetValue(pid, out stock);
+                list.Add(MapStockItemRow(r, stock));
+            }
+            return list;
+        }
+
+        private static InventoryItemRow MapStockItemRow(DataRow r, decimal stock)
+        {
+            string rawTypeId = DbHelper.Str(r["DLOAIMATHANGID"]) ?? "";
+            return new InventoryItemRow
+            {
+                ProductId = DbHelper.Str(r["ID"]) ?? "",
+                Code = DbHelper.Str(r["CODE"]) ?? "",
+                Name = DbHelper.Str(r["NAME"]) ?? "",
+                TypeId = string.IsNullOrEmpty(rawTypeId) ? InventoryConstants.TypeProductWithStock : rawTypeId,
+                TypeName = DbHelper.Str(r["TYPENAME"]) ?? "",
+                GroupId = DbHelper.Str(r["DNHOMMATHANGID"]) ?? "",
+                GroupName = DbHelper.Str(r["GROUPNAME"]) ?? "",
+                UnitId = DbHelper.Str(r["DDONVITINHID"]),
+                UnitName = DbHelper.Str(r["UNITNAME"]) ?? "",
+                BigUnitId = DbHelper.Str(r["DDONVITINHCHANID"]),
+                BigUnitName = DbHelper.Str(r["BIGUNITNAME"]) ?? "",
+                QuyDoi = DbHelper.Dec(r["QUYDOI"]),
+                StockQuantity = stock,
+                MinStock = DbHelper.Dec(r["TONTOITHIEU"]),
+                BuyPrice = DbHelper.Dec(r["GIANHAP"]),
+                CostPrice = DbHelper.Dec(r["GIAVON"]),
+                SellPrice = DbHelper.Dec(r["GIABAN"])
+            };
         }
     }
 }

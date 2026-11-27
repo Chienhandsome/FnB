@@ -85,15 +85,126 @@ namespace Kazuko_FnB.Services
             return rows;
         }
 
-        /// <summary>Tải và áp bộ lọc đầy đủ cho màn Tồn kho.</summary>
+        /// <summary>Tải và áp bộ lọc đầy đủ cho màn Tồn kho (hỗ trợ cả mục "Tất cả các kho" cho Tồn nhiều kho).</summary>
         public List<InventoryItemRow> LoadItems(InventoryFilter filter)
         {
             if (filter == null)
                 throw new ArgumentNullException("filter");
-            List<InventoryItemRow> all = LoadWarehouseItems(filter.WarehouseId);
+            List<InventoryItemRow> all;
+            if (InventoryRules.IsAllWarehousesSelection(filter.WarehouseId))
+            {
+                Dictionary<string, Dictionary<string, decimal>> ignored;
+                all = LoadItemsForMode(InventoryConstants.AllWarehousesId, true, out ignored);
+            }
+            else
+            {
+                all = LoadWarehouseItems(filter.WarehouseId);
+            }
             if (all.Count == 0)
                 return all;
             return all.FindAll(r => InventoryRules.MatchesFilter(r, filter));
+        }
+
+        /// <summary>
+        /// Tải danh sách tồn kho theo chế độ màn hình (màn Tồn kho thường hoặc Tồn nhiều kho).
+        /// Ở chế độ Tồn nhiều kho, <paramref name="stockByWarehouse"/> trả thêm tồn chi tiết từng kho được phép
+        /// (warehouseId -&gt; (productId -&gt; tồn)) từ cùng một lượt đọc DB và cùng một công thức tồn.
+        /// </summary>
+        public List<InventoryItemRow> LoadItemsForMode(
+            string warehouseId,
+            bool allWarehousesMode,
+            out Dictionary<string, Dictionary<string, decimal>> stockByWarehouse)
+        {
+            stockByWarehouse = new Dictionary<string, Dictionary<string, decimal>>(StringComparer.Ordinal);
+            if (!CanView)
+                return new List<InventoryItemRow>();
+
+            if (!allWarehousesMode)
+                return LoadWarehouseItems(warehouseId);
+
+            List<WarehouseRow> allowed = LoadAllowedWarehouses();
+            if (allowed.Count == 0)
+                return new List<InventoryItemRow>();
+
+            List<string> allowedIds = allowed.Select(w => w.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+            if (allowedIds.Count == 0)
+                return new List<InventoryItemRow>();
+
+            bool isAllSelected = InventoryRules.IsAllWarehousesSelection(warehouseId);
+            string selectedWhId = null;
+            if (!isAllSelected)
+            {
+                if (string.IsNullOrWhiteSpace(warehouseId)
+                    || !allowedIds.Exists(id => string.Equals(id, warehouseId, StringComparison.Ordinal)))
+                {
+                    return new List<InventoryItemRow>();
+                }
+                selectedWhId = warehouseId;
+            }
+
+            bool sortByCode = SystemConfig.SapXepThuTuTheo == 1;
+            List<InventoryItemRow> rows = _repo.LoadStockItemsForWarehouses(
+                allowedIds, sortByCode, out stockByWarehouse, selectedWhId);
+            InventoryRules.ApplyMetrics(rows);
+
+            if (!CanViewBuyPrice)
+                StripPriceFields(rows);
+
+            return rows;
+        }
+
+        /// <summary>
+        /// Dựng bảng tồn chi tiết theo kho cho một mặt hàng đang chọn từ dữ liệu tồn theo kho đã nạp sẵn.
+        /// Không truy vấn lặp DB khi người dùng đổi dòng chọn trên lưới chính.
+        /// </summary>
+        public List<InventoryWarehouseDetailRow> BuildProductWarehouseDetails(
+            InventoryItemRow item,
+            IList<WarehouseRow> allowedWarehouses,
+            IDictionary<string, Dictionary<string, decimal>> stockByWarehouse,
+            bool hideZeroStock)
+        {
+            if (!CanView || item == null || string.IsNullOrEmpty(item.ProductId)
+                || allowedWarehouses == null || allowedWarehouses.Count == 0)
+            {
+                return new List<InventoryWarehouseDetailRow>();
+            }
+
+            var perWh = new Dictionary<string, decimal>(StringComparer.Ordinal);
+            if (stockByWarehouse != null)
+            {
+                foreach (WarehouseRow w in allowedWarehouses)
+                {
+                    if (w == null || string.IsNullOrEmpty(w.Id))
+                        continue;
+                    Dictionary<string, decimal> whMap;
+                    decimal qty = 0m;
+                    if (stockByWarehouse.TryGetValue(w.Id, out whMap) && whMap != null)
+                        whMap.TryGetValue(item.ProductId, out qty);
+                    perWh[w.Id] = qty;
+                }
+            }
+            return InventoryRules.BuildWarehouseDetails(item, allowedWarehouses, perWh, hideZeroStock, CanViewBuyPrice);
+        }
+
+        /// <summary>
+        /// Tải tồn chi tiết theo từng kho được phép cho một mặt hàng trực tiếp từ DB qua công thức tồn dùng chung.
+        /// </summary>
+        public List<InventoryWarehouseDetailRow> LoadProductWarehouseDetails(string productId, bool hideZeroStock)
+        {
+            if (!CanView || string.IsNullOrEmpty(productId))
+                return new List<InventoryWarehouseDetailRow>();
+
+            List<WarehouseRow> allowed = LoadAllowedWarehouses();
+            if (allowed.Count == 0)
+                return new List<InventoryWarehouseDetailRow>();
+
+            InventoryItemRow item = _repo.LoadStockItemById(productId);
+            if (item == null)
+                return new List<InventoryWarehouseDetailRow>();
+
+            List<string> allowedIds = allowed.Select(w => w.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+            Dictionary<string, decimal> perWh = _repo.LoadProductStockByWarehouses(productId, allowedIds);
+            return InventoryRules.BuildWarehouseDetails(item, allowed, perWh, hideZeroStock, CanViewBuyPrice);
         }
 
         /// <summary>Đọc tồn kho một mặt hàng qua hàm tồn dùng chung ServiceOrderRepository.GetStockBalanceIn.</summary>

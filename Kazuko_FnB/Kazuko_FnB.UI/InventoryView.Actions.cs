@@ -47,7 +47,10 @@ namespace Kazuko_FnB.UI
                 {
                     _warehouseItems = new List<InventoryItemRow>();
                     _visibleItems = new List<InventoryItemRow>();
+                    _stockByWarehouse = new Dictionary<string, Dictionary<string, decimal>>(StringComparer.Ordinal);
                     _grid.Rows.Clear();
+                    if (_allWarehousesMode)
+                        ClearWarehouseDetail(InventoryConstants.NoPermission);
                     _empty.Text = InventoryConstants.NoPermission;
                     _empty.Visible = true;
                     _summary.Text = "0 mặt hàng";
@@ -59,20 +62,35 @@ namespace Kazuko_FnB.UI
                 {
                     _warehouseItems = new List<InventoryItemRow>();
                     _visibleItems = new List<InventoryItemRow>();
+                    _stockByWarehouse = new Dictionary<string, Dictionary<string, decimal>>(StringComparer.Ordinal);
                     _grid.Rows.Clear();
+                    if (_allWarehousesMode)
+                        ClearWarehouseDetail(InventoryConstants.EmptyNoWarehouse);
                     _empty.Text = InventoryConstants.EmptyNoWarehouse;
                     _empty.Visible = true;
                     _summary.Text = "0 mặt hàng";
                     return;
                 }
 
-                _warehouseItems = _service.LoadWarehouseItems(whId);
+                if (_allWarehousesMode)
+                {
+                    Dictionary<string, Dictionary<string, decimal>> byWh;
+                    _warehouseItems = _service.LoadItemsForMode(whId, true, out byWh);
+                    _stockByWarehouse = byWh ?? new Dictionary<string, Dictionary<string, decimal>>(StringComparer.Ordinal);
+                }
+                else
+                {
+                    _warehouseItems = _service.LoadWarehouseItems(whId);
+                }
             }
             catch (DataAccessException ex)
             {
                 _warehouseItems = new List<InventoryItemRow>();
                 _visibleItems = new List<InventoryItemRow>();
+                _stockByWarehouse = new Dictionary<string, Dictionary<string, decimal>>(StringComparer.Ordinal);
                 _grid.Rows.Clear();
+                if (_allWarehousesMode)
+                    ClearWarehouseDetail("Không đọc được dữ liệu tồn kho: " + ex.Message);
                 _empty.Text = "Không đọc được dữ liệu tồn kho: " + ex.Message;
                 _empty.Visible = true;
                 _summary.Text = "0 mặt hàng";
@@ -92,6 +110,14 @@ namespace Kazuko_FnB.UI
             _allowedWarehouses = _service.LoadAllowedWarehouses();
 
             _warehouse.Items.Clear();
+            if (_allWarehousesMode && _allowedWarehouses.Count > 0)
+            {
+                _warehouse.Items.Add(new LookupItem
+                {
+                    Id = InventoryConstants.AllWarehousesId,
+                    Name = InventoryConstants.AllWarehousesDisplayName
+                });
+            }
             foreach (WarehouseRow w in _allowedWarehouses)
                 _warehouse.Items.Add(new LookupItem { Id = w.Id, Name = w.Name });
             _warehouse.DisplayMember = "Name";
@@ -100,10 +126,14 @@ namespace Kazuko_FnB.UI
                 return;
 
             string targetId = keepId;
-            if (string.IsNullOrEmpty(targetId)
-                || !_allowedWarehouses.Exists(w => string.Equals(w.Id, targetId, StringComparison.Ordinal)))
+            bool keepValid = !string.IsNullOrEmpty(targetId)
+                && ((_allWarehousesMode && InventoryRules.IsAllWarehousesSelection(targetId))
+                    || _allowedWarehouses.Exists(w => string.Equals(w.Id, targetId, StringComparison.Ordinal)));
+            if (!keepValid)
             {
-                targetId = _service.ResolveDefaultWarehouseId(_allowedWarehouses);
+                targetId = _allWarehousesMode
+                    ? InventoryConstants.AllWarehousesId
+                    : _service.ResolveDefaultWarehouseId(_allowedWarehouses);
             }
 
             int selIdx = 0;
@@ -248,7 +278,7 @@ namespace Kazuko_FnB.UI
             };
         }
 
-        private void ApplyLocalFilter()
+        internal void ApplyLocalFilter()
         {
             InventoryFilter filter = CurrentFilter();
             _visibleItems = _warehouseItems.FindAll(r => InventoryRules.MatchesFilter(r, filter));
@@ -259,8 +289,9 @@ namespace Kazuko_FnB.UI
         {
             if (!_canViewBuyPrice)
                 return false;
+            string defaultName = _allWarehousesMode ? "TonNhieuKho" : "TonKho";
             return GridExcelExporter.Export(
-                this, _grid, "TonKho", GridExportOutputForTest,
+                this, _grid, defaultName, GridExportOutputForTest,
                 delegate(string msg) { LastExportMessageForTest = msg; });
         }
 
