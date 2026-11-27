@@ -3,3 +3,4 @@
 - **28/11 P3a đã code, push `7d7653e`** (#61): `Payroll*`: view `PayrollView` hai chế độ (menu Tính lương, Chấm công), lưới ca × ngày, `PayrollCalculator` thuần (theo ca, theo tháng, tháng theo ca), lưu một transaction, chế độ Chấm công chỉ ghi `TBANGLUONGCHITIET`, xóa bảng lương xóa cả ba bảng, Tải lại có xác nhận.
 - **Chưa kiểm:** bấm thật, 125% DPI, ảnh app gốc. Điểm TẠM T1–T11 trong spec (nhất là T4 quyền Chấm công, T6 công thức tạm ứng chỉ `CHI`, T8 xóa dòng khi ô về trống).
 - **28/11 P3b đã code, push `ba293bd`** (#62): `PayrollPayout*`: nút Chi lương, lưới Thực nhận/Đã chi/Còn lại/Số phiếu, phiếu chi có `TBANGLUONGID` qua `PhieuThuDialog` chế độ chi lương (`VoucherRepository`, quỹ và chi vượt quỹ dùng hàm chung), chi từng phần, sửa/xóa trả quỹ, cách ly khỏi Tạm ứng lương và TAMUNG. Chưa kiểm bấm thật.
+- **28/11 `cf11e30` (theo Chiến chốt):** chế độ Chấm công chỉ ẩn cột tiền, Cập nhật ghi cả `TBANGLUONGTONGHOP` như gốc (bỏ T4).

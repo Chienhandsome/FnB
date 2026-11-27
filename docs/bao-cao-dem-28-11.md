@@ -19,6 +19,10 @@ Selftest: **1376 đạt, 0 lỗi → 1553 đạt, 0 lỗi** (thêm 177 ca). 11 c
 
 Spec mới, Claude tự duyệt theo §10.1.1: `nhan-su-danh-muc.md`, `nhan-su-thuong-phat-tam-ung.md`, `nhan-su-tinh-luong.md`, `quan-tri-nho.md`, `kiem-soat-order.md`, `danh-muc-the-tra-truoc.md` (Danh mục cửa hàng và Xuất lại định lượng đã có spec từ trước). Brief, QUEUE, `hieu-qua.md` (42 chức năng có code) đã cập nhật; bài học agy ghi ở `docs/kinh-nghiem.md`.
 
+## Cập nhật 28/11 sáng: Chiến đã trả lời (xem `docs/specs/chien-chot-28-11.md`)
+- Đã sửa code theo quyết định (`cf11e30`): Chấm công ghi tiền như gốc; thẻ trả trước bỏ chặn số dư và tính vào công nợ. Các điểm 1, 3, 4 (trừ tạm ứng chỉ `CHI`, Chi lương mặc định Còn lại, xóa dòng ô trống) và các chặn/số phiếu/Tồn nhiều kho/Kiểm soát order Chiến đã đồng ý giữ nguyên.
+- Việc mới chốt: wifi trên hóa đơn (xoay vòng, không xóa), máy in theo khu vực (file cục bộ), in/Excel và nhập hệ thống cũ (xem app gốc trước), ẩn menu Gửi tin nhắn.
+
 ## Chiến cần xem lại (quyết định Claude tự chốt, có tiền hoặc quyền)
 
 1. **Trừ tạm ứng khi tính lương chỉ lấy `CHI`** (R1, `nhan-su-tinh-luong.md` T6). Form máy của gốc trừ cả `THU`; vì luồng chuẩn không tạo phiếu thu tạm ứng nên hai cách cho cùng kết quả.
