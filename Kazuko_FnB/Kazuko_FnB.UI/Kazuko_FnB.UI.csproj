@@ -657,6 +657,7 @@
     <Compile Include="Diagnostics\SelfTest.RepairNotice.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.WifiPassword.cs" />
     <Compile Include="Diagnostics\SelfTest.WifiPassword.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.WifiInvoice.cs" />
     <Compile Include="Diagnostics\SelfTest.OrderControl.cs" />
     <Compile Include="Diagnostics\SelfTest.OrderControl.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.PrepaidCard.cs" />

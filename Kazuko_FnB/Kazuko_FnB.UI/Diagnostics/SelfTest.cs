@@ -595,6 +595,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             PayrollPayoutTests(db);
             RepairNoticeTests(db);
             WifiPasswordTests(db);
+            WifiInvoiceTests(db);
             AllWarehousesInventoryTests(db);
             OrderControlTests(db);
             PrepaidCardTests(db);

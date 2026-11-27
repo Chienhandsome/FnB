@@ -265,6 +265,7 @@ namespace Kazuko_FnB.Services
                             throw new PaymentRollbackException(ServiceOrderConstants.BillAlreadyPaid);
 
                         ServicePaymentRepository.ReleaseTableLockIn(conn, tx, b.TableId);
+                        ServicePaymentRepository.AssignWifiPasswordIn(conn, tx, b.Id);
 
                         if (request.TestHookAfterBillUpdate != null)
                             request.TestHookAfterBillUpdate(b.Id);

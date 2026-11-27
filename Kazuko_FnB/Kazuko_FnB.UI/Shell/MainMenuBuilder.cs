@@ -195,7 +195,9 @@ namespace Kazuko_FnB.UI
             "Dịch vụ MTB",
             // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
             "Danh mục bảng giá",
-            "Danh mục loại phòng"
+            "Danh mục loại phòng",
+            // App gốc không triển khai chức năng này (menu chết); Chiến chốt 28/11: không làm, ẩn menu.
+            "Gửi tin nhắn tới khách hàng"
         };
 
         private static void HideFromMenu(MenuNode n)
