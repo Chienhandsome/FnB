@@ -22,6 +22,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 Sửa 7 ca selftest (`9e7c6f1`) | 1, +1 −0 | 2, +163 −14 | 0 / 1 / 0 / 0 | 0 | 857 (7) → 864 (0) | không có lỗi sau vòng 1 | không áp dụng (chủ yếu sửa test) |
 | 26/11 Spec in, xuất Excel | không đổi code | – | – | – | – | thử ngoài app: thiếu `No1Lib*.dll` | – |
 | 26/11 In FastReport P0 (`30ced3e`, `8a9c0ee`, #27) | 14, +1570 −7 | 4, +1161 −4 | 0 / 0 / 0 / 1 | 1 (biên dịch, trong test) | 864 → 898 (0) | build 1, selftest 3, thử ngoài app + app gốc (lỗi tiền) | chưa bấm thử. Claude thấy khi làm P1a: lớp in chưa ẩn cột theo `VisibleByConfigID` (sửa ở `100513f`; chưa kiểm 3 mẫu mặt hàng bán có dùng thuộc tính này không) |
+| 27/11 Danh mục nhà cung cấp (`0228433`, #41) | 21 | 1 | 0 / 2 / 0 / 0 | 2 (lọc cây nhóm, quyền Thủ kho trên UI) rồi 1 (tiêu đề cột bị cắt) | 1197 → 1220 (0) | selftest 3 (ca mới của agy; build 0) | chưa bấm thử |
 | 27/11 Danh mục kho hàng (`b4bb293`, #40) | 15, +? | 1 | 0 / 0 / 0 / 0 | 1 (ghi lưu vết không cắt chuỗi 255 ký tự: ca tên kho dài 255) | 1176 → 1197 (0) | selftest 1 (ngoại lệ tràn chuỗi) | chưa bấm thử |
 | 27/11 Quỹ: phiếu thu/chi, danh mục + hai sửa nhỏ (`66e5b4c`, #39) | 26, +705 −362 (sửa) và 15 file mới | 3 file selftest | 0 / 1 / 0 / 1 | 0 | 1149 → 1176 (0) | build 0, selftest 0 ngay lần đầu; kiểm phạm vi dừng vì Claude ghi nhầm thư mục | chưa bấm thử |
 | 27/11 Quản lý bán hàng và Điều chỉnh hóa đơn (`92f92de`, #38) | 26, +4492 −15 | 5, +1234 −1 | 0 / 2 / 0 / 0 | 3 (hai chỗ test dùng cột không có thật; in ngăn xếp ngoại lệ trong `SelfTest.cs`) | 1129 → 1149 (0) | build 0, selftest 3 vòng chẩn đoán (SQL cột sai, âm kho, cọc dư, thanh toán chung, tên cột lưới) | chưa bấm thử |
@@ -36,7 +37,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 18 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 19 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -59,6 +60,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | Sử dụng dịch vụ patch (b) | 1572 s; 697 / 144 (dừng: gọi Bash) · 2090 s; 157 / 49 | 3662 s (61 phút) | 1.046 (12.208) |
 | Sử dụng dịch vụ patch (c) | 1236 s; 498 / 113 | 1236 s (21 phút) | 611 (9.028) |
 | Sử dụng dịch vụ patch (d) | 1612 s; 689 / 135 (dừng: gọi Bash) · 1717 s; 146 / 4 (dừng: agy hết quota) | 3329 s (55 phút) | 974 (9.653) |
+| Danh mục nhà cung cấp | 925 s · 1458 s · 1788 s | 4171 s (70 phút) | chưa đo |
 | Danh mục kho hàng | 1226 s | 1226 s (20 phút) | chưa đo |
 | Quỹ phiếu thu/chi (+ A1, A2) | 895 s (dừng: gọi Bash) · 1618 s | 2513 s (42 phút) | chưa đo |
 | Quản lý bán hàng + Điều chỉnh hóa đơn | 1569 s; 1136 / 180 (dừng: gọi Bash) · 1823 s; 69 / 21 · 3014 s; 104 / 23 | 6406 s (107 phút) | 1.532 (13.211) |
@@ -89,3 +91,4 @@ Các tổng ghi ở bản trước (khoảng 59, 67, 38 phút) đã cộng chồ
 | Quản lý bán hàng + Điều chỉnh hóa đơn | 5 giờ 33% lúc giữa chừng; tuần 17% | có: xin quyền computer-use (không có), trả lời issue, loop | Chạy selftest sau mỗi vòng và gửi nguyên văn từng ca lỗi cho agy sửa (vòng 3) nhanh hơn Claude tự dò; script giao việc cấm dấu ngoặc kép trong lời nhắn |
 | Quỹ phiếu thu/chi | chưa đo | có: viết spec phieu-thu-chi, loop | Chạy xong ngay lần đầu khi spec chi tiết và prompt chỉ rõ phần tái dùng (FundRepository, FundLedgerRules). Bài học Claude: .NET `File` dùng thư mục làm việc của tiến trình, không phải của PowerShell: luôn dùng đường dẫn tuyệt đối khi ghi file; script kiểm phạm vi so cả giờ sửa UTC của file ngoài worktree |
 | Danh mục kho hàng | chưa đo | có: tự duyệt spec | Ca biên (tên dài đúng 255 ký tự) làm lộ chỗ ghi lưu vết nối chuỗi vào cột 255: dặn agy cắt mọi chuỗi ghi vào cột có giới hạn |
+| Danh mục nhà cung cấp | chưa đo | có: viết 4 spec Kho, Công nợ | Ca UI (cây nhóm, quyền, tiêu đề) khiến agy cần 3 vòng; gửi nguyên văn từng ca lỗi cho agy sửa nhanh hơn Claude tự dò. Chốt chặn "file ngoài worktree" báo nhầm khi Chiến deploy AWS ở phiên khác (đã xác nhận); Publish không soi file ngoài nên không cần lách |

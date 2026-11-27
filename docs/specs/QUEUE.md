@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Danh mục nhà cung cấp (`0228433`, #41): cây nhóm, thêm/sửa/xóa NCC và nhóm, xóa còn tham chiếu, quyền Thủ kho
 - [ ] Danh mục kho hàng (`b4bb293`, #40): thêm/sửa/xóa, trùng tên, xóa kho còn tham chiếu, cờ âm kho, quyền Thủ kho
 - [ ] Quỹ (`66e5b4c`, #39): tạo/sửa/xóa phiếu thu chi, chi vượt quỹ, danh mục lý do và tài khoản, hủy bill có cọc bị chặn, Lưu & In khi đã lưu
 - [ ] Quản lý bán hàng + Điều chỉnh hóa đơn (`92f92de`, #38): sửa bill đã thanh toán và kiểm Tồn quỹ/kho/công nợ, trả đồ, hủy phiếu
@@ -51,7 +52,7 @@ Làm theo thứ tự; "chưa có spec" thì viết spec nháp và tự duyệt t
 2. Sử dụng dịch vụ: bán hàng và thanh toán (**đủ 4 patch đã code**: (a) `91a57c7`, (b) `56f2036`, (c) `35c0878`, (d) `ac6c750`)
 3. Quản lý bán hàng, Điều chỉnh hóa đơn (**đã code** `92f92de`)
 4. Quỹ: Tạo phiếu thu/chi ghi thật, Danh mục phiếu thu/chi, Danh mục lý do thu chi, Danh mục tài khoản ngân hàng (spec `phieu-thu-chi.md`; **đã code** `66e5b4c`)
-5. Kho (Danh mục kho hàng **đã code** `b4bb293`): Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)
+5. Kho (Danh mục kho hàng **đã code** `b4bb293`, Danh mục nhà cung cấp **đã code** `0228433`; spec Nhập, Xuất/Chuyển, Tồn kho, Công nợ **đã viết, Claude tự duyệt 27/11**, issue #42; chưa code): Danh mục kho hàng, Danh mục nhà cung cấp (spec nháp), Nhập hàng vào kho, Xuất khác, Chuyển kho, Tồn kho (chưa có spec)
 6. Công nợ khách hàng, Công nợ nhà cung cấp (chưa có spec)
 **Ngoài 2 ngày (làm sau):** Kiểm kê kho, Tính lại giá vốn, Xuất lại định lượng, Tồn nhiều kho, Danh mục cửa hàng, khuyến mại, voucher, thẻ trả trước, khách hàng thân thiết, Kiểm soát order, mật khẩu wifi, toàn bộ Nhân sự, Dữ liệu ban đầu, cấu hình máy in theo khu vực, in P3b, nhập Excel P5, Ctrl+P P6.
 
