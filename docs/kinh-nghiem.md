@@ -97,3 +97,14 @@ Rút từ các phiên 23–25/11/2026. Mỗi mục là một lỗi hoặc vướ
 - **Mẫu in gắn theo bảng:** `STEMPLATE.SFORMID` của mẫu phiếu (Đặt hàng, Báo giá) rỗng, liên kết bằng `STABLEDESCID` (bảng `TDATHANG`, `TBAOGIA` trong `STABLEDESC`). Hàm trong biểu thức ô chữ (`ToVndWords`) phải đăng ký bằng `FastReport.Utils.RegisteredObjects.AddFunction`.
 - **Dữ liệu thử của test:** `DLYDOTHUCHI` dùng cột `LOAILYDO` (không có `LOAI`). Một câu SQL sai trong chỗ dựng dữ liệu của ca test làm selftest dừng giữa chừng, nên mọi ca sau bị báo "mất ca".
 - GitHub CLI trong Git Bash: `"/c/Program Files/GitHub CLI/gh.exe"`. Trước khi viết spec mới, xem issue nhãn `spec-review`.
+
+## Bài học làm việc với agy (27/11/2026)
+- **Tên cột schema:** agy hay bịa cột (`CONGNOBANDAU`, `SOLUONG`, `TDONHANGID` trong `TLUUVET`...). Dặn "kiểm tên cột thật trong schema trước khi viết SQL"; `TDONHANGCHITIET` dùng `SLNHAP`/`SLXUAT`.
+- **`internal` và `public`:** method Data mà Services/UI gọi qua assembly phải `public`; thiếu thì lỗi biên dịch chỉ lộ khi Claude chạy build (agy không dịch được trong sandbox).
+- **Firebird -804:** không đặt `@param` trong `NULLIF`, `COALESCE`, `UPPER`, `CASE`, danh sách SELECT; dùng `CAST(@X AS VARCHAR(n))`.
+- **Cột có giới hạn:** chuỗi ghi vào cột `VARCHAR(255)` (kể cả `Note`, `TableName` của lưu vết) phải cắt cho vừa; ca biên "tên dài đúng 255 ký tự" bắt được lỗi này.
+- **`using` và namespace:** control chung ở `Kazuko_FnB.UI.Controls` (`FlatButton`...): nhắc agy khi giao phiếu mới.
+- **Bash bị từ chối:** agy dừng sớm khi gọi Bash. Nối vòng tiếp cùng `-Conversation` với lời nhắn "không chạy lệnh shell nào, chỉ dùng công cụ đọc/ghi file". `-Message` không được chứa dấu ngoặc kép.
+- **Ca selftest gõ phím thật** (`Nhập số P1`...) chập chờn khi cửa sổ khác giành tiêu điểm: chạy lại tối đa 2 lần trước khi kết luận là lỗi của chức năng đang làm.
+- **Chốt chặn phạm vi:** commit docs ở thư mục chính khi agy đang chạy làm hỏng kiểm phạm vi; file ngoài worktree (`.ssh\known_hosts`, dự án khác trong `D:\Working`) báo lỗi chặn nhưng `Publish-AgyFeature` không soi file ngoài; kiểm xem có phải việc khác của Chiến không. CRLF/LF: file mới agy ghi LF làm git cảnh báo "LF will be replaced by CRLF" bị tính là lỗi chặn: đổi file đó sang CRLF (dùng đường dẫn tuyệt đối khi ghi, .NET `File` không theo thư mục hiện tại của PowerShell).
+- **Prompt:** chỉ cần trỏ spec và chức năng mẫu vừa xong cộng danh sách bẫy trên thì agy xong một vòng sạch (Xuất/Chuyển kho, Kho hàng).
