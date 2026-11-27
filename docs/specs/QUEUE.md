@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Nhân sự P3a (`7d7653e`, #61): bảng lương, Tính lương, Chấm công (lưới ca × ngày, 3 cách tính, chế độ Chấm công không ghi tiền); chưa có Chi lương
 - [ ] Nhân sự P2 (`4f40fbd`, #60): Thưởng phạt (số phiếu TP, giới hạn tháng) và Tạm ứng lương (phiếu chi LATAMUNG=30, quỹ giảm, chi vượt quỹ như phiếu chi)
 - [ ] Nhân sự P1 (`708952b`, #59): Danh mục nhân viên và ca làm việc: cách tính lương, ẩn/hiện theo máy chấm công, trùng tên, chặn xóa khi còn tham chiếu
 - [ ] Danh mục cửa hàng (`37211bd`, #58): thêm/sửa/xóa, trùng mã tên, chặn xóa khi còn tham chiếu và cửa hàng cuối, hiện menu theo NhieuCuaHang
