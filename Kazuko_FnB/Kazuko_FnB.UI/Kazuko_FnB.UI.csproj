@@ -274,6 +274,15 @@
     <Compile Include="DebtListView.Render.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="LoyaltyView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="LoyaltyView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="LoyaltyView.Render.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -525,6 +534,8 @@
     <Compile Include="Diagnostics\SelfTest.Promotion.Apply.cs" />
     <Compile Include="Diagnostics\SelfTest.Promotion.Apply.Db.cs" />
     <Compile Include="Diagnostics\SelfTest.Promotion.Apply.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Loyalty.cs" />
+    <Compile Include="Diagnostics\SelfTest.Loyalty.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -631,6 +642,12 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\DebtPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\LoyaltyPointDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\LoyaltyPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PickRoomDialog.cs" />

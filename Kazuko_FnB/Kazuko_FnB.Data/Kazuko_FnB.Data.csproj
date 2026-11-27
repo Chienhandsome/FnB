@@ -120,6 +120,8 @@
     <Compile Include="DebtRepository.cs" />
     <Compile Include="DebtRepository.Detail.cs" />
     <Compile Include="DebtRepository.Write.cs" />
+    <Compile Include="LoyaltyRepository.cs" />
+    <Compile Include="LoyaltyRepository.Write.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

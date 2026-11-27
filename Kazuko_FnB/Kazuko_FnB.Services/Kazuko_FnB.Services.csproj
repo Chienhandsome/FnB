@@ -130,6 +130,8 @@
     <Compile Include="InventoryService.cs" />
     <Compile Include="DebtRules.cs" />
     <Compile Include="DebtService.cs" />
+    <Compile Include="LoyaltyRules.cs" />
+    <Compile Include="LoyaltyService.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

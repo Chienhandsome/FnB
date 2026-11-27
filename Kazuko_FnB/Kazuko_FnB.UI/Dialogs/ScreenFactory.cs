@@ -52,6 +52,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "preview.inventory", session => new InventoryPreviewForm(session) },
                 { "preview.debtcustomer", session => new DebtPreviewForm(session, DebtPartyKind.Customer) },
                 { "preview.debtsupplier", session => new DebtPreviewForm(session, DebtPartyKind.Supplier) },
+                { "preview.loyalty", session => new LoyaltyPreviewForm(session) },
                 { "preview.promotionedit", session => new PromotionEditDialog(session, null, false) },
                 { "preview.useredit", session => new UserEditDialog(session, null, null, null) },
                 { "preview.groupedit", session => new GroupEditDialog(session, null) }
@@ -130,6 +131,9 @@ namespace Kazuko_FnB.UI.Dialogs
                 return new DebtListView(session, DebtPartyKind.Customer);
             if (IsSupplierDebtMenu(node))
                 return new DebtListView(session, DebtPartyKind.Supplier);
+            // Màn "Khách hàng thân thiết" (KHÁCH HÀNG > Khách hàng thân thiết, docs/specs/khach-hang-than-thiet.md).
+            if (IsLoyaltyMenu(node))
+                return new LoyaltyView(session);
             // Màn "Danh mục đợt khuyến mại" (KHÁCH HÀNG > Danh mục đợt khuyến mại, DDOTKHUYENMAI).
             if (IsPromotionMenu(node, session))
             {
@@ -288,6 +292,15 @@ namespace Kazuko_FnB.UI.Dialogs
             string title = (node.Title ?? "").Trim();
             return string.Equals(title, DebtConstants.SupplierDebtFunctionName, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(title, "Công nợ NCC", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Mục "KHÁCH HÀNG > Khách hàng thân thiết": mở màn khách hàng thân thiết.</summary>
+        internal static bool IsLoyaltyMenu(MenuNode node)
+        {
+            if (node == null)
+                return false;
+            string title = (node.Title ?? "").Trim();
+            return string.Equals(title, LoyaltyConstants.FunctionName, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Mục "KHÁCH HÀNG > Danh mục đợt khuyến mại": mở CatalogView chế độ đợt khuyến mại (DDOTKHUYENMAI).</summary>
