@@ -226,8 +226,8 @@ namespace Kazuko_FnB.UI.Diagnostics
                     Application.DoEvents();
                     DataGridView g = view.GridForTest;
 
-                    // Kiểm không có nút Chi lương ở P3a và thanh nút không cuộn dọc ở 1366x768.
-                    bool noPaySalaryBtn = !ContainsControlWithText(view, "Chi lương");
+                    // P3b đã bổ sung nút Chi lương ở chế độ Tính lương (giữ nguyên tên ca P3a) và thanh nút không cuộn dọc ở 1366x768.
+                    bool noPaySalaryBtn = view.PayOutButtonForTest != null && view.PayOutButtonForTest.Visible;
                     bool toolbarNoVScroll = !view.ToolbarFlowForTest.VerticalScroll.Visible
                         && view.SaveButtonForTest.Bottom <= view.ToolbarPanelForTest.Height;
 

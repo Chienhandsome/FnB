@@ -111,6 +111,7 @@
     <Compile Include="SalaryAdvanceRepository.cs" />
     <Compile Include="PayrollRepository.cs" />
     <Compile Include="PayrollRepository.Write.cs" />
+    <Compile Include="PayrollPayoutRepository.cs" />
     <Compile Include="SupplierRepository.cs" />
     <Compile Include="SupplierGroupRepository.cs" />
     <Compile Include="GiftVoucherRepository.cs" />

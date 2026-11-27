@@ -201,8 +201,10 @@ namespace Kazuko_FnB.UI.Dialogs
             }
 
             _btnSave.Visible = !_readOnly;
-            _btnSaveNew.Visible = !_readOnly && !_isDepositMode;
-            if (_isSalaryAdvanceMode)
+            _btnSaveNew.Visible = !_readOnly && !_isDepositMode && !_isSalaryPayoutMode;
+            if (_isSalaryPayoutMode)
+                ApplySalaryPayoutModeState();
+            else if (_isSalaryAdvanceMode)
                 ApplySalaryAdvanceModeState();
             else if (!string.IsNullOrEmpty(_linkedWarning))
                 SubtitleText = _linkedWarning;
@@ -246,6 +248,11 @@ namespace Kazuko_FnB.UI.Dialogs
             if (_isDepositMode)
             {
                 SaveDepositMode();
+                return;
+            }
+            if (_isSalaryPayoutMode)
+            {
+                SaveSalaryPayoutMode();
                 return;
             }
             if (_isSalaryAdvanceMode)

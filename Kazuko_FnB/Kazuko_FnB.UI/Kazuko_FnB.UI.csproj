@@ -238,6 +238,9 @@
     <Compile Include="PayrollView.Save.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="PayrollView.PayOut.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="CatalogView.Supplier.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -578,6 +581,8 @@
     <Compile Include="Diagnostics\SelfTest.SalaryAdvance.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Payroll.cs" />
     <Compile Include="Diagnostics\SelfTest.Payroll.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.PayrollPayout.cs" />
+    <Compile Include="Diagnostics\SelfTest.PayrollPayout.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Purchase.cs" />
@@ -674,6 +679,9 @@
     <Compile Include="Dialogs\PhieuThuDialog.Advance.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Dialogs\PhieuThuDialog.SalaryPayout.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\CashReasonEditDialog.cs" />
     <Compile Include="Dialogs\BankAccountEditDialog.cs" />
     <Compile Include="Dialogs\WarehouseEditDialog.cs" />
@@ -687,6 +695,12 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PayrollPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\PayrollPayoutDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\PayrollPayoutDialog.Actions.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\SupplierEditDialog.cs" />

@@ -188,11 +188,11 @@ namespace Kazuko_FnB.Data
                 "INSERT INTO TTHUCHI (" +
                 "ID, NAME, NGAY, LOAI, LOAIDOITUONG, LAPHIEUTHUCONGNO, KHONGTHAYDOICONGNO, LATAMUNG, " +
                 "TENDOITUONG, DIACHI, DNHANVIENID, DKHACHHANGID, DNHACUNGCAPID, DCUAHANGID, DLYDOTHUCHIID, " +
-                "DIENGIAI, CHUNGTUGOC, NOTE, THU, CHI, CHUYENKHOAN, DTAIKHOANNGANHANGID, " +
+                "DIENGIAI, CHUNGTUGOC, NOTE, THU, CHI, CHUYENKHOAN, DTAIKHOANNGANHANGID, TBANGLUONGID, " +
                 "STATUS, USERCREATEDID, TIMECREATED, USERMODIFIEDID, TIMEMODIFIED) " +
                 "VALUES (@ID, @NAME, @NGAY, @LOAI, @OBJ, 0, @NDC, @TU, " +
                 "@TEN, @DC, @NV, @KH, @NCC, @CH, @LD, " +
-                "@DG, @CTG, @NOTE, @THU, @CHI, @CK, @TK, " +
+                "@DG, @CTG, @NOTE, @THU, @CHI, @CK, @TK, @BL, " +
                 "@ST, @UC, @TC, NULL, NULL)",
                 "@ID", row.Id,
                 "@NAME", row.Name,
@@ -215,6 +215,7 @@ namespace Kazuko_FnB.Data
                 "@CHI", chi,
                 "@CK", row.Transfer ? ActiveStatus : 0,
                 "@TK", row.Transfer ? NullIfEmpty(row.BankAccountId) : null,
+                "@BL", NullIfEmpty(row.PayrollId),
                 "@ST", ActiveStatus,
                 "@UC", row.CreatedById ?? "",
                 "@TC", row.CreatedAt ?? DbHelper.Now());

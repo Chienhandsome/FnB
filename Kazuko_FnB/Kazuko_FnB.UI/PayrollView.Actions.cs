@@ -26,6 +26,7 @@ namespace Kazuko_FnB.UI
             _btnClearCell.Click += delegate { ApplyStatusToSelection(AttendanceStatus.Empty); };
             _btnReload.Click += delegate { ReloadAllFromCatalog(); };
             _btnSave.Click += delegate { SaveChanges(); };
+            _btnPayOut.Click += delegate { OpenPayOutDialog(); };
 
             _periodGrid.SelectionChanged += OnPeriodSelectionChanged;
             _grid.SelectionChanged += delegate { if (!_loading) UpdateSelectedEmployeeStats(); };

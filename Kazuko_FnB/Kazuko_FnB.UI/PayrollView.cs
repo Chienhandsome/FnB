@@ -60,6 +60,7 @@ namespace Kazuko_FnB.UI
         private readonly FlatButton _btnClearCell = new FlatButton { Text = "0. Xóa" };
         private readonly FlatButton _btnReload = new FlatButton { Text = "Tải lại" };
         private readonly FlatButton _btnSave = new FlatButton { Text = "Cập nhật", Tag = "primary" };
+        private readonly FlatButton _btnPayOut = new FlatButton { Text = "Chi lương" };
         private readonly Label _summary = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleRight };
 
         private readonly Panel _infoBar = new Panel { Dock = DockStyle.Top };
@@ -102,6 +103,7 @@ namespace Kazuko_FnB.UI
         internal Func<string, bool> ConfirmReloadOverrideForTest { get; set; }
         internal Func<string, bool> ConfirmDeleteOverrideForTest { get; set; }
         internal Func<PayrollCreateDialog, DialogResult> CreateDialogOpenerForTest { get; set; }
+        internal Func<PayrollPayoutDialog, DialogResult> PayoutDialogOpenerForTest { get; set; }
 
         internal PayrollMode ModeForTest { get { return _mode; } }
         internal PayrollSheetData CurrentSheetForTest { get { return _currentSheet; } }
@@ -117,6 +119,7 @@ namespace Kazuko_FnB.UI
         internal FlatButton ClearCellButtonForTest { get { return _btnClearCell; } }
         internal FlatButton ReloadButtonForTest { get { return _btnReload; } }
         internal FlatButton SaveButtonForTest { get { return _btnSave; } }
+        internal FlatButton PayOutButtonForTest { get { return _btnPayOut; } }
         internal Label EmployeeStatsLabelForTest { get { return _lblEmpStats; } }
         internal Label SummaryLabelForTest { get { return _summary; } }
         internal Panel WarningBannerForTest { get { return _warnBanner; } }
@@ -243,7 +246,7 @@ namespace Kazuko_FnB.UI
             _barFlow.AutoScroll = false;
             _barFlow.Padding = new Padding((int)(10 * s), (int)(8 * s), (int)(10 * s), (int)(8 * s));
 
-            FlatButton[] buttons = { _btnPresent, _btnPaidLeave, _btnUnpaidLeave, _btnClearCell, _btnReload, _btnSave };
+            FlatButton[] buttons = { _btnPresent, _btnPaidLeave, _btnUnpaidLeave, _btnClearCell, _btnReload, _btnSave, _btnPayOut };
             foreach (FlatButton b in buttons)
             {
                 b.Height = (int)(36 * s);
@@ -357,6 +360,7 @@ namespace Kazuko_FnB.UI
             _btnReload.Enabled = !_busy && isPayroll && _service.CanEdit && hasSheet;
 
             _btnSave.Enabled = !_busy && _service.CanEdit && hasSheet;
+            ApplyPayOutButtonState();
         }
 
         private static void EnableGridDoubleBuffer(DataGridView g)

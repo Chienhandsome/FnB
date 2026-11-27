@@ -160,14 +160,19 @@ namespace Kazuko_FnB.UI.Dialogs
             bool readOnly,
             bool depositMode,
             bool salaryAdvanceMode = false,
-            RewardPenaltyMonthLimit advanceMonthLimit = null)
+            RewardPenaltyMonthLimit advanceMonthLimit = null,
+            PayrollPayoutPreset salaryPayoutPreset = null)
             : base(
-                salaryAdvanceMode ? BuildAdvanceTitle(string.IsNullOrEmpty(voucherId), readOnly) : BuildTitle(kind, string.IsNullOrEmpty(voucherId), readOnly),
-                salaryAdvanceMode ? BuildAdvanceSubtitle(readOnly) : BuildSubtitle(kind, readOnly),
+                salaryPayoutPreset != null ? BuildSalaryPayoutTitle(string.IsNullOrEmpty(voucherId), readOnly || salaryPayoutPreset.ReadOnly)
+                    : (salaryAdvanceMode ? BuildAdvanceTitle(string.IsNullOrEmpty(voucherId), readOnly) : BuildTitle(kind, string.IsNullOrEmpty(voucherId), readOnly)),
+                salaryPayoutPreset != null ? BuildSalaryPayoutSubtitle(salaryPayoutPreset, readOnly || salaryPayoutPreset.ReadOnly)
+                    : (salaryAdvanceMode ? BuildAdvanceSubtitle(readOnly) : BuildSubtitle(kind, readOnly)),
                 720, 640)
         {
             _session = session ?? AppSession.Current;
-            _kind = salaryAdvanceMode ? VoucherKind.Expense : kind;
+            _isSalaryPayoutMode = salaryPayoutPreset != null;
+            _salaryPayoutPreset = salaryPayoutPreset;
+            _kind = (_isSalaryPayoutMode || salaryAdvanceMode) ? VoucherKind.Expense : kind;
             _isDepositMode = depositMode;
             _isSalaryAdvanceMode = salaryAdvanceMode;
             _advanceMonthLimit = advanceMonthLimit;
@@ -179,15 +184,19 @@ namespace Kazuko_FnB.UI.Dialogs
             _phieuThuRepo = new PhieuThuRepository(_session.DatabasePath);
             if (_isSalaryAdvanceMode)
                 _salaryAdvanceService = new SalaryAdvanceService(_session);
+            if (_isSalaryPayoutMode)
+                _salaryPayoutService = new PayrollPayoutService(_session);
 
-            if (_isSalaryAdvanceMode)
+            if (_isSalaryPayoutMode)
+                _readOnly = readOnly || salaryPayoutPreset.ReadOnly || !_salaryPayoutService.CanPayOut;
+            else if (_isSalaryAdvanceMode)
                 _readOnly = readOnly || (_isNew ? !_salaryAdvanceService.CanAdd : !_salaryAdvanceService.CanEdit);
             else if (!depositMode)
                 _readOnly = readOnly || (_isNew ? !_voucherService.CanAdd : !_voucherService.CanEdit);
 
-            _layout = LoadVoucherLayout(kind);
+            _layout = LoadVoucherLayout(_kind);
             if (_layout == null || !string.Equals(_layout.Table, "TTHUCHI", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Không đọc được layout form \"" + (kind == VoucherKind.Expense ? VoucherConstants.ExpenseFormName : FormName) + "\".");
+                throw new InvalidOperationException("Không đọc được layout form \"" + (_kind == VoucherKind.Expense ? VoucherConstants.ExpenseFormName : FormName) + "\".");
 
             _form = new DynamicForm(_layout) { Dock = DockStyle.Fill, Padding = new Padding((int)(8 * Dpi)) };
             Body.Controls.Add(_form);
@@ -215,6 +224,8 @@ namespace Kazuko_FnB.UI.Dialogs
                 AdjustExpenseLabels();
             if (_isSalaryAdvanceMode)
                 ConfigureSalaryAdvanceLayout();
+            else if (_isSalaryPayoutMode)
+                ConfigureSalaryPayoutLayout();
 
             _btnClose = AddButton("Đóng", null, delegate { Close(); });
             _btnSaveNew = AddButton("Lưu & Mới", null, delegate { Save(true); });
@@ -226,11 +237,15 @@ namespace Kazuko_FnB.UI.Dialogs
 
             if (_isNew)
             {
-                if (_isSalaryAdvanceMode)
+                if (_isSalaryPayoutMode)
+                    InitNewSalaryPayoutDocument();
+                else if (_isSalaryAdvanceMode)
                     InitNewSalaryAdvanceDocument();
                 else
                     InitNewDocument();
             }
+            else if (_isSalaryPayoutMode)
+                LoadExistingSalaryPayout(_editingId);
             else if (_isSalaryAdvanceMode)
                 LoadExistingSalaryAdvance(_editingId);
             else
