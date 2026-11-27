@@ -40,6 +40,7 @@ Thứ tự theo menu Hoạt động thật của POS TAP. 1 spec = 1 commit. T�
 - [ ] Sử dụng dịch vụ patch (b) (`56f2036`, #35): thanh toán tiền mặt/thẻ/CK/voucher/thẻ trả trước/điểm/đặt trước, nợ khách, thanh toán chung, trừ kho, phiếu chi trả cọc dư
 - [ ] Sử dụng dịch vụ patch (c) (`35c0878`, #36): chuyển bàn, gộp bàn, chuyển mặt hàng, hủy bill
 - [ ] Sử dụng dịch vụ patch (d) (`ac6c750`, #37): in hóa đơn, in tạm tính, in lại, in bếp (xem trước, máy in tem/hóa đơn khi có máy)
+- [ ] Kiểm soát order (`e750244`, #65): đối chiếu số order giấy với hóa đơn theo ngày: đã dùng, viết sai, trùng, thiếu, tóm tắt, xuất Excel
 - [ ] Mục nhỏ P-B (`8d26868`, #64): Tồn nhiều kho: tất cả các kho, bảng chi tiết theo kho, Tồn kho thường không đổi
 - [ ] Mục nhỏ P-A (`cfff63f`, #63): Thông báo sửa chữa (bàn hiện Sửa chữa) và Danh mục mật khẩu wifi (cây nhóm); chưa gán wifi lên hóa đơn
 - [ ] Nhân sự P3b (`ba293bd`, #62): Chi lương: lưới thực nhận/đã chi/còn lại, phiếu chi có TBANGLUONGID, chi từng phần, sửa/xóa trả quỹ

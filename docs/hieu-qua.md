@@ -49,7 +49,7 @@ Mỗi chức năng một dòng ở bảng 1 và 3, ghi khi làm xong (kể cả 
 | 26/11 In P1b, hai màn xem nhúng (`2be56da`, #29) | 12, +811 −1285 | 8, +1134 −648 | 0 / 0 / 0 / 0 | 2 (biên dịch trong test; chữ xuống dòng trong chi tiết ca làm script đọc sai tên ca) + xóa 4 file lưới agy không xóa được | 925 → 923 (0); bỏ 16 ca giao diện cũ (Chiến đồng ý), thêm 14 | build 1 (CS0165), selftest 0, kiểm phạm vi chặn nhầm 2 lần (CRLF; pull ở dự án khác, lối tắt Desktop) | chưa bấm thử |
 | 26/11 In P1a, Thống kê doanh thu (`100513f`) | 11, +737 −103 | 4, +1306 −2 | 1 / 0 / 0 / 0 | 0 (đổi xuống dòng 1 file để gỡ chặn nhầm) | 898 → 925 (0) | selftest 2 (cùng gốc: in thừa cột app gốc ẩn) | chưa bấm thử |
 
-**Cộng 40 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
+**Cộng 41 chức năng có code:** 10 vòng thừa: Claude 3, agy 5, đổi yêu cầu 0, lẫn 2 (một lần đổi yêu cầu kèm lỗi agy, một lần agy kèm Claude).
 
 ## Bảng 2. Thời gian và token agy từng lượt
 
@@ -81,6 +81,7 @@ Số của **riêng lượt đó** (đã trừ cộng dồn), token tính bằng
 | Nhân sự P3b (Chi lương) | chưa đo | có: viết spec | Một vòng, selftest 1492 → 1497 không lỗi: prompt nêu sẵn danh sách cột thật của các bảng lương và chỉ định mẫu phải bám (chế độ tạm ứng của PhieuThuDialog), nên agy không lặp lại lỗi cột NAME của P3a. Bài học: dán cột thật và mẫu cần bám vào prompt giúp xong ngay vòng 1 |
 | Mục nhỏ P-A (Thông báo sửa chữa, mật khẩu wifi) | chưa đo | có: viết spec | Ba vòng agy: vòng 1 agy chạy lệnh shell bị chặn giữa chừng, vòng 2 còn một ca UI đỏ (hộp không vừa 1366×768 ở 150% DPI), vòng 3 xong. Bài học: nhắc "không chạy shell" ở đầu prompt không đủ, agy vẫn thử; nên có sẵn câu giao vòng 2 ngắn gọn để resume ngay |
 | Mục nhỏ P-B (Tồn nhiều kho) | chưa đo | có: viết spec | Một vòng, selftest 1522 → 1528 không lỗi; chỉ vướng một cảnh báo biên dịch mới (CS0184) trong file selftest của agy do Claude sửa một dòng (1 lần Claude tự sửa). Bài học: giao việc kèm "không chạy shell" và chỉ rõ file mẫu giúp xong sớm; cảnh báo biên dịch mới cũng tính là lỗi nên cần dặn agy tránh điều kiện `is` thừa kiểu |
+| Kiểm soát order | chưa đo | có: viết spec | Một vòng, selftest 1528 → 1537 không lỗi, không phải Claude sửa. Hàm phân tích thuần kiểm bằng số tính tay và đã dặn tránh cảnh báo biên dịch kiểu CS0184 từ đầu. Bài học: đưa các bẫy của lần trước (cảnh báo biên dịch mới, không chạy shell) vào prompt ngay từ đầu rút được cả vòng sửa |
 | Tồn kho ban đầu | 1065 s · 1615 s | 2680 s (45 phút) | chưa đo |
 | Khách hàng thân thiết | 873 s · vòng 2 chưa đo (máy tắt giữa chừng) | chưa đo | chưa đo |
 | Khuyến mại P2 | 1319 s | 1319 s (22 phút) | chưa đo |
