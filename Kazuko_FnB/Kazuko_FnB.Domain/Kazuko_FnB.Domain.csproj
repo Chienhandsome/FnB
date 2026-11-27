@@ -75,6 +75,7 @@
     <Compile Include="PromotionModels.cs" />
     <Compile Include="PromotionApplyModels.cs" />
     <Compile Include="WarehouseModels.cs" />
+    <Compile Include="StoreModels.cs" />
     <Compile Include="SupplierModels.cs" />
     <Compile Include="PurchaseModels.cs" />
     <Compile Include="CostRecalcModels.cs" />

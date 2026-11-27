@@ -159,6 +159,16 @@ namespace Kazuko_FnB.UI.Dialogs
                     return new CatalogView(session.DatabasePath, stableId,
                         string.IsNullOrWhiteSpace(node.Title) ? PromotionText.FunctionName : node.Title);
             }
+            // Màn "Danh mục cửa hàng" (HOẠT ĐỘNG > Danh mục cửa hàng, DCUAHANG, SMENU.SORTORDER = ZZZ003).
+            if (IsStoreCatalogMenu(node, session))
+            {
+                string stableId = !string.IsNullOrEmpty(node.StableDescId)
+                    ? node.StableDescId
+                    : new Data.CatalogRepository(session.DatabasePath).FindIdByTable(StoreText.TableName);
+                if (!string.IsNullOrEmpty(stableId))
+                    return new CatalogView(session.DatabasePath, stableId,
+                        string.IsNullOrWhiteSpace(node.Title) ? StoreText.FunctionName : node.Title);
+            }
             if (string.IsNullOrEmpty(node.StableDescId) || node.Operation != 0)
                 return null;
             try
@@ -355,6 +365,20 @@ namespace Kazuko_FnB.UI.Dialogs
                 return false;
             string folded = Data.CatalogRepository.Fold((node.Title ?? "").Trim());
             return string.Equals(folded, "cong no nha cung cap ban dau", StringComparison.Ordinal);
+        }
+
+        /// <summary>Mục "HOẠT ĐỘNG > Danh mục cửa hàng": nhận diện theo tên không dấu (không phân biệt hoa thường) hoặc bảng DCUAHANG.</summary>
+        internal static bool IsStoreCatalogMenu(MenuNode node, UserSession session)
+        {
+            if (node == null) return false;
+            if (string.Equals(Data.CatalogRepository.Fold((node.Title ?? "").Trim()), "danh muc cua hang", StringComparison.Ordinal))
+                return true;
+            if (session == null || string.IsNullOrEmpty(node.StableDescId)) return false;
+            try
+            {
+                return string.Equals(new Data.FormRepository(session.DatabasePath).TableNameOf(node.StableDescId), StoreText.TableName, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception) { return false; }
         }
 
         /// <summary>Mục "KHÁCH HÀNG > Danh mục đợt khuyến mại": mở CatalogView chế độ đợt khuyến mại (DDOTKHUYENMAI).</summary>

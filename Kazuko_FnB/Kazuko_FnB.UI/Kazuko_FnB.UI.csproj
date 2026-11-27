@@ -205,6 +205,9 @@
     <Compile Include="CatalogView.Warehouse.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.Store.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="CatalogView.Supplier.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -533,6 +536,8 @@
     <Compile Include="Diagnostics\SelfTest.Voucher.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Warehouse.cs" />
     <Compile Include="Diagnostics\SelfTest.Warehouse.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Store.cs" />
+    <Compile Include="Diagnostics\SelfTest.Store.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.cs" />
     <Compile Include="Diagnostics\SelfTest.Supplier.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Purchase.cs" />
@@ -629,6 +634,7 @@
     <Compile Include="Dialogs\CashReasonEditDialog.cs" />
     <Compile Include="Dialogs\BankAccountEditDialog.cs" />
     <Compile Include="Dialogs\WarehouseEditDialog.cs" />
+    <Compile Include="Dialogs\StoreEditDialog.cs" />
     <Compile Include="Dialogs\SupplierEditDialog.cs" />
     <Compile Include="Dialogs\SupplierGroupEditDialog.cs" />
     <Compile Include="Dialogs\GiftVoucherEditDialog.cs" />

@@ -88,6 +88,8 @@ namespace Kazuko_FnB.Domain
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        /// <summary>Kho mặc định của cửa hàng (DCUAHANG.DKHOHANGID), dùng khi nạp phiên làm việc.</summary>
+        public string DefaultWarehouseId { get; set; }
 
         public override string ToString()
         {

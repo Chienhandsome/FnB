@@ -108,6 +108,8 @@
     <Compile Include="VoucherService.cs" />
     <Compile Include="WarehouseRules.cs" />
     <Compile Include="WarehouseService.cs" />
+    <Compile Include="StoreRules.cs" />
+    <Compile Include="StoreService.cs" />
     <Compile Include="SupplierRules.cs" />
     <Compile Include="SupplierService.cs" />
     <Compile Include="SupplierGroupService.cs" />

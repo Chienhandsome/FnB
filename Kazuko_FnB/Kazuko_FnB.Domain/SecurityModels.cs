@@ -93,6 +93,8 @@ namespace Kazuko_FnB.Domain
         public string DatabasePath { get; set; }
         public List<StoreRecord> Stores { get; set; }
         public StoreRecord CurrentStore { get; set; }
+        /// <summary>Kho mặc định đang dùng của phiên (DKHOHANGID của CurrentStore, theo Shared.Load).</summary>
+        public string CurrentWarehouseId { get; set; }
         /// <summary>Quyền chức năng của người dùng (nạp một lần lúc đăng nhập). Có thể null ở lệnh render thử.</summary>
         public FunctionPermissions Permissions { get; set; }
     }

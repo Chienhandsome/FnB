@@ -49,6 +49,7 @@ namespace Kazuko_FnB.Services
                         DatabasePath = databasePath,
                         Stores = stores,
                         CurrentStore = stores.Count > 0 ? stores[0] : null,
+                        CurrentWarehouseId = stores.Count > 0 ? stores[0].DefaultWarehouseId : null,
                         Permissions = repo.GetFunctionPermissions(u.Id, u.IsAdmin)
                     }
                 };

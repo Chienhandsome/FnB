@@ -22,6 +22,7 @@ namespace Kazuko_FnB.UI
             var model = new MenuModel();
             FunctionPermissions perms;
             List<MenuNode> dbRoots = new List<MenuNode>();
+            Dictionary<string, int> configById = null;
 
             if (!string.IsNullOrEmpty(session.DatabasePath))
             {
@@ -33,6 +34,7 @@ namespace Kazuko_FnB.UI
                     dbRoots = menus.LoadTree();
                     // Mục không có SMENU.SFUNCTIONID thì lấy quyền từ STABLEDESC (vd. "Khách đặt hàng").
                     menus.FillFunctionIds(dbRoots);
+                    configById = menus.LoadConfigIntValuesById();
                 }
                 catch (Kazuko_FnB.Data.DataAccessException)
                 {
@@ -48,7 +50,7 @@ namespace Kazuko_FnB.UI
             model.Roots.Add(BuildSystemMenu(perms));
             foreach (MenuNode root in dbRoots)
             {
-                MenuNode pruned = Prune(root, perms);
+                MenuNode pruned = Prune(root, perms, configById);
                 if (pruned == null || pruned.IsSeparator)
                     continue;
                 // Chỉ lược khỏi menu thả xuống; thanh công cụ / Truy cập nhanh vẫn dùng dữ liệu đầy đủ.
@@ -65,23 +67,46 @@ namespace Kazuko_FnB.UI
             var dbPruned = new List<MenuNode>();
             foreach (MenuNode root in dbRoots)
             {
-                MenuNode p = Prune(root, perms);
+                MenuNode p = Prune(root, perms, configById);
                 if (p != null)
                     dbPruned.Add(p);
             }
-            BuildToolbar(model, dbRoots, perms);
+            BuildToolbar(model, dbRoots, perms, configById);
             BuildQuickGroups(model, dbPruned);
             return model;
         }
 
         // ------------------------------------------------------------------ lọc quyền
 
-        /// <summary>Bỏ mục ẩn / không đủ quyền; nhóm rỗng cũng bị bỏ; dọn dòng kẻ thừa.</summary>
-        private static MenuNode Prune(MenuNode n, FunctionPermissions perms)
+        /// <summary>
+        /// Kiểm tra cờ SMENU.VISIBLECONFIGID cho riêng menu Danh mục cửa hàng (NhieuCuaHang = 30 mới hiện).
+        /// Các menu khác giữ nguyên hành vi cũ (không lọc theo VISIBLECONFIGID).
+        /// </summary>
+        private static bool IsVisibleByConfig(MenuNode n, Dictionary<string, int> configById)
+        {
+            if (n == null || !IsStoreCatalogMenuNode(n))
+                return true;
+            if (string.IsNullOrEmpty(n.VisibleConfigId) || configById == null)
+                return true;
+            int val;
+            return !configById.TryGetValue(n.VisibleConfigId, out val) || val == SystemConfig.On;
+        }
+
+        private static bool IsStoreCatalogMenuNode(MenuNode n)
+        {
+            if (n == null)
+                return false;
+            if (string.Equals(n.FunctionId, StoreText.FunctionId, StringComparison.OrdinalIgnoreCase))
+                return true;
+            return Dialogs.ScreenFactory.IsStoreCatalogMenu(n, null);
+        }
+
+        /// <summary>Bỏ mục ẩn / ẩn theo VISIBLECONFIGID / không đủ quyền; nhóm rỗng cũng bị bỏ; dọn dòng kẻ thừa.</summary>
+        private static MenuNode Prune(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById)
         {
             if (n.IsSeparator)
                 return n;
-            if (n.Hidden)
+            if (n.Hidden || !IsVisibleByConfig(n, configById))
                 return null;
 
             if (n.IsLeaf)
@@ -90,7 +115,7 @@ namespace Kazuko_FnB.UI
             var copy = Clone(n);
             foreach (MenuNode c in n.Children)
             {
-                MenuNode pc = Prune(c, perms);
+                MenuNode pc = Prune(c, perms, configById);
                 if (pc != null)
                     copy.Children.Add(pc);
             }
@@ -102,7 +127,6 @@ namespace Kazuko_FnB.UI
         private static readonly HashSet<string> MenuHiddenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Dịch vụ MTB",
-            "Danh mục cửa hàng",
             "Kiểm soát order",
             "Danh mục thẻ trả trước",
             // Menu Hoạt động của app đích (POS TAP) không có các mục này (Chiến gửi ảnh menu, 2026-11-19).
@@ -189,7 +213,8 @@ namespace Kazuko_FnB.UI
                 StableDescId = n.StableDescId,
                 FormId = n.FormId,
                 Operation = n.Operation,
-                Loai = n.Loai
+                Loai = n.Loai,
+                VisibleConfigId = n.VisibleConfigId
             };
         }
 
@@ -324,11 +349,11 @@ namespace Kazuko_FnB.UI
 
         // ------------------------------------------------------------------ thanh công cụ
 
-        private static void BuildToolbar(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms)
+        private static void BuildToolbar(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms, Dictionary<string, int> configById)
         {
             var found = new List<MenuNode>();
             foreach (MenuNode root in dbRoots)
-                CollectToolbar(root, perms, found);
+                CollectToolbar(root, perms, configById, found);
             found.Sort(delegate (MenuNode a, MenuNode b) { return a.ToolbarIndex.CompareTo(b.ToolbarIndex); });
 
             foreach (MenuNode n in found)
@@ -349,11 +374,12 @@ namespace Kazuko_FnB.UI
                     StableDescId = n.StableDescId,
                     FormId = n.FormId,
                     Operation = n.Operation,
-                    Loai = n.Loai
+                    Loai = n.Loai,
+                    VisibleConfigId = n.VisibleConfigId
                 };
                 model.Toolbar.Add(tb);
             }
-            AddExtraToolbarButtons(model, dbRoots, perms);
+            AddExtraToolbarButtons(model, dbRoots, perms, configById);
             TrimSeparators(model.Toolbar);
         }
 
@@ -390,7 +416,7 @@ namespace Kazuko_FnB.UI
             "@note", "@report", "@exit"
         };
 
-        private static void AddExtraToolbarButtons(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms)
+        private static void AddExtraToolbarButtons(MenuModel model, List<MenuNode> dbRoots, FunctionPermissions perms, Dictionary<string, int> configById)
         {
             int sep = 0;
             foreach (string key in ExtraToolbar)
@@ -419,7 +445,7 @@ namespace Kazuko_FnB.UI
                 MenuNode n = null;
                 foreach (MenuNode root in dbRoots)
                 {
-                    n = FindLeafByTitle(root, key, perms);
+                    n = FindLeafByTitle(root, key, perms, configById);
                     if (n != null)
                         break;
                 }
@@ -444,21 +470,22 @@ namespace Kazuko_FnB.UI
                     StableDescId = n.StableDescId,
                     FormId = n.FormId,
                     Operation = n.Operation,
-                    Loai = n.Loai
+                    Loai = n.Loai,
+                    VisibleConfigId = n.VisibleConfigId
                 });
             }
         }
 
-        private static MenuNode FindLeafByTitle(MenuNode n, string title, FunctionPermissions perms)
+        private static MenuNode FindLeafByTitle(MenuNode n, string title, FunctionPermissions perms, Dictionary<string, int> configById)
         {
-            if (n.Hidden || n.IsSeparator)
+            if (n.Hidden || n.IsSeparator || !IsVisibleByConfig(n, configById))
                 return null;
             if (n.IsLeaf)
                 return string.Equals((n.Title ?? "").Trim(), title, StringComparison.OrdinalIgnoreCase) && perms.AllowsId(n.FunctionId)
                     ? n : null;
             foreach (MenuNode c in n.Children)
             {
-                MenuNode f = FindLeafByTitle(c, title, perms);
+                MenuNode f = FindLeafByTitle(c, title, perms, configById);
                 if (f != null)
                     return f;
             }
@@ -472,12 +499,14 @@ namespace Kazuko_FnB.UI
                 : MenuRepository.DisplayText(n.ToolbarTitle);
         }
 
-        private static void CollectToolbar(MenuNode n, FunctionPermissions perms, List<MenuNode> into)
+        private static void CollectToolbar(MenuNode n, FunctionPermissions perms, Dictionary<string, int> configById, List<MenuNode> into)
         {
+            if (!IsVisibleByConfig(n, configById))
+                return;
             if (n.InToolbar && (n.IsSeparator || (n.IsLeaf && perms.AllowsId(n.FunctionId))))
                 into.Add(n);
             foreach (MenuNode c in n.Children)
-                CollectToolbar(c, perms, into);
+                CollectToolbar(c, perms, configById, into);
         }
 
         // ------------------------------------------------------------------ Truy cập nhanh

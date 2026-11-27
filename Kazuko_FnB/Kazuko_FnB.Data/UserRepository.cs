@@ -139,14 +139,19 @@ namespace Kazuko_FnB.Data
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText =
-                    "SELECT C.ID, C.NAME FROM TNGUOIDUNGTHEOCUAHANG T " +
+                    "SELECT C.ID, C.NAME, C.DKHOHANGID FROM TNGUOIDUNGTHEOCUAHANG T " +
                     "INNER JOIN DCUAHANG C ON C.ID = T.DCUAHANGID " +
                     "WHERE T.SUSERID = @UserId ORDER BY C.NAME";
                 cmd.Parameters.Add("@UserId", FbDbType.VarChar).Value = userId;
                 using (var r = cmd.ExecuteReader())
                 {
                     while (r.Read())
-                        list.Add(new StoreRecord { Id = AsString(r[0]), Name = AsString(r[1]) });
+                        list.Add(new StoreRecord
+                        {
+                            Id = AsString(r[0]),
+                            Name = AsString(r[1]),
+                            DefaultWarehouseId = AsString(r[2])
+                        });
                 }
             }
             return list;

@@ -47,6 +47,8 @@ namespace Kazuko_FnB.Domain
         public int Operation { get; set; }
         /// <summary>SMENU.LOAI: với phiếu thu/chi, 0 = phiếu thu, 1 = phiếu chi.</summary>
         public int Loai { get; set; }
+        /// <summary>SMENU.VISIBLECONFIGID: ID cấu hình trong SCONFIG quyết định hiện (INTVALUE = 30) hay ẩn menu; rỗng = không lọc.</summary>
+        public string VisibleConfigId { get; set; }
 
         public bool IsLeaf
         {

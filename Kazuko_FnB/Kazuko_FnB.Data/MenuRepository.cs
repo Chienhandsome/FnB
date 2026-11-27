@@ -26,38 +26,43 @@ namespace Kazuko_FnB.Data
             var all = new Dictionary<string, MenuNode>();
             var ordered = new List<MenuNode>();
             using (var conn = KazukoConnection.Open(_databasePath))
-            using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText =
-                    "SELECT ID, NAME, PARENTID, SORTORDER, ITEMTYPE, TOOLBAR, TOOLBARINDEX, " +
-                    "TOOLBARTITLTE, SHORTCUT, HIDEINMENU, SFUNCTIONID, STABLEDESCID, OPERATION, LOAI, SFORMID " +
-                    "FROM SMENU WHERE STATUS = 30 ORDER BY SORTORDER";
-                using (var r = cmd.ExecuteReader())
+                bool hasVisibleConfig = CatalogRepository.ReadTableColumns(conn, "SMENU").Contains("VISIBLECONFIGID");
+                using (var cmd = conn.CreateCommand())
                 {
-                    while (r.Read())
+                    cmd.CommandText =
+                        "SELECT ID, NAME, PARENTID, SORTORDER, ITEMTYPE, TOOLBAR, TOOLBARINDEX, " +
+                        "TOOLBARTITLTE, SHORTCUT, HIDEINMENU, SFUNCTIONID, STABLEDESCID, OPERATION, LOAI, SFORMID" +
+                        (hasVisibleConfig ? ", VISIBLECONFIGID " : " ") +
+                        "FROM SMENU WHERE STATUS = 30 ORDER BY SORTORDER";
+                    using (var r = cmd.ExecuteReader())
                     {
-                        string raw = Str(r[1]).Trim();
-                        var n = new MenuNode
+                        while (r.Read())
                         {
-                            Id = Str(r[0]),
-                            RawName = raw,
-                            Title = DisplayText(raw),
-                            ParentId = Str(r[2]),
-                            SortOrder = Str(r[3]),
-                            IsSeparator = Int(r[4]) == 2 || raw.StartsWith("___", StringComparison.Ordinal),
-                            InToolbar = Int(r[5]) == 30,
-                            ToolbarIndex = Int(r[6]),
-                            ToolbarTitle = Str(r[7]).Trim(),
-                            Shortcut = Int(r[8]),
-                            Hidden = Int(r[9]) == 30,
-                            FunctionId = Str(r[10]),
-                            StableDescId = Str(r[11]),
-                            Operation = Int(r[12]),
-                            Loai = Int(r[13]),
-                            FormId = Str(r[14])
-                        };
-                        all[n.Id] = n;
-                        ordered.Add(n);
+                            string raw = Str(r[1]).Trim();
+                            var n = new MenuNode
+                            {
+                                Id = Str(r[0]),
+                                RawName = raw,
+                                Title = DisplayText(raw),
+                                ParentId = Str(r[2]),
+                                SortOrder = Str(r[3]),
+                                IsSeparator = Int(r[4]) == 2 || raw.StartsWith("___", StringComparison.Ordinal),
+                                InToolbar = Int(r[5]) == 30,
+                                ToolbarIndex = Int(r[6]),
+                                ToolbarTitle = Str(r[7]).Trim(),
+                                Shortcut = Int(r[8]),
+                                Hidden = Int(r[9]) == 30,
+                                FunctionId = Str(r[10]),
+                                StableDescId = Str(r[11]),
+                                Operation = Int(r[12]),
+                                Loai = Int(r[13]),
+                                FormId = Str(r[14]),
+                                VisibleConfigId = hasVisibleConfig ? Str(r[15]).Trim() : ""
+                            };
+                            all[n.Id] = n;
+                            ordered.Add(n);
+                        }
                     }
                 }
             }
@@ -128,6 +133,30 @@ namespace Kazuko_FnB.Data
             });
             foreach (MenuNode root in roots)
                 FillNode(root, map, formMap);
+        }
+
+        /// <summary>Đọc bản đồ SCONFIG.ID → INTVALUE để lọc các mục SMENU có VISIBLECONFIGID (30 = hiện, khác 30 = ẩn).</summary>
+        public Dictionary<string, int> LoadConfigIntValuesById()
+        {
+            return DbHelper.Guard(delegate
+            {
+                var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                using (var conn = KazukoConnection.Open(_databasePath))
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT ID, INTVALUE FROM SCONFIG WHERE ID IS NOT NULL";
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            string id = Str(r[0]).Trim();
+                            if (!string.IsNullOrEmpty(id))
+                                map[id] = Int(r[1]);
+                        }
+                    }
+                }
+                return map;
+            });
         }
 
         private static void FillNode(MenuNode n, Dictionary<string, string> map, Dictionary<string, string> formMap)
