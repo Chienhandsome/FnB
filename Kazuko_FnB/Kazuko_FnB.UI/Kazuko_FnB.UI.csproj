@@ -292,6 +292,15 @@
     <Compile Include="OpeningStockView.Render.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="OpeningDebtView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OpeningDebtView.Actions.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="OpeningDebtView.Render.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="BarcodePanel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -548,6 +557,9 @@
     <Compile Include="Diagnostics\SelfTest.OpeningStock.cs" />
     <Compile Include="Diagnostics\SelfTest.OpeningStock.Cost.cs" />
     <Compile Include="Diagnostics\SelfTest.OpeningStock.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.OpeningDebt.cs" />
+    <Compile Include="Diagnostics\SelfTest.OpeningDebt.Collect.cs" />
+    <Compile Include="Diagnostics\SelfTest.OpeningDebt.Ui.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
@@ -663,6 +675,9 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\OpeningStockPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\OpeningDebtPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\PickRoomDialog.cs" />
