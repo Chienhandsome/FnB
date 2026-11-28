@@ -1,0 +1,4 @@
+# Brief: Wifi trên hóa đơn, Máy in hóa đơn theo khu vực
+- Quyết định: `docs/specs/chien-chot-28-11.md` mục "Việc mới chốt".
+- **28/11 đã code (Claude tự viết, `-ClaudeDirect`):** `f6c691d` `ServicePaymentRepository.AssignWifiPasswordIn` (gọi trong `TableService.Payment.Execute` sau khi cập nhật hóa đơn đã thanh toán): mật khẩu kế tiếp theo thứ tự tên danh mục sau mật khẩu của hóa đơn thanh toán gần nhất, quay vòng, không xóa, ghi `TDONHANG.PASSWIFI`; menu "Gửi tin nhắn tới khách hàng" ẩn. `a0dd18e` `AreaInvoicePrinterDialog` (QUẢN TRỊ, cùng quyền "Cấu hình toàn hệ thống"): mỗi khu vực chọn máy in, lưu `FileKitchenPrinterStore` khóa `IN_HD_KV_{id}`.
+- **Chưa kiểm:** bấm thật, in thật ra máy in (cần bật "In hóa đơn theo khu vực"), 125% DPI; wifi chỉ kiểm hàm gán, chưa chạy qua luồng thanh toán đầy đủ có mật khẩu.
