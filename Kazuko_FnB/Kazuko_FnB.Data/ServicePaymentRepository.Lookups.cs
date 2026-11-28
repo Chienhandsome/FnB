@@ -48,7 +48,7 @@ namespace Kazuko_FnB.Data
             return DbHelper.Read(_databasePath, conn =>
             {
                 DataTable dt = DbHelper.Table(conn, null,
-                    "SELECT ID, NAME FROM DNHANVIEN WHERE STATUS = @S ORDER BY NAME",
+                    "SELECT ID, NAME FROM DNHANVIEN WHERE STATUS = @S AND (ITEMTYPE IS NULL OR ITEMTYPE = 0) ORDER BY NAME",
                     "@S", ActiveStatus);
                 var list = new List<LookupItem>(dt.Rows.Count);
                 foreach (DataRow r in dt.Rows)

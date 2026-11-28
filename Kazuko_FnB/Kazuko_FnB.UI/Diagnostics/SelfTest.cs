@@ -588,6 +588,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             MaterialRegenTests(db);
             StoreTests(db);
             EmployeeTests(db);
+            EmployeeTreeTests(db);
             ShiftTests(db);
             RewardPenaltyTests(db);
             SalaryAdvanceTests(db);

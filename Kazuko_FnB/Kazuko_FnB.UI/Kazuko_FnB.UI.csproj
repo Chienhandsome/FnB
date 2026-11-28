@@ -211,6 +211,12 @@
     <Compile Include="CatalogView.Employee.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="CatalogView.Employee.Tree.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CatalogView.Employee.Menus.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="CatalogView.Shift.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -609,6 +615,8 @@
     <Compile Include="Diagnostics\SelfTest.Store.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Employee.cs" />
     <Compile Include="Diagnostics\SelfTest.Employee.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.EmployeeTree.cs" />
+    <Compile Include="Diagnostics\SelfTest.EmployeeTree.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.Shift.cs" />
     <Compile Include="Diagnostics\SelfTest.Shift.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.RewardPenalty.cs" />
@@ -742,6 +750,8 @@
     <Compile Include="Dialogs\StoreEditDialog.cs" />
     <Compile Include="Dialogs\EmployeeEditDialog.cs" />
     <Compile Include="Dialogs\EmployeeEditDialog.Layout.cs" />
+    <Compile Include="Dialogs\EmployeeFolderEditDialog.cs" />
+    <Compile Include="Dialogs\EmployeeTrashDialog.cs" />
     <Compile Include="Dialogs\ShiftEditDialog.cs" />
     <Compile Include="Dialogs\RewardPenaltyEditDialog.cs" />
     <Compile Include="Dialogs\RewardPenaltyEditDialog.Layout.cs" />

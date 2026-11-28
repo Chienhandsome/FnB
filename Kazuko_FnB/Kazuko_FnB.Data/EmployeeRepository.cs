@@ -12,9 +12,11 @@ namespace Kazuko_FnB.Data
     /// đếm tham chiếu 8 bảng (kiểm tra sự tồn tại bảng/cột qua RDB$RELATION_FIELDS trước khi đếm);
     /// xóa cứng; không DDL; không chạm cột LUONGTHEOCA, SIMAGEID, ITEMTYPE khi UPDATE.
     /// </summary>
-    public sealed class EmployeeRepository
+    public sealed partial class EmployeeRepository
     {
         public const int ActiveStatus = EmployeeText.ActiveStatus;
+        public const int TrashStatus = EmployeeText.TrashStatus;
+        public const string ActiveEmployeeWhere = "STATUS = 30 AND (ITEMTYPE IS NULL OR ITEMTYPE = 0)";
 
         /// <summary>8 bảng tham chiếu tới DNHANVIEN.ID theo spec §2.</summary>
         public static readonly EmployeeReferenceColumn[] ReferenceColumns =
@@ -35,11 +37,14 @@ namespace Kazuko_FnB.Data
             "COALESCE(E.LUONGCA, 0) AS LUONGCA, COALESCE(E.LUONGTHANG, 0) AS LUONGTHANG, " +
             "COALESCE(E.NGHICHUNHAT, 0) AS NGHICHUNHAT, COALESCE(E.NGHITHU7, 0) AS NGHITHU7, " +
             "E.LUONGTHEOCA, E.SIMAGEID, E.NOTE, COALESCE(E.STATUS, 0) AS STATUS, " +
+            "E.ITEMTYPE, E.PARENTID, E.PARENTDIR, E.SORTORDER, COALESCE(E.AUTOID, 0) AS AUTOID, " +
             "E.USERCREATEDID, E.TIMECREATED, E.USERMODIFIEDID, E.TIMEMODIFIED, " +
             "COALESCE(C.NAME, '') AS SHIFTNAME, " +
+            "COALESCE(P.NAME, '') AS PARENTNAME, " +
             "COALESCE(UC.NAME, '') AS CREATEDBY, COALESCE(UM.NAME, '') AS MODIFIEDBY " +
             "FROM DNHANVIEN E " +
             "LEFT JOIN DCALAMVIEC C ON C.ID = E.DCALAMVIECID " +
+            "LEFT JOIN DNHANVIEN P ON P.ID = E.PARENTID " +
             "LEFT JOIN SUSER UC ON UC.ID = E.USERCREATEDID " +
             "LEFT JOIN SUSER UM ON UM.ID = E.USERMODIFIEDID ";
 
@@ -57,13 +62,13 @@ namespace Kazuko_FnB.Data
             DbHelper.InTransaction(_databasePath, work);
         }
 
-        /// <summary>Mọi nhân viên đang dùng (STATUS = 30), sắp tăng theo tên.</summary>
+        /// <summary>Mọi nhân viên đang dùng (STATUS = 30, không gồm thư mục/phân cách), sắp tăng theo tên.</summary>
         public List<EmployeeRow> LoadAll()
         {
             return DbHelper.Read(_databasePath, conn =>
             {
                 DataTable dt = DbHelper.Table(conn, null,
-                    SelectSql + "WHERE E.STATUS = @S ORDER BY E.NAME",
+                    SelectSql + "WHERE E.STATUS = @S AND (E.ITEMTYPE IS NULL OR E.ITEMTYPE = 0) ORDER BY E.NAME",
                     "@S", ActiveStatus);
                 var list = new List<EmployeeRow>(dt.Rows.Count);
                 foreach (DataRow r in dt.Rows)
@@ -126,7 +131,10 @@ namespace Kazuko_FnB.Data
             if (string.IsNullOrWhiteSpace(name))
                 return false;
             string target = EmployeeText.FoldNoTrim(name);
-            DataTable dt = DbHelper.Table(conn, tx, "SELECT ID, NAME FROM DNHANVIEN WHERE NAME IS NOT NULL");
+            DataTable dt = DbHelper.Table(conn, tx,
+                "SELECT ID, NAME FROM DNHANVIEN " +
+                "WHERE NAME IS NOT NULL AND STATUS = @S AND (ITEMTYPE IS NULL OR ITEMTYPE = 0)",
+                "@S", ActiveStatus);
             foreach (DataRow r in dt.Rows)
             {
                 if (string.Equals(DbHelper.Str(r["ID"]), excludeId ?? "", StringComparison.Ordinal))
@@ -137,7 +145,7 @@ namespace Kazuko_FnB.Data
             return false;
         }
 
-        /// <summary>Mã nhân viên đã tồn tại chưa (không phân biệt hoa/thường, T2)?</summary>
+        /// <summary>Mã nhân viên đã tồn tại chưa (không phân biệt hoa/thường, chỉ so với NV STATUS = 30)?</summary>
         public bool IsCodeTaken(string code, string excludeId)
         {
             if (string.IsNullOrWhiteSpace(code))
@@ -150,7 +158,10 @@ namespace Kazuko_FnB.Data
             if (string.IsNullOrWhiteSpace(code))
                 return false;
             string target = code.Trim();
-            DataTable dt = DbHelper.Table(conn, tx, "SELECT ID, CODE FROM DNHANVIEN WHERE CODE IS NOT NULL AND CODE <> ''");
+            DataTable dt = DbHelper.Table(conn, tx,
+                "SELECT ID, CODE FROM DNHANVIEN " +
+                "WHERE CODE IS NOT NULL AND CODE <> '' AND STATUS = @S AND (ITEMTYPE IS NULL OR ITEMTYPE = 0)",
+                "@S", ActiveStatus);
             foreach (DataRow r in dt.Rows)
             {
                 if (string.Equals(DbHelper.Str(r["ID"]), excludeId ?? "", StringComparison.Ordinal))
@@ -206,14 +217,16 @@ namespace Kazuko_FnB.Data
             return blocks;
         }
 
-        /// <summary>Thêm mới nhân viên (bỏ qua LUONGTHEOCA, SIMAGEID, ITEMTYPE, PARENTID, PARENTDIR → NULL).</summary>
+        /// <summary>Thêm mới nhân viên (ITEMTYPE = NULL; ghi PARENTID, PARENTDIR, SORTORDER, AUTOID theo spec cây).</summary>
         public static void InsertIn(FbConnection conn, FbTransaction tx, EmployeeRow row)
         {
             DbHelper.Exec(conn, tx,
                 "INSERT INTO DNHANVIEN (ID, CODE, NAME, DIENTHOAI, DIACHI, DCALAMVIECID, " +
                 "CACHTINHLUONG, LUONGCA, LUONGTHANG, NGHICHUNHAT, NGHITHU7, NOTE, " +
+                "ITEMTYPE, PARENTID, PARENTDIR, SORTORDER, AUTOID, " +
                 "STATUS, USERCREATEDID, TIMECREATED, USERMODIFIEDID, TIMEMODIFIED) " +
                 "VALUES (@ID, @CODE, @NAME, @PHONE, @ADDR, @SHIFT, @MODE, @LCA, @LTH, @CN, @T7, @NOTE, " +
+                "NULL, @PID, @PDIR, @SORT, @AUTO, " +
                 "@ST, @UC, @TC, NULL, NULL)",
                 "@ID", row.Id,
                 "@CODE", NullIfEmpty(row.Code),
@@ -227,6 +240,10 @@ namespace Kazuko_FnB.Data
                 "@CN", row.OffSunday,
                 "@T7", row.OffSaturday,
                 "@NOTE", NullIfEmpty(row.Note),
+                "@PID", row.ParentId ?? "",
+                "@PDIR", row.ParentDir ?? "",
+                "@SORT", string.IsNullOrEmpty(row.SortOrder) ? "ZZZZ" : row.SortOrder,
+                "@AUTO", row.AutoId,
                 "@ST", row.Status,
                 "@UC", row.CreatedById ?? "",
                 "@TC", row.CreatedAt);
@@ -287,12 +304,18 @@ namespace Kazuko_FnB.Data
                 LegacyShiftSalary = r["LUONGTHEOCA"] is DBNull ? (decimal?)null : DbHelper.Dec(r["LUONGTHEOCA"]),
                 ImageId = DbHelper.Str(r["SIMAGEID"]),
                 Note = DbHelper.Str(r["NOTE"]) ?? "",
+                ItemType = r["ITEMTYPE"] is DBNull ? (int?)null : DbHelper.Int(r["ITEMTYPE"]),
+                ParentId = DbHelper.Str(r["PARENTID"]) ?? "",
+                ParentDir = DbHelper.Str(r["PARENTDIR"]) ?? "",
+                SortOrder = DbHelper.Str(r["SORTORDER"]) ?? "",
+                AutoId = DbHelper.Int(r["AUTOID"]),
                 Status = DbHelper.Int(r["STATUS"]),
                 CreatedById = DbHelper.Str(r["USERCREATEDID"]),
                 CreatedAt = r["TIMECREATED"] is DBNull ? (DateTime?)null : Convert.ToDateTime(r["TIMECREATED"]),
                 ModifiedById = DbHelper.Str(r["USERMODIFIEDID"]),
                 ModifiedAt = r["TIMEMODIFIED"] is DBNull ? (DateTime?)null : Convert.ToDateTime(r["TIMEMODIFIED"]),
                 ShiftName = DbHelper.Str(r["SHIFTNAME"]) ?? "",
+                ParentName = DbHelper.Str(r["PARENTNAME"]) ?? "",
                 CreatedByName = DbHelper.Str(r["CREATEDBY"]) ?? "",
                 ModifiedByName = DbHelper.Str(r["MODIFIEDBY"]) ?? ""
             };

@@ -121,7 +121,12 @@ namespace Kazuko_FnB.Data
                 string table = DbHelper.Str(DbHelper.Scalar(conn, null, "SELECT NAME FROM STABLEDESC WHERE ID = @I", "@I", refTableId));
                 if (string.IsNullOrEmpty(table) || !IdentifierRx.IsMatch(table))
                     return list;
-                string where = !string.IsNullOrEmpty(filter) && FilterRx.IsMatch(filter.Trim()) ? " WHERE " + filter.Trim() : "";
+                var conds = new List<string>();
+                if (!string.IsNullOrEmpty(filter) && FilterRx.IsMatch(filter.Trim()))
+                    conds.Add(filter.Trim());
+                if (string.Equals(table, "DNHANVIEN", StringComparison.OrdinalIgnoreCase))
+                    conds.Add("STATUS = 30 AND (ITEMTYPE IS NULL OR ITEMTYPE = 0)");
+                string where = conds.Count == 0 ? "" : " WHERE " + string.Join(" AND ", conds.ToArray());
                 DataTable dt;
                 try
                 {

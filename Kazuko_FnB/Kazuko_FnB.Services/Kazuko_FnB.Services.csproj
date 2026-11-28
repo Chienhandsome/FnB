@@ -112,6 +112,7 @@
     <Compile Include="StoreService.cs" />
     <Compile Include="EmployeeRules.cs" />
     <Compile Include="EmployeeService.cs" />
+    <Compile Include="EmployeeService.Tree.cs" />
     <Compile Include="ShiftRules.cs" />
     <Compile Include="ShiftService.cs" />
     <Compile Include="RewardPenaltyRules.cs" />

@@ -294,6 +294,11 @@ namespace Kazuko_FnB.UI
                     UpdateWifiPasswordButtons();
                 else if (_prepaidCardMode)
                     UpdatePrepaidCardButtons();
+                else if (_employeeMode)
+                {
+                    UpdateEmployeeButtons();
+                    UpdateEmployeeAuditPanel();
+                }
             };
 
             _split.FixedPanel = FixedPanel.Panel1;
@@ -464,6 +469,11 @@ namespace Kazuko_FnB.UI
                 }
                 if (!_repairNoticeMode)
                     _rnFilterBar.Visible = false;
+                if (!_employeeMode)
+                {
+                    HideEmployeeTreeBars();
+                    _btnAdd.Text = "Thêm mới";
+                }
                 if (_customerMode)
                 {
                     ApplyCustomerBarVisibility();
@@ -940,12 +950,22 @@ namespace Kazuko_FnB.UI
                 }
                 if (keyData == Keys.F4)
                 {
-                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else if (_customerMode) OpenCustomerFromGrid(); else if (_warehouseMode) OpenWarehouseFromGrid(); else if (_storeMode) OpenStoreFromGrid(); else if (_supplierMode) OpenSupplierFromGrid(); else if (_giftVoucherMode) OpenGiftVoucherFromGrid(); else if (_promotionMode) OpenPromotionFromGrid(); else if (_employeeMode) OpenEmployeeFromGrid(); else if (_shiftMode) OpenShiftFromGrid(); else if (_rewardPenaltyMode) OpenRewardPenaltyFromGrid(); else if (_repairNoticeMode) OpenRepairNoticeFromGrid(); else if (_wifiPasswordMode) OpenWifiPasswordFromGrid(); else if (_prepaidCardMode) OpenPrepaidCardFromGrid(); else OpenFundCatalogFromGrid();
+                    if (_productMode) EditProduct(); else if (_roomMode) EditRoom(); else if (_customerMode) OpenCustomerFromGrid(); else if (_warehouseMode) OpenWarehouseFromGrid(); else if (_storeMode) OpenStoreFromGrid(); else if (_supplierMode) OpenSupplierFromGrid(); else if (_giftVoucherMode) OpenGiftVoucherFromGrid(); else if (_promotionMode) OpenPromotionFromGrid(); else if (_employeeMode) { if (_tree.Focused) OpenEmployeeFolderFromTree(); else OpenEmployeeFromGrid(); } else if (_shiftMode) OpenShiftFromGrid(); else if (_rewardPenaltyMode) OpenRewardPenaltyFromGrid(); else if (_repairNoticeMode) OpenRepairNoticeFromGrid(); else if (_wifiPasswordMode) OpenWifiPasswordFromGrid(); else if (_prepaidCardMode) OpenPrepaidCardFromGrid(); else OpenFundCatalogFromGrid();
+                    return true;
+                }
+                if (keyData == (Keys.Shift | Keys.Delete) && _employeeMode)
+                {
+                    DeleteEmployeeOrFolderPermanent();
+                    return true;
+                }
+                if (keyData == Keys.F2 && _employeeMode && _tree.Focused)
+                {
+                    RenameSelectedEmployeeFolder();
                     return true;
                 }
                 if (keyData == Keys.Delete)
                 {
-                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) DeleteEmployee(); else if (_shiftMode) DeleteShift(); else if (_rewardPenaltyMode) DeleteRewardPenalty(); else if (_repairNoticeMode) DeleteRepairNotice(); else if (_wifiPasswordMode) DeleteWifiPassword(); else if (_prepaidCardMode) DeletePrepaidCard(); else DeleteFundCatalogItem();
+                    if (_productMode) DeleteProduct(); else if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) { if (_tree.Focused) DeleteEmployeeFolder(false); else DeleteEmployee(); } else if (_shiftMode) DeleteShift(); else if (_rewardPenaltyMode) DeleteRewardPenalty(); else if (_repairNoticeMode) DeleteRepairNotice(); else if (_wifiPasswordMode) DeleteWifiPassword(); else if (_prepaidCardMode) DeletePrepaidCard(); else DeleteFundCatalogItem();
                     return true;
                 }
             }
@@ -1031,6 +1051,7 @@ namespace Kazuko_FnB.UI
                 }
                 else if (_employeeMode)
                 {
+                    ApplyEmployeeTheme(t, page);
                     UpdateEmployeeButtons();
                     UpdateEmployeeAuditPanel();
                 }
@@ -1081,7 +1102,7 @@ namespace Kazuko_FnB.UI
             _btnRemove.Tag = "danger";
             _removeFont = new Font("Segoe UI Semibold", 10f);
             _btnRemove.Font = _removeFont;
-            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (IsFundCatalogMode) AddFundCatalogItem(); else if (_warehouseMode) AddWarehouse(); else if (_storeMode) AddStore(); else if (_supplierMode) AddSupplier(); else if (_giftVoucherMode) AddGiftVoucher(); else if (_promotionMode) AddPromotion(); else if (_employeeMode) AddEmployee(); else if (_shiftMode) AddShift(); else if (_rewardPenaltyMode) AddRewardPenalty(); else if (_repairNoticeMode) AddRepairNotice(); else if (_wifiPasswordMode) AddWifiPassword(); else if (_prepaidCardMode) AddPrepaidCard(); else AddProduct(); };
+            _btnAdd.Click += delegate { if (_roomMode) AddRoom(); else if (_customerMode) AddCustomer(); else if (IsFundCatalogMode) AddFundCatalogItem(); else if (_warehouseMode) AddWarehouse(); else if (_storeMode) AddStore(); else if (_supplierMode) AddSupplier(); else if (_giftVoucherMode) AddGiftVoucher(); else if (_promotionMode) AddPromotion(); else if (_employeeMode) ShowEmployeeAddMenu(); else if (_shiftMode) AddShift(); else if (_rewardPenaltyMode) AddRewardPenalty(); else if (_repairNoticeMode) AddRepairNotice(); else if (_wifiPasswordMode) AddWifiPassword(); else if (_prepaidCardMode) AddPrepaidCard(); else AddProduct(); };
             _btnEdit.Click += delegate { if (_roomMode) EditRoom(); else if (_customerMode) EditCustomer(); else if (IsFundCatalogMode) EditFundCatalogItem(); else if (_warehouseMode) EditWarehouse(); else if (_storeMode) EditStore(); else if (_supplierMode) EditSupplier(); else if (_giftVoucherMode) EditGiftVoucher(); else if (_promotionMode) EditPromotion(); else if (_employeeMode) EditEmployee(); else if (_shiftMode) EditShift(); else if (_rewardPenaltyMode) EditRewardPenalty(); else if (_repairNoticeMode) EditRepairNotice(); else if (_wifiPasswordMode) EditWifiPassword(); else if (_prepaidCardMode) EditPrepaidCard(); else EditProduct(); };
             _btnRemove.Click += delegate { if (_roomMode) DeleteRoom(); else if (_customerMode) DeleteCustomer(); else if (IsFundCatalogMode) DeleteFundCatalogItem(); else if (_warehouseMode) DeleteWarehouse(); else if (_storeMode) DeleteStore(); else if (_supplierMode) DeleteSupplier(); else if (_giftVoucherMode) DeleteGiftVoucher(); else if (_promotionMode) DeletePromotion(); else if (_employeeMode) DeleteEmployee(); else if (_shiftMode) DeleteShift(); else if (_rewardPenaltyMode) DeleteRewardPenalty(); else if (_repairNoticeMode) DeleteRepairNotice(); else if (_wifiPasswordMode) DeleteWifiPassword(); else if (_prepaidCardMode) DeletePrepaidCard(); else DeleteProduct(); };
             _btnExcelAdd.Click += delegate { Msg.Info(this, UnsupportedText); };
@@ -1848,6 +1869,8 @@ namespace Kazuko_FnB.UI
         {
             if ((!_productMode && !_roomMode && !_customerMode && !IsFundCatalogMode && !_warehouseMode && !_storeMode && !_supplierMode && !_giftVoucherMode && !_promotionMode && !_employeeMode && !_shiftMode && !_repairNoticeMode && !_wifiPasswordMode && !_prepaidCardMode) || !_grid.RowHeadersVisible)
                 return;
+            if (_employeeMode && IsEmployeeSeparatorRowIndex(e.RowIndex))
+                return;
             string text = (e.RowIndex + 1).ToString(CultureInfo.InvariantCulture);
             var bounds = new Rectangle(0, e.RowBounds.Top, _grid.RowHeadersWidth, e.RowBounds.Height);
             TextRenderer.DrawText(e.Graphics, text, _grid.Font, bounds, _grid.RowHeadersDefaultCellStyle.ForeColor,
@@ -2144,6 +2167,11 @@ namespace Kazuko_FnB.UI
                 RenamePrepaidCardGroupLabel(e);
                 return;
             }
+            if (_employeeMode)
+            {
+                RenameEmployeeFolderLabel(e);
+                return;
+            }
             if (!_productMode || e.Label == null)
                 return;
             string id = e.Node.Tag as string;
@@ -2389,7 +2417,7 @@ namespace Kazuko_FnB.UI
 
         private void TreeMouseDown(object sender, MouseEventArgs e)
         {
-            if ((!_productMode && !_roomMode && !_customerMode && !_supplierMode && !_giftVoucherMode && !_wifiPasswordMode && !_prepaidCardMode) || e.Button != MouseButtons.Right)
+            if ((!_productMode && !_roomMode && !_customerMode && !_supplierMode && !_giftVoucherMode && !_wifiPasswordMode && !_prepaidCardMode && !_employeeMode) || e.Button != MouseButtons.Right)
                 return;
             TreeNode node = _tree.GetNodeAt(e.X, e.Y);
             if (node != null)
@@ -2406,6 +2434,8 @@ namespace Kazuko_FnB.UI
                 _wifiTreeMenu.Show(_tree, e.Location);
             else if (_prepaidCardMode)
                 _prepaidTreeMenu.Show(_tree, e.Location);
+            else if (_employeeMode)
+                _employeeTreeMenu.Show(_tree, e.Location);
             else
                 _treeMenu.Show(_tree, e.Location);
         }
@@ -2510,6 +2540,7 @@ namespace Kazuko_FnB.UI
                 DisposeRepairNoticeUi();
                 DisposeWifiPasswordUi();
                 DisposePrepaidCardUi();
+                DisposeEmployeeUi();
                 DisposeBarcodeUi();
             }
             base.Dispose(disposing);

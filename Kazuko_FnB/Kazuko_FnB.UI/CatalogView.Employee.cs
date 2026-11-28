@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Globalization;
 using System.Text;
 using System.Windows.Forms;
@@ -13,10 +14,9 @@ using Kazuko_FnB.UI.Dialogs;
 namespace Kazuko_FnB.UI
 {
     /// <summary>
-    /// Chế độ Danh mục nhân viên (DNHANVIEN, spec docs/specs/nhan-su-danh-muc.md §2) trong <see cref="CatalogView"/>:
-    /// danh mục phẳng 9 cột (Mã, Tên nhân viên, Điện thoại, Địa chỉ, Ca làm việc, Cách tính lương, Lương ca, Lương tháng, Ghi chú),
-    /// ô tìm không dấu (F3), phân quyền theo tên chức năng "Danh mục nhân viên", chỉ Xem mở hộp thoại chỉ đọc,
-    /// xóa cứng chặn khi còn tham chiếu ở 8 bảng, xuất Excel qua <c>GridExcelExporter</c>.
+    /// Chế độ Danh mục nhân viên dạng cây (DNHANVIEN, spec docs/specs/nhan-su-danh-muc.md §2 &amp; docs/specs/nhan-su-cay.md)
+    /// trong <see cref="CatalogView"/>: cây thư mục + nút Thùng rác bên trái, lưới 9 cột (nhân viên + dòng phân cách) bên phải,
+    /// nút "Thêm mới ▾" gồm 4 mục, xóa mềm (Del) vào Thùng rác, xóa vĩnh viễn (Shift+Del), xuất Excel qua <c>GridExcelExporter</c>.
     /// </summary>
     internal sealed partial class CatalogView
     {
@@ -35,18 +35,31 @@ namespace Kazuko_FnB.UI
 
         private void BuildEmployeeUi()
         {
-            _employeeGridMenu.AddItem("Thêm mới", Keys.Insert, delegate { AddEmployee(); });
-            _employeeGridMenu.AddItem("Chỉnh sửa", Keys.F4, delegate { EditEmployee(); });
-            _employeeGridMenu.AddItem("Xem chi tiết", delegate { OpenEmployeeFromGrid(); });
-            _employeeGridMenu.AddItem("Xóa", Keys.Delete, delegate { DeleteEmployee(); });
-            _employeeGridMenu.AddSeparator();
-            _employeeGridMenu.AddItem("Refresh", delegate { Reload(); });
-            _employeeGridMenu.AddItem("Xuất excel", delegate { ExportGridToExcel(); });
-            _employeeGridMenu.AddSeparator();
-            _employeeGridMenu.AddItem("Sao chép ô", delegate { CopyCell(); });
-            _employeeGridMenu.AddItem("Sao chép vùng chọn", delegate { CopySelection(); });
-            _employeeGridMenu.AddItem("Tự động dãn cột", delegate { AutoFitColumns(); });
-            _employeeGridMenu.Opening += delegate { UpdateEmployeeGridMenuState(); };
+            BuildEmployeeMenus();
+            BuildEmployeeTreePanelUi();
+            _grid.CellFormatting += EmployeeGridCellFormatting;
+            _grid.RowPostPaint += EmployeeGridRowPostPaint;
+        }
+
+        private void EmployeeGridCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (!_employeeMode || !IsEmployeeSeparatorRowIndex(e.RowIndex))
+                return;
+            e.CellStyle.BackColor = Draw.Mix(_theme.Surface, _theme.Border, 0.25f);
+            e.CellStyle.ForeColor = _theme.TextMuted;
+            e.CellStyle.SelectionBackColor = Draw.Mix(_theme.Primary, _theme.Surface, 0.55f);
+            e.CellStyle.SelectionForeColor = _theme.Text;
+        }
+
+        private void EmployeeGridRowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            if (!_employeeMode || !IsEmployeeSeparatorRowIndex(e.RowIndex))
+                return;
+            int y = e.RowBounds.Top + e.RowBounds.Height / 2;
+            int left = _grid.RowHeadersVisible ? _grid.RowHeadersWidth + 8 : 8;
+            int right = Math.Max(left + 10, _grid.ClientSize.Width - 12);
+            using (var pen = new Pen(_theme.Border, 1.2f))
+                e.Graphics.DrawLine(pen, left, y, right, y);
         }
 
         private UserSession ResolveEmployeeSession()
@@ -74,9 +87,10 @@ namespace Kazuko_FnB.UI
             _canEdit = _employeeService.CanEdit;
             _canRemove = _employeeService.CanRemove;
 
-            _employeeRows = _employeeService.LoadAll();
+            _employeeFolders = _employeeService.LoadActiveFolders();
+            _employeeRows = _employeeService.LoadActiveGridItems();
             _total = _employeeRows.Count;
-            BuildTree(data);
+            BuildEmployeeTree();
             BuildEmployeeColumns();
             BuildEmployeeTable();
 
@@ -86,6 +100,7 @@ namespace Kazuko_FnB.UI
                 _infoTabs.TabPages.Remove(_areaTabPage);
 
             ApplyEmployeeBarVisibility();
+            ApplyEmployeeTheme(_theme, _page);
             UpdateEmployeeButtons();
             UpdateEmployeeAuditPanel();
         }
@@ -94,6 +109,7 @@ namespace Kazuko_FnB.UI
         {
             if (!_employeeMode)
                 return;
+            _btnAdd.Text = "Thêm mới ▾";
             _btnAdd.Visible = _canAdd;
             _btnEdit.Visible = _canEdit;
             _btnRemove.Visible = _canRemove;
@@ -107,6 +123,8 @@ namespace Kazuko_FnB.UI
             _btnTotal.Visible = false;
 
             _groupBar.Visible = false;
+            _empTrashBar.Visible = _canRemove;
+            LayoutEmployeeTrashBar();
             _bottom.Visible = true;
             _paneSplitter.Visible = true;
             LayoutBar();
@@ -175,11 +193,32 @@ namespace Kazuko_FnB.UI
             dt.Columns.Add(ColId, typeof(string));
             dt.Columns.Add(ColSearch, typeof(string));
             dt.Columns.Add(ColCategory, typeof(string));
+            dt.Columns.Add(ColEmpItemType, typeof(int));
 
             var sb = new StringBuilder();
             dt.BeginLoadData();
             foreach (EmployeeRow r in _employeeRows)
             {
+                if (r.IsSeparator)
+                {
+                    string sepCat = string.IsNullOrEmpty(r.ParentId) ? "" : "|" + r.ParentId + "|";
+                    dt.Rows.Add(
+                        "",
+                        EmployeeText.SeparatorName,
+                        "",
+                        "",
+                        "",
+                        "",
+                        DBNull.Value,
+                        DBNull.Value,
+                        "",
+                        r.Id,
+                        "",
+                        sepCat,
+                        EmployeeItemType.Separator);
+                    continue;
+                }
+
                 sb.Length = 0;
                 sb.Append(r.Code).Append(' ');
                 sb.Append(r.Name).Append(' ');
@@ -199,7 +238,8 @@ namespace Kazuko_FnB.UI
                     r.Note ?? "",
                     r.Id,
                     CatalogRepository.Fold(sb.ToString()),
-                    "");
+                    CatalogRepository.CategoryPath(_nodes, r.ParentId),
+                    EmployeeItemType.Employee);
             }
             dt.EndLoadData();
 
@@ -248,10 +288,17 @@ namespace Kazuko_FnB.UI
         {
             if (!_employeeMode)
                 return;
-            bool hasRow = CurrentEmployeeId() != null;
+            EmployeeRow row = CurrentEmployeeRow();
+            bool hasRow = row != null;
+            bool hasRealFolder = !string.IsNullOrEmpty(SelectedEmployeeFolderId());
+            bool canEditTarget = hasRow ? !row.IsSeparator : hasRealFolder;
             _btnAdd.Enabled = _canAdd;
-            _btnEdit.Enabled = _canEdit && hasRow;
-            _btnRemove.Enabled = _canRemove && hasRow;
+            _btnEdit.Enabled = _canEdit && canEditTarget;
+            _btnRemove.Enabled = _canRemove && (hasRow || hasRealFolder);
+            _btnEmpTrash.Visible = _canRemove;
+            _empTrashBar.Visible = _canRemove;
+            _tree.LabelEdit = _canEdit;
+            UpdateEmployeeAddMenuState();
         }
 
         private void UpdateEmployeeAuditPanel()
@@ -259,6 +306,12 @@ namespace Kazuko_FnB.UI
             if (!_employeeMode)
                 return;
             EmployeeRow row = CurrentEmployeeRow();
+            if (row == null)
+            {
+                string folderId = SelectedEmployeeFolderId();
+                if (!string.IsNullOrEmpty(folderId))
+                    row = _employeeFolders.Find(f => string.Equals(f.Id, folderId, StringComparison.Ordinal));
+            }
             if (row == null)
             {
                 _lblCreated.Text = "";
@@ -273,47 +326,14 @@ namespace Kazuko_FnB.UI
             _lblModifiedBy.Text = row.ModifiedByName ?? "";
         }
 
-        private void UpdateEmployeeGridMenuState()
-        {
-            bool hasRow = CurrentEmployeeId() != null;
-            foreach (ToolStripItem item in _employeeGridMenu.Items)
-            {
-                var mi = item as ToolStripMenuItem;
-                if (mi == null)
-                    continue;
-                switch (mi.Text)
-                {
-                    case "Thêm mới":
-                        mi.Visible = _canAdd;
-                        mi.Enabled = _canAdd;
-                        break;
-                    case "Chỉnh sửa":
-                        mi.Visible = _canEdit;
-                        mi.Enabled = _canEdit && hasRow;
-                        break;
-                    case "Xem chi tiết":
-                        mi.Visible = !_canEdit && _canViewEmployee;
-                        mi.Enabled = hasRow;
-                        break;
-                    case "Xóa":
-                        mi.Visible = _canRemove;
-                        mi.Enabled = _canRemove && hasRow;
-                        break;
-                    case "Sao chép ô":
-                    case "Sao chép vùng chọn":
-                        mi.Enabled = hasRow;
-                        break;
-                }
-            }
-        }
-
         // ------------------------------------------------------------------ CRUD Nhân viên
 
         private void AddEmployee()
         {
             if (!_employeeMode || !_canAdd)
                 return;
-            using (var dlg = new EmployeeEditDialog(ResolveEmployeeSession(), null, false))
+            string parentId = SelectedEmployeeFolderId();
+            using (var dlg = new EmployeeEditDialog(ResolveEmployeeSession(), null, false, parentId))
             {
                 OpenEmployeeDialog(dlg);
                 if (dlg.AnySaved)
@@ -325,10 +345,16 @@ namespace Kazuko_FnB.UI
         {
             if (!_employeeMode || !_canEdit)
                 return;
-            string id = CurrentEmployeeId();
-            if (string.IsNullOrEmpty(id))
+            EmployeeRow row = CurrentEmployeeRow();
+            if (row == null)
+            {
+                if (!string.IsNullOrEmpty(SelectedEmployeeFolderId()))
+                    EditEmployeeFolder();
                 return;
-            using (var dlg = new EmployeeEditDialog(ResolveEmployeeSession(), id, false))
+            }
+            if (row.IsSeparator)
+                return;
+            using (var dlg = new EmployeeEditDialog(ResolveEmployeeSession(), row.Id, false))
             {
                 OpenEmployeeDialog(dlg);
                 if (dlg.AnySaved)
@@ -336,10 +362,13 @@ namespace Kazuko_FnB.UI
             }
         }
 
-        /// <summary>Nhấp đôi dòng nhân viên: có quyền Sửa thì mở sửa; chỉ có quyền Xem thì mở chỉ đọc.</summary>
+        /// <summary>Nhấp đôi dòng nhân viên: có quyền Sửa thì mở sửa; chỉ có quyền Xem thì mở chỉ đọc; phân cách bỏ qua.</summary>
         private void OpenEmployeeFromGrid()
         {
             if (!_employeeMode)
+                return;
+            EmployeeRow row = CurrentEmployeeRow();
+            if (row == null || row.IsSeparator)
                 return;
             if (_canEdit)
             {
@@ -348,10 +377,7 @@ namespace Kazuko_FnB.UI
             }
             if (!_canViewEmployee)
                 return;
-            string id = CurrentEmployeeId();
-            if (string.IsNullOrEmpty(id))
-                return;
-            using (var dlg = new EmployeeEditDialog(ResolveEmployeeSession(), id, true))
+            using (var dlg = new EmployeeEditDialog(ResolveEmployeeSession(), row.Id, true))
                 OpenEmployeeDialog(dlg);
         }
 
@@ -359,16 +385,20 @@ namespace Kazuko_FnB.UI
         {
             if (!_employeeMode || !_canRemove)
                 return;
-            string id = CurrentEmployeeId();
-            if (string.IsNullOrEmpty(id))
+            EmployeeRow row = CurrentEmployeeRow();
+            if (row == null)
+            {
+                if (!string.IsNullOrEmpty(SelectedEmployeeFolderId()))
+                    DeleteEmployeeFolder(false);
                 return;
-            if (!SuppressEmployeePopupForTest && !Msg.Confirm(this, EmployeeText.DeleteConfirm))
+            }
+            if (!SuppressEmployeePopupForTest && !Msg.Confirm(this, EmployeeText.SoftDeleteConfirm(1)))
                 return;
 
             EmployeeDeleteResult res;
             try
             {
-                res = _employeeService.Delete(id);
+                res = _employeeService.SoftDelete(row.Id);
             }
             catch (DataAccessException ex)
             {

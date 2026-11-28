@@ -66,7 +66,8 @@ namespace Kazuko_FnB.Data
             var list = new List<KeyValuePair<string, string>>();
             using (FbConnection conn = KazukoConnection.Open(_databasePath))
             {
-                DataTable dt = DbHelper.Table(conn, null, "SELECT ID, NAME FROM DNHANVIEN WHERE STATUS = 30 ORDER BY NAME");
+                DataTable dt = DbHelper.Table(conn, null,
+                    "SELECT ID, NAME FROM DNHANVIEN WHERE STATUS = 30 AND (ITEMTYPE IS NULL OR ITEMTYPE = 0) ORDER BY NAME");
                 foreach (DataRow r in dt.Rows)
                     list.Add(new KeyValuePair<string, string>(DbHelper.Str(r[0]), DbHelper.Str(r[1]) ?? ""));
             }

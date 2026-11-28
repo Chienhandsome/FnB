@@ -173,7 +173,7 @@ namespace Kazuko_FnB.UI.Diagnostics
 
                     bool sel = view.SelectEmployeeRowByIdForTest(empBId);
                     Application.DoEvents();
-                    view.RemoveButtonForTest.PerformClick();
+                    view.DeleteEmployeePermanent();
                     Application.DoEvents();
                     string warn = view.LastEmployeeMessageForTest;
                     bool stillThere = new EmployeeRepository(db).LoadById(empBId) != null;

@@ -105,9 +105,15 @@ namespace Kazuko_FnB.Data
                     throw new System.IO.InvalidDataException("Bảng không có ID/NAME: " + name);
                 bool hasAddress = cols.Contains("DIACHI");
 
+                string extra = fixedCondition;
+                if (string.Equals(name, "DNHANVIEN", StringComparison.OrdinalIgnoreCase))
+                {
+                    string empOnly = "(ITEMTYPE IS NULL OR ITEMTYPE = 0)";
+                    extra = string.IsNullOrEmpty(extra) ? empOnly : "(" + extra + ") AND " + empOnly;
+                }
                 string sql = "SELECT \"ID\", \"NAME\"" + (hasAddress ? ", \"DIACHI\"" : "") +
                              " FROM \"" + name + "\" WHERE STATUS = @status" +
-                             (fixedCondition == null ? "" : " AND " + fixedCondition);
+                             (string.IsNullOrEmpty(extra) ? "" : " AND " + extra);
                 var list = new List<LookupItem>();
                 using (FbCommand cmd = userId == null
                     ? DbHelper.Command(conn, null, sql, "@status", CatalogRepository.ActiveStatus)

@@ -322,7 +322,7 @@ namespace Kazuko_FnB.Data
                         "COALESCE(CACHTINHLUONG, 30) AS CACHTINHLUONG, " +
                         "COALESCE(LUONGCA, 0) AS LUONGCA, COALESCE(LUONGTHANG, 0) AS LUONGTHANG, " +
                         "COALESCE(NGHICHUNHAT, 0) AS NGHICHUNHAT, COALESCE(NGHITHU7, 0) AS NGHITHU7 " +
-                        "FROM DNHANVIEN ORDER BY NAME")
+                        "FROM DNHANVIEN WHERE (ITEMTYPE IS NULL OR ITEMTYPE = 0) ORDER BY NAME")
                     : DbHelper.Table(conn, null,
                         "SELECT ID, COALESCE(CODE, '') AS CODE, COALESCE(NAME, '') AS NAME, " +
                         "COALESCE(STATUS, 0) AS STATUS, COALESCE(ITEMTYPE, 0) AS ITEMTYPE, " +

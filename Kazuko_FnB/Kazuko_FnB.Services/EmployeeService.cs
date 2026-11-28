@@ -12,7 +12,7 @@ namespace Kazuko_FnB.Services
     /// giữ nguyên giá trị các ô bị khóa/ẩn (CODE, DCALAMVIECID, LUONGCA/LUONGTHANG, NGHICHUNHAT/NGHITHU7, LUONGTHEOCA, SIMAGEID),
     /// xóa cứng chặn khi còn tham chiếu ở 8 bảng, ghi lưu vết TLUUVET trong cùng transaction.
     /// </summary>
-    public sealed class EmployeeService
+    public sealed partial class EmployeeService
     {
         private readonly UserSession _session;
         private readonly EmployeeRepository _repo;
@@ -150,8 +150,26 @@ namespace Kazuko_FnB.Services
                     DateTime serverNow = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
                     if (isNew)
                     {
+                        string parentId = string.IsNullOrEmpty(row.ParentId) ? "" : row.ParentId;
+                        string parentDir = "";
+                        if (parentId.Length > 0)
+                        {
+                            EmployeeRow parent = EmployeeRepository.LoadByIdIn(conn, tx, parentId);
+                            if (parent == null || !parent.IsFolder || parent.Status != EmployeeRepository.ActiveStatus)
+                            {
+                                outcome = EmployeeSaveResult.Fail(EmployeeText.ParentFolderGone);
+                                return;
+                            }
+                            parentDir = EmployeeRepository.BuildParentDir(parent);
+                        }
+
                         row.Id = DbHelper.NewId();
                         assignedNewId = true;
+                        row.ItemType = null;
+                        row.ParentId = parentId;
+                        row.ParentDir = parentDir;
+                        row.AutoId = EmployeeRepository.NextAutoIdIn(conn, tx);
+                        row.SortOrder = EmployeeRepository.NextSortOrderIn(conn, tx, parentId);
                         row.Status = EmployeeRepository.ActiveStatus;
                         row.CreatedById = _session.UserId ?? "";
                         row.CreatedAt = serverNow;
@@ -235,20 +253,38 @@ namespace Kazuko_FnB.Services
                     return;
                 }
 
-                List<ReferenceBlock> blocks = EmployeeRepository.CheckReferencesIn(conn, tx, id);
-                int totalRefs = 0;
-                foreach (ReferenceBlock b in blocks)
-                    totalRefs += b.Count;
-                if (totalRefs > 0)
+                List<ReferenceBlock> blocks = new List<ReferenceBlock>();
+                if (existing.IsFolder)
                 {
-                    outcome = new EmployeeDeleteResult
+                    int activeChildren = EmployeeRepository.CountActiveDescendantsIn(conn, tx, id);
+                    if (activeChildren > 0)
                     {
-                        Ok = false,
-                        ReferenceCount = totalRefs,
-                        Blocks = blocks,
-                        ErrorMessage = EmployeeRules.BuildReferenceBlockedMessage(existing.Name, blocks)
-                    };
-                    return;
+                        outcome = new EmployeeDeleteResult
+                        {
+                            Ok = false,
+                            ReferenceCount = activeChildren,
+                            ErrorMessage = EmployeeText.FolderNotEmpty(existing.Name, activeChildren)
+                        };
+                        return;
+                    }
+                }
+                else if (existing.IsEmployee)
+                {
+                    blocks = EmployeeRepository.CheckReferencesIn(conn, tx, id);
+                    int totalRefs = 0;
+                    foreach (ReferenceBlock b in blocks)
+                        totalRefs += b.Count;
+                    if (totalRefs > 0)
+                    {
+                        outcome = new EmployeeDeleteResult
+                        {
+                            Ok = false,
+                            ReferenceCount = totalRefs,
+                            Blocks = blocks,
+                            ErrorMessage = EmployeeRules.BuildReferenceBlockedMessage(existing.Name, blocks)
+                        };
+                        return;
+                    }
                 }
 
                 if (EmployeeRepository.DeleteIn(conn, tx, id) == 0)
@@ -257,6 +293,8 @@ namespace Kazuko_FnB.Services
                     return;
                 }
 
+                string kindLabel = existing.IsFolder ? "thư mục nhân viên"
+                    : (existing.IsSeparator ? "phân cách nhân viên" : "nhân viên");
                 DateTime serverNow = InvoiceNumberRepository.GetServerTimestamp(conn, tx);
                 _activityLogger.WriteBatch(conn, tx, new[]
                 {
@@ -266,7 +304,7 @@ namespace Kazuko_FnB.Services
                         Kind = ActivityKind.Khac,
                         BillId = existing.Id,
                         TableName = Clip(existing.Name),
-                        Note = Clip("Xóa nhân viên: " + (existing.Name ?? "")),
+                        Note = Clip("Xóa vĩnh viễn " + kindLabel + ": " + (existing.Name ?? "")),
                         Account = ResolveAccount(),
                         UserId = _session.UserId ?? "",
                         Time = serverNow

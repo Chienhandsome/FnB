@@ -137,7 +137,7 @@ namespace Kazuko_FnB.Data
             return DbHelper.Read(_databasePath, conn =>
             {
                 DataTable dt = DbHelper.Table(conn, null,
-                    "SELECT ID, NAME FROM DNHANVIEN WHERE STATUS = @S ORDER BY NAME",
+                    "SELECT ID, NAME FROM DNHANVIEN WHERE STATUS = @S AND (ITEMTYPE IS NULL OR ITEMTYPE = 0) ORDER BY NAME",
                     "@S", ActiveStatus);
                 var list = new List<LookupItem>(dt.Rows.Count);
                 foreach (DataRow r in dt.Rows)
@@ -159,7 +159,7 @@ namespace Kazuko_FnB.Data
             if (string.IsNullOrWhiteSpace(employeeId))
                 return null;
             object v = DbHelper.Scalar(conn, tx,
-                "SELECT NAME FROM DNHANVIEN WHERE ID = @I AND STATUS = @S",
+                "SELECT NAME FROM DNHANVIEN WHERE ID = @I AND STATUS = @S AND (ITEMTYPE IS NULL OR ITEMTYPE = 0)",
                 "@I", employeeId, "@S", ActiveStatus);
             return DbHelper.Str(v);
         }

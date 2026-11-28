@@ -164,6 +164,19 @@ namespace Kazuko_FnB.Services
             return result;
         }
 
+        /// <summary>Kiểm tra tên thư mục nhân viên (bắt buộc, &lt;= 255, không trùng thư mục anh em cùng cha).</summary>
+        public static EmployeeSaveResult ValidateFolder(string name, bool duplicateSiblingName)
+        {
+            string val = name ?? "";
+            if (string.IsNullOrWhiteSpace(val))
+                return EmployeeSaveResult.Fail(EmployeeText.FolderNameEmpty, true, false, false);
+            if (val.Length > EmployeeText.MaxTextLength)
+                return EmployeeSaveResult.Fail(EmployeeText.FieldTooLong("Tên thư mục", EmployeeText.MaxTextLength), true, false, false);
+            if (duplicateSiblingName)
+                return EmployeeSaveResult.Fail(EmployeeText.FolderNameDuplicate(val), true, false, false);
+            return new EmployeeSaveResult { Ok = true };
+        }
+
         /// <summary>Thông báo chặn xóa nhân viên nêu rõ từng nơi dùng và số lượng theo spec §2.</summary>
         public static string BuildReferenceBlockedMessage(string employeeName, IList<ReferenceBlock> blocks)
         {

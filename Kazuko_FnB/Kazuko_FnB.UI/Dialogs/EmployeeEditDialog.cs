@@ -24,6 +24,7 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly EmployeeService _service;
         private readonly bool _readOnly;
         private readonly bool _useTimekeeper;
+        private readonly string _parentId;
 
         private EmployeeRow _row;
         private bool _isNew;
@@ -77,7 +78,7 @@ namespace Kazuko_FnB.UI.Dialogs
         public string SavedId { get; private set; }
         public bool AnySaved { get; private set; }
 
-        public EmployeeEditDialog(UserSession session, string employeeId, bool readOnly = false)
+        public EmployeeEditDialog(UserSession session, string employeeId, bool readOnly = false, string parentId = null)
             : base("NHÂN VIÊN - THÊM MỚI", "Thông tin nhân viên", BodyWidth96, 460)
         {
             _session = session ?? AppSession.Current;
@@ -85,6 +86,7 @@ namespace Kazuko_FnB.UI.Dialogs
             _isNew = string.IsNullOrEmpty(employeeId);
             _readOnly = readOnly || (_isNew ? !_service.CanAdd : !_service.CanEdit);
             _useTimekeeper = _service.ReadUseTimekeeper();
+            _parentId = string.IsNullOrEmpty(parentId) ? "" : parentId;
 
             Body.AutoScroll = false;
 
@@ -145,6 +147,7 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             _isNew = true;
             _row = EmployeeRow.NewDefault();
+            _row.ParentId = _parentId;
             SetTitle("NHÂN VIÊN - THÊM MỚI");
             BindRowToControls();
         }

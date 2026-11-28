@@ -107,6 +107,7 @@
     <Compile Include="WarehouseRepository.cs" />
     <Compile Include="StoreRepository.cs" />
     <Compile Include="EmployeeRepository.cs" />
+    <Compile Include="EmployeeRepository.Tree.cs" />
     <Compile Include="ShiftRepository.cs" />
     <Compile Include="RewardPenaltyRepository.cs" />
     <Compile Include="SalaryAdvanceRepository.cs" />
