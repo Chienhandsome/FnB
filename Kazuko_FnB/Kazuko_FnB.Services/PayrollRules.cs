@@ -18,6 +18,16 @@ namespace Kazuko_FnB.Services
             return null;
         }
 
+        public static string ValidatePeriodName(string name)
+        {
+            string trimmed = (name ?? "").Trim();
+            if (trimmed.Length == 0)
+                return PayrollText.NameRequired;
+            if (trimmed.Length > PayrollText.MaxTextLength)
+                return PayrollText.NameTooLong;
+            return null;
+        }
+
         /// <summary>Kiểm quyền theo chức năng "Tính lương"; Admin luôn được.</summary>
         public static bool CanPayroll(UserSession session, int bit)
         {

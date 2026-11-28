@@ -228,6 +228,9 @@ namespace Kazuko_FnB.Domain
 
         public const string MonthInvalid = "Tháng phải nằm trong khoảng từ 1 đến 12.";
         public const string YearInvalid = "Năm phải nằm trong khoảng từ 0 đến 2999.";
+        public const string NameRequired = "Mời bạn nhập số phiếu.";
+        public const string NameTooLong = "Số phiếu tối đa 255 ký tự.";
+        public const string DiscardChangesConfirm = "Dữ liệu của bạn đã thay đổi, bạn có muốn hủy bỏ các thay đổi không?";
         public const string NoPermission = "Bạn không có quyền thực hiện thao tác này.";
         public const string PeriodNotFound = "Bảng lương không còn tồn tại.";
         public const string NoShiftsWarning = "Chưa có ca làm việc nào.";

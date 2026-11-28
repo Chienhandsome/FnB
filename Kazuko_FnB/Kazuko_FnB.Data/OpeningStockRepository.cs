@@ -155,7 +155,7 @@ namespace Kazuko_FnB.Data
 
                 string orderBy = sortByCode ? "M.CODE, M.NAME" : "M.NAME, M.CODE";
                 DataTable dt = DbHelper.Table(conn, null,
-                    "SELECT M.ID, M.CODE, M.NAME, M.DDONVITINHID, COALESCE(U.NAME, '') AS UNITNAME, " +
+                    "SELECT M.ID, M.CODE, M.MASANCO, M.NAME, M.DDONVITINHID, COALESCE(U.NAME, '') AS UNITNAME, " +
                     "COALESCE(M.GIAVON, 0) AS GIAVON " +
                     "FROM DMATHANG M " +
                     "LEFT JOIN DDONVITINH U ON U.ID = M.DDONVITINHID " +
@@ -189,6 +189,7 @@ namespace Kazuko_FnB.Data
                     {
                         ProductId = pid,
                         Code = DbHelper.Str(r["CODE"]) ?? "",
+                        Barcode = DbHelper.Str(r["MASANCO"]) ?? "",
                         Name = DbHelper.Str(r["NAME"]) ?? "",
                         UnitId = DbHelper.Str(r["DDONVITINHID"]),
                         UnitName = DbHelper.Str(r["UNITNAME"]) ?? "",

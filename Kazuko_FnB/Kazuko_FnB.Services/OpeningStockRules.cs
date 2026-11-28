@@ -71,8 +71,10 @@ namespace Kazuko_FnB.Services
                 if (q.Length > 0)
                 {
                     string codeFold = CatalogRepository.Fold(item.Code ?? "");
+                    string barcodeFold = CatalogRepository.Fold(item.Barcode ?? "");
                     string nameFold = CatalogRepository.Fold(item.Name ?? "");
                     if (codeFold.IndexOf(q, StringComparison.Ordinal) < 0
+                        && barcodeFold.IndexOf(q, StringComparison.Ordinal) < 0
                         && nameFold.IndexOf(q, StringComparison.Ordinal) < 0)
                     {
                         return false;

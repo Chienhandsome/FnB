@@ -165,12 +165,18 @@ namespace Kazuko_FnB.Services
         /// <summary>Thêm mới kỳ bảng lương (kiểm tháng 1..12, năm 0..2999, chặn trùng tháng/năm, ghi lưu vết).</summary>
         public PayrollCreateResult CreatePeriod(int month, int year, string note = "", Action testHookAfterWrite = null)
         {
+            return CreatePeriod(month, year, PayrollText.FormatPeriodName(month, year), note, testHookAfterWrite);
+        }
+
+        /// <summary>Thêm mới kỳ bảng lương với số phiếu tùy chỉnh (không rỗng, tối đa 255 ký tự, chặn trùng tháng/năm).</summary>
+        public PayrollCreateResult CreatePeriod(int month, int year, string name, string note, Action testHookAfterWrite = null)
+        {
             if (!CanAdd)
                 return PayrollCreateResult.Fail(PayrollText.NoPermission);
-
-            string err = PayrollRules.ValidatePeriod(month, year);
+            string err = PayrollRules.ValidatePeriod(month, year) ?? PayrollRules.ValidatePeriodName(name);
             if (err != null)
                 return PayrollCreateResult.Fail(err);
+            string periodName = name.Trim();
 
             PayrollCreateResult outcome = null;
             _repo.RunInTransaction((conn, tx) =>
@@ -185,7 +191,7 @@ namespace Kazuko_FnB.Services
                 var row = new PayrollPeriodRow
                 {
                     Id = DbHelper.NewId(),
-                    Name = PayrollText.FormatPeriodName(month, year),
+                    Name = periodName,
                     Month = month,
                     Year = year,
                     Note = PayrollText.Clip(note),

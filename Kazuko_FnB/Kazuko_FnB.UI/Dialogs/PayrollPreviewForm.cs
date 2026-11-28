@@ -31,5 +31,11 @@ namespace Kazuko_FnB.UI.Dialogs
         {
             _view.ReloadPeriods(null, true);
         }
+
+        /// <summary>Chọn và hiển thị đúng kỳ bảng lương vừa tạo (dùng bởi nút "Lưu &amp; In" của hộp tạo mới).</summary>
+        public void SelectPeriod(string periodId)
+        {
+            _view.ReloadPeriods(periodId, true);
+        }
     }
 }

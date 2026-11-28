@@ -98,14 +98,69 @@ namespace Kazuko_FnB.UI
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Right);
         }
 
+        private void OnDateCheckChanged(CheckBox check, DateBox box, ref DateTime lastDate)
+        {
+            if (_loading)
+                return;
+            _loading = true;
+            try
+            {
+                if (check.Checked)
+                {
+                    if (!box.NullableValue.HasValue)
+                        box.NullableValue = lastDate;
+                    else
+                        lastDate = box.NullableValue.Value;
+                }
+                else
+                {
+                    if (box.NullableValue.HasValue)
+                        lastDate = box.NullableValue.Value;
+                    box.NullableValue = null;
+                }
+            }
+            finally
+            {
+                _loading = false;
+            }
+            Reload();
+        }
+
+        private void OnDateValueChanged(CheckBox check, DateBox box, ref DateTime lastDate)
+        {
+            if (_loading)
+                return;
+            _loading = true;
+            try
+            {
+                DateTime? v = box.NullableValue;
+                if (v.HasValue)
+                {
+                    lastDate = v.Value;
+                    check.Checked = true;
+                }
+                else
+                {
+                    check.Checked = false;
+                }
+            }
+            finally
+            {
+                _loading = false;
+            }
+            Reload();
+        }
+
         private SalaryAdvanceFilter CurrentFilter()
         {
             var selEmp = _employee.SelectedItem as LookupItem;
             string empId = selEmp == null ? "" : (selEmp.Id ?? "");
+            DateTime? fromDate = _chkFrom.Checked ? _dtFrom.NullableValue : null;
+            DateTime? toDate = _chkTo.Checked ? _dtTo.NullableValue : null;
             return new SalaryAdvanceFilter
             {
-                FromDate = _dtFrom.Value.Date,
-                ToDate = _dtTo.Value.Date,
+                FromDate = fromDate.HasValue ? (DateTime?)fromDate.Value.Date : null,
+                ToDate = toDate.HasValue ? (DateTime?)toDate.Value.Date : null,
                 EmployeeId = empId,
                 AllowedStoreIds = _session.IsAdmin ? null : new List<string>(_allowedStoreIds),
                 SearchText = _txtSearch.Text
@@ -397,7 +452,13 @@ namespace Kazuko_FnB.UI
             _rightSplit.Panel2.BackColor = t.Background;
             ThemeApplier.ApplyInput(_txtSearch, t, t.Background, Draw.StrongBorder(t));
             foreach (FieldFrame f in _frames)
-                f.ApplyTheme(t, t.Background);
+            {
+                var db = f as DateBox;
+                if (db != null)
+                    db.ApplyTheme(t, t.Background);
+                else
+                    f.ApplyTheme(t, t.Background);
+            }
             _totalBar.BackColor = Draw.Mix(t.Surface, t.Primary, 0.08f);
             _lblTotalCaption.BackColor = Color.Transparent;
             _lblTotalCaption.ForeColor = t.Text;

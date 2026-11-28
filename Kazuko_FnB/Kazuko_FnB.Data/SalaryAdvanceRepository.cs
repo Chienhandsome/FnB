@@ -61,24 +61,30 @@ namespace Kazuko_FnB.Data
 
             return DbHelper.Read(_databasePath, conn =>
             {
-                DateTime from = filter.FromDate.Date;
-                DateTime toExcl = filter.ToDate.Date.AddDays(1);
-                if (toExcl <= from)
-                    toExcl = from.AddDays(1);
-
                 var args = new List<object>
                 {
-                    "@ST", ActiveStatus,
-                    "@From", from,
-                    "@ToExcl", toExcl
+                    "@ST", ActiveStatus
                 };
 
                 string where =
                     "WHERE COALESCE(T.LOAI, 0) = 1 " +
                     "AND COALESCE(T.LATAMUNG, 0) = 30 " +
                     "AND T.STATUS = @ST " +
-                    "AND (T.TBANGLUONGID IS NULL OR T.TBANGLUONGID = '') " +
-                    "AND T.NGAY >= @From AND T.NGAY < @ToExcl ";
+                    "AND (T.TBANGLUONGID IS NULL OR T.TBANGLUONGID = '') ";
+
+                if (filter.FromDate.HasValue)
+                {
+                    where += "AND T.NGAY >= @From ";
+                    args.Add("@From");
+                    args.Add(filter.FromDate.Value.Date);
+                }
+
+                if (filter.ToDate.HasValue)
+                {
+                    where += "AND T.NGAY < @ToExcl ";
+                    args.Add("@ToExcl");
+                    args.Add(filter.ToDate.Value.Date.AddDays(1));
+                }
 
                 if (!string.IsNullOrEmpty(filter.EmployeeId))
                 {

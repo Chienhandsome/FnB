@@ -67,6 +67,7 @@ namespace Kazuko_FnB.UI
                 _grid.Rows.Clear();
                 _empty.Visible = true;
                 _empty.Text = "Không đọc được danh sách kho: " + ex.Message;
+                ResetSummaryDisplay("0 mặt hàng");
                 _isDirty = false;
                 return;
             }
@@ -138,7 +139,7 @@ namespace Kazuko_FnB.UI
                     _grid.Rows.Clear();
                     _empty.Text = OpeningStockConstants.NoPermission;
                     _empty.Visible = true;
-                    _summary.Text = "0 mặt hàng";
+                    ResetSummaryDisplay("0 mặt hàng");
                     _isDirty = false;
                     return;
                 }
@@ -152,7 +153,7 @@ namespace Kazuko_FnB.UI
                     _grid.Rows.Clear();
                     _empty.Text = OpeningStockConstants.EmptyNoWarehouse;
                     _empty.Visible = true;
-                    _summary.Text = "0 mặt hàng";
+                    ResetSummaryDisplay("0 mặt hàng");
                     _isDirty = false;
                     return;
                 }
@@ -176,7 +177,7 @@ namespace Kazuko_FnB.UI
                 _grid.Rows.Clear();
                 _empty.Text = "Không đọc được tồn kho ban đầu: " + ex.Message;
                 _empty.Visible = true;
-                _summary.Text = "0 mặt hàng";
+                ResetSummaryDisplay("0 mặt hàng");
                 _isDirty = false;
                 return;
             }

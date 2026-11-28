@@ -601,6 +601,7 @@ namespace Kazuko_FnB.UI.Diagnostics
             AllWarehousesInventoryTests(db);
             WithMenuFlagsOn(db, "BatChucNangKiemSoatOrder", () => OrderControlTests(db));
             PrepaidCardTests(db);
+            Chot2811BTests(db);
         }
 
         // ------------------------------------------------------------------ Tab liên quan dưới lưới (pane dưới)

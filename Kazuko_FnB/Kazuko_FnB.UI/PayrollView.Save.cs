@@ -41,12 +41,12 @@ namespace Kazuko_FnB.UI
             if (!ConfirmDiscardUnsavedChanges())
                 return;
 
-            using (var dlg = new PayrollCreateDialog(_service))
+            using (var dlg = new PayrollCreateDialog(_service, _session))
             {
                 DialogResult dr = CreateDialogOpenerForTest != null
                     ? CreateDialogOpenerForTest(dlg)
                     : dlg.ShowDialog(FindForm());
-                if (dr == DialogResult.OK && dlg.CreatedPeriod != null)
+                if ((dr == DialogResult.OK || dlg.AnySaved) && dlg.CreatedPeriod != null)
                     ReloadPeriods(dlg.CreatedPeriod.Id, true);
             }
         }

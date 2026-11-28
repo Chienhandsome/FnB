@@ -78,6 +78,8 @@ namespace Kazuko_FnB.Domain
     {
         public string ProductId { get; set; }
         public string Code { get; set; }
+        /// <summary>Mã sẵn có (DMATHANG.MASANCO).</summary>
+        public string Barcode { get; set; }
         public string Name { get; set; }
         public string UnitId { get; set; }
         public string UnitName { get; set; }

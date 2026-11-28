@@ -29,8 +29,12 @@ namespace Kazuko_FnB.UI
 
         private readonly SplitContainer _split = new SplitContainer { Dock = DockStyle.Fill };
         private readonly List<FieldFrame> _frames = new List<FieldFrame>();
-        private readonly DateBox _dtFrom = new DateBox();
-        private readonly DateBox _dtTo = new DateBox();
+        private readonly CheckBox _chkFrom = new CheckBox { AutoSize = false, CheckAlign = ContentAlignment.MiddleLeft, Checked = false };
+        private readonly CheckBox _chkTo = new CheckBox { AutoSize = false, CheckAlign = ContentAlignment.MiddleLeft, Checked = false };
+        private readonly DateBox _dtFrom = new DateBox(true);
+        private readonly DateBox _dtTo = new DateBox(true);
+        private DateTime _lastFromDate = DateTime.Today;
+        private DateTime _lastToDate = DateTime.Today;
         private readonly ComboBox _employee = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat };
         private readonly InputBox _txtSearch = new InputBox();
 
@@ -74,6 +78,8 @@ namespace Kazuko_FnB.UI
         internal IGridExportOutput GridExportOutputForTest { get; set; }
         internal Func<PhieuThuDialog, DialogResult> DialogOpenerForTest { get; set; }
         internal DataGridView GridForTest { get { return _grid; } }
+        internal CheckBox FromDateCheckForTest { get { return _chkFrom; } }
+        internal CheckBox ToDateCheckForTest { get { return _chkTo; } }
         internal DateBox FromDateBoxForTest { get { return _dtFrom; } }
         internal DateBox ToDateBoxForTest { get { return _dtTo; } }
         internal ComboBox EmployeeComboForTest { get { return _employee; } }
@@ -181,7 +187,7 @@ namespace Kazuko_FnB.UI
 
             string[] captions = { "Từ ngày", "Đến ngày", "Nhân viên", "Tìm kiếm" };
             int lblColW = MeasureMaxWidth(captions, bodyFont, (int)Math.Ceiling(16 * s));
-            _filterPaneWidth = lblColW + (int)Math.Ceiling(190 * s);
+            _filterPaneWidth = lblColW + (int)Math.Ceiling(218 * s);
 
             var panel = new TableLayoutPanel
             {
@@ -196,27 +202,47 @@ namespace Kazuko_FnB.UI
             for (int i = 0; i < 4; i++)
                 panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 40 * s));
 
-            DateTime today = DateTime.Today;
-            _dtFrom.Value = new DateTime(today.Year, today.Month, 1);
-            _dtTo.Value = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
+            _chkFrom.Checked = false;
+            _chkTo.Checked = false;
+            _dtFrom.NullableValue = null;
+            _dtTo.NullableValue = null;
             _txtSearch.Placeholder = "Số phiếu, nhân viên, lý do...";
             _dtFrom.Inner.KeyDown += OnKeyDown;
             _dtTo.Inner.KeyDown += OnKeyDown;
             _employee.KeyDown += OnKeyDown;
             _txtSearch.Inner.KeyDown += OnKeyDown;
-            _dtFrom.ValueChanged += delegate { if (!_loading) Reload(); };
-            _dtTo.ValueChanged += delegate { if (!_loading) Reload(); };
+            _chkFrom.CheckedChanged += delegate { OnDateCheckChanged(_chkFrom, _dtFrom, ref _lastFromDate); };
+            _chkTo.CheckedChanged += delegate { OnDateCheckChanged(_chkTo, _dtTo, ref _lastToDate); };
+            _dtFrom.ValueChanged += delegate { OnDateValueChanged(_chkFrom, _dtFrom, ref _lastFromDate); };
+            _dtTo.ValueChanged += delegate { OnDateValueChanged(_chkTo, _dtTo, ref _lastToDate); };
             _employee.SelectedIndexChanged += delegate { if (!_loading) Reload(); };
             _txtSearch.TextChanged += delegate { if (!_loading) Reload(); };
 
-            AddFilterRow(panel, 0, "Từ ngày", _dtFrom, bodyFont, s);
-            AddFilterRow(panel, 1, "Đến ngày", _dtTo, bodyFont, s);
+            AddDateFilterRow(panel, 0, "Từ ngày", _chkFrom, _dtFrom, bodyFont, s);
+            AddDateFilterRow(panel, 1, "Đến ngày", _chkTo, _dtTo, bodyFont, s);
             AddFilterRow(panel, 2, "Nhân viên", _employee, bodyFont, s);
             AddFilterRow(panel, 3, "Tìm kiếm", _txtSearch, bodyFont, s);
 
             _split.Panel1.Controls.Add(panel);
             _split.Panel1.Controls.Add(title);
             LoadFilterLookups();
+        }
+
+        private void AddDateFilterRow(TableLayoutPanel panel, int row, string caption, CheckBox check, DateBox date, Font font, float s)
+        {
+            var lbl = new Label { Text = caption, AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = font };
+            date.Inner.Font = font;
+            date.Dock = DockStyle.Fill;
+            _frames.Add(date);
+            check.Dock = DockStyle.Left;
+            check.Width = (int)(22 * s);
+            check.Margin = Padding.Empty;
+            var wrap = new Panel { Height = (int)(34 * s), Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = new Padding(0, (int)(3 * s), 0, (int)(3 * s)) };
+            wrap.Controls.Add(date);
+            wrap.Controls.Add(check);
+            date.BringToFront();
+            panel.Controls.Add(lbl, 0, row);
+            panel.Controls.Add(wrap, 1, row);
         }
 
         private void AddFilterRow(TableLayoutPanel panel, int row, string caption, Control field, Font font, float s)

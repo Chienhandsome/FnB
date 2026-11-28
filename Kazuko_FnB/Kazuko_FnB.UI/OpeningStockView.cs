@@ -37,7 +37,22 @@ namespace Kazuko_FnB.UI
         private readonly FlatButton _btnSave = new FlatButton { Text = "Lưu (Ctrl+L)", Tag = "primary" };
         private readonly FlatButton _btnExcel = new FlatButton { Text = "Xuất excel" };
         private readonly FlatButton _btnRefresh = new FlatButton { Text = "Làm mới (F5)" };
-        private readonly Label _summary = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleRight };
+        private readonly Label _summary = new Label { AutoSize = false, TextAlign = ContentAlignment.MiddleLeft, UseMnemonic = false };
+
+        private readonly Panel _bottomBar = new Panel { Dock = DockStyle.Bottom };
+        private readonly Label _lblTotalValue = new Label { Text = "Tổng giá trị:", AutoSize = false, TextAlign = ContentAlignment.MiddleRight, UseMnemonic = false };
+        private readonly NumberBox _numTotalValue = new NumberBox
+        {
+            Minimum = 0m,
+            Maximum = 999999999999999m,
+            DecimalPlaces = 0,
+            ThousandsSeparator = true,
+            ReadOnly = true,
+            Increment = 0m,
+            InterceptArrowKeys = false,
+            TabStop = false,
+            TextAlign = HorizontalAlignment.Right
+        };
 
         private readonly Panel _filterPanel = new Panel { Dock = DockStyle.Top };
         private readonly List<FieldFrame> _frames = new List<FieldFrame>();
@@ -86,6 +101,9 @@ namespace Kazuko_FnB.UI
         internal FlatButton ExcelButtonForTest { get { return _btnExcel; } }
         internal FlatButton RefreshButtonForTest { get { return _btnRefresh; } }
         internal Label SummaryLabelForTest { get { return _summary; } }
+        internal Panel BottomBarForTest { get { return _bottomBar; } }
+        internal Label TotalValueLabelForTest { get { return _lblTotalValue; } }
+        internal NumberBox TotalValueBoxForTest { get { return _numTotalValue; } }
         internal Panel WarningBannerForTest { get { return _warnBanner; } }
         internal bool IsReadOnlyForTest { get { return _readOnly; } }
         internal bool IsDirtyForTest { get { return _isDirty; } }
@@ -106,9 +124,11 @@ namespace Kazuko_FnB.UI
             BuildBar(s);
             BuildFilterBar(s);
             BuildWarningBanner(s);
+            BuildBottomBar(s);
             BuildGrid(s);
 
             Controls.Add(_grid);
+            Controls.Add(_bottomBar);
             Controls.Add(_warnBanner);
             Controls.Add(_filterPanel);
             Controls.Add(_bar);
@@ -143,13 +163,19 @@ namespace Kazuko_FnB.UI
                 flow.Controls.Add(b);
             }
 
-            _summary.Width = (int)(380 * s);
-            _summary.Dock = DockStyle.Right;
-            _summary.Padding = new Padding(0, 0, (int)(12 * s), 0);
-            _summary.Font = _bodyFont;
-
             _bar.Controls.Add(flow);
-            _bar.Controls.Add(_summary);
+        }
+
+        private void BuildBottomBar(float s)
+        {
+            _bottomBar.Height = (int)(40 * s);
+            _summary.Font = _bodyFont;
+            _lblTotalValue.Font = _summaryFont;
+            _numTotalValue.Font = _summaryFont;
+            _bottomBar.Controls.Add(_summary);
+            _bottomBar.Controls.Add(_lblTotalValue);
+            _bottomBar.Controls.Add(_numTotalValue);
+            _bottomBar.Resize += delegate { LayoutBottomBar(); };
         }
 
         private void BuildFilterBar(float s)
@@ -186,7 +212,7 @@ namespace Kazuko_FnB.UI
             flow.Controls.Add(_dtDate);
 
             AddInlineLabel(flow, "Tìm kiếm:", s);
-            _txtSearch.Placeholder = "Mã hàng, tên mặt hàng...";
+            _txtSearch.Placeholder = "Mã hàng, mã sẵn có, tên mặt hàng...";
             _txtSearch.Inner.Font = _bodyFont;
             _txtSearch.Width = (int)(240 * s);
             _txtSearch.Height = (int)(34 * s);
@@ -251,20 +277,21 @@ namespace Kazuko_FnB.UI
             if (prop != null)
                 prop.SetValue(_grid, true, null);
 
-            // Đúng 6 cột theo spec §2: Mã, Tên, ĐVT, Tồn đầu (nhập), Giá vốn (nhập), Thành tiền.
-            AddGridColumn("colCode", "Mã hàng", 104, "MH00001", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
-            DataGridViewTextBoxColumn nameCol = AddGridColumn("colName", "Tên mặt hàng", 240, "Trà sữa trân châu đường đen", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
+            // 7 cột: Mã hàng, Mã sẵn có (DMATHANG.MASANCO), Tên mặt hàng, ĐVT, Tồn đầu, Giá vốn, Thành tiền.
+            AddGridColumn("colCode", "Mã hàng", 96, "MH00001", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
+            AddGridColumn("colBarcode", "Mã sẵn có", 104, "8930000001", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
+            DataGridViewTextBoxColumn nameCol = AddGridColumn("colName", "Tên mặt hàng", 210, "Trà sữa trân châu đường đen", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
             nameCol.MinimumWidth = nameCol.Width;
             nameCol.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            AddGridColumn("colUnit", "ĐVT", 84, "Thùng", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
+            AddGridColumn("colUnit", "ĐVT", 76, "Thùng", typeof(string), null, DataGridViewContentAlignment.MiddleLeft, true, s);
 
-            DataGridViewTextBoxColumn qtyCol = AddGridColumn("colQty", "Tồn đầu", 112, "99.999,99", typeof(decimal), "#,##0.##", DataGridViewContentAlignment.MiddleRight, _readOnly, s);
+            DataGridViewTextBoxColumn qtyCol = AddGridColumn("colQty", "Tồn đầu", 104, "99.999,99", typeof(decimal), "#,##0.##", DataGridViewContentAlignment.MiddleRight, _readOnly, s);
             NumericEditGridCell.ConfigureColumn(qtyCol, 2);
 
-            DataGridViewTextBoxColumn costCol = AddGridColumn("colCost", "Giá vốn", 132, "999.999.999,99", typeof(decimal), "#,##0.##", DataGridViewContentAlignment.MiddleRight, _readOnly, s);
+            DataGridViewTextBoxColumn costCol = AddGridColumn("colCost", "Giá vốn", 122, "999.999.999,99", typeof(decimal), "#,##0.##", DataGridViewContentAlignment.MiddleRight, _readOnly, s);
             NumericEditGridCell.ConfigureColumn(costCol, 2);
 
-            DataGridViewTextBoxColumn amtCol = AddGridColumn("colAmount", "Thành tiền", 142, "999.999.999", typeof(decimal), "N0", DataGridViewContentAlignment.MiddleRight, true, s);
+            DataGridViewTextBoxColumn amtCol = AddGridColumn("colAmount", "Thành tiền", 132, "999.999.999", typeof(decimal), "N0", DataGridViewContentAlignment.MiddleRight, true, s);
             amtCol.DefaultCellStyle.FormatProvider = NumberInput.ViFormat;
 
             _empty.Font = _bodyFont;

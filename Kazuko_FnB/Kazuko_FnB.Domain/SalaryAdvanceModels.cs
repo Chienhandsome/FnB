@@ -6,8 +6,10 @@ namespace Kazuko_FnB.Domain
     /// <summary>Bộ lọc danh sách Tạm ứng lương (TTHUCHI LOAI = 1, LATAMUNG = 30, TBANGLUONGID IS NULL).</summary>
     public sealed class SalaryAdvanceFilter
     {
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
+        /// <summary>null = không lọc cận dưới ngày.</summary>
+        public DateTime? FromDate { get; set; }
+        /// <summary>null = không lọc cận trên ngày.</summary>
+        public DateTime? ToDate { get; set; }
         /// <summary>Rỗng = tất cả nhân viên.</summary>
         public string EmployeeId { get; set; }
         /// <summary>Giới hạn cửa hàng cho user không phải admin (null = không giới hạn).</summary>

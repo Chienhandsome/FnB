@@ -104,7 +104,7 @@ namespace Kazuko_FnB.UI.Diagnostics
                 try
                 {
                     DataGridView grid = view.GridForTest;
-                    bool colsOk = CheckHeadersNoClip(grid, new[] { "Mã hàng", "Tên mặt hàng", "ĐVT", "Tồn đầu", "Giá vốn", "Thành tiền" });
+                    bool colsOk = CheckHeadersNoClip(grid, new[] { "Mã hàng", "Mã sẵn có", "Tên mặt hàng", "ĐVT", "Tồn đầu", "Giá vốn", "Thành tiền" });
                     var selWh = view.WarehouseComboForTest.SelectedItem as LookupItem;
                     bool defaultWhAndDateOk = selWh != null && selWh.Id == whA
                         && view.DateBoxForTest.Value.Date == OpeningStockRules.DefaultOpeningDate(DateTime.Today);
@@ -215,13 +215,13 @@ namespace Kazuko_FnB.UI.Diagnostics
                     bool accentSearchOk = view.FindRowByProductIdForTest(prodA) != null
                         && view.FindRowByProductIdForTest(prodB) == null;
 
-                    // Xuất Excel qua nút thật -> đọc lại file .xls đúng 6 cột đang hiện.
+                    // Xuất Excel qua nút thật -> đọc lại file .xls đúng 7 cột đang hiện.
                     var rec = new GridExportOutputRecorder { NextSavePath = xlsPath, ConfirmOpenResult = false };
                     view.GridExportOutputForTest = rec;
                     view.ExcelButtonForTest.PerformClick();
                     Application.DoEvents();
                     XlsSheetSnapshot snap = File.Exists(xlsPath) ? ReadFirstXlsSheet(xlsPath) : null;
-                    bool xlsOk = snap != null && rec.PromptSaveCount == 1 && snap.ColCount == 6
+                    bool xlsOk = snap != null && rec.PromptSaveCount == 1 && snap.ColCount == 7
                         && HeadersMatch(snap, VisibleGridHeaders(grid))
                         && XlsSheetContainsSubstring(snap, "TDUIA-" + tag);
 
@@ -369,7 +369,7 @@ namespace Kazuko_FnB.UI.Diagnostics
                     try
                     {
                         f.Preview("");
-                        previewOk = f.ViewForTest != null && f.ViewForTest.GridForTest.Columns.Count == 6;
+                        previewOk = f.ViewForTest != null && f.ViewForTest.GridForTest.Columns.Count == 7;
                     }
                     finally { f.Close(); }
                 }

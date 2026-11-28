@@ -261,6 +261,7 @@ namespace Kazuko_FnB.UI
                 {
                     int idx = _grid.Rows.Add(
                         item.Code ?? "",
+                        item.Barcode ?? "",
                         item.Name ?? "",
                         item.UnitName ?? "",
                         item.Quantity,
@@ -272,7 +273,7 @@ namespace Kazuko_FnB.UI
                 OpeningStockTotals totals = OpeningStockRules.ComputeTotals(_visibleItems);
                 if (_visibleItems.Count > 0)
                 {
-                    int sumIdx = _grid.Rows.Add("", "Tổng cộng", "", null, null, totals.TotalAmount);
+                    int sumIdx = _grid.Rows.Add("", "", "Tổng cộng", "", null, null, totals.TotalAmount);
                     DataGridViewRow sumRow = _grid.Rows[sumIdx];
                     sumRow.Tag = SummaryRowTag;
                     sumRow.ReadOnly = true;
@@ -330,11 +331,39 @@ namespace Kazuko_FnB.UI
 
         private void UpdateSummaryLabel(OpeningStockTotals totals)
         {
+            decimal totalAmt = totals == null ? 0m : totals.TotalAmount;
+            decimal clamped = Math.Max(_numTotalValue.Minimum, Math.Min(_numTotalValue.Maximum, totalAmt));
+            _numTotalValue.Value = clamped;
             _summary.Text = string.Format(
-                "{0}/{1} mặt hàng có tồn — Tổng giá trị: {2}",
-                totals.EnteredCount,
-                totals.ItemCount,
-                PurchaseConstants.FormatMoneyVi(totals.TotalAmount));
+                "{0}/{1} mặt hàng có tồn — Tổng giá trị",
+                totals == null ? 0 : totals.EnteredCount,
+                totals == null ? 0 : totals.ItemCount);
+            LayoutBottomBar();
+        }
+
+        private void ResetSummaryDisplay(string text)
+        {
+            _numTotalValue.Value = 0m;
+            _summary.Text = text ?? "";
+            LayoutBottomBar();
+        }
+
+        private void LayoutBottomBar()
+        {
+            float s = DeviceDpi / 96f;
+            int pad = (int)(12 * s);
+            int gap = (int)(8 * s);
+            int w = _bottomBar.ClientSize.Width;
+            int h = _bottomBar.ClientSize.Height;
+            int boxW = (int)(180 * s);
+            int boxH = Math.Min(h - (int)(8 * s), Math.Max((int)(24 * s), _numTotalValue.PreferredHeight));
+            int lblW = TextRenderer.MeasureText(_lblTotalValue.Text, _summaryFont).Width + (int)(10 * s);
+
+            int boxX = Math.Max(pad, w - pad - boxW);
+            int lblX = Math.Max(pad, boxX - gap - lblW);
+            _numTotalValue.SetBounds(boxX, Math.Max(0, (h - boxH) / 2), boxW, boxH);
+            _lblTotalValue.SetBounds(lblX, 0, lblW, h);
+            _summary.SetBounds(pad, 0, Math.Max(0, lblX - pad - gap), h);
         }
 
         private void StyleSummaryRow(DataGridViewRow row, ThemeTokens t)
@@ -360,8 +389,13 @@ namespace Kazuko_FnB.UI
             BackColor = t.Background;
             _bar.BackColor = t.Background;
             _filterPanel.BackColor = t.Background;
+            _bottomBar.BackColor = Draw.Mix(t.Surface, t.Primary, 0.08f);
             _summary.BackColor = Color.Transparent;
             _summary.ForeColor = t.TextMuted;
+            _lblTotalValue.BackColor = Color.Transparent;
+            _lblTotalValue.ForeColor = t.Text;
+            _numTotalValue.BackColor = t.Surface;
+            _numTotalValue.ForeColor = t.Primary;
             _empty.BackColor = _grid.BackgroundColor;
             _empty.ForeColor = t.TextMuted;
             _warnBanner.BackColor = WarningBannerBackColor(t);

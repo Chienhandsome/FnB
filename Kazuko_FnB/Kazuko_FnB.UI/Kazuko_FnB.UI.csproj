@@ -664,6 +664,8 @@
     <Compile Include="Diagnostics\SelfTest.OrderControl.Ui.cs" />
     <Compile Include="Diagnostics\SelfTest.PrepaidCard.cs" />
     <Compile Include="Diagnostics\SelfTest.PrepaidCard.Ui.cs" />
+    <Compile Include="Diagnostics\SelfTest.Chot2811B.cs" />
+    <Compile Include="Diagnostics\SelfTest.Chot2811B.Payroll.cs" />
     <Compile Include="Printing\FastReportEngine.cs" />
     <Compile Include="Printing\FastReportFunctions.cs" />
     <Compile Include="Printing\GridExcelExporter.cs" />
