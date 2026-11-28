@@ -19,7 +19,7 @@ Hộp thêm/sửa (thứ tự trường giống gốc):
 - **Mã nhân viên** (`CODE`, tối đa 255): **chỉ hiện và bắt buộc khi cấu hình `TinhLuongSuDungMayChamCong = 30`** (mã khớp `USERID` máy chấm công); ngược lại ẩn và để trống; khi có giá trị thì **không trùng** (so không phân biệt hoa thường) giữa các nhân viên (T2).
 - Điện thoại, Địa chỉ (≤ 255), Ghi chú (≤ 255).
 - **Ca làm việc** (`DCALAMVIECID`, chọn từ `DCALAMVIEC` đang dùng): chỉ hiện khi `TinhLuongSuDungMayChamCong = 30` và khi đó **bắt buộc**; ngược lại ẩn (giữ nguyên giá trị cũ khi sửa).
-- **Cách tính lương** (`CACHTINHLUONG`, nút chọn một): **Theo ca = 30** (nhập `LUONGCA`, ô Lương tháng bị khóa), **Theo tháng = 0** (nhập `LUONGTHANG`, hai ô tích **Nghỉ chủ nhật** `NGHICHUNHAT` và **Nghỉ thứ 7** `NGHITHU7` mở; Lương ca khóa), **Tháng theo ca = 60** (mở cả hai ô lương như gốc: gốc cho `rdLuongThangTheoCa` không khóa ô nào). Ô tích chỉ mở với "Theo tháng". Mặc định tạo mới: Theo ca, Nghỉ thứ 7 **có** (30), Nghỉ chủ nhật **không** (0).
+- **Cách tính lương** (`CACHTINHLUONG`, nút chọn một): **Theo ca = 30** (nhập `LUONGCA`, ô Lương tháng bị khóa), **Theo tháng = 0** (nhập `LUONGTHANG`, hai ô tích **Nghỉ chủ nhật** `NGHICHUNHAT` và **Nghỉ thứ 7** `NGHITHU7` mở; Lương ca khóa), **Tháng theo ca = 60** (Lương ca khóa, Lương tháng mở; đã bấm app gốc 28/11 xác nhận, sửa lại chỗ ghi sai trước đó). Ô tích chỉ mở với "Theo tháng". Mặc định tạo mới: Theo ca, Nghỉ thứ 7 **có** (30), Nghỉ chủ nhật **không** (0).
 - **Lương ca**, **Lương tháng**: số tiền ≥ 0, nhập bằng ô nhập số chung của dự án, tối đa 9 chữ số phần nguyên, 2 số lẻ khi lưu (cột `NUMERIC(*,2)`); hiện phân cách hàng nghìn. Khi khóa thì **giữ nguyên giá trị đã lưu** (không tự đặt 0).
 - **Lương theo ca** (`LUONGTHEOCA`): cột chết trong gốc (không dùng ở đâu): **không có ô nhập**, giữ nguyên giá trị cũ khi sửa, dòng mới để trống. (T3)
 - Ảnh (`SIMAGEID`): không làm ô nhập, giữ nguyên giá trị cũ.
@@ -67,5 +67,5 @@ Như các danh mục đã có: hộp thoại gọn, không cuộn dọc ở 1366
 - **T2** Chặn trùng `CODE` thêm so với gốc (gốc không ràng buộc); cần vì mã gắn với `USERID` máy chấm công.
 - **T3** `LUONGTHEOCA` là cột chết, không có ô nhập.
 - **T4** Chặn ca có thời lượng 0 khi bật máy chấm công là thêm so với gốc.
-- **T5** "Tháng theo ca" mở cả hai ô lương như gốc; ý nghĩa tiền xử lý ở patch Tính lương.
+- **T5** "Lương tháng theo ca" khóa Lương ca, mở Lương tháng (đúng app gốc, đã sửa ở commit 5e3a858); ý nghĩa tiền xử lý ở patch Tính lương.
 - **T6** Chưa có màn bật tắt `TinhLuongSuDungMayChamCong`; cấu hình tắt mặc định (DEMO để trống), nên Mã/Ca/giờ của ca bị ẩn hoặc khóa trên DB demo.
