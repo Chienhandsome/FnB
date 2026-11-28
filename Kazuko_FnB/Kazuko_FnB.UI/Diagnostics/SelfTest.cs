@@ -580,8 +580,8 @@ namespace Kazuko_FnB.UI.Diagnostics
             DebtTests(db);
             StockTakeTests(db);
             CostRecalcTests(db);
-            GiftVoucherTests(db);
-            PromotionTests(db);
+            WithMenuFlagsOn(db, "LuaChonVoucherTuDanhSach", () => GiftVoucherTests(db));
+            WithMenuFlagsOn(db, "KichHoatKhuyenMaiTuDong", () => PromotionTests(db));
             LoyaltyTests(db);
             OpeningStockTests(db);
             OpeningDebtTests(db);
@@ -594,11 +594,12 @@ namespace Kazuko_FnB.UI.Diagnostics
             PayrollTests(db);
             PayrollPayoutTests(db);
             RepairNoticeTests(db);
-            WifiPasswordTests(db);
+            WithMenuFlagsOn(db, "InMatKhauWifiTrenBill", () => WifiPasswordTests(db));
             WifiInvoiceTests(db);
             AreaInvoicePrinterTests(db);
+            MenuConfigTests(db);
             AllWarehousesInventoryTests(db);
-            OrderControlTests(db);
+            WithMenuFlagsOn(db, "BatChucNangKiemSoatOrder", () => OrderControlTests(db));
             PrepaidCardTests(db);
         }
 

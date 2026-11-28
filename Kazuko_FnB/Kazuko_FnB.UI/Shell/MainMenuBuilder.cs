@@ -83,30 +83,21 @@ namespace Kazuko_FnB.UI
         // ------------------------------------------------------------------ lọc quyền
 
         /// <summary>
-        /// Kiểm tra cờ cấu hình hiện menu cho riêng Danh mục cửa hàng (NhieuCuaHang = 30)
-        /// và Danh mục thẻ trả trước (SuDungTheTraTruoc = 30). Các menu khác giữ nguyên hành vi cũ.
+        /// Mục menu có VISIBLECONFIGID chỉ hiện khi cờ SCONFIG tương ứng = 30 (cửa hàng, thẻ trả trước,
+        /// voucher, khuyến mại, kiểm soát order, mật khẩu wifi), như app gốc.
         /// </summary>
         private static bool IsVisibleByConfig(MenuNode n, Dictionary<string, int> configById, int? prepaidCardConfigVal)
         {
             if (n == null)
                 return true;
-            if (IsStoreCatalogMenuNode(n))
+            if (!string.IsNullOrEmpty(n.VisibleConfigId) && configById != null)
             {
-                if (string.IsNullOrEmpty(n.VisibleConfigId) || configById == null)
-                    return true;
                 int val;
-                return !configById.TryGetValue(n.VisibleConfigId, out val) || val == SystemConfig.On;
+                if (configById.TryGetValue(n.VisibleConfigId, out val))
+                    return val == SystemConfig.On;
             }
             if (IsPrepaidCardCatalogMenuNode(n))
-            {
-                if (!string.IsNullOrEmpty(n.VisibleConfigId) && configById != null)
-                {
-                    int val;
-                    if (configById.TryGetValue(n.VisibleConfigId, out val))
-                        return val == SystemConfig.On;
-                }
                 return !prepaidCardConfigVal.HasValue || prepaidCardConfigVal.Value == SystemConfig.On;
-            }
             return true;
         }
 
