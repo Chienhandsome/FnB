@@ -14,3 +14,11 @@ Nguồn: Chiến trả lời trong phiên Claude Code sáng 28/11. Các quyết 
 3. **In danh sách, In mã vạch, nhập Excel ở Danh mục và Đặt hàng, Ctrl+P ở hộp sửa:** **đối chiếu app gốc trước** (phiên mới bấm thử app gốc), rồi mới viết spec và làm.
 4. **Nhập dữ liệu từ hệ thống cũ:** xem app gốc trước rồi mới quyết.
 5. **Gửi tin nhắn tới khách hàng:** không làm, **ẩn menu**.
+
+## Chiến trả lời tiếp (28/11, sau khi bấm thử app gốc) — ĐÃ DUYỆT
+1. **Menu Voucher, Khuyến mại, Thẻ trả trước, Kiểm soát order, Mật khẩu wifi, Cửa hàng:** hiện/ẩn theo cờ `SCONFIG` trong cấu hình toàn hệ thống (`VISIBLECONFIGID` của mục menu), như app gốc.
+2. Ô **Phân loại** của phiếu chi Tạm ứng: xem app gốc rồi làm theo.
+3. **Danh mục nhân viên làm dạng cây** (thư mục, thư mục con, phân cách, Thùng rác xóa mềm) như app gốc.
+4. **Tạm ứng:** lọc Từ/Đến mặc định để trống như gốc.
+5. **Tồn kho ban đầu:** thêm cột "Mã sẵn có" và ô "Tổng giá trị".
+6. **Bảng lương:** Số phiếu sửa được, thêm nút "Lưu & Mới" và "In".
