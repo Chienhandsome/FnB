@@ -211,10 +211,10 @@ namespace Kazuko_FnB.UI.Diagnostics
                         && !dlgOff.OffSaturdayCheckForTest.Enabled && !dlgOff.OffSundayCheckForTest.Enabled
                         && dlgOff.MonthlySalaryBoxForTest.Value == 4500000m;
 
-                    // Chuyển sang Tháng theo ca -> mở cả 2 ô lương, khóa 2 checkbox.
+                    // Chuyển sang Tháng theo ca -> khóa Lương ca, mở Lương tháng, khóa 2 checkbox (như app gốc).
                     dlgOff.MonthByShiftRadioForTest.Checked = true;
                     dlgOff.ApplySalaryModeState();
-                    bool comboUnlocksBoth = dlgOff.ShiftSalaryBoxForTest.Enabled && dlgOff.MonthlySalaryBoxForTest.Enabled
+                    bool comboUnlocksBoth = !dlgOff.ShiftSalaryBoxForTest.Enabled && dlgOff.MonthlySalaryBoxForTest.Enabled
                         && !dlgOff.OffSaturdayCheckForTest.Enabled && !dlgOff.OffSundayCheckForTest.Enabled;
 
                     // Lưu ở chế độ Theo ca với Lương ca mới 180.000 -> DB phải giữ Lương tháng 4.500.000 và CODE/DCALAMVIECID cũ.
@@ -234,6 +234,14 @@ namespace Kazuko_FnB.UI.Diagnostics
                 }
                 finally { dlgOff.Close(); }
             }
+
+            Check("Nhân sự (nhãn và khóa lương như app gốc): 3 kiểu tên Lương theo ca / Lương tháng theo ngày / Lương tháng theo ca; hai kiểu tháng khóa Lương ca",
+                EmployeeRules.SalaryModeDisplayText(EmployeeSalaryMode.ByShift) == "Lương theo ca"
+                && EmployeeRules.SalaryModeDisplayText(EmployeeSalaryMode.ByMonth) == "Lương tháng theo ngày"
+                && EmployeeRules.SalaryModeDisplayText(EmployeeSalaryMode.MonthByShift) == "Lương tháng theo ca"
+                && !EmployeeRules.IsShiftSalaryLocked(EmployeeSalaryMode.ByShift)
+                && EmployeeRules.IsShiftSalaryLocked(EmployeeSalaryMode.ByMonth)
+                && EmployeeRules.IsShiftSalaryLocked(EmployeeSalaryMode.MonthByShift));
 
             // Bật máy chấm công: mở hộp mới -> Mã và Ca hiện và bắt buộc; nhập đủ -> lưu thành công; không cuộn dọc.
             SetOpeningConfigInt(db, cfgRepo, cfgBackups, EmployeeText.ConfigUseTimekeeperKey, 30);

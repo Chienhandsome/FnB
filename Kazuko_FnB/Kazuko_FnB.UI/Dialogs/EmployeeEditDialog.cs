@@ -38,9 +38,9 @@ namespace Kazuko_FnB.UI.Dialogs
         private readonly TextBox _address = new TextBox { MaxLength = EmployeeText.MaxTextLength };
         private readonly LookupCombo _shift = new LookupCombo();
         private readonly GroupBox _grpSalary = new GroupBox { Text = "Cách tính lương" };
-        private readonly RadioButton _rdByShift = new RadioButton { Text = "Theo ca", AutoSize = true };
-        private readonly RadioButton _rdByMonth = new RadioButton { Text = "Theo tháng", AutoSize = true };
-        private readonly RadioButton _rdMonthByShift = new RadioButton { Text = "Tháng theo ca", AutoSize = true };
+        private readonly RadioButton _rdByShift = new RadioButton { Text = "Lương theo ca", AutoSize = true };
+        private readonly RadioButton _rdByMonth = new RadioButton { Text = "Lương tháng theo ngày", AutoSize = true };
+        private readonly RadioButton _rdMonthByShift = new RadioButton { Text = "Lương tháng theo ca", AutoSize = true };
         private readonly CheckBox _chkOffSaturday = new CheckBox { Text = "Nghỉ thứ 7", AutoSize = true };
         private readonly CheckBox _chkOffSunday = new CheckBox { Text = "Nghỉ chủ nhật", AutoSize = true };
         private readonly NumberBox _shiftSalary = new NumberBox

@@ -39,17 +39,17 @@ namespace Kazuko_FnB.Services
             switch (mode)
             {
                 case EmployeeSalaryMode.ByMonth:
-                    return "Theo tháng";
+                    return "Lương tháng theo ngày";
                 case EmployeeSalaryMode.MonthByShift:
-                    return "Tháng theo ca";
+                    return "Lương tháng theo ca";
                 default:
-                    return "Theo ca";
+                    return "Lương theo ca";
             }
         }
 
         public static bool IsShiftSalaryLocked(int salaryMode)
         {
-            return salaryMode == EmployeeSalaryMode.ByMonth;
+            return salaryMode == EmployeeSalaryMode.ByMonth || salaryMode == EmployeeSalaryMode.MonthByShift;
         }
 
         public static bool IsMonthlySalaryLocked(int salaryMode)
