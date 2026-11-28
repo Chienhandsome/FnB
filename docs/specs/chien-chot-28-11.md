@@ -1,5 +1,7 @@
 # Chiến chốt 28/11/2026 (trả lời lần lượt các câu hỏi sau đêm làm liên tục)
 
+- Trạng thái: **ĐÃ DUYỆT** (Chiến trả lời trực tiếp trong chat 28/11/2026)
+
 Nguồn: Chiến trả lời trong phiên Claude Code sáng 28/11. Các quyết định này **thắng** mọi chỗ khác trong spec liên quan.
 
 ## Đã áp dụng vào spec và đang sửa code (patch `chien-chot-2811`)
