@@ -21,6 +21,7 @@ namespace Kazuko_FnB.UI.Dialogs
                 { "admin.images", session => new ImageLibraryDialog(session) },
                 { "admin.users", session => new UserManagerDialog(session) },
                 { "admin.themes", session => new ThemeChooserDialog(session) },
+                { "admin.areaprinters", session => new AreaInvoicePrinterDialog(session) },
                 // Phiếu thu / Phiếu chi dựng từ layout gốc (docs/specs/phieu-thu-chi.md).
                 { "preview.phieuthu", session => new PhieuThuDialog(session) },
                 { "preview.phieuchi", session => new PhieuThuDialog(session, VoucherKind.Expense) },

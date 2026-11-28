@@ -235,6 +235,8 @@ namespace Kazuko_FnB.UI
             AddIfAllowed(ordered, perms, Item("admin.audit", "Lịch sử tương tác hệ thống", "Lịch sử tương tác hệ thống", MenuAction.OpenTab));
             AddIfAllowed(ordered, perms, Item("admin.users", "Người dùng và phân quyền", "Quản lý người dùng", MenuAction.OpenTab));
             AddIfAllowed(ordered, perms, Item("admin.config", "Cấu hình toàn hệ thống", "Cấu hình toàn hệ thống", MenuAction.OpenTab));
+            // Máy in hóa đơn theo khu vực: cấu hình cục bộ theo máy (Chiến chốt 28/11), cùng quyền với Cấu hình toàn hệ thống.
+            AddIfAllowed(ordered, perms, Item("admin.areaprinters", "Cấu hình máy in hóa đơn theo khu vực", "Cấu hình toàn hệ thống", MenuAction.OpenTab));
             // Đổi bảng màu chỉ lưu cục bộ theo người dùng Windows (không đụng DB) nên không gắn quyền chức năng.
             ordered.Add(Item("admin.themes", "Giao diện chương trình", null, MenuAction.OpenTab));
 
